@@ -1,0 +1,124 @@
+whale-alert_1778614610513.tsx
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
+import SiteNav from "@/components/site-nav";
+
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+function getAuth() {
+  try {
+    const r = localStorage.getItem("psyko_auth");
+    if (!r) return null;
+    const s = JSON.parse(r) as { role?: string; plan?: string; ts?: number; user?: string };
+    if (Date.now() - (s.ts ?? 0) > 28_800_000) return null;
+    return s;
+  } catch { return null; }
+}
+function isElite(auth: ReturnType<typeof getAuth>) {
+  if (!auth) return false;
+  const role = auth.role ?? "";
+  const plan = (auth.plan ?? "").toLowerCase();
+  return role === "superadmin" || role === "operator" || plan === "institucional" || plan === "elite";
+}
+function hasPro(auth: ReturnType<typeof getAuth>) {
+  if (!auth) return false;
+  const role = auth.role ?? "";
+  const plan = (auth.plan ?? "").toLowerCase();
+  return isElite({ ...auth }) || plan === "trader" || plan === "pro" || role === "member";
+}
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+interface WhaleAlert {
+  id: string; ts: number; coin: string; amount: number; usd: number;
+  from: string; to: string;
+  type: "transfer"|"exchange_in"|"exchange_out"|"whale_buy"|"whale_sell"|"liquidation";
+  hash: string; source: "hyperliquid"|"etherscan"|"mempool"|"dexscreener"; significant: boolean;
+}
+interface WhaleTrader {
+  id: string; displayName: string; coin: string;
+  exchange?: "binance"|"bybit"|"okx"|"hyperliquid"|"dydx"|"bitmex";
+  currentPosition: "LONG"|"SHORT"|"NEUTRAL";
+  positionSizeUsd: number; winRate: number;
+  pnl24h: number; pnlWeek: number; volume24h: number;
+  totalTrades: number; roi: number; fundingRate: number;
+  oiUsd: number; signal: "BUY"|"SELL"|"HOLD";
+  size?: "GRANDE"|"MID"|"SMALL";
+  score100?: number;
+  fundingFormatted?: string;
+  isCoinglass?: boolean;
+  priceChange24h?: number;
+  pnlSource?: "mtm" | "est";
+  entryPrice?: number;
+  tpPrice?: number;
+  slPrice?: number;
+  walletLabel?: string;
+}
+interface CgSignalRaw {
+  id: string;
+  exchange: "binance"|"bybit"|"okx";
+  exchangeLabel: string;
+  coin: string;
+  direction: "LONG"|"SHORT"|"NEUTRAL";
+  fundingRate: number;
+  fundingFormatted: string;
+  oiUsd: number;
+  signal: "BUY"|"SELL"|"HOLD";
+  score100: number;
+  size: "GRANDE"|"MID"|"SMALL";
+  volume24h: number;
+}
+interface Gem {
+  address: string; symbol: string; name: string; chain: string;
+  price: number; priceChange1h: number; priceChange24h: number;
+  volume24h: number; liquidity: number; marketCap: number;
+  buyVolume: number; buyCount: number; sellCount: number;
+  ageMinutes: number; dexUrl: string; isBoosted: boolean;
+  rugScore?: number; rugRisks?: number; rugLoading?: boolean;
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function fmt(n: number) {
+  if (n >= 1e9) return `$${(n/1e9).toFixed(2)}B`;
+  if (n >= 1e6) return `$${(n/1e6).toFixed(1)}M`;
+  if (n >= 1e3) return `$${(n/1e3).toFixed(0)}K`;
+  return `$${n.toFixed(0)}`;
+}
+function timeAgo(ts: number) {
+  const s = Math.floor((Date.now()-ts)/1000);
+  if (s < 60) return `${s}s`;
+  if (s < 3600) return `${Math.floor(s/60)}m`;
+  return `${Math.floor(s/3600)}h`;
+}
+function ageLabel(min: number) {
+  if (min < 60) return `${Math.round(min)}m`;
+  if (min < 1440) return `${Math.round(min/60)}h`;
+  return `${Math.round(min/1440)}d`;
+}
+function fmtPrice(p: number) {
+  if (!p) return "–";
+  if (p >= 1000) return `$${Math.round(p).toLocaleString("en")}`;
+  if (p >= 1) return `$${p.toFixed(2)}`;
+  return `$${p.toFixed(6)}`;
+}
+
+// ─── Exchange meta ─────────────────────────────────────────────────────────────
+type ExchangeKey = "all"|"hyperliquid"|"dydx"|"okx"|"bitmex"|"binance"|"bybit";
+const EX_META: Record<ExchangeKey, { color: string; short: string; bg: string }> = {
+  all:         { color: "#00e5ff", short: "TODAS",  bg: "#001a1f" },
+  hyperliquid: { color: "#00d4aa", short: "HL",     bg: "#001a15" },
+  dydx:        { color: "#6c63ff", short: "dYdX",   bg: "#08001a" },
+  okx:         { color: "#00a3ff", short: "OKX",    bg: "#00101a" },
+  bitmex:      { color: "#ff6d00", short: "BMX",    bg: "#1a0800" },
+  binance:     { color: "#f0b90b", short: "BNB",    bg: "#1a1000" },
+  bybit:       { color: "#f7a600", short: "BYB",    bg: "#1a1200" },
+};
+
+// ─── CG mapper ────────────────────────────────────────────────────────────────
+function cgToTrader(s: CgSignalRaw): WhaleTrader {
+  return {
+    id: s.id, displayName: `${s.exchange.toUpperCase()}-${s.coin}`, coin: s.coin,
+    exchange: s.exchange, currentPosition: s.direction,
+    positionSizeUsd: s.oiUsd * 0.01, winRate: s.score100,
+    pnl24h: 0, pnlWeek: 0, volume24h: s.volume24h,
+    totalTrades: 0, roi: 0, fundingRate: s.fundingRate,
+    oiUsd: s.oiUsd, signal: s.signal, size: s.size,
+    score100: s.score100, fundingFormatted: s.fundingFormatte...

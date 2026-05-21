@@ -1,0 +1,99 @@
+You reached the start of the range
+May 17, 2026, 7:28 PM
+scheduling build on Metal builder "production-builderv3-us-west1-3nb4"
+unpacking archive
+100 KB
+1ms
+using build driver nixpacks-v1.41.0
+uploading snapshot
+20.5 KB
+31ms
+ 
+╔══════════════════════════════ Nixpacks v1.41.0 ══════════════════════════════╗
+║ setup      │ python3, gcc                                                    ║
+║──────────────────────────────────────────────────────────────────────────────║
+║ install    │ python -m venv --copies /opt/venv && . /opt/venv/bin/activate   ║
+║            │ && pip install -r requirements.txt                              ║
+║──────────────────────────────────────────────────────────────────────────────║
+║ start      │ gunicorn main:app --bind 0.0.0.0:$PORT --workers 1 --threads 8  ║
+║            │ --timeout 120                                                   ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+ 
+ 
+Saved output to:
+  snapshot-target-unpack
+
+internal
+load build definition from Dockerfile
+0ms
+
+internal
+load metadata for ghcr.io/railwayapp/nixpacks:ubuntu-1745885067
+136ms
+
+internal
+load .dockerignore
+0ms
+SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "APIFY_TOKEN") (line 11)(https://docs.docker.com/go/dockerfile/rule/secrets-used-in-arg-or-env/)
+ details: Sensitive data should not be used in the ARG or ENV commands
+SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "DUNE_API_KEY") (line 11)(https://docs.docker.com/go/dockerfile/rule/secrets-used-in-arg-or-env/)
+ details: Sensitive data should not be used in the ARG or ENV commands
+SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "ETHERSCAN_KEY") (line 11)(https://docs.docker.com/go/dockerfile/rule/secrets-used-in-arg-or-env/)
+ details: Sensitive data should not be used in the ARG or ENV commands
+SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "TELEGRAM_BOT_TOKEN") (line 11)(https://docs.docker.com/go/dockerfile/rule/secrets-used-in-arg-or-env/)
+ details: Sensitive data should not be used in the ARG or ENV commands
+SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ENV "APIFY_TOKEN") (line 12)(https://docs.docker.com/go/dockerfile/rule/secrets-used-in-arg-or-env/)
+ details: Sensitive data should not be used in the ARG or ENV commands
+SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ENV "DUNE_API_KEY") (line 12)(https://docs.docker.com/go/dockerfile/rule/secrets-used-in-arg-or-env/)
+ details: Sensitive data should not be used in the ARG or ENV commands
+SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ENV "ETHERSCAN_KEY") (line 12)(https://docs.docker.com/go/dockerfile/rule/secrets-used-in-arg-or-env/)
+ details: Sensitive data should not be used in the ARG or ENV commands
+SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ENV "TELEGRAM_BOT_TOKEN") (line 12)(https://docs.docker.com/go/dockerfile/rule/secrets-used-in-arg-or-env/)
+ details: Sensitive data should not be used in the ARG or ENV commands
+UndefinedVar: Usage of undefined variable '$NIXPACKS_PATH' (line 18)(https://docs.docker.com/go/dockerfile/rule/undefined-var/)
+ details: Variables should be defined before their use
+
+stage-0
+FROM ghcr.io/railwayapp/nixpacks:ubuntu-1745885067@sha256:d45c89d80e13d7ad0fd555b5130f22a866d9dd10e861f589932303ef2314c7de
+10ms
+
+internal
+load build context
+0ms
+
+stage-0
+RUN nix-env -if .nixpacks/nixpkgs-bc8f8d1be58e8c8383e683a06e1e1e57893fff87.nix && nix-collect-garbage -d cached
+0ms
+
+stage-0
+COPY .nixpacks/nixpkgs-bc8f8d1be58e8c8383e683a06e1e1e57893fff87.nix .nixpacks/nixpkgs-bc8f8d1be58e8c8383e683a06e1e1e57893fff87.nix cached
+0ms
+
+stage-0
+WORKDIR /app/ cached
+0ms
+
+stage-0
+COPY . /app/.
+353ms
+
+stage-0
+RUN python -m venv --copies /opt/venv && . /opt/venv/bin/activate && pip install -r requirements.txt
+5s
+Successfully installed Jinja2-3.1.6 MarkupSafe-3.0.3 Werkzeug-3.1.8 beautifulsoup4-4.12.3 blinker-1.9.0 certifi-2026.4.22 charset-normalizer-3.4.7 click-8.4.0 flask-3.0.3 flask-cors-4.0.0 gunicorn-22.0.0 idna-3.15 itsdangerous-2.2.0 lxml-5.2.2 packaging-26.2 requests-2.31.0 soupsieve-2.8.3 urllib3-2.7.0
+
+stage-0
+RUN printf '\nPATH=/opt/venv/bin:$PATH' >> /root/.profile
+130ms
+
+stage-0
+COPY . /app
+45ms
+
+exporting to docker image format
+2s
+containerimage.descriptor: eyJtZWRpYVR5cGUiOiJhcHBsaWNhdGlvbi92bmQub2NpLmltYWdlLm1hbmlmZXN0LnYxK2pzb24iLCJkaWdlc3QiOiJzaGEyNTY6YjI2NzgwMDYxZGU2MmIzNmI0ZDE1ODFiZDM4OTNlY2FjMGNmNDdmNWMyZWViMmU4ZWVlNzg1ZWZmMzMyYmIzMiIsInNpemUiOjIzODQsImFubm90YXRpb25zIjp7Im9yZy5vcGVuY29udGFpbmVycy5pbWFnZS5jcmVhdGVkIjoiMjAyNi0wNS0xOFQwMDozMzozMFoifSwicGxhdGZvcm0iOnsiYXJjaGl0ZWN0dXJlIjoiYW1kNjQiLCJvcyI6ImxpbnV4In19
+containerimage.config.digest: sha256:f57622c2575da11d878b3114ff2366f6e8ed72316415825164cc1c0453d9e974
+containerimage.digest: sha256:b26780061de62b36b4d1581bd3893ecac0cf47f5c2eeb2e8eee785eff332bb32
+image push
+378.8 MB

@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 style="margin-bottom:16px">Pagos</h2>
+<div style="margin-bottom:16px">
+  <a href="/admin/payments?status=pending" class="btn btn-blue" style="margin-right:8px">⏳ Pendientes</a>
+  <a href="/admin/payments?status=approved" class="btn btn-green" style="margin-right:8px">✅ Aprobados</a>
+  <a href="/admin/payments?status=all" class="btn" style="background:#30363d;color:#e6edf3">Todos</a>
+</div>
+<div class="card">
+  <table>
+    <tr><th>#</th><th>Usuario</th><th>Monto</th><th>Método</th><th>Estado</th><th>Comprobante</th><th>Fecha</th><th>Acción</th></tr>
+    {% for p in payments %}
+    {% set u = users_map.get(p.user_id) %}
+    <tr>
+      <td>{{ p.id }}</td>
+      <td>@{{ u.username if u else 'N/A' }}<br><small style="color:#8b949e">{{ u.telegram_id if u else '' }}</small></td>
+      <td>${{ "%.2f"|format(p.amount) }}</td>
+      <td>{{ p.method }}</td>
+      <td><span class="badge badge-{{ p.status }}">{{ p.status }}</span></td>
+      <td style="max-width:140px;overflow:hidden;font-size:11px;color:#8b949e">{{ (p.proof or '')[:80] }}</td>
+      <td style="font-size:12px">{{ p.created_at.strftime('%d/%m %H:%M') }}</td>
+      <td>
+        {% if p.status == 'pending' %}
+        <form method="post" action="/admin/payments/{{ p.id }}/approve" style="display:inline">
+          <button class="btn btn-green" style="font-size:11px;padding:5px 10px">✅</button>
+        </form>
+        <form method="post" action="/admin/payments/{{ p.id }}/reject" style="display:inline">
+          <button class="btn btn-red" style="font-size:11px;padding:5px 10px">❌</button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

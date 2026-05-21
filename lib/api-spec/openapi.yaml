@@ -1,0 +1,146 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: chat
+    description: Asesor de trading IA con FAQ + IA
+paths:
+  /chat/message:
+    post:
+      operationId: sendChatMessage
+      tags: [chat]
+      summary: Enviar mensaje al asesor de trading
+      description: Primero busca en FAQ, si no encuentra respuesta llama a la IA. Soporta streaming SSE.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatMessageBody"
+      responses:
+        "200":
+          description: Respuesta del asesor (SSE stream)
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+  /chat/suggestions:
+    get:
+      operationId: getChatSuggestions
+      tags: [chat]
+      summary: Preguntas sugeridas
+      description: Devuelve preguntas frecuentes de trading para mostrar al usuario
+      responses:
+        "200":
+          description: Lista de sugerencias
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatSuggestionsResponse"
+
+  /chat/history:
+    get:
+      operationId: getChatHistory
+      tags: [chat]
+      summary: Historial de conversación
+      parameters:
+        - in: query
+          name: sessionId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Historial del chat
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatHistoryResponse"
+
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+components:
+  schemas:
+    ChatMessageBody:
+      type: object
+      required: [message, sessionId]
+      properties:
+        message:
+          type: string
+          description: Pregunta del usuario
+        sessionId:
+          type: string
+          description: ID de sesión del chat
+
+    ChatSuggestionsResponse:
+      type: object
+      required: [suggestions]
+      properties:
+        suggestions:
+          type: array
+          items:
+            type: object
+            required: [category, questions]
+            properties:
+              category:
+                type: string
+              questions:
+                type: array
+                items:
+                  type: string
+
+    ChatMessage:
+      type: object
+      required: [id, role, content, createdAt]
+      properties:
+        id:
+          type: integer
+        role:
+          type: string
+          enum: [user, assistant]
+        content:
+          type: string
+        source:
+          type: string
+          description: "faq | ai"
+        createdAt:
+          type: string
+          format: date-time
+
+    ChatHistoryResponse:
+      type: object
+      required: [messages]
+      properties:
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChatMessage"
+
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+

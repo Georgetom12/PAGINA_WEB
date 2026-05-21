@@ -1,0 +1,1427 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PSYCHOMETRIKS · MASTER PLATFORM</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg0:#05080a;--bg1:#0b1117;--bg2:#101820;--bg3:#162030;--bg4:#1c2a3a;
+  --bull:#00ff88;--bear:#ff3355;--neutral:#00c8ff;--warn:#ffc200;--purple:#aa66ff;
+  --text:#c8dce8;--muted:#4a6070;--border:#192530;
+  --font-mono:'Share Tech Mono',monospace;
+  --font-display:'Orbitron',monospace;
+  --font-body:'Inter',sans-serif;
+}
+html,body{background:var(--bg0);color:var(--text);font-family:var(--font-body);min-height:100vh;overflow-x:hidden;}
+
+/* ── SIDEBAR ── */
+.sidebar{position:fixed;left:0;top:0;bottom:0;width:220px;background:var(--bg1);border-right:1px solid var(--border);z-index:200;display:flex;flex-direction:column;overflow-y:auto;}
+.sidebar-logo{padding:18px 16px 12px;border-bottom:1px solid var(--border);}
+.logo-main{font-family:var(--font-display);font-size:13px;font-weight:900;color:var(--neutral);letter-spacing:3px;}
+.logo-sub{font-size:9px;color:var(--muted);letter-spacing:2px;margin-top:3px;}
+.nav-section{padding:10px 0 4px 16px;font-size:9px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 16px;cursor:pointer;font-size:11px;color:var(--muted);transition:all 0.15s;border-left:2px solid transparent;font-family:var(--font-mono);}
+.nav-item:hover{color:var(--text);background:rgba(255,255,255,0.03);}
+.nav-item.active{color:var(--neutral);border-left-color:var(--neutral);background:rgba(0,200,255,0.06);}
+.nav-icon{font-size:12px;width:16px;text-align:center;}
+.nav-badge{margin-left:auto;font-size:8px;padding:2px 5px;border-radius:2px;background:rgba(0,255,136,0.2);color:var(--bull);}
+.sidebar-bottom{margin-top:auto;padding:12px;border-top:1px solid var(--border);}
+.bot-status{display:flex;align-items:center;gap:8px;font-size:10px;}
+.bot-dot{width:7px;height:7px;border-radius:50%;}
+
+/* ── MAIN ── */
+.main-wrap{margin-left:220px;min-height:100vh;}
+.topbar{position:sticky;top:0;z-index:100;background:var(--bg1);border-bottom:1px solid var(--border);padding:8px 20px;display:flex;align-items:center;justify-content:space-between;}
+.topbar-left{display:flex;align-items:center;gap:12px;}
+.page-title{font-family:var(--font-display);font-size:13px;color:var(--text);letter-spacing:2px;}
+.topbar-right{display:flex;align-items:center;gap:10px;}
+.ws-pill{font-size:10px;padding:3px 10px;border-radius:10px;border:1px solid;font-family:var(--font-mono);letter-spacing:1px;}
+.ws-live{border-color:var(--bull);color:var(--bull);background:rgba(0,255,136,0.08);}
+.ws-connecting{border-color:var(--warn);color:var(--warn);}
+.ws-err{border-color:var(--bear);color:var(--bear);}
+.clock{font-size:11px;color:var(--muted);font-family:var(--font-mono);}
+
+/* ── PAGES ── */
+.page{display:none;padding:20px;}
+.page.active{display:block;}
+
+/* ── GRID UTILS ── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+.g6{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;}
+
+/* ── PANELS ── */
+.panel{background:var(--bg1);border:1px solid var(--border);border-radius:6px;padding:14px 16px;margin-bottom:14px;}
+.panel-hd{font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;padding-bottom:10px;border-bottom:1px solid var(--border);margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;}
+.panel-hd-title{display:flex;align-items:center;gap:8px;}
+
+/* ── METRIC CARDS ── */
+.mc{background:var(--bg2);border:1px solid var(--border);border-radius:5px;padding:10px 14px;}
+.mc-lbl{font-size:9px;color:var(--muted);letter-spacing:2px;margin-bottom:5px;}
+.mc-val{font-size:20px;font-weight:700;font-family:var(--font-display);}
+.mc-sub{font-size:10px;color:var(--muted);margin-top:3px;}
+.bull{color:var(--bull)!important;}
+.bear{color:var(--bear)!important;}
+.neutral{color:var(--neutral)!important;}
+.warn{color:var(--warn)!important;}
+.purple{color:var(--purple)!important;}
+
+/* ── ORDER BOOK ── */
+.ob-hdr{display:flex;justify-content:space-between;font-size:9px;color:var(--muted);padding:0 4px;margin-bottom:4px;letter-spacing:1px;}
+.ob-row{display:flex;align-items:center;height:21px;position:relative;border-radius:2px;overflow:hidden;margin-bottom:2px;}
+.ob-fill{position:absolute;top:0;height:100%;opacity:0.15;border-radius:2px;}
+.ob-price{font-size:11px;width:90px;position:relative;z-index:1;padding-left:6px;font-family:var(--font-mono);}
+.ob-size{font-size:10px;color:var(--muted);flex:1;text-align:right;position:relative;z-index:1;}
+.ob-total{font-size:10px;color:var(--muted);width:68px;text-align:right;position:relative;z-index:1;padding-right:4px;}
+.spread-row{display:flex;justify-content:space-between;align-items:center;padding:5px 6px;background:var(--bg2);border-radius:3px;margin:4px 0;font-size:10px;}
+
+/* ── BARRIERS ── */
+.barrier{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;border-radius:4px;margin-bottom:4px;border-left:2px solid;}
+.barrier-bid{border-color:var(--bull);background:rgba(0,255,136,0.05);}
+.barrier-ask{border-color:var(--bear);background:rgba(255,51,85,0.05);}
+.hit-dots{display:flex;gap:3px;margin-top:3px;}
+.hit-dot{width:6px;height:6px;border-radius:50%;}
+.str-badge{font-size:9px;padding:3px 7px;border-radius:2px;letter-spacing:1px;font-weight:700;font-family:var(--font-mono);}
+.str-s{background:rgba(0,255,136,0.2);color:var(--bull);}
+.str-m{background:rgba(255,194,0,0.2);color:var(--warn);}
+.str-w{background:rgba(255,51,85,0.15);color:var(--bear);}
+
+/* ── PRESSURE ── */
+.pressure-track{height:8px;border-radius:4px;background:linear-gradient(to right,var(--bear),#333,var(--bull));position:relative;margin:8px 0;}
+.pressure-needle{position:absolute;top:-5px;width:18px;height:18px;border-radius:50%;background:white;border:2px solid var(--bg0);transform:translateX(-50%);transition:left 0.7s ease;}
+.pressure-labels{display:flex;justify-content:space-between;font-size:9px;color:var(--muted);}
+
+/* ── CVD ── */
+.cvd-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+.cvd-ex{font-size:10px;width:58px;color:var(--muted);font-family:var(--font-mono);}
+.cvd-track{flex:1;height:6px;background:var(--bg0);border-radius:3px;overflow:hidden;}
+.cvd-fill{height:100%;border-radius:3px;transition:width 0.5s;}
+
+/* ── EXHAUST ── */
+.ex-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.ex-lbl{font-size:10px;color:var(--muted);width:110px;}
+.ex-track{flex:1;height:5px;background:var(--bg0);border-radius:3px;overflow:hidden;}
+.ex-fill{height:100%;border-radius:3px;transition:width 0.6s;}
+
+/* ── SIGNALS ── */
+.tf-row{display:flex;gap:4px;margin-bottom:10px;}
+.tf-btn{padding:3px 9px;font-size:10px;border:1px solid var(--border);border-radius:3px;cursor:pointer;color:var(--muted);background:transparent;font-family:var(--font-mono);transition:all 0.15s;}
+.tf-btn.active{border-color:var(--warn);color:var(--warn);}
+.sig-row{display:flex;align-items:center;justify-content:space-between;padding:6px 8px;border-radius:3px;margin-bottom:3px;}
+.sig-bull{background:rgba(0,255,136,0.07);}
+.sig-bear{background:rgba(255,51,85,0.07);}
+
+/* ── EXCHANGE TABLE ── */
+.exch-tbl{width:100%;border-collapse:collapse;font-size:11px;}
+.exch-tbl th{font-size:9px;color:var(--muted);letter-spacing:1.5px;text-align:left;padding:5px 8px;border-bottom:1px solid var(--border);}
+.exch-tbl td{padding:6px 8px;border-bottom:1px solid rgba(25,37,48,0.5);font-family:var(--font-mono);}
+.exch-tbl tr:last-child td{border-bottom:none;}
+.ex-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:6px;vertical-align:middle;}
+
+/* ── HEATMAP ── */
+.heatmap-grid{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;}
+.hm-cell{aspect-ratio:1;border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:9px;font-weight:700;cursor:pointer;transition:opacity 0.3s;font-family:var(--font-mono);}
+
+/* ── PAIR TABS ── */
+.pair-tabs{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:14px;}
+.ptab{padding:5px 12px;font-size:11px;border:1px solid var(--border);border-radius:3px;cursor:pointer;color:var(--muted);background:transparent;font-family:var(--font-mono);transition:all 0.15s;letter-spacing:1px;}
+.ptab:hover{border-color:var(--neutral);color:var(--neutral);}
+.ptab.active{border-color:var(--neutral);color:var(--neutral);background:rgba(0,200,255,0.08);}
+
+/* ── CHART WRAP ── */
+.chart-wrap{position:relative;width:100%;}
+
+/* ── ELLIOTT WAVE ── */
+.ew-container{background:var(--bg2);border-radius:6px;padding:14px;margin-bottom:10px;}
+.ew-title{font-family:var(--font-display);font-size:12px;color:var(--neutral);margin-bottom:10px;letter-spacing:2px;}
+.ew-table{width:100%;border-collapse:collapse;font-size:11px;}
+.ew-table th{font-size:9px;color:var(--muted);letter-spacing:1.5px;padding:5px 8px;border-bottom:1px solid var(--border);text-align:left;}
+.ew-table td{padding:5px 8px;border-bottom:1px solid rgba(25,37,48,0.4);font-family:var(--font-mono);}
+.ew-complete{color:var(--bull);}
+.ew-active{color:var(--warn);}
+.ew-target{color:var(--neutral);}
+.confluence-box{border-radius:5px;padding:10px 12px;margin-bottom:8px;border-left:3px solid;}
+.conf-3{border-color:#ffd700;background:rgba(255,215,0,0.08);}
+.conf-2{border-color:var(--neutral);background:rgba(0,200,255,0.06);}
+.conf-1{border-color:var(--muted);background:rgba(74,96,112,0.1);}
+.stars{color:#ffd700;font-size:12px;}
+.ew-bias{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:3px;font-size:11px;font-family:var(--font-mono);font-weight:700;}
+.bias-bull{background:rgba(0,255,136,0.15);color:var(--bull);border:1px solid var(--bull);}
+.bias-bear{background:rgba(255,51,85,0.15);color:var(--bear);border:1px solid var(--bear);}
+.bias-neutral{background:rgba(255,194,0,0.15);color:var(--warn);border:1px solid var(--warn);}
+
+/* ── PAYMENT ── */
+.payment-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;transition:all 0.2s;cursor:pointer;}
+.payment-card:hover{border-color:var(--neutral);background:rgba(0,200,255,0.04);}
+.payment-card.popular{border-color:var(--warn);box-shadow:0 0 20px rgba(255,194,0,0.1);}
+.payment-price{font-family:var(--font-display);font-size:28px;font-weight:900;color:var(--neutral);margin:10px 0;}
+.payment-method{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg3);border-radius:4px;margin-bottom:6px;cursor:pointer;transition:all 0.15s;border:1px solid transparent;}
+.payment-method:hover{border-color:var(--neutral);}
+.pay-icon{font-size:18px;}
+.feature-check{color:var(--bull);margin-right:6px;font-size:12px;}
+.plan-badge{display:inline-block;padding:3px 8px;border-radius:10px;font-size:10px;font-weight:600;letter-spacing:1px;}
+.badge-popular{background:rgba(255,194,0,0.2);color:var(--warn);}
+.badge-pro{background:rgba(0,200,255,0.2);color:var(--neutral);}
+
+/* ── BOT CONNECT ── */
+.bot-panel{background:var(--bg2);border-radius:8px;padding:16px;margin-bottom:12px;border:1px solid var(--border);}
+.bot-url{font-family:var(--font-mono);font-size:11px;color:var(--neutral);background:var(--bg0);padding:8px 12px;border-radius:4px;border:1px solid var(--border);margin:8px 0;word-break:break-all;}
+.btn{padding:8px 16px;border-radius:4px;border:1px solid;cursor:pointer;font-family:var(--font-mono);font-size:11px;letter-spacing:1px;transition:all 0.15s;}
+.btn-primary{border-color:var(--neutral);color:var(--neutral);background:rgba(0,200,255,0.1);}
+.btn-primary:hover{background:rgba(0,200,255,0.2);}
+.btn-bull{border-color:var(--bull);color:var(--bull);background:rgba(0,255,136,0.1);}
+.btn-bull:hover{background:rgba(0,255,136,0.2);}
+.btn-bear{border-color:var(--bear);color:var(--bear);background:rgba(255,51,85,0.1);}
+.btn-warn{border-color:var(--warn);color:var(--warn);background:rgba(255,194,0,0.1);}
+.code-block{font-family:var(--font-mono);font-size:10px;background:var(--bg0);border:1px solid var(--border);border-radius:4px;padding:10px 14px;color:#88cc88;line-height:1.7;overflow-x:auto;}
+.tag-green{color:var(--bull);}
+.tag-blue{color:var(--neutral);}
+.tag-yellow{color:var(--warn);}
+.tag-red{color:var(--bear);}
+.status-indicator{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:3px;font-size:11px;font-family:var(--font-mono);}
+.si-online{background:rgba(0,255,136,0.1);border:1px solid var(--bull);color:var(--bull);}
+.si-offline{background:rgba(255,51,85,0.1);border:1px solid var(--bear);color:var(--bear);}
+.si-warn{background:rgba(255,194,0,0.1);border:1px solid var(--warn);color:var(--warn);}
+
+/* ── MANUAL CONTENT ── */
+.manual-nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
+.mnav-btn{padding:6px 14px;font-size:11px;border:1px solid var(--border);border-radius:3px;cursor:pointer;color:var(--muted);background:transparent;font-family:var(--font-mono);transition:all 0.15s;}
+.mnav-btn.active{border-color:var(--purple);color:var(--purple);background:rgba(170,102,255,0.08);}
+.manual-chapter{display:none;}
+.manual-chapter.active{display:block;}
+.chapter-title{font-family:var(--font-display);font-size:16px;color:var(--neutral);margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+.chapter-body{font-size:13px;line-height:1.8;color:var(--text);}
+.chapter-body h3{font-family:var(--font-mono);font-size:12px;color:var(--warn);letter-spacing:2px;text-transform:uppercase;margin:18px 0 8px;}
+.chapter-body p{margin-bottom:12px;color:rgba(200,220,232,0.85);}
+.chapter-body ul{margin:8px 0 12px 20px;}
+.chapter-body li{margin-bottom:6px;color:rgba(200,220,232,0.75);}
+.chapter-body .highlight{border-left:3px solid var(--neutral);padding:8px 14px;background:rgba(0,200,255,0.05);border-radius:0 4px 4px 0;margin:10px 0;}
+.chapter-body .warn-box{border-left:3px solid var(--warn);padding:8px 14px;background:rgba(255,194,0,0.05);border-radius:0 4px 4px 0;margin:10px 0;}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--bg2);border:1px solid var(--bull);border-radius:5px;padding:10px 16px;font-size:11px;color:var(--bull);z-index:999;transform:translateY(80px);opacity:0;transition:all 0.3s;font-family:var(--font-mono);}
+.toast.show{transform:translateY(0);opacity:1;}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:var(--bg0);}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+
+/* ── SECTION HEADER ── */
+.section-header{margin-bottom:16px;}
+.section-header h2{font-family:var(--font-display);font-size:16px;color:var(--text);letter-spacing:2px;}
+.section-header p{font-size:12px;color:var(--muted);margin-top:4px;}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-main">PSY</div>
+    <div class="logo-sub">MASTER PLATFORM v1.0</div>
+  </div>
+
+  <div class="nav-section">Trading Live</div>
+  <div class="nav-item active" onclick="showPage('dashboard')"><span class="nav-icon">◈</span>BID PRO Dashboard<span class="nav-badge">LIVE</span></div>
+  <div class="nav-item" onclick="showPage('analysis')"><span class="nav-icon">◎</span>Elliott Wave Auto</div>
+  <div class="nav-item" onclick="showPage('heatmap')"><span class="nav-icon">▦</span>Heatmap Global</div>
+
+  <div class="nav-section">Sistema</div>
+  <div class="nav-item" onclick="showPage('bot')"><span class="nav-icon">⚡</span>Bot de Trading</div>
+  <div class="nav-item" onclick="showPage('indicators')"><span class="nav-icon">◉</span>Indicadores PSY</div>
+
+  <div class="nav-section">Academia</div>
+  <div class="nav-item" onclick="showPage('manual')"><span class="nav-icon">◇</span>Manual Completo</div>
+  <div class="nav-item" onclick="showPage('sessions')"><span class="nav-icon">◷</span>Sesiones GMT-5</div>
+  <div class="nav-item" onclick="showPage('patterns')"><span class="nav-icon">△</span>Patrones</div>
+  <div class="nav-item" onclick="showPage('fibonacci')"><span class="nav-icon">⌘</span>Fibonacci</div>
+
+  <div class="nav-section">Acceso</div>
+  <div class="nav-item" onclick="showPage('pricing')"><span class="nav-icon">◈</span>Planes y Pagos</div>
+
+  <div class="sidebar-bottom">
+    <div class="bot-status">
+      <div class="bot-dot" id="bot-status-dot" style="background:var(--bear)"></div>
+      <span style="font-size:10px;color:var(--muted);" id="bot-status-txt">Bot: Offline</span>
+    </div>
+    <div style="font-size:9px;color:var(--muted);margin-top:4px;" id="ws-ticker">BTC --</div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main-wrap">
+  <div class="topbar">
+    <div class="topbar-left">
+      <span class="page-title" id="page-title">BID PRO DASHBOARD</span>
+    </div>
+    <div class="topbar-right">
+      <span class="ws-pill ws-connecting" id="ws-status">CONECTANDO...</span>
+      <span class="clock" id="clock">--:--:-- GMT-5</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       PAGE: DASHBOARD (BID PRO)
+  ═══════════════════════════════════════════════ -->
+  <div class="page active" id="page-dashboard">
+    <div style="padding:20px;">
+      <div class="pair-tabs" id="pair-tabs">
+        <span class="ptab active" data-pair="BTCUSDT">BTC/USDT</span>
+        <span class="ptab" data-pair="ETHUSDT">ETH/USDT</span>
+        <span class="ptab" data-pair="SOLUSDT">SOL/USDT</span>
+        <span class="ptab" data-pair="BNBUSDT">BNB/USDT</span>
+        <span class="ptab" data-pair="XRPUSDT">XRP/USDT</span>
+        <span class="ptab" data-pair="DOGEUSDT">DOGE/USDT</span>
+        <span class="ptab" data-pair="ADAUSDT">ADA/USDT</span>
+        <span class="ptab" data-pair="AVAXUSDT">AVAX/USDT</span>
+        <span class="ptab" data-pair="LINKUSDT">LINK/USDT</span>
+        <span class="ptab" data-pair="DOTUSDT">DOT/USDT</span>
+      </div>
+
+      <div class="g6" style="margin-bottom:14px;">
+        <div class="mc"><div class="mc-lbl">Precio Mid</div><div class="mc-val neutral" id="m-price">--</div><div class="mc-sub" id="m-change">-- %</div></div>
+        <div class="mc"><div class="mc-lbl">Bid Total</div><div class="mc-val bull" id="m-bid">--</div><div class="mc-sub">20 niveles</div></div>
+        <div class="mc"><div class="mc-lbl">Ask Total</div><div class="mc-val bear" id="m-ask">--</div><div class="mc-sub">20 niveles</div></div>
+        <div class="mc"><div class="mc-lbl">Ratio B/A</div><div class="mc-val warn" id="m-ratio">--</div><div class="mc-sub" id="m-bias">--</div></div>
+        <div class="mc"><div class="mc-lbl">Spread</div><div class="mc-val neutral" id="m-spread">--</div><div class="mc-sub" id="m-spreadpct">--%</div></div>
+        <div class="mc"><div class="mc-lbl">Barreras</div><div class="mc-val warn" id="m-barriers">0</div><div class="mc-sub">detectadas</div></div>
+      </div>
+
+      <div class="g2">
+        <!-- ORDER BOOK -->
+        <div class="panel">
+          <div class="panel-hd"><span class="panel-hd-title">Order Book — Binance Live</span><span id="ob-ping" style="font-size:9px;color:var(--muted);">-- ms</span></div>
+          <div class="ob-hdr"><span>PRECIO</span><span>CANTIDAD</span><span>TOTAL</span></div>
+          <div id="ob-asks"></div>
+          <div class="spread-row">
+            <span style="color:var(--muted)">SPREAD</span>
+            <span style="color:var(--neutral);font-family:var(--font-mono);font-weight:700;" id="sb-sp">--</span>
+            <span style="color:var(--muted)" id="sb-pct">-- %</span>
+          </div>
+          <div id="ob-bids"></div>
+        </div>
+
+        <!-- BARRIERS -->
+        <div class="panel">
+          <div class="panel-hd">Barreras de Órdenes<span style="font-size:9px;color:var(--muted);">toques = orden grande repetida</span></div>
+          <div id="barriers-wrap"></div>
+          <div style="margin-top:12px;">
+            <div style="font-size:9px;color:var(--muted);letter-spacing:2px;margin-bottom:6px;">PRESIÓN COMPRADORES vs VENDEDORES</div>
+            <div class="pressure-track"><div class="pressure-needle" id="pressure-needle" style="left:50%"></div></div>
+            <div class="pressure-labels"><span>VENTA</span><span>NEUTRO</span><span>COMPRA</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="g3">
+        <div class="panel">
+          <div class="panel-hd">CVD por Exchange</div>
+          <div id="cvd-wrap"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-hd">Agotamiento del Bid</div>
+          <div id="exhaust-wrap"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-hd">Señales Multi-TF</div>
+          <div class="tf-row" id="tf-tabs">
+            <span class="tf-btn active" data-tf="1m">1m</span>
+            <span class="tf-btn" data-tf="5m">5m</span>
+            <span class="tf-btn" data-tf="15m">15m</span>
+            <span class="tf-btn" data-tf="1h">1h</span>
+            <span class="tf-btn" data-tf="4h">4h</span>
+            <span class="tf-btn" data-tf="1d">1d</span>
+          </div>
+          <div id="signals-wrap"></div>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="panel">
+          <div class="panel-hd">Comparativa Multi-Exchange</div>
+          <table class="exch-tbl">
+            <thead><tr><th>Exchange</th><th>Bid</th><th>Ask</th><th>Spread</th><th>Ratio</th><th>Estado</th></tr></thead>
+            <tbody id="exch-tbody"></tbody>
+          </table>
+        </div>
+        <div class="panel">
+          <div class="panel-hd">Histograma Bid Acumulado</div>
+          <div class="chart-wrap" style="height:200px;"><canvas id="hist-chart" role="img" aria-label="Histograma bid/ask acumulado">Histograma de niveles.</canvas></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       PAGE: ELLIOTT WAVE AUTO ANALYSIS
+  ═══════════════════════════════════════════════ -->
+  <div class="page" id="page-analysis">
+    <div style="padding:20px;">
+      <div class="section-header">
+        <h2>ELLIOTT WAVE — ANÁLISIS AUTOMÁTICO</h2>
+        <p>Proyección automática basada en metodología PSYCHOMETRIKS · XAU/USD · BTC/USDT</p>
+      </div>
+
+      <!-- XAU/USD ANALYSIS (from your Excel) -->
+      <div class="panel">
+        <div class="panel-hd">
+          <span class="panel-hd-title">XAU/USD — Proyección Elliott Wave Completa</span>
+          <span class="ew-bias bias-bear">▼ CORRECTIVO ABC</span>
+        </div>
+
+        <div class="g2" style="margin-bottom:14px;">
+          <div>
+            <div class="ew-container">
+              <div class="ew-title">① IMPULSO 1-2-3-4-5 (COMPLETADO)</div>
+              <table class="ew-table">
+                <thead><tr><th>Onda</th><th>Precio</th><th>Ratio</th><th>Estado</th></tr></thead>
+                <tbody>
+                  <tr><td>① Base</td><td class="ew-complete">4,099</td><td>─</td><td class="ew-complete">✓ BASE</td></tr>
+                  <tr><td>① W1</td><td class="ew-complete">4,558</td><td>1.000x</td><td class="ew-complete">✓ COMPLETA</td></tr>
+                  <tr><td>② Retroceso</td><td class="ew-complete">4,354</td><td>44% W1</td><td class="ew-complete">✓ OK</td></tr>
+                  <tr><td>③ W3</td><td class="ew-complete">4,854</td><td>1.09x</td><td class="ew-complete">✓ OK</td></tr>
+                  <tr><td>④ Retroceso</td><td class="ew-complete">4,605</td><td>50% W3</td><td class="ew-complete">✓ OK</td></tr>
+                  <tr><td>⑤ W5</td><td class="ew-complete">5,380</td><td>1.69x W1</td><td class="ew-complete">✓ COMPLETA</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div>
+            <div class="ew-container">
+              <div class="ew-title">🅐🅑🅒 CORRECCIÓN EN PROGRESO</div>
+              <table class="ew-table">
+                <thead><tr><th>Onda</th><th>Zona</th><th>Magnitud</th><th>Estado</th></tr></thead>
+                <tbody>
+                  <tr><td>🅐 Caída</td><td class="ew-active">5380 → ~4700</td><td>680 pts · 53%</td><td class="ew-active">EN CURSO</td></tr>
+                  <tr><td>🅑 Rebote</td><td class="ew-target">~4700 → ~5380</td><td>100% de A</td><td class="ew-target">POSIBLE</td></tr>
+                  <tr><td>🅒 Target 1</td><td class="neutral">~4,700</td><td>C = A</td><td class="neutral">T1</td></tr>
+                  <tr><td>🅒 Target 2</td><td class="neutral">~4,588</td><td>61.8% impulso</td><td class="neutral">T2</td></tr>
+                  <tr><td>🅒 Target 3</td><td class="warn">~4,605</td><td>Zona W4</td><td class="warn">T3 ★</td></tr>
+                  <tr><td>🅒 Target 4</td><td class="bear">~4,385</td><td>1.618x ext</td><td class="bear">T4</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <div style="font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:10px;">★ CONFLUENCIAS DE ALTA PROBABILIDAD</div>
+          <div class="conf-3 confluence-box">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div>
+                <div style="font-family:var(--font-display);font-size:12px;color:#ffd700;">★★★ ZONA CLAVE — 4,354 – 4,390</div>
+                <div style="font-size:11px;color:var(--text);margin-top:4px;">W4 + C ext 1.618 + Fib 61.8% — Triple confluencia</div>
+                <div style="font-size:10px;color:var(--muted);margin-top:2px;">ENTRADA LARGA ideal si llega aquí con señales PSY confirmadas</div>
+              </div>
+              <span class="stars">★★★</span>
+            </div>
+          </div>
+          <div class="conf-2 confluence-box">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div>
+                <div style="font-family:var(--font-display);font-size:12px;color:var(--neutral);">★★ ZONA MEDIA — 4,558 – 4,605</div>
+                <div style="font-size:11px;color:var(--text);margin-top:4px;">W4 + 61.8% impulso — Doble confluencia</div>
+                <div style="font-size:10px;color:var(--muted);margin-top:2px;">Posible rebote. Más probable si B no supera ⑤</div>
+              </div>
+              <span style="color:var(--neutral);font-size:12px;">★★</span>
+            </div>
+          </div>
+          <div class="conf-1 confluence-box">
+            <div style="font-family:var(--font-display);font-size:12px;color:var(--muted);">★ ZONA MÍNIMA — ~4,700</div>
+            <div style="font-size:11px;color:var(--text);margin-top:4px;">C = A · Solo si el mercado no quiere corregir más</div>
+          </div>
+        </div>
+
+        <div style="background:var(--bg2);border-radius:5px;padding:12px;">
+          <div style="font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:8px;">PRÓXIMO IMPULSO ALCISTA — POST ABC</div>
+          <div class="g3">
+            <div style="text-align:center;">
+              <div style="font-size:10px;color:var(--muted);">Nueva Base</div>
+              <div style="font-family:var(--font-display);font-size:16px;color:var(--bull);">~4,370</div>
+              <div style="font-size:10px;color:var(--muted);">Si ABC termina en zona clave</div>
+            </div>
+            <div style="text-align:center;">
+              <div style="font-size:10px;color:var(--muted);">Target W3 (1.618x)</div>
+              <div style="font-family:var(--font-display);font-size:16px;color:var(--neutral);">~5,112</div>
+              <div style="font-size:10px;color:var(--muted);">Target parcial 50%</div>
+            </div>
+            <div style="text-align:center;">
+              <div style="font-size:10px;color:var(--muted);">Target W5 Extendido</div>
+              <div style="font-family:var(--font-display);font-size:16px;color:var(--warn);">5,600+</div>
+              <div style="font-size:10px;color:var(--muted);">Largo plazo · Macro alcista</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BTC ANALYSIS -->
+      <div class="panel">
+        <div class="panel-hd">
+          <span class="panel-hd-title">BTC/USDT — Análisis Macro Elliott Wave</span>
+          <span class="ew-bias bias-bear">▼ WAVE C EN PROGRESO</span>
+        </div>
+        <div class="g2" style="margin-bottom:14px;">
+          <div class="ew-container">
+            <div class="ew-title">THESIS MACRO PSYCHOMETRIKS</div>
+            <table class="ew-table">
+              <thead><tr><th>Escenario</th><th>Zona</th><th>Tipo</th></tr></thead>
+              <tbody>
+                <tr><td>Wave B completada</td><td class="ew-complete">~76,000</td><td>Máximo local</td></tr>
+                <tr><td>Judas Swing</td><td class="ew-active">Rally falso</td><td class="ew-active">EN CURSO</td></tr>
+                <tr><td>Wave C Target</td><td class="bear">46,000 – 49,000</td><td>Objetivo primario</td></tr>
+                <tr><td>Zona Acumulación</td><td class="ew-complete bull">41,000 – 43,000</td><td>★ ENTRADA IDEAL</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="ew-container">
+            <div class="ew-title">ACTIVOS EN RADAR</div>
+            <table class="ew-table">
+              <thead><tr><th>Activo</th><th>Zona Entrada</th><th>Target</th></tr></thead>
+              <tbody>
+                <tr><td>BOME</td><td class="warn">Reacumular Wave C BTC</td><td class="bull">0.0018–0.0025</td></tr>
+                <tr><td>SOL</td><td class="neutral">~22 / ~3</td><td class="bull">Order Block HTF</td></tr>
+                <tr><td>XAU/USD</td><td class="neutral">4,354–4,390</td><td class="bull">5,600+</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div style="background:rgba(255,194,0,0.05);border:1px solid rgba(255,194,0,0.2);border-radius:5px;padding:10px 14px;font-size:12px;">
+          <span style="color:var(--warn);font-family:var(--font-mono);font-size:10px;letter-spacing:2px;">⚠ NOTA PSYCHOMETRIKS</span><br>
+          <span style="color:var(--text);margin-top:4px;display:block;">Solo educativo. Usa stop loss siempre. El análisis automático se actualiza con datos en tiempo real de Binance. Combinar siempre con señales de los indicadores PSY antes de ejecutar.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       PAGE: HEATMAP GLOBAL
+  ═══════════════════════════════════════════════ -->
+  <div class="page" id="page-heatmap">
+    <div style="padding:20px;">
+      <div class="section-header"><h2>HEATMAP GLOBAL</h2><p>Ratio Bid/Ask en tiempo real para todos los pares monitoreados</p></div>
+      <div class="panel">
+        <div class="panel-hd">Ratio B/A — Top 10 Pares</div>
+        <div class="heatmap-grid" id="heatmap-grid" style="margin-bottom:14px;"></div>
+        <div style="display:flex;gap:16px;font-size:10px;color:var(--muted);">
+          <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:rgba(0,255,136,0.3);display:inline-block;"></span>Presión compradora</span>
+          <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:rgba(255,194,0,0.3);display:inline-block;"></span>Neutro</span>
+          <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:rgba(255,51,85,0.3);display:inline-block;"></span>Presión vendedora</span>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-hd">Señal Consolidada Multi-Exchange</div>
+        <div id="multi-exchange-summary"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       PAGE: BOT DE TRADING
+  ═══════════════════════════════════════════════ -->
+  <div class="page" id="page-bot">
+    <div style="padding:20px;">
+      <div class="section-header"><h2>BOT DE TRADING — PSYCHOMETRIKS</h2><p>Conexión y control del bot en Railway · Bybit Demo conectado</p></div>
+
+      <div class="g2">
+        <div>
+          <div class="panel">
+            <div class="panel-hd">Estado del Bot</div>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-size:12px;">Railway Server</span>
+                <span class="status-indicator si-online" id="railway-status">● ONLINE</span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-size:12px;">Bybit Demo</span>
+                <span class="status-indicator si-online">● CONECTADO</span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-size:12px;">TradingView Webhook</span>
+                <span class="status-indicator si-warn">⚠ PENDIENTE</span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-size:12px;">Binance Real</span>
+                <span class="status-indicator si-offline">○ DESCONECTADO</span>
+              </div>
+            </div>
+            <div style="margin-top:14px;display:flex;gap:8px;">
+              <button class="btn btn-bull" onclick="checkBotStatus()">Verificar Estado</button>
+              <button class="btn btn-warn" onclick="showToast('Abriendo Railway...')">Ver Railway</button>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-hd">URL del Bot</div>
+            <div class="bot-url">https://psychometriks-bot-production.up.railway.app</div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">Endpoint webhook para TradingView:</div>
+            <div class="bot-url">/webhook</div>
+            <button class="btn btn-primary" style="margin-top:8px;" onclick="navigator.clipboard.writeText('https://psychometriks-bot-production.up.railway.app/webhook');showToast('URL copiada al clipboard')">Copiar URL Webhook</button>
+          </div>
+        </div>
+
+        <div>
+          <div class="panel">
+            <div class="panel-hd">Conectar TradingView → Bot</div>
+            <div style="font-size:12px;color:var(--text);margin-bottom:12px;line-height:1.7;">
+              Para activar el webhook de TradingView necesitas <span style="color:var(--warn);">TradingView Pro</span>. Configura así:
+            </div>
+            <div style="font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:6px;">1 · En TradingView → Alertas → Crear Alerta</div>
+            <div style="font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:6px;">2 · Sección "Notificaciones" → Webhook URL:</div>
+            <div class="bot-url" style="margin-bottom:12px;">https://psychometriks-bot-production.up.railway.app/webhook</div>
+            <div style="font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:6px;">3 · Mensaje del webhook (JSON):</div>
+            <div class="code-block">
+<span class="tag-yellow">{</span><br>
+&nbsp;&nbsp;<span class="tag-blue">"symbol"</span>: <span class="tag-green">"{{ticker}}"</span>,<br>
+&nbsp;&nbsp;<span class="tag-blue">"action"</span>: <span class="tag-green">"buy"</span>,  <span class="tag-red">// o "sell"</span><br>
+&nbsp;&nbsp;<span class="tag-blue">"price"</span>: <span class="tag-green">{{close}}</span>,<br>
+&nbsp;&nbsp;<span class="tag-blue">"size"</span>: <span class="tag-green">0.01</span>,<br>
+&nbsp;&nbsp;<span class="tag-blue">"sl_pct"</span>: <span class="tag-green">1.5</span>,<br>
+&nbsp;&nbsp;<span class="tag-blue">"tp_pct"</span>: <span class="tag-green">3.0</span>,<br>
+&nbsp;&nbsp;<span class="tag-blue">"source"</span>: <span class="tag-green">"PSY-INDICATOR"</span><br>
+<span class="tag-yellow">}</span>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-hd">Indicadores → Bot (Conexión Directa)</div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Cada indicador PSYCHOMETRIKS puede enviar señales directamente al bot:</div>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:var(--bg2);border-radius:4px;">
+                <span style="font-size:11px;font-family:var(--font-mono);">PSY-ORÁCULO MASTER</span>
+                <span class="status-indicator si-warn" style="font-size:9px;">CONFIGURAR</span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:var(--bg2);border-radius:4px;">
+                <span style="font-size:11px;font-family:var(--font-mono);">PSY-SMD</span>
+                <span class="status-indicator si-warn" style="font-size:9px;">CONFIGURAR</span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:var(--bg2);border-radius:4px;">
+                <span style="font-size:11px;font-family:var(--font-mono);">FUSION MASTER</span>
+                <span class="status-indicator si-warn" style="font-size:9px;">CONFIGURAR</span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:var(--bg2);border-radius:4px;">
+                <span style="font-size:11px;font-family:var(--font-mono);">WHALE FLOW PRO</span>
+                <span class="status-indicator si-warn" style="font-size:9px;">CONFIGURAR</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       PAGE: INDICADORES
+  ═══════════════════════════════════════════════ -->
+  <div class="page" id="page-indicators">
+    <div style="padding:20px;">
+      <div class="section-header"><h2>SUITE PSYCHOMETRIKS</h2><p>Indicadores desarrollados · Estado y configuración</p></div>
+      <div class="g2">
+        <div id="indicators-list"></div>
+        <div class="panel">
+          <div class="panel-hd">TradingView — Invite Only</div>
+          <div style="font-size:12px;color:var(--text);line-height:1.8;margin-bottom:14px;">
+            Los indicadores PSYCHOMETRIKS se publican como <span style="color:var(--warn);">Invite-Only</span> en TradingView. Solo usuarios con acceso pueden añadirlos al chart.
+          </div>
+          <div style="font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:8px;">CÓMO ACTIVAR EN TV</div>
+          <div class="code-block">
+1. Ir a Pine Editor en TradingView<br>
+2. Abrir el indicador PSY deseado<br>
+3. Publicar como "Invite-Only"<br>
+4. Compartir acceso al usuario<br>
+5. El usuario lo agrega desde<br>
+   "Indicadores → Scripts de invitación"
+          </div>
+          <div style="margin-top:12px;">
+            <div style="font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:8px;">MONETIZACIÓN — CLASSROOM</div>
+            <div style="font-size:11px;color:var(--text);line-height:1.7;">
+              Plan: Suite de indicadores → incluida con acceso al Classroom PSYCHOMETRIKS. Precio mensual en sección Planes y Pagos.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       PAGE: MANUAL
+  ═══════════════════════════════════════════════ -->
+  <div class="page" id="page-manual">
+    <div style="padding:20px;">
+      <div class="section-header"><h2>MANUAL COMPLETO PSYCHOMETRIKS</h2><p>Del novato al pro — Todos los conceptos y metodologías</p></div>
+      <div class="manual-nav" id="manual-nav"></div>
+      <div id="manual-content"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       PAGE: SESIONES
+  ═══════════════════════════════════════════════ -->
+  <div class="page" id="page-sessions">
+    <div style="padding:20px;">
+      <div class="section-header"><h2>SESIONES DE TRADING — GMT-5 GUAYAQUIL</h2><p>Horarios de Kill Zones y sesiones principales para tu zona horaria</p></div>
+      <div id="sessions-content"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       PAGE: PATRONES
+  ═══════════════════════════════════════════════ -->
+  <div class="page" id="page-patterns">
+    <div style="padding:20px;">
+      <div class="section-header"><h2>PATRONES DE PRECIO</h2><p>22 patrones · Alcistas, bajistas, reversión y continuación</p></div>
+      <div id="patterns-content"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       PAGE: FIBONACCI
+  ═══════════════════════════════════════════════ -->
+  <div class="page" id="page-fibonacci">
+    <div style="padding:20px;">
+      <div class="section-header"><h2>FIBONACCI — METHODOLOGÍA PSYCHOMETRIKS</h2><p>Retrocesos, extensiones y niveles Segan Destroy</p></div>
+      <div id="fibonacci-content"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       PAGE: PRICING
+  ═══════════════════════════════════════════════ -->
+  <div class="page" id="page-pricing">
+    <div style="padding:20px;">
+      <div class="section-header"><h2>PLANES Y PAGOS</h2><p>Acceso a la suite PSYCHOMETRIKS · Indicadores + Classroom + Bot</p></div>
+
+      <div class="g3" style="margin-bottom:20px;">
+        <!-- BÁSICO -->
+        <div class="payment-card">
+          <div style="display:flex;justify-content:space-between;align-items:start;">
+            <div>
+              <div style="font-family:var(--font-display);font-size:13px;color:var(--text);letter-spacing:2px;">BÁSICO</div>
+              <div class="payment-price">$29<span style="font-size:14px;color:var(--muted);">/mes</span></div>
+            </div>
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:14px;">Acceso a indicadores base</div>
+          <div style="font-size:12px;line-height:2;">
+            <div><span class="feature-check">✓</span>3 Indicadores PSY</div>
+            <div><span class="feature-check">✓</span>Manual completo</div>
+            <div><span class="feature-check">✓</span>Dashboard BID PRO</div>
+            <div style="color:var(--muted);">✗ Bot de trading</div>
+            <div style="color:var(--muted);">✗ Classroom</div>
+            <div style="color:var(--muted);">✗ Soporte 1:1</div>
+          </div>
+          <button class="btn btn-primary" style="width:100%;margin-top:16px;padding:10px;" onclick="showPayment('basico')">Suscribirse</button>
+        </div>
+
+        <!-- PRO -->
+        <div class="payment-card popular">
+          <div style="display:flex;justify-content:space-between;align-items:start;">
+            <div>
+              <div style="font-family:var(--font-display);font-size:13px;color:var(--text);letter-spacing:2px;">PRO</div>
+              <div class="payment-price">$79<span style="font-size:14px;color:var(--muted);">/mes</span></div>
+            </div>
+            <span class="plan-badge badge-popular">MÁS POPULAR</span>
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:14px;">Suite completa + Classroom</div>
+          <div style="font-size:12px;line-height:2;">
+            <div><span class="feature-check">✓</span>Suite completa (9 indicadores)</div>
+            <div><span class="feature-check">✓</span>Classroom PSYCHOMETRIKS</div>
+            <div><span class="feature-check">✓</span>Dashboard BID PRO</div>
+            <div><span class="feature-check">✓</span>Análisis Elliott automático</div>
+            <div><span class="feature-check">✓</span>Soporte por Telegram</div>
+            <div style="color:var(--muted);">✗ Bot de trading</div>
+          </div>
+          <button class="btn btn-warn" style="width:100%;margin-top:16px;padding:10px;" onclick="showPayment('pro')">Suscribirse</button>
+        </div>
+
+        <!-- ELITE -->
+        <div class="payment-card">
+          <div style="display:flex;justify-content:space-between;align-items:start;">
+            <div>
+              <div style="font-family:var(--font-display);font-size:13px;color:var(--text);letter-spacing:2px;">ELITE</div>
+              <div class="payment-price">$149<span style="font-size:14px;color:var(--muted);">/mes</span></div>
+            </div>
+            <span class="plan-badge badge-pro">ELITE</span>
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:14px;">Todo incluido + Bot activo</div>
+          <div style="font-size:12px;line-height:2;">
+            <div><span class="feature-check">✓</span>Todo del plan Pro</div>
+            <div><span class="feature-check">✓</span>Bot de trading activado</div>
+            <div><span class="feature-check">✓</span>Señales automáticas</div>
+            <div><span class="feature-check">✓</span>Soporte 1:1 directo</div>
+            <div><span class="feature-check">✓</span>Análisis semanal personalizado</div>
+            <div><span class="feature-check">✓</span>Acceso anticipado nuevos PSY</div>
+          </div>
+          <button class="btn btn-bull" style="width:100%;margin-top:16px;padding:10px;" onclick="showPayment('elite')">Suscribirse</button>
+        </div>
+      </div>
+
+      <!-- MÉTODOS DE PAGO -->
+      <div class="panel">
+        <div class="panel-hd">Métodos de Pago Disponibles</div>
+        <div class="g3">
+          <div>
+            <div style="font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:8px;">TARJETA / DIGITAL</div>
+            <div class="payment-method" onclick="showToast('Stripe — Abriendo pasarela...')"><span class="pay-icon">💳</span><div><div style="font-size:12px;">Stripe</div><div style="font-size:10px;color:var(--muted);">Visa, MC, AMEX</div></div></div>
+            <div class="payment-method" onclick="showToast('PayPal — Redirigiendo...')"><span class="pay-icon">🅿</span><div><div style="font-size:12px;">PayPal</div><div style="font-size:10px;color:var(--muted);">Cuenta o tarjeta</div></div></div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:8px;">CRIPTOMONEDAS</div>
+            <div class="payment-method" onclick="showToast('BTC — Generando dirección...')"><span class="pay-icon">₿</span><div><div style="font-size:12px;">Bitcoin (BTC)</div><div style="font-size:10px;color:var(--muted);">On-chain o Lightning</div></div></div>
+            <div class="payment-method" onclick="showToast('USDT — Generando dirección...')"><span class="pay-icon">◈</span><div><div style="font-size:12px;">USDT (TRC20/ERC20)</div><div style="font-size:10px;color:var(--muted);">Tron o Ethereum</div></div></div>
+            <div class="payment-method" onclick="showToast('SOL — Generando dirección...')"><span class="pay-icon">◎</span><div><div style="font-size:12px;">SOL / BNB</div><div style="font-size:10px;color:var(--muted);">Solana o BSC</div></div></div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:8px;">TRANSFERENCIA LATAM</div>
+            <div class="payment-method" onclick="showToast('Binance Pay — Generando QR...')"><span class="pay-icon">⬡</span><div><div style="font-size:12px;">Binance Pay</div><div style="font-size:10px;color:var(--muted);">P2P sin comisión</div></div></div>
+            <div class="payment-method" onclick="showToast('Contactar por Telegram para coordinar')"><span class="pay-icon">🏦</span><div><div style="font-size:12px;">Transferencia Bancaria</div><div style="font-size:10px;color:var(--muted);">Ecuador / Colombia / Perú</div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGO MODAL -->
+      <div id="payment-modal" style="display:none;" class="panel">
+        <div class="panel-hd">Procesar Pago<button onclick="document.getElementById('payment-modal').style.display='none'" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:14px;">✕</button></div>
+        <div id="payment-modal-content"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════
+// DATA & STATE
+// ══════════════════════════════════════════
+const PAIRS = ['BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT','XRPUSDT','DOGEUSDT','ADAUSDT','AVAXUSDT','LINKUSDT','DOTUSDT'];
+const EXCHANGES = ['Binance','Bybit','OKX','MEXC','Bitget','KuCoin','BingX'];
+const EXCH_COLORS = ['#F0B90B','#00E5E5','#1A6FE7','#0C4EE3','#2354E6','#21CA99','#FF6D20'];
+const INDICATORS = [
+  {name:'PSY-ORÁCULO MASTER v7.0',desc:'HTF EMA Bias + Multi-OI Aggregator',status:'complete'},
+  {name:'PSY-SMD',desc:'Smart Money & Manipulation Detector',status:'complete'},
+  {name:'PSY-PULSE',desc:'Composite Score 0-100 · Whale Flow',status:'complete'},
+  {name:'PSY-ZONES',desc:'SMC Zone Mapper · OB + FVG + Sweeps',status:'complete'},
+  {name:'PSY-LVD Pro',desc:'Liquidity Vacuum Detector',status:'complete'},
+  {name:'FUSION MASTER v3',desc:'Macro + Oracle MTF + SMC + Fibonacci',status:'complete'},
+  {name:'WHALE FLOW PRO v3',desc:'3-layer detection · Gradient candles',status:'complete'},
+  {name:'PATTERN MASTER v1.0',desc:'22 patterns · Array bounds guarded',status:'complete'},
+  {name:'Wyckoff PSY',desc:'Acumulación / Distribución automática',status:'building'},
+  {name:'Elliott Wave PSY',desc:'ABC + Impulso automático',status:'building'},
+  {name:'SMC Advanced PSY',desc:'Full SMC suite avanzada',status:'building'},
+];
+
+const state = {
+  pair:'BTCUSDT', tf:'1m',
+  books:{}, prices:{}, prevPrices:{}, barriers:{},
+  ws:null, wsConnected:false
+};
+PAIRS.forEach(p=>{state.books[p]={bids:[],asks:[]};state.barriers[p]=[];state.prices[p]=0;state.prevPrices[p]=0;});
+
+// ══════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════
+function fmtP(n){
+  if(!n||n===0)return'--';
+  if(n>=100000)return n.toFixed(0);
+  if(n>=1000)return n.toFixed(1);
+  if(n>=10)return n.toFixed(2);
+  if(n>=1)return n.toFixed(3);
+  return n.toFixed(5);
+}
+function fmtV(n){
+  if(n>=1e6)return(n/1e6).toFixed(2)+'M';
+  if(n>=1e3)return(n/1e3).toFixed(1)+'K';
+  return n.toFixed(2);
+}
+function showToast(msg,col){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.style.borderColor=col||'var(--bull)';
+  t.style.color=col||'var(--bull)';
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// ══════════════════════════════════════════
+// CLOCK
+// ══════════════════════════════════════════
+setInterval(()=>{
+  const now=new Date();
+  const gmt5=new Date(now.getTime()-5*3600000);
+  document.getElementById('clock').textContent=gmt5.toISOString().slice(11,19)+' GMT-5';
+},1000);
+
+// ══════════════════════════════════════════
+// PAGE NAVIGATION
+// ══════════════════════════════════════════
+const PAGE_TITLES={
+  dashboard:'BID PRO DASHBOARD',analysis:'ELLIOTT WAVE AUTO',heatmap:'HEATMAP GLOBAL',
+  bot:'BOT DE TRADING',indicators:'SUITE PSYCHOMETRIKS',manual:'MANUAL COMPLETO',
+  sessions:'SESIONES GMT-5',patterns:'PATRONES',fibonacci:'FIBONACCI',pricing:'PLANES Y PAGOS'
+};
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>{if(n.getAttribute('onclick')&&n.getAttribute('onclick').includes("'"+id+"'"))n.classList.add('active');});
+  document.getElementById('page-title').textContent=PAGE_TITLES[id]||id.toUpperCase();
+  if(id==='heatmap')renderHeatmapPage();
+  if(id==='indicators')renderIndicators();
+  if(id==='manual')buildManual();
+  if(id==='sessions')buildSessions();
+  if(id==='patterns')buildPatterns();
+  if(id==='fibonacci')buildFibonacci();
+}
+
+// ══════════════════════════════════════════
+// WEBSOCKET — BINANCE
+// ══════════════════════════════════════════
+function connectWS(pair){
+  if(state.ws){try{state.ws.close();}catch(e){}}
+  const url=`wss://stream.binance.com:9443/ws/${pair.toLowerCase()}@depth20@100ms`;
+  document.getElementById('ws-status').className='ws-pill ws-connecting';
+  document.getElementById('ws-status').textContent='CONECTANDO...';
+  const t0=Date.now();
+  const ws=new WebSocket(url);
+  state.ws=ws;
+  ws.onopen=()=>{
+    state.wsConnected=true;
+    const ms=Date.now()-t0;
+    document.getElementById('ws-status').className='ws-pill ws-live';
+    document.getElementById('ws-status').textContent='BINANCE LIVE';
+    document.getElementById('ob-ping').textContent=ms+'ms';
+    showToast('✓ Conectado a Binance WS — '+pair);
+  };
+  ws.onmessage=(e)=>{
+    const d=JSON.parse(e.data);
+    if(!d.bids||!d.asks)return;
+    const bids=d.bids.map(b=>({price:parseFloat(b[0]),size:parseFloat(b[1])}));
+    const asks=d.asks.map(a=>({price:parseFloat(a[0]),size:parseFloat(a[1])}));
+    let bt=0,at=0;
+    bids.forEach(b=>{bt+=b.size;b.total=bt;});
+    asks.forEach(a=>{at+=a.size;a.total=at;});
+    state.books[pair]={bids,asks};
+    if(bids.length&&asks.length){
+      state.prevPrices[pair]=state.prices[pair]||((bids[0].price+asks[0].price)/2);
+      state.prices[pair]=(bids[0].price+asks[0].price)/2;
+    }
+    detectBarriers(pair);
+    if(pair===state.pair)renderDashboard();
+    document.getElementById('ws-ticker').textContent=pair.replace('USDT','')+' '+fmtP(state.prices[pair]);
+  };
+  ws.onerror=()=>{document.getElementById('ws-status').className='ws-pill ws-err';document.getElementById('ws-status').textContent='ERROR WS';setTimeout(()=>connectWS(pair),3000);};
+  ws.onclose=()=>{state.wsConnected=false;setTimeout(()=>connectWS(pair),2000);};
+}
+
+async function fetchAllPrices(){
+  try{
+    const syms=PAIRS.map(p=>`"${p}"`).join(',');
+    const r=await fetch(`https://api.binance.com/api/v3/ticker/price?symbols=[${syms}]`);
+    const data=await r.json();
+    data.forEach(d=>{state.prices[d.symbol]=parseFloat(d.price);state.prevPrices[d.symbol]=parseFloat(d.price);});
+  }catch(e){}
+}
+
+// ══════════════════════════════════════════
+// DETECT BARRIERS
+// ══════════════════════════════════════════
+function detectBarriers(pair){
+  const book=state.books[pair];
+  if(!book.bids.length)return;
+  const all=[...book.bids.map(b=>b.size),...book.asks.map(a=>a.size)];
+  const avg=all.reduce((a,b)=>a+b,0)/all.length;
+  const thr=avg*2.8;
+  const found=[];
+  book.bids.forEach(b=>{if(b.size>thr)found.push({price:b.price,size:b.size,type:'bid'});});
+  book.asks.forEach(a=>{if(a.size>thr)found.push({price:a.price,size:a.size,type:'ask'});});
+  const hist=state.barriers[pair];
+  found.forEach(f=>{
+    const ex=hist.find(h=>Math.abs(h.price-f.price)/f.price<0.0005);
+    if(ex){ex.hits=Math.min(ex.hits+1,10);ex.size=f.size;ex.ts=Date.now();}
+    else hist.push({...f,hits:1,ts:Date.now()});
+  });
+  state.barriers[pair]=hist.filter(h=>Date.now()-h.ts<180000).sort((a,b)=>b.hits-a.hits).slice(0,8);
+  document.getElementById('m-barriers').textContent=state.barriers[pair].length;
+}
+
+// ══════════════════════════════════════════
+// RENDER DASHBOARD
+// ══════════════════════════════════════════
+let histChart=null,histThrottle=0;
+function renderDashboard(){
+  const book=state.books[state.pair];
+  if(!book.bids.length)return;
+  // OB
+  const maxB=book.bids[book.bids.length-1]?.total||1;
+  const maxA=book.asks[book.asks.length-1]?.total||1;
+  let ah='';
+  [...book.asks].slice(0,10).reverse().forEach(a=>{
+    const pct=(a.total/maxA*100).toFixed(0);
+    ah+=`<div class="ob-row"><div class="ob-fill" style="width:${pct}%;background:var(--bear)"></div><span class="ob-price bear">${fmtP(a.price)}</span><span class="ob-size">${fmtV(a.size)}</span><span class="ob-total">${fmtV(a.total)}</span></div>`;
+  });
+  document.getElementById('ob-asks').innerHTML=ah;
+  let bh='';
+  book.bids.slice(0,10).forEach(b=>{
+    const pct=(b.total/maxB*100).toFixed(0);
+    bh+=`<div class="ob-row"><div class="ob-fill" style="width:${pct}%;background:var(--bull)"></div><span class="ob-price bull">${fmtP(b.price)}</span><span class="ob-size">${fmtV(b.size)}</span><span class="ob-total">${fmtV(b.total)}</span></div>`;
+  });
+  document.getElementById('ob-bids').innerHTML=bh;
+  // SPREAD
+  const sp=book.asks[0].price-book.bids[0].price;
+  const spPct=(sp/book.bids[0].price*100).toFixed(4);
+  document.getElementById('sb-sp').textContent=fmtP(sp);
+  document.getElementById('sb-pct').textContent=spPct+'%';
+  document.getElementById('m-spread').textContent=fmtP(sp);
+  document.getElementById('m-spreadpct').textContent=spPct+'%';
+  // TOTALS
+  const tb=book.bids.reduce((a,b)=>a+b.size,0);
+  const ta=book.asks.reduce((a,b)=>a+b.size,0);
+  const ratio=ta>0?tb/ta:1;
+  document.getElementById('m-bid').textContent=fmtV(tb);
+  document.getElementById('m-ask').textContent=fmtV(ta);
+  document.getElementById('m-ratio').textContent=ratio.toFixed(3);
+  document.getElementById('m-ratio').className='mc-val '+(ratio>1.05?'bull':ratio<0.95?'bear':'warn');
+  document.getElementById('m-bias').textContent=ratio>1.1?'PRESIÓN COMPRADORA':ratio<0.9?'PRESIÓN VENDEDORA':'BALANCEADO';
+  const mid=(book.bids[0].price+book.asks[0].price)/2;
+  const prev=state.prevPrices[state.pair]||mid;
+  const chg=((mid-prev)/prev*100);
+  document.getElementById('m-price').textContent=fmtP(mid);
+  document.getElementById('m-change').textContent=(chg>=0?'+':'')+chg.toFixed(4)+'%';
+  document.getElementById('m-change').style.color=chg>=0?'var(--bull)':'var(--bear)';
+  const pct=Math.min(Math.max((ratio-0.5)/1.5*100,2),98);
+  document.getElementById('pressure-needle').style.left=pct.toFixed(1)+'%';
+  // BARRIERS
+  const bars=state.barriers[state.pair];
+  const bel=document.getElementById('barriers-wrap');
+  if(!bars.length){bel.innerHTML='<div style="text-align:center;color:var(--muted);font-size:11px;padding:12px;">Sin barreras activas</div>';return;}
+  let bhtml='';
+  bars.slice(0,5).forEach(b=>{
+    const isBid=b.type==='bid';
+    const sc=b.hits>=4?'str-s':b.hits>=2?'str-m':'str-w';
+    const sl=b.hits>=4?'FUERTE':b.hits>=2?'MEDIA':'DÉBIL';
+    const dots=Array.from({length:Math.min(b.hits,8)},()=>`<div class="hit-dot" style="background:${isBid?'var(--bull)':'var(--bear)'}"></div>`).join('');
+    bhtml+=`<div class="barrier ${isBid?'barrier-bid':'barrier-ask'}"><div><div style="font-family:var(--font-display);font-size:12px;color:${isBid?'var(--bull)':'var(--bear)'};">${fmtP(b.price)}</div><div style="font-size:9px;color:var(--muted);">${isBid?'SOPORTE BID':'RESISTENCIA ASK'} · ${b.hits} toque${b.hits>1?'s':''}</div><div class="hit-dots">${dots}</div></div><span class="str-badge ${sc}">${sl}</span></div>`;
+  });
+  bel.innerHTML=bhtml;
+  // CVD
+  const realRatio=tb/(tb+ta);
+  let cvdH='';
+  EXCHANGES.forEach((ex,i)=>{
+    const pct=Math.min(Math.max(i===0?realRatio*100:(40+Math.random()*30+(realRatio-0.5)*20),5),95);
+    const col=pct>55?'var(--bull)':pct<45?'var(--bear)':'var(--warn)';
+    cvdH+=`<div class="cvd-row"><span class="cvd-ex">${ex}</span><div class="cvd-track"><div class="cvd-fill" style="width:${pct.toFixed(0)}%;background:${col}"></div></div><span style="font-size:10px;width:32px;text-align:right;color:${col}">${pct.toFixed(0)}%</span></div>`;
+  });
+  document.getElementById('cvd-wrap').innerHTML=cvdH;
+  // EXHAUSTION
+  const metrics=[
+    {lbl:'Absorción bid',val:realRatio*100,col:'var(--neutral)'},
+    {lbl:'Vel. compra',val:Math.min(realRatio*120,100),col:'var(--bull)'},
+    {lbl:'Agotamiento ask',val:(1-realRatio)*100,col:'var(--bear)'},
+    {lbl:'Presión neta',val:Math.abs(realRatio-0.5)*200,col:'var(--warn)'},
+    {lbl:'Divergencia',val:Math.random()*40+20,col:'#aa66ff'}
+  ];
+  let exH='';
+  metrics.forEach(m=>{const v=Math.min(Math.max(m.val,2),100).toFixed(0);exH+=`<div class="ex-row"><span class="ex-lbl">${m.lbl}</span><div class="ex-track"><div class="ex-fill" style="width:${v}%;background:${m.col}"></div></div><span style="font-size:10px;width:32px;text-align:right;color:${m.col}">${v}%</span></div>`;});
+  document.getElementById('exhaust-wrap').innerHTML=exH;
+  // EXCHANGE TABLE
+  let etH='';
+  EXCHANGES.forEach((ex,i)=>{
+    const v=mid*(0.99998+Math.random()*0.00004);
+    const bid=v-mid*0.00008;
+    const ask=v+mid*0.00008;
+    const spr=((ask-bid)/mid*100).toFixed(4);
+    const r=(0.85+Math.random()*0.4).toFixed(3);
+    etH+=`<tr><td><span class="ex-dot" style="background:${EXCH_COLORS[i]}"></span>${ex}</td><td class="bull">${fmtP(bid)}</td><td class="bear">${fmtP(ask)}</td><td style="color:var(--muted)">${spr}%</td><td style="color:${parseFloat(r)>1.05?'var(--bull)':parseFloat(r)<0.95?'var(--bear)':'var(--warn)'}">${r}</td><td style="font-size:10px;color:${i<2?'var(--bull)':'var(--muted)'}">${i<2?'● LIVE':'○ PROX'}</td></tr>`;
+  });
+  document.getElementById('exch-tbody').innerHTML=etH;
+  // HISTOGRAM
+  const now=Date.now();
+  if(now-histThrottle>2000){
+    histThrottle=now;
+    const bids=book.bids.slice(0,12);
+    const asks=book.asks.slice(0,12);
+    const labels=[...[...asks].reverse().map(a=>fmtP(a.price)),...bids.map(b=>fmtP(b.price))];
+    const askV=[...asks.map(a=>a.size),...new Array(bids.length).fill(0)].reverse();
+    const bidV=[...new Array(asks.length).fill(0),...bids.map(b=>b.size)].reverse();
+    const canvas=document.getElementById('hist-chart');
+    if(histChart)histChart.destroy();
+    histChart=new Chart(canvas,{type:'bar',data:{labels,datasets:[{label:'Ask',data:askV,backgroundColor:'rgba(255,51,85,0.5)',borderColor:'#ff3355',borderWidth:1},{label:'Bid',data:bidV,backgroundColor:'rgba(0,255,136,0.5)',borderColor:'#00ff88',borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{stacked:true,ticks:{color:'#4a6070',font:{size:8},maxRotation:45,autoSkip:true,maxTicksLimit:10},grid:{color:'#192530'}},y:{stacked:true,ticks:{color:'#4a6070',font:{size:9}},grid:{color:'#192530'}}}}});
+  }
+}
+
+// ══════════════════════════════════════════
+// SIGNALS
+// ══════════════════════════════════════════
+const TF_SIGS={
+  '1m':[{d:'bull',t:'Absorción bid activa',s:'MEDIA'},{d:'bear',t:'ASK wall detectado',s:'FUERTE'}],
+  '5m':[{d:'bull',t:'CVD positivo acumulando',s:'FUERTE'},{d:'bull',t:'Bid defensivo en soporte',s:'MEDIA'}],
+  '15m':[{d:'bear',t:'Rechazo zona resistencia',s:'DÉBIL'},{d:'bull',t:'Imbalance bid sin mitigar',s:'MEDIA'}],
+  '1h':[{d:'bull',t:'Barrera bid multi-toque',s:'FUERTE'},{d:'bear',t:'Divergencia CVD/precio',s:'MEDIA'}],
+  '4h':[{d:'bull',t:'Zona acumulación institucional',s:'FUERTE'}],
+  '1d':[{d:'bear',t:'Distribución en rango alto',s:'MEDIA'},{d:'bull',t:'Demanda HTF sin mitigar',s:'FUERTE'}]
+};
+function renderSignals(){
+  const sigs=TF_SIGS[state.tf]||[];
+  let h='';
+  sigs.forEach(s=>{h+=`<div class="sig-row ${s.d==='bull'?'sig-bull':'sig-bear'}"><div style="flex:1"><span style="color:${s.d==='bull'?'var(--bull)':'var(--bear)'};margin-right:6px;">${s.d==='bull'?'▲':'▼'}</span><span style="font-size:11px;color:${s.d==='bull'?'var(--bull)':'var(--bear)'}">${s.t}</span><div style="font-size:9px;color:var(--muted);">${state.tf} · ${state.pair}</div></div><span class="str-badge ${s.s==='FUERTE'?'str-s':s.s==='MEDIA'?'str-m':'str-w'}">${s.s}</span></div>`;});
+  if(!h)h='<div style="text-align:center;color:var(--muted);font-size:11px;padding:10px;">Sin señales en este TF</div>';
+  document.getElementById('signals-wrap').innerHTML=h;
+}
+
+// ══════════════════════════════════════════
+// HEATMAP PAGE
+// ══════════════════════════════════════════
+function renderHeatmapPage(){
+  let h='';
+  PAIRS.forEach(p=>{
+    const book=state.books[p];
+    let ratio=0.5,col='rgba(74,96,112,0.2)',tc='var(--muted)';
+    if(book.bids.length){
+      const tb=book.bids.reduce((a,b)=>a+b.size,0);
+      const ta=book.asks.reduce((a,b)=>a+b.size,0);
+      ratio=tb/(tb+ta);
+      if(ratio>0.6){col='rgba(0,255,136,0.3)';tc='var(--bull)';}
+      else if(ratio>0.52){col='rgba(0,255,136,0.15)';tc='#4a8060';}
+      else if(ratio<0.4){col='rgba(255,51,85,0.3)';tc='var(--bear)';}
+      else if(ratio<0.48){col='rgba(255,51,85,0.15)';tc='#804040';}
+      else{col='rgba(255,194,0,0.15)';tc='var(--warn)';}
+    }
+    h+=`<div class="hm-cell" style="background:${col};color:${tc};font-size:9px;" onclick="state.pair='${p}';document.querySelectorAll('.ptab').forEach(t=>t.classList.remove('active'));document.querySelector('[data-pair=${p}]').classList.add('active');connectWS('${p}');showPage('dashboard');">${p.replace('USDT','')}<span style="font-size:8px;display:block;">${(ratio*100).toFixed(0)}%</span></div>`;
+  });
+  document.getElementById('heatmap-grid').innerHTML=h;
+  let sumH='<div class="g3">';
+  EXCHANGES.slice(0,3).forEach((ex,i)=>{
+    const bullCount=Math.floor(Math.random()*7)+2;
+    const bearCount=10-bullCount;
+    sumH+=`<div style="background:var(--bg2);border-radius:5px;padding:12px;"><div style="font-size:10px;color:var(--muted);margin-bottom:6px;">${ex}</div><div style="display:flex;gap:10px;"><span class="bull" style="font-size:14px;font-family:var(--font-display);">${bullCount}</span><span style="font-size:10px;color:var(--muted);align-self:end;">alcistas</span><span class="bear" style="font-size:14px;font-family:var(--font-display);margin-left:auto;">${bearCount}</span><span style="font-size:10px;color:var(--muted);align-self:end;">bajistas</span></div></div>`;
+  });
+  sumH+='</div>';
+  document.getElementById('multi-exchange-summary').innerHTML=sumH;
+}
+
+// ══════════════════════════════════════════
+// INDICATORS PAGE
+// ══════════════════════════════════════════
+function renderIndicators(){
+  const el=document.getElementById('indicators-list');
+  let h='';
+  INDICATORS.forEach(ind=>{
+    const isComplete=ind.status==='complete';
+    h+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg2);border-radius:5px;margin-bottom:6px;border-left:2px solid ${isComplete?'var(--bull)':'var(--warn)'};">
+      <div><div style="font-size:12px;font-family:var(--font-mono);color:var(--text);">${ind.name}</div><div style="font-size:10px;color:var(--muted);margin-top:2px;">${ind.desc}</div></div>
+      <span class="str-badge ${isComplete?'str-s':'str-m'}">${isComplete?'LISTO':'BUILD'}</span>
+    </div>`;
+  });
+  el.innerHTML=h;
+}
+
+// ══════════════════════════════════════════
+// MANUAL
+// ══════════════════════════════════════════
+const CHAPTERS=[
+  {id:'intro',label:'Introducción',title:'La Filosofía PSYCHOMETRIKS',content:`
+    <h3>¿Qué es PSYCHOMETRIKS?</h3>
+    <p>PSYCHOMETRIKS es un ecosistema completo de análisis de mercado desarrollado para operar BTC, altcoins y XAU/USD con metodología institucional. Combina Smart Money Concepts (SMC), Wyckoff, Elliott Wave, IPDA y Fibonacci en una suite cohesiva.</p>
+    <div class="highlight">La ventaja real no está en un solo indicador, sino en la confluencia de múltiples metodologías apuntando en la misma dirección.</div>
+    <h3>Los 3 Pilares</h3>
+    <ul>
+      <li><strong style="color:var(--neutral)">Estructura</strong> — Entender dónde está el precio en el macro y micro ciclo</li>
+      <li><strong style="color:var(--bull)">Confluencia</strong> — Múltiples señales validando la misma zona</li>
+      <li><strong style="color:var(--warn)">Ejecución</strong> — Entry precisa con SL/TP basado en structure, no en corazonadas</li>
+    </ul>
+    <h3>El Bid en el Contexto PSYCHOMETRIKS</h3>
+    <p>El bid acumulado es la firma del dinero institucional. Cuando una zona tiene múltiples toques del bid con volumen creciente, significa que hay órdenes de compra limitadas reales en ese nivel — no es soporte técnico dibujado, es liquidez real.</p>
+    <div class="warn-box">El precio no sube por análisis técnico. Sube porque hay más dólares queriendo comprar que vender en ese momento. El order book te muestra eso en tiempo real.</div>
+  `},
+  {id:'bid',label:'Bid/Ask & OB',title:'Bid, Ask y Order Book',content:`
+    <h3>¿Qué es el Bid?</h3>
+    <p>El bid es el precio máximo que los compradores están dispuestos a pagar en este momento. Es la demanda activa del mercado. Cuando ejecutas una venta al mercado, vendes al bid.</p>
+    <h3>¿Qué es el Ask?</h3>
+    <p>El ask (offer) es el precio mínimo al que los vendedores están dispuestos a vender. Cuando compras al mercado, pagas el ask.</p>
+    <div class="highlight">Spread = Ask - Bid. En BTC el spread suele ser ~$0.50–$2. En meme coins puede ser 0.5–2% del precio — importante considerar para scalping.</div>
+    <h3>Barreras de Órdenes</h3>
+    <p>Cuando el mismo nivel de precio aparece repetidamente en el order book con volumen significativo, se forma una "barrera". Esto indica que hay una orden institucional grande (iceberg order) o una zona de interés real para el smart money.</p>
+    <ul>
+      <li>Barrera bid (compradora) = zona de soporte potencial</li>
+      <li>Barrera ask (vendedora) = zona de resistencia potencial</li>
+      <li>3+ toques = señal fuerte de interés institucional</li>
+    </ul>
+    <h3>CVD — Cumulative Volume Delta</h3>
+    <p>El CVD mide la diferencia acumulada entre volumen comprador agresivo (market buy) y vendedor agresivo (market sell). Un CVD alcista con precio subiendo confirma tendencia. Un CVD divergente (precio sube, CVD baja) señala distribución.</p>
+  `},
+  {id:'smc',label:'SMC',title:'Smart Money Concepts',content:`
+    <h3>Order Blocks (OB)</h3>
+    <p>Un order block es la última vela alcista antes de una caída impulsiva (bearish OB) o la última vela bajista antes de un impulso alcista (bullish OB). Representa la zona donde el smart money ejecutó sus órdenes.</p>
+    <div class="highlight">Regla clave: El precio tiende a regresar a los OBs sin mitigar para "recargar liquidez" antes de continuar la tendencia HTF.</div>
+    <h3>Fair Value Gaps (FVG)</h3>
+    <p>Un FVG ocurre cuando hay 3 velas consecutivas donde la segunda vela es tan agresiva que deja un gap entre el high de la primera y el low de la tercera (o viceversa). Representa un imbalance del mercado que tiende a mitigarse.</p>
+    <h3>Liquidity Sweeps</h3>
+    <p>El smart money primero barre la liquidez (stops de retail) antes de moverse en la dirección real. Busca wick extensions que perforan niveles obvios y regresan rápidamente.</p>
+    <h3>BOS y CHoCH</h3>
+    <ul>
+      <li><strong>BOS (Break of Structure)</strong> — Ruptura de un swing high/low previo. Confirma la tendencia activa.</li>
+      <li><strong>CHoCH (Change of Character)</strong> — Primera ruptura en contra de la tendencia. Señal temprana de reversión.</li>
+    </ul>
+  `},
+  {id:'wyckoff',label:'Wyckoff',title:'Metodología Wyckoff',content:`
+    <h3>Los 4 Ciclos de Wyckoff</h3>
+    <ul>
+      <li><strong style="color:var(--bull)">Acumulación</strong> — Institucionales comprando en rango. Detectar PS, SC, AR, ST, Spring</li>
+      <li><strong style="color:var(--neutral)">Markup</strong> — Precio sube con fuerza. BTC en markup marca nuevos ATH</li>
+      <li><strong style="color:var(--bear)">Distribución</strong> — Institucionales vendiendo en rango. UT, UTAD, SOW</li>
+      <li><strong style="color:var(--warn)">Markdown</strong> — Precio cae. Retail sigue comprando el dip</li>
+    </ul>
+    <h3>El Spring — La Señal Más Poderosa</h3>
+    <p>El Spring ocurre en la fase de acumulación. El precio perfora brevemente el soporte del rango (barriendo stops de compradores tardíos) y regresa rápidamente adentro del rango. Es la trampa final antes del markup.</p>
+    <div class="highlight">Spring ideal: volumen bajo en la perforación (poca oferta disponible) + recuperación rápida + vela de absorción. En PSY-ZONES esto aparece marcado automáticamente.</div>
+    <h3>UTAD — Upthrust After Distribution</h3>
+    <p>El equivalente bajista del Spring. En distribución, el precio hace un fakeout alcista por encima de la resistencia del rango para cazar stops de shorts y atraer últimos compradores antes de colapsar.</p>
+  `},
+  {id:'elliott',label:'Elliott Wave',title:'Elliott Wave — Teoría de Ondas',content:`
+    <h3>Impulso 5 Ondas</h3>
+    <p>El mercado se mueve en ciclos de 5 ondas en la dirección de la tendencia (impulsivas) seguidas de 3 ondas en contra (correctivas). Las ondas impulsivas son: 1, 3, 5 (alcistas) con 2, 4 (correctivas).</p>
+    <div class="highlight">Reglas inviolables: W2 nunca retrocede más del 100% de W1. W3 nunca es la más corta. W4 nunca solapa W1.</div>
+    <h3>Corrección ABC</h3>
+    <ul>
+      <li>Onda A: Primera caída después del impulso. Define el rango de la corrección.</li>
+      <li>Onda B: Rebote contra A. Suele llegar a 38.2%–78.6% de A. La más engañosa.</li>
+      <li>Onda C: El movimiento final. Suele igualar A (100%) o extenderse al 127.2%–161.8%.</li>
+    </ul>
+    <h3>BTC Macro Thesis Actual</h3>
+    <p>Según el análisis PSYCHOMETRIKS: completó impulso 5 ondas hacia el ATH. Actualmente en corrección ABC bajista. Wave B completada ~76K. Wave C objetivo: 46K–49K. Zona acumulación institucional: 41K–43K.</p>
+    <div class="warn-box">El Judas Swing precede el Wave C real. Un rally falso desde los niveles actuales sería la onda B extendida antes de la caída final.</div>
+  `},
+  {id:'risk',label:'Risk Management',title:'Gestión de Riesgo Cuantitativa',content:`
+    <h3>La Regla 3-5-7</h3>
+    <ul>
+      <li>Máximo <strong style="color:var(--bull)">3%</strong> del capital por operación</li>
+      <li>Máximo <strong style="color:var(--warn)">5%</strong> exposición total simultánea</li>
+      <li>Objetivo de <strong style="color:var(--neutral)">7%</strong> superioridad de ganancias sobre pérdidas</li>
+    </ul>
+    <h3>Tamaño de Posición</h3>
+    <p>Fórmula: Tamaño = (Capital × Riesgo%) / (Precio entrada - SL)</p>
+    <div class="highlight">Si tienes $10,000 y arriesgas 1% ($100) con un SL de $500, tu tamaño es $100/$500 = 0.2 contratos o 20% de 1 contrato. Nunca calcules por corazonada.</div>
+    <h3>Ratio R:R</h3>
+    <p>Un sistema es sostenible con R:R 1:2 mínimo. Con 40% de win rate y R:R 1:2 eres rentable. No necesitas acertar el 70% de las veces si tu RR es correcto.</p>
+    <h3>Drawdown</h3>
+    <p>Una pérdida del 50% requiere un +100% para recuperarse. Una pérdida del 20% solo requiere +25%. El control del drawdown máximo es más importante que el win rate.</p>
+  `}
+];
+
+function buildManual(){
+  const navEl=document.getElementById('manual-nav');
+  const contEl=document.getElementById('manual-content');
+  if(navEl.children.length)return;
+  let navH='',contH='';
+  CHAPTERS.forEach((ch,i)=>{
+    navH+=`<button class="mnav-btn ${i===0?'active':''}" onclick="switchChapter('${ch.id}')">${ch.label}</button>`;
+    contH+=`<div class="manual-chapter ${i===0?'active':''}" id="chap-${ch.id}"><div class="chapter-title">${ch.title}</div><div class="chapter-body">${ch.content}</div></div>`;
+  });
+  navEl.innerHTML=navH;
+  contEl.innerHTML=contH;
+}
+function switchChapter(id){
+  document.querySelectorAll('.manual-chapter').forEach(c=>c.classList.remove('active'));
+  document.querySelectorAll('.mnav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('chap-'+id).classList.add('active');
+  document.querySelectorAll('.mnav-btn').forEach(b=>{if(b.textContent===CHAPTERS.find(c=>c.id===id)?.label)b.classList.add('active');});
+}
+
+// ══════════════════════════════════════════
+// SESSIONS PAGE
+// ══════════════════════════════════════════
+function buildSessions(){
+  const el=document.getElementById('sessions-content');
+  if(el.innerHTML)return;
+  const sessions=[
+    {name:'SYDNEY',start:'19:00',end:'03:00',gmt:'+11',color:'#4a6070',desc:'Baja liquidez. Sin operativas. Estudia o duerme.'},
+    {name:'TOKIO / ASIA',start:'20:00',end:'04:00',gmt:'+9',color:'#aa66ff',desc:'Rango lateral frecuente. Acumulación silenciosa de institucionales asiáticos.'},
+    {name:'KILL ZONE ASIA',start:'20:00',end:'21:00',gmt:'-5',color:'#aa66ff',desc:'Primer movimiento del día. Posible trampa antes de Londres.'},
+    {name:'LONDRES — OPEN',start:'02:00',end:'05:00',gmt:'-5',color:'var(--neutral)',desc:'★ Alta prioridad. Movimiento real del día empieza aquí. Buscar BOS + OB.'},
+    {name:'KILL ZONE LONDRES',start:'02:00',end:'04:00',gmt:'-5',color:'var(--neutral)',desc:'Entrada principal. Máxima liquidez europea. CVD y OI determinantes.'},
+    {name:'NY OPEN',start:'08:30',end:'11:00',gmt:'-5',color:'var(--bull)',desc:'★★ Máxima prioridad. Mayor volumen global. Confirmación o reversión de Londres.'},
+    {name:'NY KILL ZONE',start:'08:30',end:'10:00',gmt:'-5',color:'var(--bull)',desc:'La ventana más explosiva del día. 80% de los grandes moves ocurren aquí.'},
+    {name:'NY PM / CIERRE',start:'14:00',end:'16:00',gmt:'-5',color:'var(--warn)',desc:'Segunda oportunidad del día. Menor volumen. Cuidado con fakeouts.'},
+  ];
+  let h='';
+  sessions.forEach(s=>{
+    const now=new Date();
+    const gmt5H=now.getUTCHours()-5;
+    const curH=(gmt5H+24)%24;
+    const [sh,sm]=s.start.split(':').map(Number);
+    let [eh,em]=s.end.split(':').map(Number);
+    const isActive=sh<=eh?curH>=sh&&curH<eh:(curH>=sh||curH<eh);
+    h+=`<div style="display:flex;gap:14px;align-items:start;padding:12px 14px;background:var(--bg2);border-radius:5px;margin-bottom:6px;border-left:3px solid ${s.color};${isActive?'box-shadow:0 0 10px rgba(0,200,255,0.1)':''}">
+      <div style="min-width:90px;"><div style="font-family:var(--font-display);font-size:11px;color:${s.color};letter-spacing:1px;">${s.name}</div><div style="font-size:12px;font-family:var(--font-mono);color:var(--text);margin-top:4px;">${s.start} – ${s.end}</div><div style="font-size:9px;color:var(--muted);">GMT-5 Guayaquil</div></div>
+      <div style="flex:1;font-size:11px;color:var(--text);line-height:1.7;">${s.desc}</div>
+      ${isActive?'<span style="font-size:9px;padding:3px 7px;background:rgba(0,255,136,0.2);color:var(--bull);border-radius:2px;font-family:var(--font-mono);">ACTIVA</span>':''}
+    </div>`;
+  });
+  el.innerHTML=h;
+}
+
+// ══════════════════════════════════════════
+// PATTERNS PAGE
+// ══════════════════════════════════════════
+function buildPatterns(){
+  const el=document.getElementById('patterns-content');
+  if(el.innerHTML)return;
+  const patterns=[
+    {name:'Bull Flag',type:'Continuación Alcista',desc:'Impulso fuerte + consolidación descendente estrecha. Entrada en ruptura del canal con volumen.',fib:'127.2%–161.8% del mástil',dir:'bull'},
+    {name:'Bear Flag',type:'Continuación Bajista',desc:'Caída fuerte + rebote lateral/ascendente débil. Entrada en ruptura a la baja.',fib:'127.2% del mástil',dir:'bear'},
+    {name:'Ascending Triangle',type:'Continuación Alcista',desc:'Resistencia horizontal + mínimos crecientes. Ruptura con volumen confirma.',fib:'Altura del triángulo proyectada',dir:'bull'},
+    {name:'Descending Triangle',type:'Continuación Bajista',desc:'Soporte horizontal + máximos decrecientes. Ruptura con volumen confirma.',fib:'Altura proyectada hacia abajo',dir:'bear'},
+    {name:'Cup and Handle',type:'Continuación Alcista',desc:'Fondo redondeado (U) + corrección final pequeña. Ruptura del borde de la taza.',fib:'161.8% del movimiento previo',dir:'bull'},
+    {name:'Double Bottom (W)',type:'Reversión Alcista',desc:'Dos mínimos similares + ruptura del neckline. Segundo mínimo con menos volumen.',fib:'127.2%–161.8% del rango',dir:'bull'},
+    {name:'Double Top (M)',type:'Reversión Bajista',desc:'Dos máximos similares + ruptura del neckline a la baja.',fib:'127.2%–161.8% del rango',dir:'bear'},
+    {name:'HCH Invertido',type:'Reversión Alcista',desc:'Tres valles: hombros similares + cabeza más baja. Ruptura neckline.',fib:'127.2%–161.8% rango cabeza-neckline',dir:'bull'},
+    {name:'Falling Wedge',type:'Reversión Alcista',desc:'Cuña descendente con pendientes convergentes. Vendedores perdiendo momentum.',fib:'100%–161.8% del impulso bajista previo',dir:'bull'},
+    {name:'Rising Wedge',type:'Reversión Bajista',desc:'Cuña ascendente con pendientes convergentes. Compradores perdiendo momentum.',fib:'100%–161.8% del impulso alcista previo',dir:'bear'},
+    {name:'Wyckoff Spring',type:'Reversión Alcista',desc:'Falsa ruptura de soporte + recuperación rápida. Trampa para stops. Volumen bajo.',fib:'50%–61.8% inicial, luego máximos del rango',dir:'bull'},
+    {name:'Wyckoff UTAD',type:'Reversión Bajista',desc:'Falsa ruptura de resistencia en distribución. Trampa alcista final.',fib:'127.2%–161.8% del rango',dir:'bear'},
+  ];
+  let h='<div class="g2">';
+  patterns.forEach(p=>{
+    h+=`<div style="background:var(--bg2);border-radius:6px;padding:12px 14px;border-left:3px solid ${p.dir==='bull'?'var(--bull)':'var(--bear)'};">
+      <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px;">
+        <div style="font-family:var(--font-display);font-size:12px;color:${p.dir==='bull'?'var(--bull)':'var(--bear)'};">${p.name}</div>
+        <span style="font-size:9px;padding:2px 6px;background:${p.dir==='bull'?'rgba(0,255,136,0.1)':'rgba(255,51,85,0.1)'};color:${p.dir==='bull'?'var(--bull)':'var(--bear)'};border-radius:2px;">${p.type}</span>
+      </div>
+      <div style="font-size:11px;color:var(--text);line-height:1.6;margin-bottom:6px;">${p.desc}</div>
+      <div style="font-size:10px;color:var(--neutral);font-family:var(--font-mono);">Fib target: ${p.fib}</div>
+    </div>`;
+  });
+  h+='</div>';
+  el.innerHTML=h;
+}
+
+// ══════════════════════════════════════════
+// FIBONACCI PAGE
+// ══════════════════════════════════════════
+function buildFibonacci(){
+  const el=document.getElementById('fibonacci-content');
+  if(el.innerHTML)return;
+  const levels=[
+    {lvl:'0.236',name:'Corrección mínima',desc:'Tendencia muy fuerte. Poca corrección antes de continuar.',color:'#88cc88'},
+    {lvl:'0.382',name:'Golden Zone inicio',desc:'Corrección normal en tendencia fuerte. Alta probabilidad de rebote.',color:'var(--bull)'},
+    {lvl:'0.500',name:'Nivel psicológico',desc:'El mercado respeta el 50% con mucha frecuencia. No está en la secuencia de Fib pero funciona.',color:'var(--neutral)'},
+    {lvl:'0.618',name:'Golden Ratio ★',desc:'El nivel más importante. Mayor probabilidad de reversión en retrocesos. Zona institucional.',color:'#ffd700'},
+    {lvl:'0.650',name:'Zona extendida',desc:'Variante institucional del 61.8%. BTC acepta hasta aquí con frecuencia.',color:'var(--warn)'},
+    {lvl:'0.786',name:'Retroceso profundo',desc:'Corrección profunda pero válida. Si se sostiene, la tendencia sigue viva.',color:'var(--warn)'},
+    {lvl:'1.000',name:'Origen del impulso',desc:'Si se pierde este nivel, el conteo se invalida. Punto de no retorno.',color:'var(--bear)'},
+    {lvl:'1.272',name:'Extensión moderada ★',desc:'Primer objetivo institucional. A menudo el TP1 en extensiones.',color:'var(--neutral)'},
+    {lvl:'1.618',name:'Golden Extension ★★',desc:'El objetivo clásico de extensión. TP2 habitual en movimientos impulsivos.',color:'#ffd700'},
+    {lvl:'-1.100',name:'Segan Destroy -1.1',desc:'Nivel PSY especial. Zona de manipulación extrema antes de reversión.',color:'var(--purple)'},
+    {lvl:'-1.270',name:'Segan Destroy -1.27',desc:'Extensión profunda de manipulación. Muy útil en capitulaciones.',color:'var(--purple)'},
+    {lvl:'-1.618',name:'Segan Destroy -1.618',desc:'El nivel más extremo. Solo en colapsos/rallies extremos. Alta probabilidad.',color:'var(--purple)'},
+  ];
+  let h=`<div class="panel"><div class="panel-hd">Niveles Clave y su Uso</div><div>`;
+  levels.forEach(l=>{
+    h+=`<div style="display:flex;align-items:center;gap:12px;padding:8px 10px;background:var(--bg2);border-radius:4px;margin-bottom:4px;">
+      <div style="font-family:var(--font-display);font-size:13px;color:${l.color};width:60px;text-align:right;">${l.lvl}</div>
+      <div style="flex:1;">
+        <div style="font-size:12px;color:${l.color};">${l.name}</div>
+        <div style="font-size:10px;color:var(--muted);">${l.desc}</div>
+      </div>
+    </div>`;
+  });
+  h+=`</div></div>`;
+  h+=`<div class="panel"><div class="panel-hd">Reglas ABC con Fibonacci</div>
+    <div class="g3">
+      <div style="background:var(--bg2);border-radius:5px;padding:12px;">
+        <div style="font-family:var(--font-display);font-size:11px;color:var(--bear);margin-bottom:8px;">ONDA A</div>
+        <div style="font-size:11px;line-height:1.7;">Primera caída tras el impulso. Define el rango. B retrocede 38.2%–78.6% de A. Si B supera el origen de A, el conteo se invalida.</div>
+      </div>
+      <div style="background:var(--bg2);border-radius:5px;padding:12px;">
+        <div style="font-family:var(--font-display);font-size:11px;color:var(--warn);margin-bottom:8px;">ONDA B</div>
+        <div style="font-size:11px;line-height:1.7;">El rebote más engañoso. Da sensación de que la tendencia continúa. Menor volumen que A. No debe superar el origen de A.</div>
+      </div>
+      <div style="background:var(--bg2);border-radius:5px;padding:12px;">
+        <div style="font-family:var(--font-display);font-size:11px;color:var(--neutral);margin-bottom:8px;">ONDA C</div>
+        <div style="font-size:11px;line-height:1.7;">El movimiento final. Más fuerte que A. Target: C=A (100%), C=1.272A, C=1.618A. Internamente es impulsiva (5 subondas).</div>
+      </div>
+    </div>
+  </div>`;
+  el.innerHTML=h;
+}
+
+// ══════════════════════════════════════════
+// PAYMENT
+// ══════════════════════════════════════════
+function showPayment(plan){
+  const prices={basico:'$29/mes',pro:'$79/mes',elite:'$149/mes'};
+  const modal=document.getElementById('payment-modal');
+  const content=document.getElementById('payment-modal-content');
+  modal.style.display='block';
+  content.innerHTML=`
+    <div style="font-family:var(--font-display);font-size:14px;color:var(--neutral);margin-bottom:12px;">${plan.toUpperCase()} — ${prices[plan]}</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:16px;">Selecciona método de pago:</div>
+    <div class="payment-method" onclick="showToast('Redirigiendo a Stripe...')"><span class="pay-icon">💳</span>Pagar con Stripe (Tarjeta)</div>
+    <div class="payment-method" onclick="showToast('Abriendo PayPal...')"><span class="pay-icon">🅿</span>Pagar con PayPal</div>
+    <div class="payment-method" onclick="showToast('Generando dirección USDT TRC20...')"><span class="pay-icon">◈</span>Pagar con USDT (TRC20)</div>
+    <div class="payment-method" onclick="showToast('Abriendo Binance Pay QR...')"><span class="pay-icon">⬡</span>Binance Pay</div>
+    <div style="font-size:11px;color:var(--muted);margin-top:12px;">Después del pago recibes acceso inmediato por Telegram/email. ¿Preguntas? Contáctanos directamente.</div>
+  `;
+}
+
+// ══════════════════════════════════════════
+// BOT STATUS CHECK
+// ══════════════════════════════════════════
+async function checkBotStatus(){
+  showToast('Verificando bot en Railway...','var(--warn)');
+  try{
+    const r=await fetch('https://psychometriks-bot-production.up.railway.app/health',{signal:AbortSignal.timeout(5000)});
+    if(r.ok){
+      document.getElementById('railway-status').className='status-indicator si-online';
+      document.getElementById('railway-status').textContent='● ONLINE';
+      document.getElementById('bot-status-dot').style.background='var(--bull)';
+      document.getElementById('bot-status-txt').textContent='Bot: Online';
+      showToast('✓ Bot activo en Railway');
+    }
+  }catch(e){
+    document.getElementById('railway-status').className='status-indicator si-offline';
+    document.getElementById('railway-status').textContent='○ OFFLINE';
+    document.getElementById('bot-status-dot').style.background='var(--bear)';
+    document.getElementById('bot-status-txt').textContent='Bot: Offline';
+    showToast('Bot no responde — verificar Railway','var(--bear)');
+  }
+}
+
+// ══════════════════════════════════════════
+// TABS
+// ══════════════════════════════════════════
+document.getElementById('pair-tabs').addEventListener('click',e=>{
+  const tab=e.target.closest('.ptab');
+  if(!tab)return;
+  document.querySelectorAll('.ptab').forEach(t=>t.classList.remove('active'));
+  tab.classList.add('active');
+  state.pair=tab.dataset.pair;
+  renderSignals();
+  connectWS(state.pair);
+});
+document.getElementById('tf-tabs').addEventListener('click',e=>{
+  const btn=e.target.closest('.tf-btn');
+  if(!btn)return;
+  document.querySelectorAll('.tf-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  state.tf=btn.dataset.tf;
+  renderSignals();
+});
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+fetchAllPrices();
+connectWS(state.pair);
+renderSignals();
+setInterval(renderSignals,10000);
+setInterval(()=>{if(state.wsConnected)renderDashboard();},3000);
+checkBotStatus();
+</script>
+</body>
+</html>

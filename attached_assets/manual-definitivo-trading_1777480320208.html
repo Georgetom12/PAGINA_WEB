@@ -1,0 +1,1954 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manual Definitivo de Trading — De Novato a Profesional</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:wght@300;400;600;700&family=Barlow:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#020509;--bg2:#040a10;--bg3:#070e18;--card:#0b1520;--card2:#0f1d2e;
+  --b1:#122036;--b2:#1a2e48;
+  --green:#00e8a0;--green2:#00ffb2;--greend:#003d2a;
+  --red:#ff2a50;--red2:#ff6070;--redd:#3d0010;
+  --gold:#f5c400;--gold2:#ffd940;
+  --blue:#1a8cff;--blue2:#60b8ff;
+  --purple:#b060ff;--cyan:#00d4e8;
+  --orange:#ff8c20;--pink:#ff50a0;
+  --text:#bdd0e8;--dim:#4a6480;--dim2:#1e3048;
+  --lv1:#22c55e;--lv2:#3b82f6;--lv3:#f59e0b;--lv4:#ef4444;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;line-height:1.7;overflow-x:hidden;}
+
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 59px,rgba(18,32,54,0.25) 60px),
+             repeating-linear-gradient(90deg,transparent,transparent 59px,rgba(18,32,54,0.25) 60px);}
+
+/* HEADER */
+header{position:relative;min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:60px 24px;overflow:hidden;z-index:2;}
+.hbg{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 40%,rgba(26,140,255,0.07) 0%,rgba(0,232,160,0.04) 40%,transparent 70%);pointer-events:none;}
+.htag{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:5px;color:var(--gold);border:1px solid rgba(245,196,0,0.25);background:rgba(245,196,0,0.05);padding:7px 22px;display:inline-flex;align-items:center;gap:10px;margin-bottom:28px;text-transform:uppercase;}
+.hdot{width:5px;height:5px;border-radius:50%;background:var(--gold);animation:pulse 1.5s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.3;transform:scale(0.7);}}
+
+h1{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(50px,9vw,115px);line-height:0.9;letter-spacing:-3px;margin-bottom:12px;}
+.h1a{display:block;background:linear-gradient(135deg,#ffffff 0%,#a0c8ff 60%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.h1b{display:block;background:linear-gradient(135deg,var(--gold) 0%,var(--orange) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.hsub{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:5px;color:var(--dim);margin-bottom:36px;text-transform:uppercase;}
+
+.lvls{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:36px;}
+.lvl{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2px;padding:6px 16px;text-transform:uppercase;border:1px solid;}
+.lvl.l1{color:var(--lv1);border-color:rgba(34,197,94,0.3);background:rgba(34,197,94,0.06);}
+.lvl.l2{color:var(--lv2);border-color:rgba(59,130,246,0.3);background:rgba(59,130,246,0.06);}
+.lvl.l3{color:var(--lv3);border-color:rgba(245,158,11,0.3);background:rgba(245,158,11,0.06);}
+.lvl.l4{color:var(--lv4);border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.06);}
+
+.hstats{display:flex;gap:50px;justify-content:center;flex-wrap:wrap;}
+.hs{text-align:center;}
+.hsn{font-family:'Syne',sans-serif;font-weight:800;font-size:44px;line-height:1;color:var(--green);}
+.hsl{font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;margin-top:3px;}
+
+.scroll-ind{position:absolute;bottom:30px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:5px;}
+.si-bar{width:1px;height:55px;background:linear-gradient(to bottom,var(--green),transparent);animation:si 1.8s ease-in-out infinite;}
+@keyframes si{0%{opacity:0;transform:scaleY(0);transform-origin:top;}50%{opacity:1;}100%{opacity:0;transform:scaleY(1);transform-origin:top;}}
+
+/* NAV */
+nav{background:rgba(2,5,9,0.97);border-bottom:1px solid var(--b1);position:sticky;top:0;z-index:200;backdrop-filter:blur(20px);}
+.nw{max-width:1400px;margin:0 auto;display:flex;overflow-x:auto;scrollbar-width:none;}
+.nw::-webkit-scrollbar{display:none;}
+nav a{color:var(--dim);text-decoration:none;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2px;padding:13px 12px;border-bottom:2px solid transparent;white-space:nowrap;transition:all .2s;text-transform:uppercase;}
+nav a.n1:hover,nav a.n1.on{color:var(--lv1);border-bottom-color:var(--lv1);}
+nav a.n2:hover,nav a.n2.on{color:var(--lv2);border-bottom-color:var(--lv2);}
+nav a.n3:hover,nav a.n3.on{color:var(--lv3);border-bottom-color:var(--lv3);}
+nav a.n4:hover,nav a.n4.on{color:var(--lv4);border-bottom-color:var(--lv4);}
+.ndiv{width:1px;background:var(--b1);margin:8px 6px;flex-shrink:0;}
+
+/* MAIN */
+main{max-width:1400px;margin:0 auto;padding:80px 24px;position:relative;z-index:2;}
+section{margin-bottom:96px;}
+
+/* LEVEL BANNER */
+.lbanner{display:flex;align-items:center;gap:24px;padding:26px 34px;margin-bottom:48px;border-left:4px solid;position:relative;overflow:hidden;}
+.lbanner::after{content:'';position:absolute;right:0;top:0;bottom:0;width:200px;background:linear-gradient(to left,transparent 0%,rgba(255,255,255,0.02) 100%);}
+.lbanner.l1{border-color:var(--lv1);background:rgba(34,197,94,0.04);}
+.lbanner.l2{border-color:var(--lv2);background:rgba(59,130,246,0.04);}
+.lbanner.l3{border-color:var(--lv3);background:rgba(245,158,11,0.04);}
+.lbanner.l4{border-color:var(--lv4);background:rgba(239,68,68,0.04);}
+.lbn{font-family:'Syne',sans-serif;font-weight:800;font-size:64px;line-height:1;opacity:0.15;}
+.l1 .lbn{color:var(--lv1);}.l2 .lbn{color:var(--lv2);}.l3 .lbn{color:var(--lv3);}.l4 .lbn{color:var(--lv4);}
+.lbt{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:4px;text-transform:uppercase;margin-bottom:5px;}
+.l1 .lbt{color:var(--lv1);}.l2 .lbt{color:var(--lv2);}.l3 .lbt{color:var(--lv3);}.l4 .lbt{color:var(--lv4);}
+.lbh{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(20px,3vw,34px);color:#fff;letter-spacing:-0.5px;}
+.lbd{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--dim);margin-top:5px;}
+
+/* SECTION HEADERS */
+.eye{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:4px;color:var(--blue2);text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:10px;}
+.eye::before{content:'';width:22px;height:1px;background:var(--blue2);}
+h2{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(26px,4vw,50px);letter-spacing:-1px;color:#fff;margin-bottom:6px;line-height:1.05;}
+.sl{width:72px;height:2px;background:linear-gradient(90deg,var(--gold),transparent);margin-bottom:34px;}
+h3{font-family:'Syne',sans-serif;font-weight:700;font-size:clamp(16px,2vw,22px);color:var(--gold);margin:38px 0 14px;letter-spacing:-0.3px;}
+h4{font-family:'Barlow',sans-serif;font-weight:700;font-size:15px;margin-bottom:7px;}
+p{color:#6880a0;font-size:14px;margin-bottom:13px;line-height:1.8;}
+p strong{color:var(--text);font-weight:600;}
+p em{color:var(--gold);font-style:normal;}
+ul,ol{padding-left:20px;margin-bottom:14px;}
+li{color:#6880a0;font-size:14px;margin-bottom:6px;line-height:1.7;}
+li strong{color:var(--text);}
+
+/* GRIDS */
+.g2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;}
+.g3{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;}
+.g4{display:grid;grid-template-columns:repeat(auto-fit,minmax(195px,1fr));gap:13px;}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--b1);padding:22px;position:relative;overflow:hidden;transition:border-color .3s,transform .2s;}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:transparent;transition:background .3s;}
+.card:hover{border-color:var(--b2);transform:translateY(-2px);}
+.card.cb::before{background:linear-gradient(90deg,var(--green),transparent);}
+.card.cr::before{background:linear-gradient(90deg,var(--red),transparent);}
+.card.cg::before{background:linear-gradient(90deg,var(--gold),transparent);}
+.card.cp::before{background:linear-gradient(90deg,var(--purple),transparent);}
+.card.co::before{background:linear-gradient(90deg,var(--orange),transparent);}
+.card.cbl::before{background:linear-gradient(90deg,var(--blue),transparent);}
+.card.cc::before{background:linear-gradient(90deg,var(--cyan),transparent);}
+.ceye{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;margin-bottom:5px;}
+.card p{font-size:13px;margin-bottom:7px;}
+.card h4.g{color:var(--gold);}.card h4.b{color:var(--green);}.card h4.r{color:var(--red);}
+.card h4.p{color:var(--purple);}.card h4.o{color:var(--orange);}.card h4.bl{color:var(--blue2);}.card h4.c{color:var(--cyan);}
+
+/* SVG WRAP */
+.svgw{background:var(--bg3);border:1px solid var(--b1);padding:20px;margin:18px 0;overflow-x:auto;}
+.svgw svg{display:block;margin:0 auto;}
+
+/* CALLOUTS */
+.box{padding:18px 24px;margin:18px 0;border-left:3px solid;}
+.box-b{background:rgba(0,232,160,0.04);border-color:var(--green);}
+.box-r{background:rgba(255,42,80,0.04);border-color:var(--red);}
+.box-g{background:rgba(245,196,0,0.04);border-color:var(--gold);}
+.box-p{background:rgba(176,96,255,0.04);border-color:var(--purple);}
+.box-bl{background:rgba(26,140,255,0.04);border-color:var(--blue);}
+.box-o{background:rgba(255,140,32,0.04);border-color:var(--orange);}
+.btt{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:3px;text-transform:uppercase;margin-bottom:8px;}
+.box-b .btt{color:var(--green);}.box-r .btt{color:var(--red);}
+.box-g .btt{color:var(--gold);}.box-p .btt{color:var(--purple);}
+.box-bl .btt{color:var(--blue2);}.box-o .btt{color:var(--orange);}
+.box p{font-size:13px;margin-bottom:0;color:#506070;}
+.box p strong{color:#88a8c8;}
+
+/* BADGES */
+.badge{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1px;padding:3px 8px;margin:2px;text-transform:uppercase;}
+.bb{background:rgba(0,232,160,0.1);color:var(--green);border:1px solid rgba(0,232,160,0.25);}
+.br{background:rgba(255,42,80,0.1);color:var(--red);border:1px solid rgba(255,42,80,0.25);}
+.bg{background:rgba(245,196,0,0.1);color:var(--gold);border:1px solid rgba(245,196,0,0.25);}
+.bp{background:rgba(176,96,255,0.1);color:var(--purple);border:1px solid rgba(176,96,255,0.25);}
+.bo{background:rgba(255,140,32,0.1);color:var(--orange);border:1px solid rgba(255,140,32,0.25);}
+.bbl{background:rgba(26,140,255,0.1);color:var(--blue2);border:1px solid rgba(26,140,255,0.25);}
+.bc{background:rgba(0,212,232,0.1);color:var(--cyan);border:1px solid rgba(0,212,232,0.25);}
+
+/* TABLE */
+table{width:100%;border-collapse:collapse;font-size:13px;margin:16px 0;}
+th{background:var(--card2);color:var(--gold);font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;padding:11px 14px;text-align:left;border-bottom:1px solid var(--b2);}
+td{padding:10px 14px;border-bottom:1px solid rgba(18,32,54,0.8);color:#6880a0;vertical-align:top;}
+tr:hover td{background:rgba(11,21,32,0.7);}
+td.tg{color:var(--green);font-family:'IBM Plex Mono',monospace;font-size:11px;}
+td.tr{color:var(--red);font-family:'IBM Plex Mono',monospace;font-size:11px;}
+td.ty{color:var(--gold);font-family:'IBM Plex Mono',monospace;font-size:11px;}
+td.tb{color:var(--blue2);font-family:'IBM Plex Mono',monospace;font-size:11px;}
+td.tp{color:var(--purple);font-family:'IBM Plex Mono',monospace;font-size:11px;}
+td.to{color:var(--orange);font-family:'IBM Plex Mono',monospace;font-size:11px;}
+
+/* FORMULA */
+.formula{background:var(--bg3);border:1px solid var(--b2);border-left:3px solid var(--cyan);padding:15px 20px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--cyan);margin:14px 0;letter-spacing:.5px;line-height:1.9;}
+
+/* PSHOW (pattern showcase) */
+.pshow{display:grid;grid-template-columns:140px 1fr;gap:20px;align-items:start;background:var(--card);border:1px solid var(--b1);padding:22px;margin-bottom:14px;transition:border-color .3s;}
+.pshow:hover{border-color:var(--b2);}
+.pshow h4{font-size:17px;letter-spacing:-0.3px;margin-bottom:6px;}
+
+/* FADE IN */
+.fade{opacity:0;transform:translateY(16px);transition:opacity .6s ease,transform .6s ease;}
+.fade.vis{opacity:1;transform:translateY(0);}
+
+/* DISCLAIMER */
+.disc{background:rgba(255,42,80,0.04);border:1px solid rgba(255,42,80,0.1);padding:16px 22px;margin:40px 0;font-family:'IBM Plex Mono',monospace;font-size:10px;color:#5a3040;letter-spacing:.5px;line-height:1.9;}
+
+/* FOOTER */
+footer{background:var(--bg2);border-top:1px solid var(--b1);padding:50px 40px;text-align:center;position:relative;z-index:2;}
+footer p{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim);margin-bottom:5px;letter-spacing:1px;}
+
+@media(max-width:640px){
+  main{padding:48px 14px;}
+  .lbanner{flex-direction:column;gap:8px;padding:20px;}
+  .g4{grid-template-columns:repeat(2,1fr);}
+  .pshow{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hbg"></div>
+  <div class="htag"><span class="hdot"></span> EDICIÓN DEFINITIVA · RUTA COMPLETA <span class="hdot"></span></div>
+  <h1>
+    <span class="h1a">MANUAL</span>
+    <span class="h1b">DEFINITIVO</span>
+  </h1>
+  <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(16px,3vw,30px);color:rgba(255,255,255,0.25);letter-spacing:6px;margin-bottom:18px;">DE TRADING</div>
+  <div class="hsub">De Novato a Profesional · 4 Niveles · Todos los Contextos · Lógica Completa</div>
+  <div class="lvls">
+    <div class="lvl l1">▸ Nivel 1 — Inicial</div>
+    <div class="lvl l2">▸ Nivel 2 — Intermedio</div>
+    <div class="lvl l3">▸ Nivel 3 — Avanzado</div>
+    <div class="lvl l4">▸ Nivel 4 — Profesional</div>
+  </div>
+  <div class="hstats">
+    <div class="hs"><div class="hsn">22</div><div class="hsl">Módulos</div></div>
+    <div class="hs"><div class="hsn">4</div><div class="hsl">Niveles</div></div>
+    <div class="hs"><div class="hsn">150+</div><div class="hsl">Conceptos</div></div>
+    <div class="hs"><div class="hsn">∞</div><div class="hsl">Gráficos</div></div>
+  </div>
+  <div class="scroll-ind"><div class="si-bar"></div></div>
+</header>
+
+<nav>
+  <div class="nw">
+    <a href="#intro" class="n1">INTRO</a>
+    <a href="#mercados" class="n1">MERCADOS</a>
+    <a href="#participantes" class="n1">PARTICIPANTES</a>
+    <a href="#precio" class="n1">PRECIO</a>
+    <div class="ndiv"></div>
+    <a href="#sr" class="n2">S &amp; R</a>
+    <a href="#tendencias" class="n2">TENDENCIAS</a>
+    <a href="#volumen" class="n2">VOLUMEN</a>
+    <a href="#indicadores" class="n2">INDICADORES</a>
+    <a href="#riesgo-base" class="n2">RIESGO</a>
+    <div class="ndiv"></div>
+    <a href="#estructura" class="n3">ESTRUCTURA</a>
+    <a href="#orderflow" class="n3">ORDER FLOW</a>
+    <a href="#fibonacci" class="n3">FIBONACCI</a>
+    <a href="#elliott" class="n3">ELLIOTT</a>
+    <a href="#wyckoff" class="n3">WYCKOFF</a>
+    <div class="ndiv"></div>
+    <a href="#smc" class="n4">SMART MONEY</a>
+    <a href="#institucional" class="n4">INSTITUCIONAL</a>
+    <a href="#macro" class="n4">MACRO</a>
+    <a href="#sistemas" class="n4">SISTEMAS</a>
+    <a href="#riesgo-pro" class="n4">RIESGO PRO</a>
+    <a href="#psicologia" class="n4">PSICOLOGÍA</a>
+    <a href="#plan" class="n4">PLAN</a>
+  </div>
+</nav>
+
+<main>
+
+<!-- ══════════════════════════════════════════
+     NIVEL 1 — INICIAL
+══════════════════════════════════════════ -->
+<div class="lbanner l1 fade">
+  <div class="lbn">01</div>
+  <div>
+    <div class="lbt">Nivel 1 — Inicial</div>
+    <div class="lbh">LOS FUNDAMENTOS ABSOLUTOS</div>
+    <div class="lbd">Para quien empieza desde cero. Mercados, participantes, precio, lógica.</div>
+  </div>
+</div>
+
+<!-- M01 INTRO -->
+<section id="intro" class="fade">
+  <div class="eye">Módulo 01 · Nivel Inicial</div>
+  <h2>¿QUÉ ES EL TRADING?</h2>
+  <div class="sl"></div>
+
+  <p>El <strong>trading</strong> es comprar y vender instrumentos financieros —acciones, divisas, criptomonedas, futuros, materias primas— con el objetivo de obtener beneficio de la diferencia de precio entre la compra y la venta. A diferencia de invertir (donde compras y mantienes años), el trading opera en horizontes más cortos: segundos, horas, días o semanas.</p>
+  <p>Pero el trading no es especulación ciega. Es una disciplina que combina <strong>análisis técnico, gestión de riesgo, psicología y un sistema probado</strong>. El 80-90% de los traders minoristas pierde dinero no porque el mercado sea imposible, sino porque operan sin sistema, sin gestión de riesgo y con emociones.</p>
+
+  <div class="g3">
+    <div class="card cb">
+      <div class="ceye">Estilo</div>
+      <h4 class="b">SCALPING</h4>
+      <p>Operaciones de segundos a minutos. Muchas operaciones pequeñas. Requiere concentración total, spreads bajos y plataforma rápida. M1–M5. Para perfiles muy activos.</p>
+      <div><span class="badge bb">M1–M5</span><span class="badge bg">Alta frecuencia</span></div>
+    </div>
+    <div class="card cb">
+      <div class="ceye">Estilo</div>
+      <h4 class="b">DAY TRADING</h4>
+      <p>Abre y cierra todas las posiciones en el mismo día. Sin posiciones overnight. M5–H1. Requiere disponibilidad durante la sesión del mercado.</p>
+      <div><span class="badge bb">M5–H1</span><span class="badge bg">Intradía</span></div>
+    </div>
+    <div class="card cg">
+      <div class="ceye">Estilo</div>
+      <h4 class="g">SWING TRADING</h4>
+      <p>Mantiene posiciones de días a semanas. Captura "swings" o oscilaciones de precio. H4–D1. <strong>El más recomendado para principiantes.</strong> Ritmo manejable.</p>
+      <div><span class="badge bg">H4–D1</span><span class="badge bb">Días/semanas</span></div>
+    </div>
+    <div class="card cg">
+      <div class="ceye">Estilo</div>
+      <h4 class="g">POSICIONAL</h4>
+      <p>Tendencias de semanas a meses. Análisis macro + técnico D1–W1. Menos tiempo de pantalla. Requiere mayor capital y paciencia, pero menor estrés.</p>
+      <div><span class="badge bg">D1–W1</span><span class="badge bc">Meses</span></div>
+    </div>
+    <div class="card cp">
+      <div class="ceye">Estilo</div>
+      <h4 class="p">ALGORÍTMICO / QUANT</h4>
+      <p>Sistemas automatizados que ejecutan órdenes basados en reglas de código. Elimina las emociones. Requiere programación y backtesting riguroso.</p>
+      <div><span class="badge bp">Automatizado</span><span class="badge bo">Código</span></div>
+    </div>
+    <div class="card co">
+      <div class="ceye">Estilo</div>
+      <h4 class="o">INVERSIÓN L/P</h4>
+      <p>Horizonte meses–años. Fundamentals + tendencia macro. Menos estresante. Combinable con trading activo como estrategia dual de portafolio.</p>
+      <div><span class="badge bo">W1–MN</span><span class="badge bg">LP</span></div>
+    </div>
+  </div>
+
+  <div class="box box-g">
+    <div class="btt">💡 La Verdad que Nadie Dice al Empezar</div>
+    <p>El trading es una carrera profesional que toma <strong>2–4 años en dominar</strong>. El primer año se aprende a perder correctamente. El segundo, a empatar. Recién en el tercero aparecen los beneficios consistentes. Quien lo entiende así desde el inicio tiene una ventaja enorme sobre el 90% que entra buscando riqueza rápida.</p>
+  </div>
+</section>
+
+<!-- M02 MERCADOS -->
+<section id="mercados" class="fade">
+  <div class="eye">Módulo 02 · Nivel Inicial</div>
+  <h2>LOS MERCADOS FINANCIEROS</h2>
+  <div class="sl"></div>
+  <p>Un <strong>mercado financiero</strong> es el ecosistema donde se intercambian activos. Hay mercados centralizados (bolsas de valores con cámara de compensación) y OTC (Over The Counter: negociación directa entre partes, como Forex y Crypto).</p>
+
+  <div class="svgw">
+    <svg width="700" height="290" viewBox="0 0 700 290">
+      <text x="350" y="18" fill="#4a6480" font-family="IBM Plex Mono" font-size="9" text-anchor="middle" letter-spacing="3">ECOSISTEMA DE MERCADOS FINANCIEROS</text>
+      <!-- Centro -->
+      <circle cx="350" cy="148" r="58" fill="rgba(245,196,0,0.07)" stroke="rgba(245,196,0,0.3)" stroke-width="1.5"/>
+      <text x="350" y="143" fill="#f5c400" font-family="Syne" font-size="13" text-anchor="middle" font-weight="700">MERCADOS</text>
+      <text x="350" y="160" fill="#f5c400" font-family="Syne" font-size="13" text-anchor="middle" font-weight="700">FINANCIEROS</text>
+      <!-- Nodos -->
+      <!-- FOREX -->
+      <line x1="294" y1="148" x2="170" y2="80" stroke="rgba(0,232,160,0.35)" stroke-width="1.5"/>
+      <circle cx="145" cy="68" r="44" fill="rgba(0,232,160,0.06)" stroke="rgba(0,232,160,0.3)" stroke-width="1"/>
+      <text x="145" y="62" fill="#00e8a0" font-family="IBM Plex Mono" font-size="11" text-anchor="middle" font-weight="600">FOREX</text>
+      <text x="145" y="78" fill="#4a6480" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">$7.5T/día · OTC</text>
+      <!-- ACCIONES -->
+      <line x1="350" y1="92" x2="350" y2="32" stroke="rgba(26,140,255,0.35)" stroke-width="1.5"/>
+      <rect x="276" y="6" width="148" height="38" fill="rgba(26,140,255,0.06)" stroke="rgba(26,140,255,0.3)" stroke-width="1"/>
+      <text x="350" y="22" fill="#1a8cff" font-family="IBM Plex Mono" font-size="11" text-anchor="middle" font-weight="600">ACCIONES</text>
+      <text x="350" y="37" fill="#4a6480" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">NYSE · NASDAQ · LSE</text>
+      <!-- CRYPTO -->
+      <line x1="406" y1="148" x2="530" y2="80" stroke="rgba(176,96,255,0.35)" stroke-width="1.5"/>
+      <circle cx="554" cy="68" r="44" fill="rgba(176,96,255,0.06)" stroke="rgba(176,96,255,0.3)" stroke-width="1"/>
+      <text x="554" y="62" fill="#b060ff" font-family="IBM Plex Mono" font-size="11" text-anchor="middle" font-weight="600">CRYPTO</text>
+      <text x="554" y="78" fill="#4a6480" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">BTC · ETH · 24/7</text>
+      <!-- FUTUROS -->
+      <line x1="294" y1="180" x2="170" y2="228" stroke="rgba(255,140,32,0.35)" stroke-width="1.5"/>
+      <circle cx="145" cy="240" r="44" fill="rgba(255,140,32,0.06)" stroke="rgba(255,140,32,0.3)" stroke-width="1"/>
+      <text x="145" y="234" fill="#ff8c20" font-family="IBM Plex Mono" font-size="11" text-anchor="middle" font-weight="600">FUTUROS</text>
+      <text x="145" y="250" fill="#4a6480" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">CME · CBOT</text>
+      <!-- ÍNDICES -->
+      <line x1="350" y1="204" x2="350" y2="258" stroke="rgba(245,196,0,0.35)" stroke-width="1.5"/>
+      <rect x="276" y="258" width="148" height="28" fill="rgba(245,196,0,0.06)" stroke="rgba(245,196,0,0.3)" stroke-width="1"/>
+      <text x="350" y="276" fill="#f5c400" font-family="IBM Plex Mono" font-size="11" text-anchor="middle" font-weight="600">ÍNDICES · S&amp;P500 · DAX</text>
+      <!-- OPCIONES -->
+      <line x1="406" y1="180" x2="530" y2="228" stroke="rgba(0,212,232,0.35)" stroke-width="1.5"/>
+      <circle cx="554" cy="240" r="44" fill="rgba(0,212,232,0.06)" stroke="rgba(0,212,232,0.3)" stroke-width="1"/>
+      <text x="554" y="234" fill="#00d4e8" font-family="IBM Plex Mono" font-size="11" text-anchor="middle" font-weight="600">OPCIONES</text>
+      <text x="554" y="250" fill="#4a6480" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">Derivados · Puts/Calls</text>
+    </svg>
+  </div>
+
+  <h3>SESIONES DE TRADING — EL RELOJ GLOBAL</h3>
+  <div class="svgw">
+    <svg width="700" height="130" viewBox="0 0 700 130">
+      <text x="350" y="16" fill="#4a6480" font-family="IBM Plex Mono" font-size="8" text-anchor="middle" letter-spacing="3">SESIONES EN UTC — FOREX/CRYPTO</text>
+      <!-- Eje -->
+      <line x1="30" y1="68" x2="680" y2="68" stroke="var(--b2)" stroke-width="1.5"/>
+      <!-- Horas -->
+      <text x="30" y="120" fill="#4a6480" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">00</text>
+      <text x="138" y="120" fill="#4a6480" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">04</text>
+      <text x="246" y="120" fill="#4a6480" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">08</text>
+      <text x="354" y="120" fill="#4a6480" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">12</text>
+      <text x="462" y="120" fill="#4a6480" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">16</text>
+      <text x="570" y="120" fill="#4a6480" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">20</text>
+      <text x="680" y="120" fill="#4a6480" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">24</text>
+      <!-- ASIA 00–09 -->
+      <rect x="30" y="48" width="345" height="15" fill="rgba(176,96,255,0.2)" stroke="rgba(176,96,255,0.4)" stroke-width="1" rx="2"/>
+      <text x="202" y="60" fill="#b060ff" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">ASIA — Tokyo 00:00–09:00 UTC</text>
+      <!-- LONDON 07–16 -->
+      <rect x="238" y="30" width="345" height="15" fill="rgba(26,140,255,0.2)" stroke="rgba(26,140,255,0.4)" stroke-width="1" rx="2"/>
+      <text x="410" y="42" fill="#1a8cff" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">LONDON 07:00–16:00 UTC</text>
+      <!-- NY 12–21 -->
+      <rect x="354" y="68" width="337" height="15" fill="rgba(0,232,160,0.2)" stroke="rgba(0,232,160,0.4)" stroke-width="1" rx="2"/>
+      <text x="522" y="80" fill="#00e8a0" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">NEW YORK 12:00–21:00 UTC</text>
+      <!-- Overlap = Kill Zone -->
+      <rect x="354" y="25" width="112" height="7" fill="rgba(255,42,80,0.5)" rx="1"/>
+      <text x="410" y="20" fill="#ff2a50" font-family="IBM Plex Mono" font-size="7" text-anchor="middle">OVERLAP = MÁX VOLUMEN</text>
+      <!-- Kill zone markers -->
+      <line x1="246" y1="15" x2="246" y2="100" stroke="rgba(245,196,0,0.25)" stroke-width="1" stroke-dasharray="3,2"/>
+      <text x="246" y="11" fill="#f5c400" font-family="IBM Plex Mono" font-size="7" text-anchor="middle">London Open</text>
+      <line x1="354" y1="15" x2="354" y2="100" stroke="rgba(245,196,0,0.25)" stroke-width="1" stroke-dasharray="3,2"/>
+      <text x="354" y="11" fill="#f5c400" font-family="IBM Plex Mono" font-size="7" text-anchor="middle">NY Open</text>
+    </svg>
+  </div>
+
+  <table>
+    <tr><th>Mercado</th><th>Horario</th><th>Volatilidad</th><th>Cap. mínimo</th><th>Mejor para</th></tr>
+    <tr><td><strong style="color:var(--green)">Forex</strong></td><td>24h L–V</td><td>Media–Alta</td><td>~$100</td><td>Principiantes, swing</td></tr>
+    <tr><td><strong style="color:var(--blue2)">Acciones</strong></td><td>9:30–16:00 ET</td><td>Variable</td><td>~$1,000</td><td>Posicional, inversión</td></tr>
+    <tr><td><strong style="color:var(--purple)">Crypto</strong></td><td>24/7/365</td><td>Muy Alta</td><td>~$50</td><td>Swing, especulación</td></tr>
+    <tr><td><strong style="color:var(--orange)">Futuros</strong></td><td>Casi 24h</td><td>Alta</td><td>~$5,000</td><td>Profesionales</td></tr>
+    <tr><td><strong style="color:var(--gold)">Índices CFD</strong></td><td>Horario bolsa</td><td>Media</td><td>~$500</td><td>Day trading, swing</td></tr>
+    <tr><td><strong style="color:var(--cyan)">Opciones</strong></td><td>Horario bolsa</td><td>Alta</td><td>~$2,000</td><td>Avanzado, hedging</td></tr>
+  </table>
+</section>
+
+<!-- M03 PARTICIPANTES -->
+<section id="participantes" class="fade">
+  <div class="eye">Módulo 03 · Nivel Inicial</div>
+  <h2>PARTICIPANTES DEL MERCADO</h2>
+  <div class="sl"></div>
+  <p>Entender quiénes mueven el mercado es fundamental. No todos los jugadores tienen el mismo poder. El trader retail es el más pequeño, pero al entender a los grandes puede aprovechar sus huellas.</p>
+
+  <div class="svgw">
+    <svg width="700" height="260" viewBox="0 0 700 260">
+      <text x="350" y="18" fill="#4a6480" font-family="IBM Plex Mono" font-size="9" text-anchor="middle" letter-spacing="2">JERARQUÍA DE PODER EN LOS MERCADOS</text>
+      <!-- Pirámide -->
+      <!-- Nivel 1 -->
+      <polygon points="350,32 430,65 270,65" fill="rgba(176,96,255,0.15)" stroke="rgba(176,96,255,0.5)" stroke-width="1.5"/>
+      <text x="350" y="56" fill="#b060ff" font-family="IBM Plex Mono" font-size="9" text-anchor="middle" font-weight="600">BANCOS CENTRALES · FED · BCE</text>
+      <!-- Nivel 2 -->
+      <polygon points="270,65 430,65 480,102 220,102" fill="rgba(255,42,80,0.1)" stroke="rgba(255,42,80,0.4)" stroke-width="1.5"/>
+      <text x="350" y="88" fill="#ff2a50" font-family="IBM Plex Mono" font-size="9" text-anchor="middle">TIER 1 BANKS — JPMorgan · Goldman · Citi</text>
+      <!-- Nivel 3 -->
+      <polygon points="220,102 480,102 530,140 170,140" fill="rgba(255,140,32,0.08)" stroke="rgba(255,140,32,0.35)" stroke-width="1.5"/>
+      <text x="350" y="126" fill="#ff8c20" font-family="IBM Plex Mono" font-size="9" text-anchor="middle">HEDGE FUNDS · FONDOS SOBERANOS · PENSIONES</text>
+      <!-- Nivel 4 -->
+      <polygon points="170,140 530,140 580,178 120,178" fill="rgba(26,140,255,0.07)" stroke="rgba(26,140,255,0.3)" stroke-width="1.5"/>
+      <text x="350" y="163" fill="#1a8cff" font-family="IBM Plex Mono" font-size="9" text-anchor="middle">CORPORACIONES MULTINACIONALES · HFT ALGORITHMS</text>
+      <!-- Nivel 5 -->
+      <polygon points="120,178 580,178 650,220 50,220" fill="rgba(0,232,160,0.06)" stroke="rgba(0,232,160,0.3)" stroke-width="1.5"/>
+      <text x="350" y="204" fill="#00e8a0" font-family="IBM Plex Mono" font-size="9" text-anchor="middle">TRADERS RETAIL (TÚ) — 5% DEL VOLUMEN TOTAL</text>
+      <!-- Labels lado -->
+      <text x="660" y="52" fill="#b060ff" font-family="IBM Plex Mono" font-size="8">MÁXIMO PODER</text>
+      <text x="660" y="215" fill="#00e8a0" font-family="IBM Plex Mono" font-size="8">MÍNIMO PODER</text>
+      <line x1="655" y1="58" x2="655" y2="210" stroke="rgba(74,100,128,0.3)" stroke-width="1"/>
+    </svg>
+  </div>
+
+  <div class="g2">
+    <div class="card cp">
+      <div class="ceye">Participante — Máximo poder</div>
+      <h4 class="p">BANCOS CENTRALES</h4>
+      <p>Fed, BCE, BoJ, BoE. Controlan la política monetaria global. Sus decisiones sobre tasas de interés, QE (Quantitative Easing) y QT mueven todos los mercados simultáneamente. <strong>Una sola declaración del Fed mueve el dólar 1–2% en segundos.</strong></p>
+      <p>Son los únicos que pueden "crear dinero de la nada". Su poder sobre el mercado es absoluto y no se puede ignorar en ningún análisis macro.</p>
+      <div><span class="badge bp">POLÍTICA MONETARIA</span><span class="badge bg">MÁXIMO IMPACTO</span></div>
+    </div>
+    <div class="card cr">
+      <div class="ceye">Participante — Market Makers</div>
+      <h4 class="r">BANCOS TIER 1 (MARKET MAKERS)</h4>
+      <p>JPMorgan, Goldman Sachs, Deutsche Bank, HSBC, Citi. Son la contraparte de la mayoría de transacciones. Tienen acceso al precio interbancario (mejor que cualquier retail) y flujo de órdenes de sus clientes institucionales.</p>
+      <p><strong>Son tus contrapartes reales.</strong> Cuando tú compras, ellos frecuentemente venden. Entender cómo operan es entender cómo funciona realmente el mercado.</p>
+      <div><span class="badge br">CONTRAPARTE</span><span class="badge bg">FLUJO DE ÓRDENES</span></div>
+    </div>
+    <div class="card co">
+      <div class="ceye">Participante — Smart Money</div>
+      <h4 class="o">FONDOS INSTITUCIONALES</h4>
+      <p>Hedge funds, fondos soberanos, fondos de pensión. Manejan billones. Sus órdenes son tan masivas que no pueden ejecutarlas de golpe sin mover el mercado en su contra. <strong>Por eso acumulan y distribuyen gradualmente en rangos laterales.</strong></p>
+      <p>Sus huellas son detectables: zonas de alta liquidez, Order Blocks, imbalances. Aprender a leer estas huellas es la base del SMC (Smart Money Concepts).</p>
+      <div><span class="badge bo">SMART MONEY</span><span class="badge bg">ACUMULACIÓN SILENCIOSA</span></div>
+    </div>
+    <div class="card cbl">
+      <div class="ceye">Participante — Tú</div>
+      <h4 class="bl">TRADERS RETAIL</h4>
+      <p>Menos del 5% del volumen total. Los bancos e instituciones nos usan como liquidez para ejecutar sus órdenes. Cuando la mayoría de retails pone sus stops en el mismo nivel, los institucionales van ahí a buscarlos.</p>
+      <p><strong>Tu ventaja:</strong> Puedes entrar/salir de posiciones pequeñas sin mover el mercado. Puedes esperar solo los mejores setups. Puedes adaptarte rápido.</p>
+      <div><span class="badge bbl">LIQUIDEZ RETAIL</span><span class="badge bb">FLEXIBILIDAD</span></div>
+    </div>
+  </div>
+
+  <div class="box box-r">
+    <div class="btt">⚡ La Realidad que Cambará tu Trading</div>
+    <p>El mercado <strong>NO es un juego justo</strong>. Los institucionales tienen información antes que tú, capital ilimitado, algoritmos de nanosegundos y acceso a flujo de órdenes real. Sin embargo, cada vez que ellos acumulan o distribuyen, dejan huellas en el gráfico. <strong>Aprender a leer esas huellas es tu única ventaja real como retail.</strong></p>
+  </div>
+</section>
+
+<!-- M04 PRECIO -->
+<section id="precio" class="fade">
+  <div class="eye">Módulo 04 · Nivel Inicial</div>
+  <h2>CÓMO SE FORMA EL PRECIO</h2>
+  <div class="sl"></div>
+  <p>El precio de cualquier activo es el <strong>último acuerdo entre un comprador y un vendedor</strong>. Es el punto de equilibrio entre oferta y demanda en tiempo real. Entender esto es entender la lógica más profunda del mercado.</p>
+
+  <h3>BID, ASK Y SPREAD</h3>
+  <div class="svgw">
+    <svg width="680" height="210" viewBox="0 0 680 210">
+      <text x="340" y="18" fill="#4a6480" font-family="IBM Plex Mono" font-size="9" text-anchor="middle" letter-spacing="2">LIBRO DE ÓRDENES — ORDER BOOK</text>
+      <!-- Ventas (Ask) -->
+      <rect x="220" y="30" width="240" height="18" fill="rgba(255,42,80,0.12)" stroke="rgba(255,42,80,0.2)" stroke-width="1"/>
+      <text x="270" y="43" fill="#ff2a50" font-family="IBM Plex Mono" font-size="9">ASK 1.2058</text><text x="400" y="43" fill="#ff2a50" font-family="IBM Plex Mono" font-size="9">2.5M</text>
+      <rect x="220" y="49" width="240" height="18" fill="rgba(255,42,80,0.09)" stroke="rgba(255,42,80,0.15)" stroke-width="1"/>
+      <text x="270" y="62" fill="#ff2a50" font-family="IBM Plex Mono" font-size="9">ASK 1.2057</text><text x="400" y="62" fill="#ff2a50" font-family="IBM Plex Mono" font-size="9">1.8M</text>
+      <rect x="220" y="68" width="240" height="18" fill="rgba(255,42,80,0.06)" stroke="rgba(255,42,80,0.1)" stroke-width="1"/>
+      <text x="270" y="81" fill="#ff2a50" font-family="IBM Plex Mono" font-size="9">ASK 1.2056</text><text x="400" y="81" fill="#ff2a50" font-family="IBM Plex Mono" font-size="9">0.9M</text>
+      <!-- Spread -->
+      <rect x="185" y="88" width="310" height="22" fill="rgba(245,196,0,0.08)" stroke="rgba(245,196,0,0.4)" stroke-width="1.5"/>
+      <text x="340" y="103" fill="#f5c400" font-family="IBM Plex Mono" font-size="10" text-anchor="middle" font-weight="600">SPREAD = 1 PIP = COSTO DE TRANSACCIÓN</text>
+      <!-- Compras (Bid) -->
+      <rect x="220" y="112" width="240" height="18" fill="rgba(0,232,160,0.06)" stroke="rgba(0,232,160,0.1)" stroke-width="1"/>
+      <text x="270" y="125" fill="#00e8a0" font-family="IBM Plex Mono" font-size="9">BID 1.2055</text><text x="400" y="125" fill="#00e8a0" font-family="IBM Plex Mono" font-size="9">1.2M</text>
+      <rect x="220" y="131" width="240" height="18" fill="rgba(0,232,160,0.1)" stroke="rgba(0,232,160,0.15)" stroke-width="1"/>
+      <text x="270" y="144" fill="#00e8a0" font-family="IBM Plex Mono" font-size="9">BID 1.2054</text><text x="400" y="144" fill="#00e8a0" font-family="IBM Plex Mono" font-size="9">3.1M</text>
+      <rect x="220" y="150" width="240" height="18" fill="rgba(0,232,160,0.14)" stroke="rgba(0,232,160,0.2)" stroke-width="1"/>
+      <text x="270" y="163" fill="#00e8a0" font-family="IBM Plex Mono" font-size="9">BID 1.2053</text><text x="400" y="163" fill="#00e8a0" font-family="IBM Plex Mono" font-size="9">4.5M</text>
+      <!-- Labels izquierda -->
+      <text x="90" y="75" fill="#ff2a50" font-family="IBM Plex Mono" font-size="9" text-anchor="middle">VENDEDORES</text>
+      <text x="90" y="88" fill="#4a6480" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">Tú compras al ASK</text>
+      <text x="90" y="145" fill="#00e8a0" font-family="IBM Plex Mono" font-size="9" text-anchor="middle">COMPRADORES</text>
+      <text x="90" y="158" fill="#4a6480" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">Tú vendes al BID</text>
+      <!-- Labels derecha -->
+      <text x="490" y="65" fill="#4a6480" font-family="IBM Plex Mono" font-size="9">Precio al que</text>
+      <text x="490" y="78" fill="#ff2a50" font-family="IBM Plex Mono" font-size="9">COMPRAS →</text>
+      <text x="490" y="138" fill="#4a6480" font-family="IBM Plex Mono" font-size="9">Precio al que</text>
+      <text x="490" y="151" fill="#00e8a0" font-family="IBM Plex Mono" font-size="9">VENDES →</text>
+      <text x="340" y="195" fill="#4a6480" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">El spread = lo que se lleva el broker. Nunca se puede evitar, solo minimizar.</text>
+    </svg>
+  </div>
+
+  <h3>TIPOS DE ÓRDENES — VOCABULARIO ESENCIAL</h3>
+  <table>
+    <tr><th>Orden</th><th>Qué hace</th><th>Cuándo usar</th><th>Ventaja / Desventaja</th></tr>
+    <tr><td><strong style="color:var(--green)">Market Order</strong></td><td>Ejecuta al precio actual de mercado</td><td>Cuando necesitas entrar ya</td><td>+ Inmediata / – Slippage posible</td></tr>
+    <tr><td><strong style="color:var(--blue2)">Limit Order</strong></td><td>Ejecuta solo si el precio llega a tu nivel</td><td>Retrocesos esperados</td><td>+ Mejor precio / – Puede no ejecutar</td></tr>
+    <tr><td><strong style="color:var(--gold)">Stop Order</strong></td><td>Se activa como market cuando toca nivel</td><td>Rompimientos confirmados</td><td>+ Confirma dirección / – Slippage</td></tr>
+    <tr><td><strong style="color:var(--red)">Stop Loss</strong></td><td>Cierra posición si perdemos X</td><td>SIEMPRE, sin excepción</td><td>+ Protege capital / Sin desventaja</td></tr>
+    <tr><td><strong style="color:var(--green)">Take Profit</strong></td><td>Cierra posición al alcanzar objetivo</td><td>Toda operación</td><td>+ Asegura ganancia / – Puede cortar tendencia</td></tr>
+    <tr><td><strong style="color:var(--purple)">Trailing Stop</strong></td><td>Stop que sigue al precio a favor</td><td>Tendencias fuertes</td><td>+ Maximiza ganancia / – Puede salir temprano</td></tr>
+    <tr><td><strong style="color:var(--cyan)">OCO</strong></td><td>Dos órdenes: la que activa cancela la otra</td><td>Rompimientos bilaterales</td><td>+ Automatización total</td></tr>
+  </table>
+
+  <h3>PIPS, LOTES Y VALOR — LA MATEMÁTICA BÁSICA</h3>
+  <div class="formula">
+FOREX:
+  1 PIP = 0.0001 (4to decimal) en la mayoría de pares
+  Lote Estándar (100K unidades) = $10 por pip
+  Mini Lote (10K)               = $1 por pip
+  Micro Lote (1K)               = $0.10 por pip
+
+APALANCAMIENTO:
+  Exposición = Capital × Apalancamiento
+  $1,000 × 100:1 = $100,000 en mercado (control de 1 lote estándar)
+  Movimiento 1% en tu contra → PIERDES TODO EL CAPITAL
+
+REGLA DE ORO:
+  Nunca uses más del 10:1 de apalancamiento efectivo
+  Profesionales usan 2:1 a 5:1 en promedio
+  </div>
+
+  <div class="box box-r">
+    <div class="btt">⚠️ Apalancamiento: La Espada de Doble Filo</div>
+    <p>El apalancamiento magnifica ganancias <strong>Y pérdidas</strong> por igual. Con 100:1, un movimiento del 1% en tu contra elimina toda tu cuenta. Los traders profesionales raramente usan más de 5–10:1 de apalancamiento efectivo. Empieza en demo con 2:1 o 3:1 máximo.</p>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     NIVEL 2 — INTERMEDIO
+══════════════════════════════════════════ -->
+<div class="lbanner l2 fade">
+  <div class="lbn">02</div>
+  <div>
+    <div class="lbt">Nivel 2 — Intermedio</div>
+    <div class="lbh">ANÁLISIS TÉCNICO SÓLIDO</div>
+    <div class="lbd">Soporte/resistencia, tendencias, volumen, indicadores y gestión básica de riesgo.</div>
+  </div>
+</div>
+
+<!-- M05 S&R -->
+<section id="sr" class="fade">
+  <div class="eye">Módulo 05 · Nivel Intermedio</div>
+  <h2>SOPORTE Y RESISTENCIA</h2>
+  <div class="sl"></div>
+  <p>El <strong>soporte</strong> es una zona donde la demanda históricamente ha frenado o revertido caídas. La <strong>resistencia</strong> es donde la oferta ha frenado o revertido subidas. Son los conceptos más importantes y usados del análisis técnico. Todo lo demás se construye sobre ellos.</p>
+
+  <div class="svgw">
+    <svg width="700" height="310" viewBox="0 0 700 310">
+      <text x="350" y="18" fill="#4a6480" font-family="IBM Plex Mono" font-size="9" text-anchor="middle" letter-spacing="2">S/R · REBOTES · RUPTURA · CAMBIO DE POLARIDAD</text>
+      <!-- Resistencia -->
+      <rect x="20" y="58" width="660" height="18" fill="rgba(255,42,80,0.07)"/>
+      <line x1="20" y1="67" x2="680" y2="67" stroke="rgba(255,42,80,0.5)" stroke-width="1.5" stroke-dasharray="7,3"/>
+      <text x="686" y="71" fill="#ff2a50" font-family="IBM Plex Mono" font-size="8">RESISTENCIA</text>
+      <!-- Soporte -->
+      <rect x="20" y="195" width="660" height="18" fill="rgba(0,232,160,0.07)"/>
+      <line x1="20" y1="204" x2="680" y2="204" stroke="rgba(0,232,160,0.5)" stroke-width="1.5" stroke-dasharray="7,3"/>
+      <text x="686" y="208" fill="#00e8a0" font-family="IBM Plex Mono" font-size="8">SOPORTE</text>
+      <!-- Precio rebotando en soporte varias veces -->
+      <polyline points="30,230 70,205 110,225 155,202 195,228 240,200 280,225 325,195"
+        fill="none" stroke="#00e8a0" stroke-width="2.5" stroke-linejoin="round"/>
+      <!-- Precio en resistencia rechazado -->
+      <polyline points="325,195 370,155 410,70 430,88 445,68 460,85 470,65"
+        fill="none" stroke="#7090a0" stroke-width="2"/>
+      <!-- Ruptura resistencia -->
+      <polyline points="470,65 500,45 530,30 555,48 575,25 600,40"
+        fill="none" stroke="#f5c400" stroke-width="2.5"/>
+      <!-- Retesteo -->
+      <polyline points="470,65 480,58 492,67 505,65 510,68"
+        fill="none" stroke="#f5c400" stroke-width="1.5" stroke-dasharray="5,2"/>
+      <!-- Soporte labels rebotes -->
+      <circle cx="70" cy="205" r="4" fill="#00e8a0"/>
+      <circle cx="155" cy="202" r="4" fill="#00e8a0"/>
+      <circle cx="240" cy="200" r="4" fill="#00e8a0"/>
+      <text x="155" y="193" fill="#00e8a0" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">3 TOQUES = SOPORTE FUERTE</text>
+      <!-- Resistencia labels -->
+      <circle cx="410" cy="70" r="4" fill="#ff2a50"/>
+      <circle cx="445" cy="68" r="4" fill="#ff2a50"/>
+      <text x="427" y="56" fill="#ff2a50" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">Rechazado 2x</text>
+      <!-- Ruptura y retesteo -->
+      <text x="540" y="20" fill="#f5c400" font-family="IBM Plex Mono" font-size="8">RUPTURA ↑</text>
+      <text x="492" y="82" fill="#f5c400" font-family="IBM Plex Mono" font-size="8">Retesteo</text>
+      <!-- Flecha polaridad -->
+      <text x="350" y="295" fill="#f5c400" font-family="IBM Plex Mono" font-size="9" text-anchor="middle">↑ CAMBIO DE POLARIDAD: Resistencia rota se convierte en Soporte ↑</text>
+    </svg>
+  </div>
+
+  <div class="g2">
+    <div class="card cr">
+      <div class="ceye">Psicología — Por qué funciona</div>
+      <h4 class="r">POR QUÉ EXISTE LA RESISTENCIA</h4>
+      <p>Quienes compraron "arriba" en tendencia bajista están perdiendo dinero. Cuando el precio vuelve a su nivel de compra, venden masivamente para "salir en tablas" o con pérdida mínima. Esta <strong>presión vendedora masiva y coordinada (sin coordinación deliberada)</strong> crea la resistencia.</p>
+      <p>Adicionalmente, los institucionales que quieren vender usan estos niveles de alta liquidez para distribuir posición.</p>
+    </div>
+    <div class="card cb">
+      <div class="ceye">Psicología — Por qué funciona</div>
+      <h4 class="b">POR QUÉ EXISTE EL SOPORTE</h4>
+      <p>Quienes no pudieron comprar "abajo" la primera vez esperan que el precio regrese para entrar. Cuando vuelve, compran masivamente. También: quienes vendieron en bajada (shorts) cubren posiciones (recompran) generando presión alcista.</p>
+      <p>Los institucionales usan niveles de soporte para acumular posición larga de manera gradual y silenciosa.</p>
+    </div>
+  </div>
+
+  <h3>CAMBIO DE POLARIDAD — ROLE REVERSAL</h3>
+  <p>Cuando una <strong>resistencia es rota con convicción</strong> (cierre por encima, idealmente con volumen alto), se convierte en soporte. Esto ocurre porque los participantes que "perdieron" la ruptura regresan al nivel a comprar. El "retesteo" de la antigua resistencia ahora soporte es frecuentemente la mejor entrada de riesgo/beneficio.</p>
+  <p>El principio inverso aplica: soporte roto → nueva resistencia.</p>
+
+  <h3>TIPOS Y JERARQUÍA DE SOPORTES/RESISTENCIAS</h3>
+  <table>
+    <tr><th>Tipo</th><th>Origen</th><th>Importancia</th><th>Timeframe</th></tr>
+    <tr><td>ATH / ATL Histórico</td><td>Máximos/mínimos de todos los tiempos</td><td class="tg">★★★★★ Máxima</td><td>Todos</td></tr>
+    <tr><td>Swing Highs/Lows Mayores</td><td>Máximos/mínimos en tendencia</td><td class="tg">★★★★☆ Alta</td><td>D1, W1</td></tr>
+    <tr><td>Niveles Psicológicos Redondos</td><td>$50,000 BTC · $100 AAPL · etc.</td><td class="tg">★★★★☆ Alta</td><td>Todos</td></tr>
+    <tr><td>Fibonacci 61.8% / 78.6%</td><td>Golden ratio de retrocesos</td><td class="ty">★★★★☆ Alta</td><td>H4, D1</td></tr>
+    <tr><td>Order Blocks Institucionales</td><td>Zonas de acumulación/distribución</td><td class="tg">★★★★★ Máxima</td><td>H1, H4, D1</td></tr>
+    <tr><td>Medias Móviles Clave</td><td>MA50, MA100, MA200</td><td class="ty">★★★☆☆ Media</td><td>D1, W1</td></tr>
+    <tr><td>Gaps de Precio</td><td>Huecos en apertura de sesión</td><td class="ty">★★★☆☆ Media</td><td>D1</td></tr>
+    <tr><td>Puntos Pivot</td><td>Cálculo matemático diario/semanal</td><td class="ty">★★★☆☆ Media</td><td>D1, W1</td></tr>
+    <tr><td>Swing Lows/Highs Menores</td><td>Estructuras intradía</td><td class="tb">★★☆☆☆ Baja</td><td>M15, H1</td></tr>
+  </table>
+
+  <div class="box box-g">
+    <div class="btt">📐 Zonas, No Líneas</div>
+    <p>Error clásico del principiante: buscar niveles exactos al pip. El mercado es probabilístico, no matemático. Define S/R como <strong>zonas</strong> con un margen de 5–20 pips según el activo y timeframe. Las mechas que penetran ligeramente la zona sin cerrar al otro lado son "false breaks" y normalmente validan el nivel, no lo invalidan.</p>
+  </div>
+</section>
+
+<!-- M06 TENDENCIAS -->
+<section id="tendencias" class="fade">
+  <div class="eye">Módulo 06 · Nivel Intermedio</div>
+  <h2>ANÁLISIS DE TENDENCIAS</h2>
+  <div class="sl"></div>
+  <p><em>"The trend is your friend until it bends."</em> Operar a favor de la tendencia del timeframe superior multiplica dramáticamente la probabilidad de éxito. La tendencia define el contexto; el contexto define si el setup es válido.</p>
+
+  <div class="svgw">
+    <svg width="700" height="250" viewBox="0 0 700 250">
+      <text x="175" y="18" fill="#4a6480" font-family="IBM Plex Mono" font-size="9" text-anchor="middle" letter-spacing="2">TENDENCIA ALCISTA: HH + HL</text>
+      <text x="525" y="18" fill="#4a6480" font-family="IBM Plex Mono" font-size="9" text-anchor="middle" letter-spacing="2">TENDENCIA BAJISTA: LH + LL</text>
+      <!-- ALCISTA -->
+      <polyline points="15,220 50,185 80,200 125,158 158,178 210,125 245,145 300,95 335,118 390,68"
+        fill="none" stroke="#00e8a0" stroke-width="2.5" stroke-linejoin="round"/>
+      <circle cx="125" cy="158" r="5" fill="#00e8a0"/><text x="125" y="148" fill="#00e8a0" font-family="IBM Plex Mono" font-size="9" text-anchor="middle">HH</text>
+      <circle cx="158" cy="178" r="5" fill="#4a6480"/><text x="158" y="193" fill="#4a6480" font-family="IBM Plex Mono" font-size="9" text-anchor="middle">HL</text>
+      <circle cx="210" cy="125" r="5" fill="#00e8a0"/><text x="210" y="115" fill="#00e8a0" font-family="IBM Plex Mono" font-size="9" text-anchor="middle">HH</text>
+      <circle cx="245" cy="145" r="5" fill="#4a6480"/><text x="245" y="159" fill="#4a6480" font-family="IBM Plex Mono" font-size="9" text-anchor="middle">HL</text>
+      <circle cx="300" cy="95" r="5" fill="#00e8a0"/><text x="300" y="85" fill="#00e8a0" font-family="IBM Plex Mono" font-size="9" text-anchor="middle">HH</text>
+      <line x1="50" y1="185" x2="335" y2="118" stroke="rgba(0,232,160,0.25)" stroke-width="1.5" stroke-dasharray="5,3"/>
+      <!-- Zona de compra (HL) -->
+      <text x="195" y="240" fill="#00e8a0" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">→ Zona de entrada: retrocesos a HL (Higher Low)</text>
+      <!-- BAJISTA -->
+      <polyline points="415,65 455,100 488,82 535,128 565,108 615,158 648,138 685,182"
+        fill="none" stroke="#ff2a50" stroke-width="2.5" stroke-linejoin="round"/>
+      <circle cx="455" cy="100" r="5" fill="#ff2a50"/><text x="455" y="115" fill="#ff2a50" font-family="IBM Plex Mono" font-size="9" text-anchor="middle">LL</text>
+      <circle cx="488" cy="82" r="5" fill="#4a6480"/><text x="488" y="72" fill="#4a6480" font-family="IBM Plex Mono" font-size="9" text-anchor="middle">LH</text>
+      <circle cx="535" cy="128" r="5" fill="#ff2a50"/><text x="535" y="143" fill="#ff2a50" font-family="IBM Plex Mono" font-size="9" text-anchor="middle">LL</text>
+      <circle cx="565" cy="108" r="5" fill="#4a6480"/><text x="565" y="98" fill="#4a6480" font-family="IBM Plex Mono" font-size="9" text-anchor="middle">LH</text>
+      <circle cx="615" cy="158" r="5" fill="#ff2a50"/><text x="615" y="172" fill="#ff2a50" font-family="IBM Plex Mono" font-size="9" text-anchor="middle">LL</text>
+      <line x1="415" y1="65" x2="685" y2="182" stroke="rgba(255,42,80,0.25)" stroke-width="1.5" stroke-dasharray="5,3"/>
+      <text x="550" y="240" fill="#ff2a50" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">→ Zona de venta: rebotes a LH (Lower High)</text>
+    </svg>
+  </div>
+
+  <h3>ANÁLISIS MULTI-TIMEFRAME (MTF) — TOP DOWN</h3>
+  <p>El <strong>análisis top-down</strong> es el método profesional: empieza en el timeframe mayor para definir el contexto, baja al medio para identificar zonas, y entra en el menor para timing preciso.</p>
+  <div class="formula">
+MÉTODO TOP-DOWN:
+  TF MAYOR  (D1/W1)  → Define TENDENCIA DOMINANTE y contexto macro
+  TF MEDIO  (H4/H1)  → Identifica ZONAS DE PRECIO (S/R, Order Blocks)
+  TF MENOR  (M15/M30)→ Busca TIMING DE ENTRADA (patrón de confirmación)
+
+REGLA CARDINAL: Nunca operes contra la tendencia del TF mayor
+               sin una razón técnica de altísima probabilidad.
+
+Ejemplo Swing:  D1 (contexto) → H4 (zona) → H1 (entrada)
+Ejemplo Day:    H4 (contexto) → H1 (zona) → M15 (entrada)
+  </div>
+
+  <h3>TRENDLINES Y CANALES</h3>
+  <div class="g2">
+    <div class="card cb">
+      <div class="ceye">Trendline alcista</div>
+      <h4 class="b">LÍNEA DE TENDENCIA ALCISTA</h4>
+      <p><strong>Trazado:</strong> Une al menos 2–3 mínimos crecientes (Higher Lows). Cuantos más toques sin ruptura, más válida. El tercer toque es típicamente la entrada al rebote.</p>
+      <p><strong>Ruptura confirmada:</strong> Cierre por debajo de la trendline con cuerpo completo, no solo mecha. La ruptura señala posible cambio de tendencia.</p>
+      <p><strong>Pendiente ideal:</strong> 30–45°. Pendiente muy empinada es insostenible. Muy plana, señal débil.</p>
+    </div>
+    <div class="card cr">
+      <div class="ceye">Trendline bajista</div>
+      <h4 class="r">LÍNEA DE TENDENCIA BAJISTA</h4>
+      <p><strong>Trazado:</strong> Une al menos 2–3 máximos decrecientes (Lower Highs). La ruptura alcista es la primera señal de cambio de tendencia bajista.</p>
+      <p><strong>Retesteo post-ruptura:</strong> Tras romper la trendline bajista, el precio frecuentemente retrocede a ella. Ese retesteo ofrece una entrada conservadora con stop muy ajustado.</p>
+      <p><strong>Error frecuente:</strong> Forzar la línea para que toque más puntos. Si requieres moverla, no es válida.</p>
+    </div>
+  </div>
+
+  <div class="svgw">
+    <svg width="700" height="200" viewBox="0 0 700 200">
+      <text x="350" y="18" fill="#4a6480" font-family="IBM Plex Mono" font-size="9" text-anchor="middle" letter-spacing="2">CANAL ALCISTA — COMPRA EN SOPORTE, VENDE EN RESISTENCIA DEL CANAL</text>
+      <!-- Canal -->
+      <polygon points="15,188 100,155 180,168 260,135 340,150 420,115 500,130 580,95 660,110 660,70 580,58 500,93 420,78 340,113 260,98 180,130 100,118 15,150"
+        fill="rgba(0,232,160,0.04)"/>
+      <!-- Soporte canal -->
+      <polyline points="15,188 100,155 180,168 260,135 340,150 420,115 500,130 580,95 660,110"
+        fill="none" stroke="#00e8a0" stroke-width="2" stroke-linejoin="round"/>
+      <!-- Resistencia canal -->
+      <polyline points="15,150 100,118 180,130 260,98 340,113 420,78 500,93 580,58 660,70"
+        fill="none" stroke="rgba(0,232,160,0.4)" stroke-width="1.5" stroke-dasharray="6,3" stroke-linejoin="round"/>
+      <!-- Precio rebotando -->
+      <polyline points="15,188 55,162 95,120 140,158 185,115 230,140 275,100 320,130 365,95 410,118 455,85 500,108 545,72 590,95 640,68"
+        fill="none" stroke="#f5c400" stroke-width="1.5" opacity="0.6"/>
+      <!-- Anotaciones -->
+      <text x="550" y="183" fill="#4a6480" font-family="IBM Plex Mono" font-size="8">Soporte del canal</text>
+      <text x="550" y="48" fill="#4a6480" font-family="IBM Plex Mono" font-size="8">Resistencia del canal</text>
+      <text x="100" y="147" fill="#00e8a0" font-family="IBM Plex Mono" font-size="8">↑ BUY</text>
+      <text x="340" y="100" fill="#ff2a50" font-family="IBM Plex Mono" font-size="8">↓ SELL</text>
+    </svg>
+  </div>
+</section>
+
+<!-- M07 VOLUMEN -->
+<section id="volumen" class="fade">
+  <div class="eye">Módulo 07 · Nivel Intermedio</div>
+  <h2>ANÁLISIS DE VOLUMEN</h2>
+  <div class="sl"></div>
+  <p>El <strong>volumen</strong> es el número de unidades negociadas en un período. Es la métrica más honesta: <em>el precio puede "mentir", el volumen raramente lo hace.</em> Confirma o invalida cualquier movimiento de precio.</p>
+
+  <div class="svgw">
+    <svg width="700" height="260" viewBox="0 0 700 260">
+      <text x="350" y="18" fill="#4a6480" font-family="IBM Plex Mono" font-size="9" text-anchor="middle" letter-spacing="2">LAS 4 COMBINACIONES PRECIO–VOLUMEN</text>
+      <!-- Combo 1: Precio↑ Vol↑ = ALCISTA FUERTE -->
+      <rect x="15" y="30" width="155" height="200" fill="rgba(0,232,160,0.04)" stroke="rgba(0,232,160,0.2)" stroke-width="1"/>
+      <text x="92" y="48" fill="#00e8a0" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">P ↑ + VOL ↑</text>
+      <rect x="35" y="125" width="14" height="55" fill="#00e8a0" rx="1"/>
+      <rect x="53" y="112" width="14" height="62" fill="#00e8a0" rx="1"/>
+      <rect x="71" y="95" width="14" height="72" fill="#00e8a0" rx="1"/>
+      <rect x="89" y="78" width="14" height="82" fill="#00e8a0" rx="1"/>
+      <rect x="35" y="183" width="12" height="18" fill="rgba(0,232,160,0.4)"/>
+      <rect x="53" y="178" width="12" height="23" fill="rgba(0,232,160,0.5)"/>
+      <rect x="71" y="170" width="12" height="31" fill="rgba(0,232,160,0.65)"/>
+      <rect x="89" y="162" width="12" height="39" fill="rgba(0,232,160,0.8)"/>
+      <text x="92" y="215" fill="#00e8a0" font-family="IBM Plex Mono" font-size="9" text-anchor="middle" font-weight="700">ALCISTA FUERTE</text>
+      <text x="92" y="228" fill="#4a6480" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">Compras reales</text>
+      <!-- Combo 2: Precio↑ Vol↓ = SEÑAL DÉBIL -->
+      <rect x="183" y="30" width="155" height="200" fill="rgba(245,196,0,0.04)" stroke="rgba(245,196,0,0.2)" stroke-width="1"/>
+      <text x="260" y="48" fill="#f5c400" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">P ↑ + VOL ↓</text>
+      <rect x="203" y="125" width="14" height="55" fill="#00e8a0" rx="1" opacity="0.6"/>
+      <rect x="221" y="112" width="14" height="55" fill="#00e8a0" rx="1" opacity="0.6"/>
+      <rect x="239" y="98" width="14" height="55" fill="#00e8a0" rx="1" opacity="0.6"/>
+      <rect x="257" y="88" width="14" height="55" fill="#00e8a0" rx="1" opacity="0.6"/>
+      <rect x="203" y="182" width="12" height="19" fill="rgba(245,196,0,0.4)"/>
+      <rect x="221" y="185" width="12" height="16" fill="rgba(245,196,0,0.3)"/>
+      <rect x="239" y="188" width="12" height="13" fill="rgba(245,196,0,0.2)"/>
+      <rect x="257" y="191" width="12" height="10" fill="rgba(245,196,0,0.1)"/>
+      <text x="260" y="215" fill="#f5c400" font-family="IBM Plex Mono" font-size="9" text-anchor="middle" font-weight="700">SEÑAL DÉBIL</text>
+      <text x="260" y="228" fill="#4a6480" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">Probable fallo</text>
+      <!-- Combo 3: Precio↓ Vol↑ = BAJISTA FUERTE -->
+      <rect x="351" y="30" width="155" height="200" fill="rgba(255,42,80,0.04)" stroke="rgba(255,42,80,0.2)" stroke-width="1"/>
+      <text x="428" y="48" fill="#ff2a50" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">P ↓ + VOL ↑</text>
+      <rect x="371" y="78" width="14" height="82" fill="#ff2a50" rx="1"/>
+      <rect x="389" y="88" width="14" height="72" fill="#ff2a50" rx="1"/>
+      <rect x="407" y="100" width="14" height="60" fill="#ff2a50" rx="1"/>
+      <rect x="425" y="115" width="14" height="50" fill="#ff2a50" rx="1"/>
+      <rect x="371" y="163" width="12" height="38" fill="rgba(255,42,80,0.8)"/>
+      <rect x="389" y="170" width="12" height="31" fill="rgba(255,42,80,0.65)"/>
+      <rect x="407" y="177" width="12" height="24" fill="rgba(255,42,80,0.5)"/>
+      <rect x="425" y="183" width="12" height="18" fill="rgba(255,42,80,0.4)"/>
+      <text x="428" y="215" fill="#ff2a50" font-family="IBM Plex Mono" font-size="9" text-anchor="middle" font-weight="700">BAJISTA FUERTE</text>
+      <text x="428" y="228" fill="#4a6480" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">Ventas reales</text>
+      <!-- Combo 4: Precio↓ Vol↓ = CORRECCIÓN -->
+      <rect x="519" y="30" width="162" height="200" fill="rgba(176,96,255,0.04)" stroke="rgba(176,96,255,0.2)" stroke-width="1"/>
+      <text x="600" y="48" fill="#b060ff" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">P ↓ + VOL ↓</text>
+      <rect x="539" y="85" width="14" height="75" fill="#ff2a50" rx="1" opacity="0.45"/>
+      <rect x="557" y="98" width="14" height="62" fill="#ff2a50" rx="1" opacity="0.45"/>
+      <rect x="575" y="108" width="14" height="52" fill="#ff2a50" rx="1" opacity="0.45"/>
+      <rect x="593" y="115" width="14" height="45" fill="#ff2a50" rx="1" opacity="0.45"/>
+      <rect x="539" y="183" width="12" height="18" fill="rgba(176,96,255,0.35)"/>
+      <rect x="557" y="186" width="12" height="15" fill="rgba(176,96,255,0.25)"/>
+      <rect x="575" y="188" width="12" height="13" fill="rgba(176,96,255,0.18)"/>
+      <rect x="593" y="190" width="12" height="11" fill="rgba(176,96,255,0.12)"/>
+      <text x="600" y="215" fill="#b060ff" font-family="IBM Plex Mono" font-size="9" text-anchor="middle" font-weight="700">CORRECCIÓN SANA</text>
+      <text x="600" y="228" fill="#4a6480" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">Continuación probable</text>
+    </svg>
+  </div>
+
+  <h3>HERRAMIENTAS DE VOLUMEN ESENCIALES</h3>
+  <div class="g3">
+    <div class="card cbl">
+      <div class="ceye">Indicador volumen</div>
+      <h4 class="bl">OBV — On Balance Volume</h4>
+      <p>Suma el volumen de días alcistas y resta el de bajistas. Revela <strong>divergencias</strong>: precio sube pero OBV baja = distribución oculta. Precio baja pero OBV sube = acumulación oculta. Creado por Joe Granville.</p>
+    </div>
+    <div class="card cbl">
+      <div class="ceye">Herramienta institucional</div>
+      <h4 class="bl">VWAP</h4>
+      <p><strong>Volume Weighted Average Price.</strong> El precio promedio ponderado por volumen del día. Las instituciones ejecutan sus órdenes alrededor del VWAP. Precio sobre VWAP = zona alcista de valor. Esencial en day trading.</p>
+    </div>
+    <div class="card cbl">
+      <div class="ceye">Mapa de liquidez</div>
+      <h4 class="bl">VOLUME PROFILE (VP)</h4>
+      <p>Muestra el volumen negociado a cada <strong>nivel de precio</strong> (no por tiempo). El <em>POC (Point of Control)</em> es el precio con más volumen: actúa como imán. Zonas de bajo volumen = movimientos rápidos. Zonas de alto = consolidación.</p>
+    </div>
+  </div>
+</section>
+
+<!-- M08 INDICADORES -->
+<section id="indicadores" class="fade">
+  <div class="eye">Módulo 08 · Nivel Intermedio</div>
+  <h2>INDICADORES TÉCNICOS</h2>
+  <div class="sl"></div>
+  <p>Los indicadores son <strong>derivados matemáticos del precio y/o volumen</strong>. Son herramientas secundarias de confirmación: el precio siempre manda. Nunca uses un indicador como señal primaria; úsalo para confirmar lo que ya ves en el precio.</p>
+
+  <div class="box box-r">
+    <div class="btt">⚠️ La Trampa del Sobreindicador</div>
+    <p>Muchos principiantes llenan su gráfico con 10+ indicadores creyendo que más = mejor. Resultado: parálisis por análisis y señales contradictorias. <strong>Con 2–3 indicadores bien entendidos tendrás más ventaja que con 20 mal usados.</strong> Los indicadores son lagging: siguen al precio, no lo predicen.</p>
+  </div>
+
+  <div class="svgw">
+    <svg width="700" height="230" viewBox="0 0 700 230">
+      <text x="350" y="18" fill="#4a6480" font-family="IBM Plex Mono" font-size="9" text-anchor="middle" letter-spacing="2">MEDIAS MÓVILES Y GOLDEN/DEATH CROSS</text>
+      <!-- Precio -->
+      <polyline points="20,185 60,165 100,150 130,160 170,128 200,140 240,108 270,120 310,88 340,102 380,72 410,85 450,58 490,72 530,48 570,62 610,38 650,52 690,32"
+        fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1.5"/>
+      <!-- MA20 -->
+      <polyline points="60,172 100,158 140,155 180,132 220,118 260,110 300,95 340,98 380,78 420,80 460,60 500,70 540,50 580,60 620,40 660,52"
+        fill="none" stroke="#00e8a0" stroke-width="2"/>
+      <!-- MA50 -->
+      <polyline points="100,162 140,152 180,142 220,130 260,118 300,108 340,100 380,88 420,80 460,70 500,60 540,53 580,46 620,42"
+        fill="none" stroke="#1a8cff" stroke-width="2"/>
+      <!-- MA200 -->
+      <polyline points="200,170 240,162 280,155 320,146 360,136 400,126 440,116 480,105 520,94 560,84 600,74 640,65 680,58"
+        fill="none" stroke="#f5c400" stroke-width="2"/>
+      <!-- Golden Cross -->
+      <circle cx="310" cy="95" r="8" fill="none" stroke="#f5c400" stroke-width="2"/>
+      <text x="310" y="82" fill="#f5c400" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">GOLDEN</text>
+      <text x="310" y="72" fill="#f5c400" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">CROSS</text>
+      <!-- Leyenda -->
+      <line x1="20" y1="215" x2="45" y2="215" stroke="#00e8a0" stroke-width="2"/><text x="50" y="219" fill="#00e8a0" font-family="IBM Plex Mono" font-size="9">MA20 (Rápida)</text>
+      <line x1="145" y1="215" x2="170" y2="215" stroke="#1a8cff" stroke-width="2"/><text x="175" y="219" fill="#1a8cff" font-family="IBM Plex Mono" font-size="9">MA50 (Media)</text>
+      <line x1="275" y1="215" x2="300" y2="215" stroke="#f5c400" stroke-width="2"/><text x="305" y="219" fill="#f5c400" font-family="IBM Plex Mono" font-size="9">MA200 (Lenta — Tendencia macro)</text>
+    </svg>
+  </div>
+
+  <table>
+    <tr><th>Indicador</th><th>Tipo</th><th>Qué mide</th><th>Señal principal</th><th>Limitación</th></tr>
+    <tr><td><strong style="color:var(--green)">SMA / EMA</strong></td><td class="tg">Tendencia</td><td>Promedio del precio</td><td>Dirección, S/R dinámico, cruces</td><td>Lagging, lento</td></tr>
+    <tr><td><strong style="color:var(--blue2)">RSI (14)</strong></td><td class="tb">Momentum</td><td>Velocidad del movimiento</td><td>Divergencias, OB/OS (&gt;70/&lt;30)</td><td>Puede quedar extremo mucho tiempo</td></tr>
+    <tr><td><strong style="color:var(--blue2)">MACD</strong></td><td class="tb">Momentum</td><td>Diferencia EMAs</td><td>Cruce de líneas, histograma, divergencias</td><td>Lagging en tendencias</td></tr>
+    <tr><td><strong style="color:var(--gold)">Bollinger Bands</strong></td><td class="ty">Volatilidad</td><td>Desviación estándar</td><td>Squeeze → expansión, walking the band</td><td>No indica dirección</td></tr>
+    <tr><td><strong style="color:var(--gold)">ATR</strong></td><td class="ty">Volatilidad</td><td>Rango promedio real</td><td>Tamaño de stop loss y targets</td><td>No indica dirección</td></tr>
+    <tr><td><strong style="color:var(--purple)">Estocástico</strong></td><td class="tp">Momentum</td><td>Posición cierre en rango</td><td>Cruces en OB/OS con divergencia</td><td>Señales falsas en tendencia fuerte</td></tr>
+    <tr><td><strong style="color:var(--cyan)">Ichimoku</strong></td><td class="tb">Multi</td><td>Tendencia+momentum+S/R</td><td>Sistema completo, nube como S/R</td><td>Complejo para principiantes</td></tr>
+    <tr><td><strong style="color:var(--orange)">VWAP</strong></td><td class="to">Volumen</td><td>Precio promedio ponderado vol</td><td>Precio vs VWAP = sesgo de dirección</td><td>Solo intradía</td></tr>
+  </table>
+
+  <h3>DIVERGENCIAS RSI — USO CORRECTO</h3>
+  <div class="svgw">
+    <svg width="700" height="220" viewBox="0 0 700 220">
+      <text x="350" y="18" fill="#4a6480" font-family="IBM Plex Mono" font-size="9" text-anchor="middle" letter-spacing="2">DIVERGENCIA BAJISTA (REGULAR) — SEÑAL DE REVERSIÓN</text>
+      <!-- Precio HH -->
+      <polyline points="30,128 80,100 130,112 200,78 250,92 320,60 370,74"
+        fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="2"/>
+      <circle cx="200" cy="78" r="4" fill="#f5c400"/>
+      <circle cx="320" cy="60" r="4" fill="#f5c400"/>
+      <line x1="200" y1="78" x2="320" y2="60" stroke="#ff2a50" stroke-width="1.5"/>
+      <text x="260" y="55" fill="#ff2a50" font-family="IBM Plex Mono" font-size="9" text-anchor="middle">Precio HH ↑</text>
+      <!-- RSI LH -->
+      <line x1="30" y1="148" x2="680" y2="148" stroke="rgba(74,100,128,0.3)" stroke-width="1"/>
+      <text x="686" y="152" fill="#4a6480" font-family="IBM Plex Mono" font-size="8">70</text>
+      <polyline points="80,162 130,165 200,158 250,163 320,168 370,172"
+        fill="none" stroke="#1a8cff" stroke-width="2"/>
+      <circle cx="200" cy="158" r="4" fill="#f5c400"/>
+      <circle cx="320" cy="168" r="4" fill="#f5c400"/>
+      <line x1="200" y1="158" x2="320" y2="168" stroke="#ff2a50" stroke-width="1.5" stroke-dasharray="4,2"/>
+      <text x="260" y="183" fill="#ff2a50" font-family="IBM Plex Mono" font-size="9" text-anchor="middle">RSI LH ↓ — DIVERGENCIA</text>
+      <!-- Reversión posterior -->
+      <polyline points="370,74 420,92 470,125 520,148 570,168"
+        fill="none" stroke="#ff2a50" stroke-width="2" stroke-dasharray="6,2"/>
+      <text x="470" y="143" fill="#ff2a50" font-family="IBM Plex Mono" font-size="9">→ REVERSIÓN</text>
+      <!-- Box derecha -->
+      <text x="620" y="38" fill="#00e8a0" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">DIV ALCISTA:</text>
+      <text x="620" y="52" fill="#4a6480" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">Precio LL</text>
+      <text x="620" y="66" fill="#4a6480" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">RSI HL</text>
+      <text x="620" y="80" fill="#00e8a0" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">→ Señal alcista</text>
+    </svg>
+  </div>
+</section>
+
+<!-- M09 GESTIÓN DE RIESGO BÁSICA -->
+<section id="riesgo-base" class="fade">
+  <div class="eye">Módulo 09 · Nivel Intermedio</div>
+  <h2>GESTIÓN DE RIESGO — BASE</h2>
+  <div class="sl"></div>
+  <p>La gestión de riesgo es la disciplina que separa a los traders que sobreviven de los que quiebran. <strong>Un trader con una tasa de acierto del 40% puede ser muy rentable si su gestión de riesgo es correcta.</strong> Un trader con 70% de aciertos puede arruinarse si sus pérdidas son mayores que sus ganancias.</p>
+
+  <h3>RISK/REWARD RATIO (R:R)</h3>
+  <div class="formula">
+R:R = Ganancia Potencial / Pérdida Máxima (risk)
+Ejemplo: Stop Loss = 50 pips · Take Profit = 100 pips → R:R = 2:1
+
+MATEMÁTICA DE LA SUPERVIVENCIA:
+  R:R 1:1 necesitas >50% de aciertos para ser rentable
+  R:R 2:1 necesitas >33% de aciertos para ser rentable
+  R:R 3:1 necesitas >25% de aciertos para ser rentable
+  R:R 5:1 necesitas >17% de aciertos para ser rentable
+
+MÍNIMO PROFESIONAL: R:R 2:1 en toda operación
+IDEAL:              R:R 3:1 o superior
+  </div>
+
+  <h3>REGLA DEL 1-2% POR OPERACIÓN</h3>
+  <div class="svgw">
+    <svg width="700" height="200" viewBox="0 0 700 200">
+      <text x="350" y="18" fill="#4a6480" font-family="IBM Plex Mono" font-size="9" text-anchor="middle" letter-spacing="2">DRAWDOWN: IMPACTO DE RIESGO ALTO VS BAJO</text>
+      <!-- Cuenta conservadora (1% riesgo) -->
+      <polyline points="20,50 80,55 140,60 200,55 260,65 320,58 380,52 440,48 500,45 560,42 620,38 680,35"
+        fill="none" stroke="#00e8a0" stroke-width="2.5"/>
+      <text x="690" y="39" fill="#00e8a0" font-family="IBM Plex Mono" font-size="8">1% riesgo</text>
+      <!-- Cuenta agresiva (10% riesgo) -->
+      <polyline points="20,50 80,95 140,155 200,120 260,178 320,145 380,185"
+        fill="none" stroke="#ff2a50" stroke-width="2.5"/>
+      <text x="388" y="188" fill="#ff2a50" font-family="IBM Plex Mono" font-size="8">10% riesgo → QUIEBRA</text>
+      <!-- Línea de quiebra -->
+      <line x1="20" y1="190" x2="680" y2="190" stroke="rgba(255,42,80,0.2)" stroke-width="1" stroke-dasharray="4,2"/>
+      <text x="350" y="186" fill="#4a6480" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">Línea de quiebra</text>
+      <!-- Anotaciones -->
+      <text x="350" y="38" fill="#00e8a0" font-family="IBM Plex Mono" font-size="9">Cuenta protegida: crece lentamente y sobrevive</text>
+      <text x="350" y="105" fill="#ff2a50" font-family="IBM Plex Mono" font-size="9" text-anchor="middle">10 malas operaciones = cuenta destruida</text>
+    </svg>
+  </div>
+
+  <div class="formula">
+TAMAÑO DE POSICIÓN — CÁLCULO CORRECTO:
+  Riesgo por op ($) = Capital × % riesgo
+  Tamaño posición   = Riesgo por op ($) / Distancia al SL (pips × valor pip)
+
+EJEMPLO:
+  Cuenta: $10,000 | Riesgo 1% = $100 de riesgo máximo
+  Stop Loss: 50 pips en EUR/USD | Valor pip Mini Lote = $1
+  Tamaño = $100 / (50 pips × $1) = 2 Mini Lotes
+
+RECUPERACIÓN DE DRAWDOWN (tabla crítica):
+  Pierdes 10% → necesitas ganar 11.1% para recuperar
+  Pierdes 20% → necesitas ganar 25% para recuperar
+  Pierdes 33% → necesitas ganar 50% para recuperar
+  Pierdes 50% → necesitas ganar 100% para recuperar ← TRAMPA MORTAL
+  Pierdes 75% → necesitas ganar 300% para recuperar ← IMPOSIBLE
+  </div>
+
+  <div class="g2">
+    <div class="card cb">
+      <div class="ceye">Regla fundamental</div>
+      <h4 class="b">STOP LOSS — OBLIGATORIO</h4>
+      <p>Nunca, bajo ninguna circunstancia, abras una posición sin stop loss. <strong>Una operación sin stop loss no es trading, es especulación sin control.</strong></p>
+      <p>El stop loss va siempre detrás de la lógica técnica (detrás de la mecha extrema, del Order Block, del soporte/resistencia). Nunca a distancia arbitraria.</p>
+      <p><strong>Mover el SL en contra:</strong> El peor hábito del trader emocional. Si el mercado llega a tu stop, la tesis era incorrecta. Acepta la pérdida.</p>
+    </div>
+    <div class="card cg">
+      <div class="ceye">Regla fundamental</div>
+      <h4 class="g">TAKE PROFIT Y GESTIÓN DE POSICIÓN</h4>
+      <p><strong>Take Profit parcial:</strong> Al llegar al R:R 1:1, cierra el 50% y mueve el SL a breakeven (punto de entrada). Así la segunda mitad es "free trade" sin riesgo.</p>
+      <p><strong>Trailing Stop:</strong> En tendencias fuertes, mueve el SL detrás de cada nuevo mínimo/máximo (estructura HH/HL). Maximiza ganancias en movimientos grandes.</p>
+      <p><strong>Breakeven:</strong> Mover SL al punto de entrada cuando el precio te da 1R de ganancia. Elimina el riesgo de la operación.</p>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════
+     NIVEL 3 — AVANZADO
+══════════════════════════════════════════ -->
+<div class="lbanner l3 fade">
+  <div class="lbn">03</div>
+  <div>
+    <div class="lbt">Nivel 3 — Avanzado</div>
+    <div class="lbh">ESTRUCTURA, ORDER FLOW Y MÉTODOS AVANZADOS</div>
+    <div class="lbd">Market structure, Fibonacci, Elliott Waves, Wyckoff. La lógica profunda del mercado.</div>
+  </div>
+</div>
+
+<!-- M10 ESTRUCTURA DE MERCADO -->
+<section id="estructura" class="fade">
+  <div class="eye">Módulo 10 · Nivel Avanzado</div>
+  <h2>ESTRUCTURA DE MERCADO AVANZADA</h2>
+  <div class="sl"></div>
+  <p>La <strong>estructura de mercado</strong> es el lenguaje del precio. No son solo HH/HL/LH/LL genéricos: es la lectura precisa de cómo se forman los swings, dónde están los puntos de inflexión y cuándo la estructura cambia de sesgo.</p>
+
+  <h3>BREAK OF STRUCTURE (BOS) vs CHANGE OF CHARACTER (ChoCH)</h3>
+  <div class="svgw">
+    <svg width="700" height="280" viewBox="0 0 700 280">
+      <text x="350" y="18" fill="#4a6480" font-family="IBM Plex Mono" font-size="9" text-anchor="middle" letter-spacing="2">BOS (CONTINUACIÓN) vs ChoCH (CAMBIO DE ESTRUCTURA)</text>
+      <!-- Tendencia alcista con BOS -->
+      <polyline points="15,245 55,210 90,228 135,185 170,205 220,155 258,178 310,128 350,152 400,100"
+        fill="none" stroke="#00e8a0" stroke-width="2.5" stroke-linejoin="round"/>
+      <!-- BOS labels -->
+      <circle cx="135" cy="185" r="5" fill="#00e8a0"/>
+      <circle cx="170" cy="205" r="5" fill="#4a6480"/>
+      <circle cx="220" cy="155" r="5" fill="#00e8a0"/>
+      <circle cx="258" cy="178" r="5" fill="#4a6480"/>
+      <circle cx="310" cy="128" r="5" fill="#00e8a0"/>
+      <!-- BOS arrows -->
+      <line x1="135" y1="185" x2="220" y2="155" stroke="rgba(0,232,160,0.3)" stroke-width="1" stroke-dasharray="4,2"/>
+      <text x="178" y="162" fill="#00e8a0" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">BOS ↑</text>
+      <line x1="220" y1="155" x2="310" y2="128" stroke="rgba(0,232,160,0.3)" stroke-width="1" stroke-dasharray="4,2"/>
+      <text x="265" y="133" fill="#00e8a0" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">BOS ↑</text>
+
+      <!-- ChoCH: precio rompe debajo del último HL -->
+      <polyline points="400,100 430,118 455,105 480,130 510,115 545,160 580,140 620,178 660,165 690,200"
+        fill="none" stroke="#f5c400" stroke-width="2.5" stroke-linejoin="round"/>
+      <circle cx="455" cy="105" r="5" fill="#4a6480"/><text x="455" y="94" fill="#4a6480" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">LH</text>
+      <circle cx="510" cy="115" r="5" fill="#4a6480"/><text x="510" y="104" fill="#4a6480" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">LH</text>
+      <circle cx="545" cy="160" r="5" fill="#ff2a50"/><text x="545" y="173" fill="#ff2a50" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">LL</text>
+      <!-- ChoCH marker -->
+      <line x1="480" y1="30" x2="480" y2="260" stroke="rgba(245,196,0,0.3)" stroke-width="1.5" stroke-dasharray="5,3"/>
+      <text x="480" y="25" fill="#f5c400" font-family="IBM Plex Mono" font-size="10" text-anchor="middle" font-weight="700">ChoCH</text>
+      <text x="420" y="250" fill="#4a6480" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">Estructura alcista</text>
+      <text x="590" y="250" fill="#ff2a50" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">Estructura bajista</text>
+    </svg>
+  </div>
+
+  <div class="g2">
+    <div class="card cg">
+      <div class="ceye">Evento estructural</div>
+      <h4 class="g">BOS — BREAK OF STRUCTURE</h4>
+      <p>Ocurre cuando el precio rompe el último Higher High (en alcista) o el último Lower Low (en bajista). <strong>Confirma la continuación de la tendencia actual.</strong> Cada BOS valida que la estructura sigue intacta. Señal para añadir o mantener posición.</p>
+      <p>Un BOS alcista = el precio rompió el HH anterior. La tendencia alcista está confirmada. Los bajistas que vendieron en ese HH ahora están perdiendo.</p>
+    </div>
+    <div class="card cr">
+      <div class="ceye">Evento estructural</div>
+      <h4 class="r">ChoCH — CHANGE OF CHARACTER</h4>
+      <p>Ocurre cuando en una tendencia alcista el precio rompe el último Higher Low (HL) al alza, o en bajista rompe el último LH a la baja. <strong>Es la primera señal de posible cambio de tendencia.</strong></p>
+      <p>Un ChoCH solo no confirma el cambio: necesita seguimiento. Si tras el ChoCH el precio forma un nuevo LH y luego un nuevo LL, la tendencia ha cambiado a bajista. El ChoCH es la alerta, el BOS en dirección contraria es la confirmación.</p>
+    </div>
+  </div>
+
+  <h3>PREMIUM Y DISCOUNT — EL CONCEPTO DE VALOR</h3>
+  <div class="svgw">
+    <svg width="700" height="220" viewBox="0 0 700 220">
+      <text x="350" y="18" fill="#4a6480" font-family="IBM Plex Mono" font-size="9" text-anchor="middle" letter-spacing="2">PREMIUM (CARO) vs DISCOUNT (BARATO) — FIBONACCI 50%</text>
+      <!-- Swing completo -->
+      <line x1="100" y1="40" x2="100" y2="180" stroke="rgba(74,100,128,0.4)" stroke-width="1.5"/>
+      <line x1="600" y1="40" x2="600" y2="180" stroke="rgba(74,100,128,0.4)" stroke-width="1.5"/>
+      <!-- Zonas -->
+      <rect x="100" y="40" width="500" height="70" fill="rgba(255,42,80,0.06)" stroke="none"/>
+      <rect x="100" y="110" width="500" height="70" fill="rgba(0,232,160,0.06)" stroke="none"/>
+      <!-- Línea 50% -->
+      <line x1="90" y1="110" x2="615" y2="110" stroke="rgba(245,196,0,0.6)" stroke-width="2" stroke-dasharray="6,3"/>
+      <!-- Líneas extremos -->
+      <line x1="90" y1="40" x2="615" y2="40" stroke="rgba(74,100,128,0.4)" stroke-width="1"/>
+      <line x1="90" y1="180" x2="615" y2="180" stroke="rgba(74,100,128,0.4)" stroke-width="1"/>
+      <!-- Labels -->
+      <text x="350" y="72" fill="#ff2a50" font-family="IBM Plex Mono" font-size="12" text-anchor="middle" font-weight="600">ZONA PREMIUM</text>
+      <text x="350" y="90" fill="#4a6480" font-family="IBM Plex Mono" font-size="9" text-anchor="middle">Precio CARO — Buscar ventas en tendencia bajista</text>
+      <text x="350" y="107" fill="#f5c400" font-family="IBM Plex Mono" font-size="9" text-anchor="middle">← 50% (Equilibrio) →</text>
+      <text x="350" y="148" fill="#00e8a0" font-family="IBM Plex Mono" font-size="12" text-anchor="middle" font-weight="600">ZONA DISCOUNT</text>
+      <text x="350" y="166" fill="#4a6480" font-family="IBM Plex Mono" font-size="9" text-anchor="middle">Precio BARATO — Buscar compras en tendencia alcista</text>
+      <!-- Fibonacci labels -->
+      <text x="88" y="44" fill="#4a6480" font-family="IBM Plex Mono" font-size="8" text-anchor="end">100%</text>
+      <text x="88" y="114" fill="#f5c400" font-family="IBM Plex Mono" font-size="8" text-anchor="end">50%</text>
+      <text x="88" y="184" fill="#4a6480" font-family="IBM Plex Mono" font-size="8" text-anchor="end">0%</text>
+      <text x="350" y="205" fill="#f5c400" font-family="IBM Plex Mono" font-size="9" text-anchor="middle">REGLA: Compra en Discount · Vende en Premium (siempre dentro del contexto de tendencia)</text>
+    </svg>
+  </div>
+</section>
+
+<!-- M11 ORDER FLOW -->
+<section id="orderflow" class="fade">
+  <div class="eye">Módulo 11 · Nivel Avanzado</div>
+  <h2>ORDER FLOW Y LIQUIDEZ</h2>
+  <div class="sl"></div>
+  <p>El <strong>Order Flow</strong> es la lectura del flujo real de órdenes que mueven el precio. Va más allá del precio y el volumen: analiza la microestructura del mercado para entender en tiempo real quién está ganando la batalla compradores vs vendedores.</p>
+
+  <h3>LIQUIDITY POOLS — DÓNDE ESTÁ EL DINERO</h3>
+  <div class="svgw">
+    <svg width="700" height="260" viewBox="0 0 700 260">
+      <text x="350" y="18" fill="#4a6480" font-family="IBM Plex Mono" font-size="9" text-anchor="middle" letter-spacing="2">POOLS DE LIQUIDEZ — DONDE ESTÁN LOS STOPS ACUMULADOS</text>
+      <!-- Precio -->
+      <polyline points="20,220 80,200 130,215 175,190 210,205 260,175 310,195 360,165 400,185 450,158 490,175 540,148 580,168 620,140 660,160"
+        fill="none" stroke="#7090a0" stroke-width="2" stroke-linejoin="round"/>
+      <!-- BSL (Buy Side Liquidity) encima de los HH -->
+      <line x1="20" y1="145" x2="680" y2="100" stroke="none"/>
+      <!-- Stops de vendedores ENCIMA de swing highs -->
+      <circle cx="175" cy="190" r="5" fill="#00e8a0"/>
+      <line x1="145" y1="178" x2="205" y2="178" stroke="rgba(0,232,160,0.5)" stroke-width="1.5" stroke-dasharray="4,2"/>
+      <text x="210" y="176" fill="#00e8a0" font-family="IBM Plex Mono" font-size="8">BSL (Buy Side Liq) — Stops de vendedores</text>
+
+      <circle cx="360" cy="165" r="5" fill="#00e8a0"/>
+      <line x1="330" y1="153" x2="390" y2="153" stroke="rgba(0,232,160,0.5)" stroke-width="1.5" stroke-dasharray="4,2"/>
+      <text x="395" y="151" fill="#00e8a0" font-family="IBM Plex Mono" font-size="8">BSL — Mayor pool</text>
+
+      <circle cx="540" cy="148" r="5" fill="#00e8a0"/>
+      <line x1="510" y1="136" x2="570" y2="136" stroke="rgba(0,232,160,0.5)" stroke-width="1.5" stroke-dasharray="4,2"/>
+
+      <!-- SSL (Sell Side Liquidity) debajo de los LL -->
+      <circle cx="80" cy="200" r="5" fill="#ff2a50"/>
+      <line x1="50" y1="213" x2="110" y2="213" stroke="rgba(255,42,80,0.5)" stroke-width="1.5" stroke-dasharray="4,2"/>
+      <text x="115" y="215" fill="#ff2a50" font-family="IBM Plex Mono" font-size="8">SSL (Sell Side Liq) — Stops de compradores</text>
+
+      <circle cx="310" cy="195" r="5" fill="#ff2a50"/>
+      <line x1="280" y1="208" x2="340" y2="208" stroke="rgba(255,42,80,0.5)" stroke-width="1.5" stroke-dasharray="4,2"/>
+      <text x="345" y="210" fill="#ff2a50" font-family="IBM Plex Mono" font-size="8">SSL — Stop hunt aquí</text>
+
+      <circle cx="490" cy="175" r="5" fill="#ff2a50"/>
+      <line x1="460" y1="188" x2="520" y2="188" stroke="rgba(255,42,80,0.5)" stroke-width="1.5" stroke-dasharray="4,2"/>
+
+      <!-- Institucional barriendo SSL -->
+      <text x="350" y="245" fill="#f5c400" font-family="IBM Plex Mono" font-size="9" text-anchor="middle">Los institucionales mueven el precio hacia estos pools para ejecutar sus órdenes masivas</text>
+    </svg>
+  </div>
+
+  <div class="g2">
+    <div class="card cb">
+      <div class="ceye">Concepto fundamental</div>
+      <h4 class="b">BUY SIDE LIQUIDITY (BSL)</h4>
+      <p>La liquidez comprada se acumula <strong>por encima de los máximos previos</strong>: ahí están los stop losses de los vendedores en corto, y las órdenes buy stop de traders que buscan rompimientos. Los institucionales que quieren vender necesitan que el precio vaya ahí para encontrar compradores suficientes.</p>
+      <p><strong>Señal:</strong> Si el precio sube hacia una zona de BSL clara y luego falla → probable reversión bajista.</p>
+    </div>
+    <div class="card cr">
+      <div class="ceye">Concepto fundamental</div>
+      <h4 class="r">SELL SIDE LIQUIDITY (SSL)</h4>
+      <p>La liquidez vendedora se acumula <strong>por debajo de los mínimos previos</strong>: ahí están los stop losses de los compradores en largo, y las órdenes sell stop de traders que buscan rompimientos bajistas. Los institucionales que quieren comprar masivamente necesitan ir ahí.</p>
+      <p><strong>Señal:</strong> Si el precio baja hacia una zona de SSL clara y luego falla → probable reversión alcista. Los institucionales "limpian" los stops antes de mover el precio en su dirección real.</p>
+    </div>
+  </div>
+
+  <h3>STOP HUNT — LA CACERÍA DE STOPS</h3>
+  <div class="box box-o">
+    <div class="btt">🎯 Cómo Funciona la Cacería de Stops</div>
+    <p>Los market makers e institucionales saben perfectamente dónde están acumulados los stops retail (justo debajo de mínimos evidentes o justo encima de máximos evidentes). Antes de mover el precio en su dirección real, <strong>llevan el precio a esas zonas para:</strong> (1) activar los stops y generar el volumen que necesitan, (2) recolectar liquidez barata/cara, (3) crear entradas de pánico de retails en el lado equivocado. El "falso rompimiento" o "wicky candle" que penetra un nivel y vuelve es frecuentemente un stop hunt institucional.</p>
+  </div>
+
+  <h3>IMBALANCE (FVG) — FAIR VALUE GAP</h3>
+  <div class="svgw">
+    <svg width="700" height="200" viewBox="0 0 700 200">
+      <text x="350" y="18" fill="#4a6480" font-family="IBM Plex Mono" font-size="9" text-anchor="middle" letter-spacing="2">FAIR VALUE GAP (FVG) — INEFICIENCIA DEL MERCADO</text>
+      <!-- 3 velas con FVG -->
+      <!-- Vela 1 -->
+      <line x1="120" y1="105" x2="120" y2="118" stroke="#00e8a0" stroke-width="2"/>
+      <rect x="103" y="118" width="34" height="45" fill="#00e8a0" rx="1"/>
+      <line x1="120" y1="163" x2="120" y2="175" stroke="#00e8a0" stroke-width="2"/>
+      <!-- Vela 2 (impulsiva) -->
+      <line x1="185" y1="50" x2="185" y2="62" stroke="#00e8a0" stroke-width="2"/>
+      <rect x="168" y="62" width="34" height="100" fill="#00e8a0" rx="1"/>
+      <line x1="185" y1="162" x2="185" y2="172" stroke="#00e8a0" stroke-width="2"/>
+      <!-- Vela 3 -->
+      <line x1="250" y1="52" x2="250" y2="60" stroke="#00e8a0" stroke-width="2"/>
+      <rect x="233" y="60" width="34" height="50" fill="#00e8a0" rx="1"/>
+      <line x1="250" y1="110" x2="250" y2="120" stroke="#00e8a0" stroke-width="2"/>
+      <!-- FVG zone: entre mecha superior vela 1 y mecha inferior vela 3 -->
+      <rect x="103" y="105" width="181" height="13" fill="rgba(245,196,0,0.15)" stroke="rgba(245,196,0,0.5)" stroke-width="1.5"/>
+      <text x="192" y="115" fill="#f5c400" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">FVG — INEFICIENCIA</text>
+      <!-- Precio retestea FVG -->
+      <polyline points="284,85 330,82 380,95 420,92 455,104 480,109 505,112"
+        fill="none" stroke="#f5c400" stroke-width="2" stroke-dasharray="5,2"/>
+      <polyline points="505,112 540,102 580,88 620,82 660,75"
+        fill="none" stroke="#00e8a0" stroke-width="2.5"/>
+      <text x="420" y="130" fill="#f5c400" font-family="IBM Plex Mono" font-size="9" text-anchor="middle">Retesteo del FVG → Entrada</text>
+      <text x="610" y="70" fill="#00e8a0" font-family="IBM Plex Mono" font-size="8">Continuación ↑</text>
+      <!-- Explicación -->
+      <text x="350" y="185" fill="#4a6480" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">FVG: zona donde la vela 2 fue tan impulsiva que dejó un "hueco" entre vela 1 y vela 3. El precio tiende a volver a llenar este hueco.</text>
+    </svg>
+  </div>
+</section>
+
+<!-- M12 FIBONACCI -->
+<section id="fibonacci" class="fade">
+  <div class="eye">Módulo 12 · Nivel Avanzado</div>
+  <h2>FIBONACCI — USO PROFESIONAL</h2>
+  <div class="sl"></div>
+  <p>Fibonacci es una de las herramientas más poderosas del análisis técnico porque refleja patrones matemáticos que se repiten en la naturaleza y —coincidencia o no— también en los mercados financieros. La clave está en usarlo correctamente: de swing a swing, sin manipular el trazado.</p>
+
+  <h3>RETROCESOS DE FIBONACCI</h3>
+  <div class="svgw">
+    <svg width="700" height="290" viewBox="0 0 700 290">
+      <text x="350" y="18" fill="#4a6480" font-family="IBM Plex Mono" font-size="9" text-anchor="middle" letter-spacing="2">RETROCESOS FIBONACCI — ZONAS DE COMPRA EN TENDENCIA ALCISTA</text>
+      <!-- Swing alcista -->
+      <line x1="60" y1="250" x2="60" y2="50" stroke="rgba(74,100,128,0.4)" stroke-width="1.5"/>
+      <!-- Precio impulso -->
+      <polyline points="30,250 60,248 120,200 160,210 200,170 250,180 300,145 350,158 400,120 450,130 500,95 550,105 600,70 640,78 670,50"
+        fill="none" stroke="#00e8a0" stroke-width="1.5"/>
+      <!-- Niveles Fibonacci -->
+      <!-- 0% = High -->
+      <line x1="55" y1="50" x2="680" y2="50" stroke="rgba(74,100,128,0.3)" stroke-width="1"/>
+      <text x="45" y="54" fill="#4a6480" font-family="IBM Plex Mono" font-size="8" text-anchor="end">0%</text>
+      <!-- 23.6% -->
+      <line x1="55" y1="97" x2="680" y2="97" stroke="rgba(0,212,232,0.3)" stroke-width="1" stroke-dasharray="4,2"/>
+      <text x="45" y="101" fill="#00d4e8" font-family="IBM Plex Mono" font-size="8" text-anchor="end">23.6%</text>
+      <!-- 38.2% -->
+      <line x1="55" y1="126" x2="680" y2="126" stroke="rgba(0,232,160,0.5)" stroke-width="1.5" stroke-dasharray="4,2"/>
+      <text x="45" y="130" fill="#00e8a0" font-family="IBM Plex Mono" font-size="8" text-anchor="end">38.2%</text>
+      <text x="690" y="130" fill="#00e8a0" font-family="IBM Plex Mono" font-size="8">★ Retroceso normal</text>
+      <!-- 50% -->
+      <line x1="55" y1="150" x2="680" y2="150" stroke="rgba(245,196,0,0.7)" stroke-width="2"/>
+      <text x="45" y="154" fill="#f5c400" font-family="IBM Plex Mono" font-size="9" text-anchor="end" font-weight="600">50%</text>
+      <text x="690" y="154" fill="#f5c400" font-family="IBM Plex Mono" font-size="9">★ Equilibrio</text>
+      <!-- 61.8% — GOLDEN RATIO -->
+      <rect x="55" y="162" width="620" height="18" fill="rgba(176,96,255,0.08)"/>
+      <line x1="55" y1="171" x2="680" y2="171" stroke="rgba(176,96,255,0.8)" stroke-width="2.5"/>
+      <text x="45" y="175" fill="#b060ff" font-family="IBM Plex Mono" font-size="9" text-anchor="end" font-weight="700">61.8%</text>
+      <text x="690" y="175" fill="#b060ff" font-family="IBM Plex Mono" font-size="9" font-weight="700">★★★ GOLDEN RATIO</text>
+      <!-- 78.6% -->
+      <line x1="55" y1="196" x2="680" y2="196" stroke="rgba(255,42,80,0.5)" stroke-width="1.5" stroke-dasharray="4,2"/>
+      <text x="45" y="200" fill="#ff2a50" font-family="IBM Plex Mono" font-size="8" text-anchor="end">78.6%</text>
+      <text x="690" y="200" fill="#ff2a50" font-family="IBM Plex Mono" font-size="8">Retroceso profundo</text>
+      <!-- 88.6% -->
+      <line x1="55" y1="215" x2="680" y2="215" stroke="rgba(255,42,80,0.3)" stroke-width="1" stroke-dasharray="4,2"/>
+      <text x="45" y="219" fill="#ff2a50" font-family="IBM Plex Mono" font-size="8" text-anchor="end">88.6%</text>
+      <!-- 100% = Low -->
+      <line x1="55" y1="250" x2="680" y2="250" stroke="rgba(74,100,128,0.3)" stroke-width="1"/>
+      <text x="45" y="254" fill="#4a6480" font-family="IBM Plex Mono" font-size="8" text-anchor="end">100%</text>
+      <!-- Golden Pocket zone -->
+      <rect x="55" y="162" width="5" height="35" fill="#b060ff"/>
+      <text x="200" y="283" fill="#b060ff" font-family="IBM Plex Mono" font-size="9" text-anchor="middle">GOLDEN POCKET (61.8%–65%): La zona de entrada OTE más respetada</text>
+    </svg>
+  </div>
+
+  <h3>EXTENSIONES DE FIBONACCI — OBJETIVOS DE PRECIO</h3>
+  <div class="formula">
+EXTENSIONES FIBONACCI — Proyectan hasta dónde puede llegar el movimiento:
+  127.2%  — Objetivo 1 (extensión conservadora)
+  141.4%  — Objetivo 2
+  161.8%  — Objetivo 3 (★★★ el más respetado como target final)
+  200%    — Objetivo 4 (extensión extrema, tendencias muy fuertes)
+  261.8%  — Objetivo 5 (movimientos parabólicos)
+
+CONFLUENCIA — La clave del Fibonacci profesional:
+  Una zona donde coinciden:
+  · Retroceso Fib 61.8%
+  · Order Block institucional
+  · Soporte/Resistencia previo
+  · Media móvil clave (MA50/200)
+  = ZONA DE ALTÍSIMA PROBABILIDAD
+  </div>
+
+  <h3>OTE — OPTIMAL TRADE ENTRY</h3>
+  <div class="box box-p">
+    <div class="btt">🎯 OTE — Entrada Óptima de Trading (ICT)</div>
+    <p>Concepto de ICT (Inner Circle Trader): la <strong>zona OTE</strong> es el retroceso entre el 61.8% y el 79% de Fibonacci del impulso previo. Es donde los institucionales reentran a su favor después del retroceso. Combinar OTE con un Order Block o FVG en esa zona es uno de los setups de mayor probabilidad en trading.</p>
+    <p><strong>Proceso:</strong> Identificar el impulso → Trazar Fib del swing → Esperar retroceso a 61.8–79% → Buscar patrón de confirmación (FVG, OB, patrón de velas) → Entrar con SL bajo el 100% del swing.</p>
+  </div>
+</section>
+
+<!-- M13 ELLIOTT WAVES -->
+<section id="elliott" class="fade">
+  <div class="eye">Módulo 13 · Nivel Avanzado</div>
+  <h2>ONDAS DE ELLIOTT</h2>
+  <div class="sl"></div>
+  <p>Las <strong>Ondas de Elliott</strong> son una teoría desarrollada por Ralph Nelson Elliott en los años 30. Postula que los mercados se mueven en patrones repetitivos de ondas que reflejan la psicología colectiva de los participantes. Con Fibonacci, forman el dúo más poderoso del análisis técnico avanzado.</p>
+
+  <div class="svgw">
+    <svg width="700" height="280" viewBox="0 0 700 280">
+      <text x="350" y="18" fill="#4a6480" font-family="IBM Plex Mono" font-size="9" text-anchor="middle" letter-spacing="2">CICLO COMPLETO DE ELLIOTT: 5 IMPULSO + 3 CORRECCIÓN = 8 ONDAS</text>
+      <!-- Ciclo completo -->
+      <!-- Ondas de impulso -->
+      <polyline points="40,240 110,160 150,195 240,85 280,130 390,55 430,90 520,35"
+        fill="none" stroke="#00e8a0" stroke-width="3" stroke-linejoin="round"/>
+      <!-- Ondas ABC corrección -->
+      <polyline points="520,35 590,120 640,75 695,158"
+        fill="none" stroke="#ff2a50" stroke-width="3" stroke-linejoin="round"/>
+      <!-- Puntos clave -->
+      <circle cx="40" cy="240" r="6" fill="#f5c400"/><text x="40" y="255" fill="#f5c400" font-family="IBM Plex Mono" font-size="10" text-anchor="middle" font-weight="700">0</text>
+      <circle cx="110" cy="160" r="7" fill="#00e8a0"/><text x="110" y="148" fill="#00e8a0" font-family="IBM Plex Mono" font-size="12" text-anchor="middle" font-weight="800">1</text>
+      <circle cx="150" cy="195" r="6" fill="#4a6480"/><text x="150" y="210" fill="#4a6480" font-family="IBM Plex Mono" font-size="10" text-anchor="middle" font-weight="700">2</text>
+      <circle cx="240" cy="85" r="7" fill="#00e8a0"/><text x="240" y="73" fill="#00e8a0" font-family="IBM Plex Mono" font-size="12" text-anchor="middle" font-weight="800">3</text>
+      <circle cx="280" cy="130" r="6" fill="#4a6480"/><text x="280" y="145" fill="#4a6480" font-family="IBM Plex Mono" font-size="10" text-anchor="middle" font-weight="700">4</text>
+      <circle cx="390" cy="55" r="7" fill="#00e8a0"/><text x="390" y="43" fill="#00e8a0" font-family="IBM Plex Mono" font-size="12" text-anchor="middle" font-weight="800">5</text>
+      <circle cx="520" cy="35" r="7" fill="#f5c400"/><text x="520" y="23" fill="#f5c400" font-family="IBM Plex Mono" font-size="10" text-anchor="middle" font-weight="700">Top</text>
+      <circle cx="590" cy="120" r="7" fill="#ff2a50"/><text x="590" y="108" fill="#ff2a50" font-family="IBM Plex Mono" font-size="12" text-anchor="middle" font-weight="800">A</text>
+      <circle cx="640" cy="75" r="6" fill="#4a6480"/><text x="640" y="63" fill="#4a6480" font-family="IBM Plex Mono" font-size="12" text-anchor="middle" font-weight="800">B</text>
+      <circle cx="695" cy="158" r="7" fill="#ff2a50"/><text x="695" y="172" fill="#ff2a50" font-family="IBM Plex Mono" font-size="12" text-anchor="middle" font-weight="800">C</text>
+      <!-- Reglas visuales -->
+      <text x="175" y="265" fill="#00e8a0" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">IMPULSO (5 ondas)</text>
+      <text x="610" y="265" fill="#ff2a50" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">CORRECCIÓN (3 ondas ABC)</text>
+      <!-- Onda 3 = más larga -->
+      <text x="305" y="95" fill="#f5c400" font-family="IBM Plex Mono" font-size="8">Onda 3 = más larga y fuerte</text>
+    </svg>
+  </div>
+
+  <h3>LAS 3 REGLAS IRROMPIBLES DE ELLIOTT</h3>
+  <div class="g3">
+    <div class="card cr">
+      <div class="ceye">Regla 1 — ABSOLUTA</div>
+      <h4 class="r">LA ONDA 2 NUNCA RETROCEDE MÁS DEL 100% DE LA ONDA 1</h4>
+      <p>Si el retroceso supera el origen de la Onda 1, el conteo es incorrecto. Empieza de nuevo. Esta es la regla más importante: si se viola, toda la estructura del conteo se invalida.</p>
+    </div>
+    <div class="card cr">
+      <div class="ceye">Regla 2 — ABSOLUTA</div>
+      <h4 class="r">LA ONDA 3 NUNCA ES LA MÁS CORTA</h4>
+      <p>La Onda 3 debe ser mayor que al menos una de las otras ondas de impulso (1 o 5). La Onda 3 generalmente es la más larga y fuerte (161.8% de Onda 1 mínimo). Si es más corta que ambas, el conteo está mal.</p>
+    </div>
+    <div class="card cr">
+      <div class="ceye">Regla 3 — ABSOLUTA</div>
+      <h4 class="r">LA ONDA 4 NO TOCA EL TERRITORIO DE LA ONDA 1</h4>
+      <p>El retroceso de la Onda 4 nunca puede solaparse con el tope de la Onda 1. Si lo hace, el conteo es inválido. Excepción: en algunos triángulos y en mercados de commodities bajo condiciones específicas.</p>
+    </div>
+  </div>
+
+  <h3>PSICOLOGÍA DE CADA ONDA</h3>
+  <table>
+    <tr><th>Onda</th><th>Tipo</th><th>Psicología</th><th>Fibonacci típico</th><th>Característica</th></tr>
+    <tr><td><strong style="color:var(--green)">Onda 1</strong></td><td class="tg">Impulso</td><td>Pocos creen en el movimiento. Media opinión alcista.</td><td>—</td><td>Inicio del ciclo, difícil de detectar</td></tr>
+    <tr><td><strong style="color:var(--blue2)">Onda 2</strong></td><td class="tb">Corrección</td><td>Miedo de que era falso. Mayoría vuelve a vender.</td><td>50–61.8% de Onda 1</td><td>Retroceso profundo pero no viola Onda 1</td></tr>
+    <tr><td><strong style="color:var(--gold)">Onda 3</strong></td><td class="tg">Impulso</td><td>Optimismo creciente. Noticias positivas. FOMO.</td><td>161.8% de Onda 1 mínimo</td><td>La más larga, fuerte y con más volumen</td></tr>
+    <tr><td><strong style="color:var(--blue2)">Onda 4</strong></td><td class="tb">Corrección</td><td>Toma de ganancias. "Está muy caro." Lateralización.</td><td>38.2% de Onda 3</td><td>Compleja, puede ser triángulo o plana</td></tr>
+    <tr><td><strong style="color:var(--green)">Onda 5</strong></td><td class="tg">Impulso</td><td>Euforia total. Todos quieren comprar. Noticias excelentes.</td><td>61.8–100% de Onda 1</td><td>Divergencias en indicadores. Fin del ciclo.</td></tr>
+    <tr><td><strong style="color:var(--red)">Onda A</strong></td><td class="tr">Corrección</td><td>Negación. "Es solo una corrección normal."</td><td>—</td><td>Primera señal de fin de tendencia</td></tr>
+    <tr><td><strong style="color:var(--blue2)">Onda B</strong></td><td class="tb">Corrección</td><td>Esperanza. "El mercado se recuperó." Trampa alcista.</td><td>50–78.6% de Onda A</td><td>Rebote tramposo antes de la caída real</td></tr>
+    <tr><td><strong style="color:var(--red)">Onda C</strong></td><td class="tr">Corrección</td><td>Pánico. Capitulación. "Todo va a cero."</td><td>100–161.8% de Onda A</td><td>La más dolorosa para los alcistas</td></tr>
+  </table>
+</section>
+
+<!-- M14 WYCKOFF -->
+<section id="wyckoff" class="fade">
+  <div class="eye">Módulo 14 · Nivel Avanzado</div>
+  <h2>MÉTODO WYCKOFF</h2>
+  <div class="sl"></div>
+  <p>Richard Wyckoff (1873–1934) fue uno de los traders e inversores más exitosos de su época. Su método se basa en la relación entre <strong>precio, volumen y estructura de mercado</strong> para identificar las fases de acumulación y distribución institucional. Es la base conceptual del Smart Money Concepts moderno.</p>
+
+  <h3>LAS 4 LEYES DE WYCKOFF</h3>
+  <div class="g2">
+    <div class="card cg">
+      <div class="ceye">Ley 1</div>
+      <h4 class="g">LEY DE OFERTA Y DEMANDA</h4>
+      <p>Cuando la demanda supera la oferta, el precio sube. Cuando la oferta supera la demanda, el precio baja. Wyckoff enseñó a leer el <strong>balance entre oferta y demanda a través del precio y el volumen combinados</strong>. No solo el precio, no solo el volumen: ambos juntos cuentan la historia completa.</p>
+    </div>
+    <div class="card cg">
+      <div class="ceye">Ley 2</div>
+      <h4 class="g">LEY DE CAUSA Y EFECTO</h4>
+      <p>Para que haya un efecto (movimiento de precio), debe haber una causa (período de acumulación/distribución). <strong>Cuanto más larga y amplia es la fase de acumulación/distribución, mayor será el movimiento posterior.</strong> Un rango lateral de 3 meses producirá un movimiento mayor que uno de 3 semanas.</p>
+    </div>
+    <div class="card cg">
+      <div class="ceye">Ley 3</div>
+      <h4 class="g">LEY DE ESFUERZO VS RESULTADO</h4>
+      <p>El esfuerzo (volumen) debe ser proporcional al resultado (movimiento de precio). Si hay gran volumen (esfuerzo) pero poco movimiento (poco resultado) → las fuerzas están en equilibrio o hay absorción institucional. <strong>Divergencia entre esfuerzo y resultado = señal clave.</strong></p>
+    </div>
+    <div class="card cg">
+      <div class="ceye">Ley 4</div>
+      <h4 class="g">EL OPERADOR COMPUESTO</h4>
+      <p>Wyckoff imaginaba que el mercado era controlado por un único "Operador Compuesto" (Composite Man) que representa a todos los grandes actores. Pensar en sus objetivos: necesita acumular barato, subir el precio, distribuir caro y bajar el precio. El ciclo se repite.</p>
+    </div>
+  </div>
+
+  <h3>ESQUEMA DE ACUMULACIÓN WYCKOFF</h3>
+  <div class="svgw">
+    <svg width="700" height="290" viewBox="0 0 700 290">
+      <text x="350" y="18" fill="#4a6480" font-family="IBM Plex Mono" font-size="9" text-anchor="middle" letter-spacing="2">ACUMULACIÓN WYCKOFF — FASES A→E</text>
+      <!-- Precio en acumulación -->
+      <polyline points="15,215 50,210 80,218 100,200 125,220 150,215 175,195 200,218 230,210 260,195 285,220 305,210 330,200 355,215 380,188 405,210 430,182 460,195 490,175 520,165 550,155 580,145 610,130 645,118 680,95"
+        fill="none" stroke="#00e8a0" stroke-width="2.5" stroke-linejoin="round"/>
+      <!-- Fase A: Stop de tendencia bajista -->
+      <rect x="15" y="185" width="120" height="90" fill="rgba(255,42,80,0.05)" stroke="rgba(255,42,80,0.2)" stroke-width="1"/>
+      <text x="75" y="282" fill="#ff2a50" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">FASE A</text>
+      <text x="75" y="35" fill="#ff2a50" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">PS–SC–AR–ST</text>
+      <!-- Fase B -->
+      <rect x="135" y="185" width="175" height="90" fill="rgba(245,196,0,0.04)" stroke="rgba(245,196,0,0.2)" stroke-width="1"/>
+      <text x="222" y="282" fill="#f5c400" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">FASE B — Construcción de causa</text>
+      <!-- Fase C: Spring -->
+      <rect x="310" y="185" width="120" height="90" fill="rgba(176,96,255,0.05)" stroke="rgba(176,96,255,0.3)" stroke-width="1.5"/>
+      <text x="370" y="282" fill="#b060ff" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">FASE C</text>
+      <text x="370" y="35" fill="#b060ff" font-family="IBM Plex Mono" font-size="9" text-anchor="middle">SPRING ★★★★★</text>
+      <!-- Spring marker -->
+      <circle cx="370" cy="218" r="6" fill="none" stroke="#b060ff" stroke-width="2"/>
+      <text x="370" y="208" fill="#b060ff" font-family="IBM Plex Mono" font-size="7" text-anchor="middle">↓ SPRING</text>
+      <!-- Fase D: SOS -->
+      <rect x="430" y="185" width="130" height="90" fill="rgba(0,232,160,0.05)" stroke="rgba(0,232,160,0.2)" stroke-width="1"/>
+      <text x="495" y="282" fill="#00e8a0" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">FASE D — SOS, LPS</text>
+      <!-- Fase E: Markup -->
+      <rect x="560" y="90" width="130" height="185" fill="rgba(0,232,160,0.04)" stroke="rgba(0,232,160,0.2)" stroke-width="1"/>
+      <text x="625" y="282" fill="#00e8a0" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">FASE E — MARKUP</text>
+    </svg>
+  </div>
+
+  <table>
+    <tr><th>Fase</th><th>Evento</th><th>Descripción</th><th>Volumen</th></tr>
+    <tr><td class="tr">FASE A</td><td>PS (Preliminary Support)</td><td>Primera señal de freno en la caída</td><td>Alto, inusual</td></tr>
+    <tr><td class="tr">FASE A</td><td>SC (Selling Climax)</td><td>Pánico máximo, capitulación vendedora</td><td>Muy alto — clímax</td></tr>
+    <tr><td class="tr">FASE A</td><td>AR (Automatic Rally)</td><td>Rebote automático tras SC. Define techo del rango.</td><td>Moderado</td></tr>
+    <tr><td class="tr">FASE A</td><td>ST (Secondary Test)</td><td>Retestea SC con menos volumen. Soporte valido.</td><td>Bajo</td></tr>
+    <tr><td class="ty">FASE B</td><td>Trading Range</td><td>Período de acumulación. Rango lateral.</td><td>Irregular, decreciente</td></tr>
+    <tr><td class="tp">FASE C</td><td>Spring / Shakeout</td><td>Falsa ruptura bajo el soporte. Trampa bajista. Última oportunidad de compra.</td><td>Bajo en caída, alto en recuperación</td></tr>
+    <tr><td class="tg">FASE D</td><td>SOS (Sign of Strength)</td><td>Primer movimiento alcista fuerte. Confirma acumulación.</td><td>Alto</td></tr>
+    <tr><td class="tg">FASE D</td><td>LPS (Last Point of Support)</td><td>Retroceso final antes del markup. Mejor entrada.</td><td>Bajo</td></tr>
+    <tr><td class="tg">FASE E</td><td>Markup</td><td>Tendencia alcista sostenida. El público entra tarde.</td><td>Creciente</td></tr>
+  </table>
+</section>
+
+<!-- ══════════════════════════════════════════
+     NIVEL 4 — PROFESIONAL
+══════════════════════════════════════════ -->
+<div class="lbanner l4 fade">
+  <div class="lbn">04</div>
+  <div>
+    <div class="lbt">Nivel 4 — Profesional</div>
+    <div class="lbh">SMART MONEY, MACRO Y SISTEMAS PRO</div>
+    <div class="lbd">SMC, trading institucional, análisis macro, sistemas, gestión pro y psicología de élite.</div>
+  </div>
+</div>
+
+<!-- M15 SMART MONEY CONCEPTS -->
+<section id="smc" class="fade">
+  <div class="eye">Módulo 15 · Nivel Profesional</div>
+  <h2>SMART MONEY CONCEPTS (SMC)</h2>
+  <div class="sl"></div>
+  <p>El <strong>Smart Money Concepts</strong> es la metodología más moderna y completa para leer el comportamiento institucional en el mercado. Desarrollada principalmente por ICT (Inner Circle Trader) y popularizada a nivel mundial. Integra estructura de mercado, liquidez, order blocks e imbalances en un sistema coherente.</p>
+
+  <h3>ORDER BLOCKS (OB) — ZONAS INSTITUCIONALES</h3>
+  <div class="svgw">
+    <svg width="700" height="260" viewBox="0 0 700 260">
+      <text x="350" y="18" fill="#4a6480" font-family="IBM Plex Mono" font-size="9" text-anchor="middle" letter-spacing="2">ORDER BLOCK ALCISTA Y BAJISTA — ZONAS INSTITUCIONALES</text>
+      <!-- OB Alcista -->
+      <text x="175" y="36" fill="#00e8a0" font-family="IBM Plex Mono" font-size="9" text-anchor="middle">ORDER BLOCK ALCISTA</text>
+      <!-- Tendencia previa bajista -->
+      <rect x="15" y="80" width="30" height="60" fill="#ff2a50" rx="1" opacity="0.6"/>
+      <rect x="50" y="90" width="30" height="70" fill="#ff2a50" rx="1" opacity="0.7"/>
+      <rect x="85" y="105" width="30" height="75" fill="#ff2a50" rx="1" opacity="0.7"/>
+      <!-- Última vela bajista ANTES del movimiento alcista = OB -->
+      <rect x="120" y="125" width="32" height="68" fill="#ff2a50" rx="1"/>
+      <rect x="120" y="118" width="32" height="7" fill="rgba(0,232,160,0.3)" rx="1"/>
+      <!-- Zona OB highlight -->
+      <rect x="118" y="112" width="250" height="22" fill="rgba(0,232,160,0.1)" stroke="rgba(0,232,160,0.5)" stroke-width="1.5"/>
+      <text x="243" y="127" fill="#00e8a0" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">OB ALCISTA (última vela bajista)</text>
+      <!-- Movimiento alcista fuerte -->
+      <line x1="152" y1="125" x2="152" y2="115" stroke="#00e8a0" stroke-width="2"/>
+      <rect x="155" y="58" width="30" height="70" fill="#00e8a0" rx="1"/>
+      <rect x="190" y="42" width="30" height="72" fill="#00e8a0" rx="1"/>
+      <rect x="225" y="28" width="30" height="70" fill="#00e8a0" rx="1"/>
+      <!-- Retesteo al OB -->
+      <polyline points="255,45 280,55 300,68 315,80 325,92 335,108 345,118 360,123"
+        fill="none" stroke="#f5c400" stroke-width="2" stroke-dasharray="5,2"/>
+      <text x="300" y="100" fill="#f5c400" font-family="IBM Plex Mono" font-size="8">Retesteo OB</text>
+      <!-- Rebote del OB -->
+      <polyline points="360,123 380,108 400,90 420,72 440,60 460,48"
+        fill="none" stroke="#00e8a0" stroke-width="2.5"/>
+
+      <!-- OB Bajista -->
+      <text x="570" y="36" fill="#ff2a50" font-family="IBM Plex Mono" font-size="9" text-anchor="middle">ORDER BLOCK BAJISTA</text>
+      <rect x="430" y="110" width="28" height="55" fill="#00e8a0" rx="1" opacity="0.6"/>
+      <rect x="463" y="100" width="28" height="60" fill="#00e8a0" rx="1" opacity="0.7"/>
+      <!-- Última vela alcista = OB bajista -->
+      <rect x="496" y="88" width="32" height="65" fill="#00e8a0" rx="1"/>
+      <!-- OB bajista zone -->
+      <rect x="494" y="82" width="200" height="20" fill="rgba(255,42,80,0.1)" stroke="rgba(255,42,80,0.5)" stroke-width="1.5"/>
+      <text x="594" y="95" fill="#ff2a50" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">OB BAJISTA (última vela alcista)</text>
+      <!-- Caída -->
+      <rect x="528" y="140" width="28" height="65" fill="#ff2a50" rx="1"/>
+      <rect x="561" y="155" width="28" height="68" fill="#ff2a50" rx="1"/>
+      <rect x="594" y="170" width="28" height="62" fill="#ff2a50" rx="1"/>
+      <!-- Retesteo -->
+      <polyline points="622,190 640,180 658,165 670,140 682,100 690,92"
+        fill="none" stroke="#f5c400" stroke-width="2" stroke-dasharray="5,2"/>
+      <text x="660" y="110" fill="#f5c400" font-family="IBM Plex Mono" font-size="8" text-anchor="end">Retesteo</text>
+    </svg>
+  </div>
+
+  <div class="g2">
+    <div class="card cb">
+      <div class="ceye">Definición SMC</div>
+      <h4 class="b">ORDER BLOCK ALCISTA</h4>
+      <p><strong>Definición:</strong> La <em>última vela bajista (o rango de velas bajistas) antes de un movimiento alcista impulsivo que rompe estructura</em>. Representa la zona donde los institucionales colocaron sus órdenes de compra masivas.</p>
+      <p><strong>Por qué funciona:</strong> Los institucionales no pueden comprar todo de una vez (moverían el precio). Colocan sus órdenes parciales en ese nivel y esperan que el precio regrese para completar su posición.</p>
+      <p><strong>Entrada:</strong> Cuando el precio retestea el OB, busca confirmación (vela de rechazo, FVG, divergencia RSI) y entra con SL bajo el OB.</p>
+    </div>
+    <div class="card cr">
+      <div class="ceye">Definición SMC</div>
+      <h4 class="r">ORDER BLOCK BAJISTA</h4>
+      <p><strong>Definición:</strong> La última vela alcista antes de un movimiento bajista impulsivo que rompe estructura. Zona donde los institucionales colocaron órdenes de venta masivas.</p>
+      <p><strong>Por qué funciona:</strong> Los institucionales que distribuyeron en esa zona esperan que el precio regrese para completar la distribución y añadir más posición corta.</p>
+      <p><strong>Entrada:</strong> Cuando el precio retestea el OB bajista, busca confirmación y entra en corto con SL sobre el máximo del OB.</p>
+    </div>
+  </div>
+
+  <h3>JUDAS SWING — LA TRAMPA DIARIA</h3>
+  <div class="box box-o">
+    <div class="btt">🎭 Judas Swing — El Movimiento Tramposo</div>
+    <p>El <strong>Judas Swing</strong> (concepto ICT) es el movimiento falso que ocurre típicamente en la primera hora de la sesión de Londres o Nueva York. El precio va inicialmente en la dirección <em>opuesta</em> al movimiento real del día para barrer liquidez (stop hunt) antes de invertir y moverse en la dirección real.</p>
+    <p><strong>Ejemplo típico:</strong> El mercado sube al inicio de NY, activa los stops de los vendedores y las órdenes de compra breakout de los retails → luego invierte bruscamente a la baja durante el resto de la sesión.</p>
+    <p><strong>Uso práctico:</strong> Si en las primeras velas de una sesión el precio barre un mínimo/máximo clave sin volumen real → esperar la reversión en esa zona como entrada de alta probabilidad en dirección opuesta al Judas Swing.</p>
+  </div>
+
+  <h3>MITIGATION BLOCKS Y BREAKERS</h3>
+  <div class="g2">
+    <div class="card cp">
+      <div class="ceye">SMC Avanzado</div>
+      <h4 class="p">MITIGATION BLOCK</h4>
+      <p>Un Order Block que fue parcialmente "mitigado" (el precio regresó y lo tocó, pero no lo rompió completamente). Sigue siendo una zona de interés para entradas adicionales. La zona relevante es el punto exacto donde el precio "mitigó" la última vez.</p>
+    </div>
+    <div class="card cp">
+      <div class="ceye">SMC Avanzado</div>
+      <h4 class="p">BREAKER BLOCK</h4>
+      <p>Un antiguo Order Block que fue roto (precio pasó a través de él con convicción). En este caso, el antiguo OB alcista se convierte en Breaker bajista, y viceversa. Es la versión SMC del "cambio de polaridad" clásico. Alta probabilidad como zona de entrada en la dirección contraria.</p>
+    </div>
+  </div>
+</section>
+
+<!-- M16 TRADING INSTITUCIONAL -->
+<section id="institucional" class="fade">
+  <div class="eye">Módulo 16 · Nivel Profesional</div>
+  <h2>TRADING INSTITUCIONAL — KILL ZONES</h2>
+  <div class="sl"></div>
+  <p>Los traders institucionales operan en momentos específicos del día con el mayor volumen y mayor impacto. Conocer las <strong>Kill Zones</strong> (zonas de caza) es fundamental para estar en el lado correcto del mercado.</p>
+
+  <div class="svgw">
+    <svg width="700" height="220" viewBox="0 0 700 220">
+      <text x="350" y="18" fill="#4a6480" font-family="IBM Plex Mono" font-size="9" text-anchor="middle" letter-spacing="2">KILL ZONES ICT — HORARIOS DE MÁXIMA ACTIVIDAD INSTITUCIONAL (UTC)</text>
+      <!-- Timeline -->
+      <line x1="30" y1="110" x2="680" y2="110" stroke="var(--b2)" stroke-width="2"/>
+      <!-- Horas -->
+      <text x="30" y="195" fill="#4a6480" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">00:00</text>
+      <text x="138" y="195" fill="#4a6480" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">04:00</text>
+      <text x="246" y="195" fill="#4a6480" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">08:00</text>
+      <text x="354" y="195" fill="#4a6480" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">12:00</text>
+      <text x="462" y="195" fill="#4a6480" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">16:00</text>
+      <text x="570" y="195" fill="#4a6480" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">20:00</text>
+      <!-- Asia KZ: 01:00-04:00 UTC -->
+      <rect x="57" y="82" width="111" height="28" fill="rgba(176,96,255,0.25)" stroke="rgba(176,96,255,0.6)" stroke-width="1.5" rx="2"/>
+      <text x="112" y="100" fill="#b060ff" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">ASIA KZ 01–04</text>
+      <!-- London open KZ: 07:00-09:30 UTC -->
+      <rect x="219" y="55" width="90" height="28" fill="rgba(26,140,255,0.3)" stroke="rgba(26,140,255,0.7)" stroke-width="2" rx="2"/>
+      <text x="264" y="73" fill="#1a8cff" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">LON OPEN</text>
+      <text x="264" y="83" fill="#1a8cff" font-family="IBM Plex Mono" font-size="7" text-anchor="middle">07–09:30</text>
+      <!-- NY open KZ: 12:00-14:00 UTC -->
+      <rect x="354" y="38" width="75" height="28" fill="rgba(0,232,160,0.3)" stroke="rgba(0,232,160,0.8)" stroke-width="2" rx="2"/>
+      <text x="391" y="56" fill="#00e8a0" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">NY OPEN</text>
+      <text x="391" y="65" fill="#00e8a0" font-family="IBM Plex Mono" font-size="7" text-anchor="middle">12–14h</text>
+      <!-- NY PM KZ: 17:00-19:00 UTC -->
+      <rect x="489" y="70" width="75" height="28" fill="rgba(255,140,32,0.25)" stroke="rgba(255,140,32,0.6)" stroke-width="1.5" rx="2"/>
+      <text x="526" y="88" fill="#ff8c20" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">NY PM KZ</text>
+      <text x="526" y="97" fill="#ff8c20" font-family="IBM Plex Mono" font-size="7" text-anchor="middle">17–19h</text>
+      <!-- London close KZ: 14:00-16:00 UTC -->
+      <rect x="408" y="82" width="80" height="28" fill="rgba(255,42,80,0.2)" stroke="rgba(255,42,80,0.5)" stroke-width="1.5" rx="2"/>
+      <text x="448" y="100" fill="#ff2a50" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">LON CLOSE 14–16h</text>
+      <!-- Leyenda abajo -->
+      <text x="350" y="215" fill="#4a6480" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">Las Kill Zones son donde ocurre el 70-80% de los movimientos reales del día</text>
+    </svg>
+  </div>
+
+  <div class="g2">
+    <div class="card cg">
+      <div class="ceye">Kill Zone — Mayor importancia</div>
+      <h4 class="g">LONDON OPEN — 07:00–09:30 UTC</h4>
+      <p>La sesión más importante para Forex. En esta ventana ocurre el movimiento direccional principal del día. Los bancos europeos establecen la dirección. <strong>El Judas Swing típicamente ocurre aquí.</strong></p>
+      <p>Setup: Identifica la liquidez acumulada de la sesión asiática (los máximos y mínimos del rango asiático). London frecuentemente barre uno de esos lados y luego invierte.</p>
+    </div>
+    <div class="card cg">
+      <div class="ceye">Kill Zone — Máximo volumen</div>
+      <h4 class="g">NY OPEN — 12:00–14:00 UTC</h4>
+      <p>Apertura de Wall Street. El mayor volumen del día. Si London inició una tendencia, NY puede confirmarla con el segundo movimiento fuerte. Datos económicos importantes (NFP, CPI, Fed) se publican frecuentemente en este horario.</p>
+      <p>Setup: Busca continuar la tendencia de London o una reversión si London fue un movimiento tramposo (Judas).</p>
+    </div>
+  </div>
+
+  <h3>MARKET MAKER MODEL — CÓMO OPERA EL GRAN DINERO</h3>
+  <div class="svgw">
+    <svg width="700" height="240" viewBox="0 0 700 240">
+      <text x="350" y="18" fill="#4a6480" font-family="IBM Plex Mono" font-size="9" text-anchor="middle" letter-spacing="2">CICLO DEL MARKET MAKER — ACCUMULATION → MARKUP → DISTRIBUTION → MARKDOWN</text>
+      <!-- Ciclo completo -->
+      <!-- Acumulación -->
+      <polyline points="15,180 50,175 80,185 110,172 140,182 170,170 200,180 230,168 260,178 290,165"
+        fill="none" stroke="#f5c400" stroke-width="2" stroke-linejoin="round"/>
+      <rect x="10" y="155" width="290" height="70" fill="rgba(245,196,0,0.04)" stroke="rgba(245,196,0,0.2)" stroke-width="1"/>
+      <text x="152" y="235" fill="#f5c400" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">ACUMULACIÓN</text>
+      <!-- Markup -->
+      <polyline points="290,165 330,140 370,115 410,88 450,62 490,40"
+        fill="none" stroke="#00e8a0" stroke-width="3"/>
+      <text x="390" y="235" fill="#00e8a0" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">MARKUP</text>
+      <!-- Distribución -->
+      <polyline points="490,40 520,38 550,45 580,40 610,48 640,38 670,45"
+        fill="none" stroke="#ff2a50" stroke-width="2" stroke-linejoin="round"/>
+      <text x="580" y="235" fill="#ff2a50" font-family="IBM Plex Mono" font-size="8" text-anchor="middle">DISTRIBUCIÓN</text>
+      <!-- Labels sobre fases -->
+      <text x="152" y="145" fill="#f5c400" font-family="IBM Plex Mono" font-size="9" text-anchor="middle">Inst. acumula en rango</text>
+      <text x="390" y="78" fill="#00e8a0" font-family="IBM Plex Mono" font-size="9" text-anchor="middle">Precio sube</text>
+      <text x="580" y="30" fill="#ff2a50" font-family="IBM Plex Mono" font-size="9" text-anchor="middle">Inst. distribuye en rango</text>
+      <!-- Spring marker -->
+      <circle cx="260" cy="178" r="6" fill="none" stroke="#b060ff" stroke-width="2"/>
+      <text x="260" y="167" fill="#b060ff" font-family="IBM Plex Mono" font-size="7" text-anchor="middle">Spring/SOS</text>
+    </svg>
+  </div>
+</section>
+
+<!-- M17 ANÁLISIS MACRO -->
+<section id="macro" class="fade">
+  <div class="eye">Módulo 17 · Nivel Profesional</div>
+  <h2>ANÁLISIS MACROECONÓMICO</h2>
+  <div class="sl"></div>
+  <p>El análisis macro es el contexto más grande en el que opera cualquier activo. <strong>Un gran análisis técnico puede fallar completamente si va contra el viento macro.</strong> Los traders profesionales siempre conocen el contexto macro antes de aplicar el análisis técnico.</p>
+
+  <h3>TASAS DE INTERÉS — EL REY DEL MERCADO</h3>
+  <div class="g2">
+    <div class="card cg">
+      <div class="ceye">Macro fundamental</div>
+      <h4 class="g">POLÍTICA MONETARIA HAWKISH (Restrictiva)</h4>
+      <p><strong>Definición:</strong> El banco central sube tasas o reduce su balance (QT - Quantitative Tightening). El dinero se "encarece".</p>
+      <p><strong>Efecto en mercados:</strong> Dólar se fortalece. Bonos caen de precio (yields suben). Acciones tienden a caer. Commodities mixto. Crypto y activos de riesgo se venden masivamente (risk-off).</p>
+      <p><strong>2022 fue el ejemplo perfecto:</strong> Fed subió tasas agresivamente → todos los activos de riesgo cayeron 50-80%.</p>
+    </div>
+    <div class="card cg">
+      <div class="ceye">Macro fundamental</div>
+      <h4 class="g">POLÍTICA MONETARIA DOVISH (Expansiva)</h4>
+      <p><strong>Definición:</strong> El banco central baja tasas o expande su balance (QE - Quantitative Easing). El dinero se "abarata".</p>
+      <p><strong>Efecto en mercados:</strong> Dólar se debilita. Bonos suben de precio (yields bajan). Acciones suben. Commodities suben. Crypto y activos de riesgo explotan al alza (risk-on).</p>
+      <p><strong>2020-2021 fue el ejemplo perfecto:</strong> Fed QE masivo → todos los activos de riesgo subieron 200-1000%.</p>
+    </div>
+  </div>
+
+  <h3>CALENDARIO ECONÓMICO — EVENTOS CLAVE</h3>
+  <table>
+    <tr><th>Evento</th><th>Mercado afectado</th><th>Impacto</th><th>Frecuencia</th></tr>
+    <tr><td><strong style="color:var(--red)">Fed Funds Rate / FOMC</strong></td><td>Todos</td><td class="tr">★★★★★ Máximo</td><td>8x/año</td></tr>
+    <tr><td><strong style="color:var(--red)">NFP (Non Farm Payrolls)</strong></td><td>USD, acciones, gold</td><td class="tr">★★★★★ Máximo</td><td>Mensual</td></tr>
+    <tr><td><strong style="color:var(--red)">CPI (Inflación USA)</strong></td><td>USD, acciones, bonos</td><td class="tr">★★★★★ Máximo</td><td>Mensual</td></tr>
+    <tr><td><strong style="color:var(--orange)">GDP (PIB)</strong></td><td>Divisa, acciones</td><td class="to">★★★★☆ Alto</td><td>Trimestral</td></tr>
+    <tr><td><strong style="color:var(--orange)">Jackson Hole (Fed)</strong></td><td>Todos</td><td class="to">★★★★☆ Alto</td><td>Anual (Agosto)</td></tr>
+    <tr><td><strong style="color:var(--gold)">Retail Sales</strong></td><td>USD, acciones</td><td class="ty">★★★☆☆ Medio</td><td>Mensual</td></tr>
+    <tr><td><strong style="color:var(--gold)">ISM / PMI</strong></td><td>USD, acciones</td><td class="ty">★★★☆☆ Medio</td><td>Mensual</td></tr>
+    <tr><td><strong style="color:var(--blue2)">Resultados empresariales</strong></td><td>Acción específica</td><td class="tb">Variable</td><td>Trimestral</td></tr>
+    <tr><td><strong style="color:var(--blue2)">OPEC+ reuniones</strong></td><td>Petróleo, CAD</td><td class="tb">★★★★☆ Alto</td><td>Variable</td></tr>
+  </table>
+
+  <h3>DXY — EL ÍNDICE DEL DÓLAR COMO SEÑAL MACRO</h3>
+  <div class="box box-bl">
+    <div class="btt">📊 DXY: El Termómetro del Riesgo Global</div>
+    <p>El <strong>DXY (Dollar Index)</strong> mide la fuerza del dólar contra una canasta de 6 monedas (EUR, JPY, GBP, CAD, SEK, CHF). Es el indicador macro más importante para traders de cualquier mercado:</p>
+    <p><strong>DXY sube</strong> → Forex: EUR/USD baja. Commodities bajan (petróleo, oro, cobre). Crypto generalmente baja. Risk-off.</p>
+    <p><strong>DXY baja</strong> → EUR/USD sube. Commodities suben. Crypto frecuentemente sube. Risk-on.</p>
+    <p>Antes de tomar cualquier operación, revisa el DXY y su correlación con tu activo. Un DXY en tendencia alcista fuerte hace que los setups alcistas en Forex majors sean de menor probabilidad.</p>
+  </div>
+
+  <h3>CORRELACIONES DE MERCADO</h3>
+  <table>
+    <tr><th>Par/Activo 1</th><th>Par/Activo 2</th><th>Correlación</th><th>Razón</th></tr>
+    <tr><td>EUR/USD</td><td>DXY</td><td class="tr">-0.95 Inversa fuerte</td><td>EUR es el mayor peso del DXY</td></tr>
+    <tr><td>USD/JPY</td><td>Yields bonos USA 10Y</td><td class="tg">+0.85 Directa fuerte</td><td>Diferencial de tasas</td></tr>
+    <tr><td>Oro (XAU)</td><td>DXY</td><td class="tr">-0.80 Inversa fuerte</td><td>Oro se cotiza en dólares</td></tr>
+    <tr><td>S&P 500</td><td>VIX</td><td class="tr">-0.90 Inversa</td><td>VIX = miedo del mercado</td></tr>
+    <tr><td>Bitcoin</td><td>NASDAQ</td><td class="tg">+0.75 Directa (variable)</td><td>Activos de riesgo correlados</td></tr>
+    <tr><td>AUD/USD</td><td>Precio del cobre</td><td class="tg">+0.75 Directa</td><td>Australia = mayor exportador cobre</td></tr>
+    <tr><td>USD/CAD</td><td>Precio del petróleo</td><td class="tr">-0.75 Inversa</td><td>Canadá = exportador de petróleo</td></tr>
+  </table>
+</section>
+
+<!-- M18 SISTEMAS DE TRADING -->
+<section id="sistemas" class="fade">
+  <div class="eye">Módulo 18 · Nivel Profesional</div>
+  <h2>CONSTRUCCIÓN DE SISTEMAS DE TRADING</h2>
+  <div class="sl"></div>
+  <p>Un <strong>sistema de trading</strong> es un conjunto de reglas completamente definidas que especifican cuándo entrar, cuándo salir, cuánto arriesgar y cómo gestionar la posición. Sin sistema, no hay trading profesional: solo se está reaccionando emocionalmente al mercado.</p>
+
+  <h3>COMPONENTES DE UN SISTEMA PROFESIONAL</h3>
+  <div class="g2">
+    <div class="card cg">
+      <div class="ceye">Componente 1</div>
+      <h4 class="g">UNIVERSO Y FILTRO</h4>
+      <p><strong>¿Qué activos operar?</strong> Define el universo de activos (1 par, 5 criptos, sector específico). <strong>¿Qué condiciones macro/técnicas deben cumplirse?</strong> para siquiera considerar una operación. Ejemplo: "Solo opero EUR/USD cuando DXY está en tendencia definida y no hay eventos FOMC en 24h".</p>
+    </div>
+    <div class="card cg">
+      <div class="ceye">Componente 2</div>
+      <h4 class="g">SETUP DE ENTRADA</h4>
+      <p>Las condiciones exactas que deben cumplirse para entrar. Debe ser completamente objetivo (otro trader con tus reglas debe ver el mismo setup). Incluye: timeframe, contexto, zona, patrón de confirmación, tipo de orden.</p>
+      <p>Ejemplo: "En tendencia alcista D1, espero retroceso a OB en H4 dentro del 61.8% Fibonacci, con patrón de rechazo en H1."</p>
+    </div>
+    <div class="card cg">
+      <div class="ceye">Componente 3</div>
+      <h4 class="g">GESTIÓN DE LA POSICIÓN</h4>
+      <p>Dónde va el Stop Loss (lógica técnica, nunca arbitraria). Dónde están los Take Profits (TP1, TP2, TP3). Cuándo mover el SL a breakeven. Cuándo cerrar parciales. Política de trailing stop.</p>
+    </div>
+    <div class="card cg">
+      <div class="ceye">Componente 4</div>
+      <h4 class="g">GESTIÓN DE RIESGO</h4>
+      <p>% máximo de riesgo por operación. Riesgo máximo diario y semanal (si pierdes X% en el día, paras). Correlación entre posiciones (no tener 3 trades en la misma dirección del USD). Tamaño de posición calculado, no adivinado.</p>
+    </div>
+  </div>
+
+  <h3>BACKTESTING — VALIDACIÓN DEL SISTEMA</h3>
+  <div class="formula">
+PROCESO DE BACKTESTING PROFESIONAL:
+  1. Define las reglas EXACTAS del sistema (escríbelas, no las tengas en la cabeza)
+  2. Prueba en datos históricos (mínimo 200 setups, 2+ años de datos)
+  3. Registra CADA operación: fecha, activo, setup, entrada, SL, TP, resultado
+  4. Calcula las métricas clave:
+     - Win Rate (% de operaciones ganadoras)
+     - Profit Factor = Ganancias brutas / Pérdidas brutas (>1.5 = bueno, >2.0 = excelente)
+     - Expectancy = (WR × avg_win) - (LR × avg_loss)
+     - Max Drawdown = Máxima caída desde un pico (aceptable: <20%)
+     - Sharpe Ratio = Retorno / Desviación estándar (>1.5 = bueno)
+  5. Si las métricas son positivas → forward test en demo (3-6 meses)
+  6. Si el demo es consistente → live con tamaño pequeño
+  </div>
+
+  <h3>MÉTRICAS CLAVE DEL SISTEMA</h3>
+  <table>
+    <tr><th>Métrica</th><th>Fórmula</th><th>Objetivo</th><th>Qué indica</th></tr>
+    <tr><td><strong style="color:var(--green)">Win Rate</strong></td><td>Ganadas / Total × 100</td><td class="tg">>40% mínimo</td><td>No es lo más importante. Importa junto al R:R</td></tr>
+    <tr><td><strong style="color:var(--gold)">Profit Factor</strong></td><td>Σ ganancias / Σ pérdidas</td><td class="ty">&gt;1.5 bueno, &gt;2.0 excelente</td><td>Por cada $ perdido, ganamos PF$</td></tr>
+    <tr><td><strong style="color:var(--green)">Expectancy</strong></td><td>(WR × AvgWin) – (LR × AvgLoss)</td><td class="tg">Positiva siempre</td><td>Ganancia esperada por operación</td></tr>
+    <tr><td><strong style="color:var(--red)">Max Drawdown</strong></td><td>Caída pico a valle máxima</td><td class="tr">&lt;20% idealmente</td><td>El dolor psicológico más alto que puedes esperar</td></tr>
+    <tr><td><strong style="color:var(--blue2)">Sharpe Ratio</strong></td><td>Retorno / Desv. Estándar</td><td class="tb">&gt;1.5</td><td>Rendimiento ajustado por riesgo</td></tr>
+    <tr><td><strong style="color:var(--purple)">Recovery Factor</strong></td><td>Ganancia total / Max DD</td><td class="tp">&gt;2.0</td><td>Cuántas veces el sistema cubre su peor drawdown</td></tr>
+    <tr><td><strong style="color:var(--orange)">Consecutive Losses</strong></td><td>Racha de pérdidas máxima</td><td class="to">Conocerla y aceptarla</td><td>Psicológicamente lo más difícil de aguantar</td></tr>
+  </table>
+</section>
+
+<!-- M19 GESTIÓN DE RIESGO PROFESIONAL -->
+<section id="riesgo-pro" class="fade">
+  <div class="eye">Módulo 19 · Nivel Profesional</div>
+  <h2>GESTIÓN DE RIESGO — NIVEL PROFESIONAL</h2>
+  <div class="sl"></div>
+  <p>La gestión de riesgo profesional va mucho más allá del "no arriesgues más del 2%". Es un sistema completo que protege el capital en todas las condiciones de mercado y a lo largo del tiempo.</p>
+
+  <h3>KELLY CRITERION — TAMAÑO ÓPTIMO DE POSICIÓN</h3>
+  <div class="formula">
+FÓRMULA DE KELLY:
+  f* = (bp - q) / b
+  Donde:
+    b = ratio ganancia/pérdida media (R:R)
+    p = probabilidad de ganar (win rate decimal)
+    q = probabilidad de perder (1 - p)
+
+EJEMPLO:
+  Win Rate = 55% (p=0.55, q=0.45)
+  R:R medio = 2:1 (b=2)
+  f* = (2×0.55 - 0.45) / 2 = (1.10 - 0.45) / 2 = 0.65/2 = 32.5%
+
+KELLY FRACCIONADO (RECOMENDADO):
+  Kelly completo es muy agresivo
+  Half Kelly (f*/2) = 16.25% → aun muy alto para la mayoría
+  Quarter Kelly (f*/4) = 8% → agresivo pero manejable
+  Práctica profesional: 1-3% por operación independientemente de Kelly
+  </div>
+
+  <h3>GESTIÓN DE DRAWDOWN — PROTOCOLO DE CRISIS</h3>
+  <div class="g3">
+    <div class="card cr">
+      <div class="ceye">Drawdown nivel 1</div>
+      <h4 class="r">DRAWDOWN 5% — AMARILLO</h4>
+      <p>Pérdida del 5% de la cuenta. <strong>Acción:</strong> Revisar las últimas operaciones. ¿Se siguió el plan? ¿El mercado cambió de régimen? No cambiar el sistema todavía. Continúa pero con más atención.</p>
+    </div>
+    <div class="card cr">
+      <div class="ceye">Drawdown nivel 2</div>
+      <h4 class="r">DRAWDOWN 10% — NARANJA</h4>
+      <p>Pérdida del 10%. <strong>Acción:</strong> Reducir el tamaño de posición a la mitad. Revisar si el mercado está en un régimen diferente al del backtest. Considera parar el día o la semana y hacer análisis profundo.</p>
+    </div>
+    <div class="card cr">
+      <div class="ceye">Drawdown nivel 3</div>
+      <h4 class="r">DRAWDOWN 20% — ROJO</h4>
+      <p>Pérdida del 20%. <strong>Acción:</strong> PARA COMPLETAMENTE. Toma 1-2 semanas de descanso. Revisa el sistema desde cero. ¿Cambió el mercado? ¿Hay error en la ejecución? Vuelve a demo temporalmente.</p>
+    </div>
+  </div>
+
+  <h3>RIESGO CORRELADO — EL ERROR INVISIBLE</h3>
+  <div class="box box-r">
+    <div class="btt">⚠️ El Mayor Error de Gestión de Riesgo Avanzado</div>
+    <p>Tener 5 posiciones abiertas en 5 "activos diferentes" pero todos correlados positivamente con el USD no es diversificación: es <strong>1 sola apuesta magnificada ×5</strong>. Si la tesis es "dólar débil" y tienes EUR/USD largo + GBP/USD largo + AUD/USD largo + NASDAQ largo + Bitcoin largo → estás poniendo el 5× de tu riesgo en una sola tesis macro.</p>
+    <p><strong>Regla profesional:</strong> Suma la exposición correlada. El riesgo total en activos con correlación &gt;0.7 no debe superar el 3-5% de la cuenta.</p>
+  </div>
+</section>
+
+<!-- M20 PSICOLOGÍA PROFESIONAL -->
+<section id="psicologia" class="fade">
+  <div class="eye">Módulo 20 · Nivel Profesional</div>
+  <h2>PSICOLOGÍA DEL TRADER PROFESIONAL</h2>
+  <div class="sl"></div>
+  <p>La psicología es el factor diferenciador final. Dos traders con el mismo sistema, el mismo capital y las mismas oportunidades obtendrán resultados completamente diferentes por su psicología. <strong>El mercado te mostrará exactamente quién eres como persona.</strong></p>
+
+  <h3>LOS 4 SESGOS COGNITIVOS QUE DESTRUYEN TRADERS</h3>
+  <div class="g2">
+    <div class="card cp">
+      <div class="ceye">Sesgo cognitivo #1</div>
+      <h4 class="p">LOSS AVERSION (Aversión a la Pérdida)</h4>
+      <p>Psicológicamente, las pérdidas duelen 2.5 veces más que las ganancias producen placer. Esto lleva a: mover el stop loss para "darle más espacio" (ampliando la pérdida potencial), cerrar ganancias demasiado pronto, y mantener pérdidas demasiado tiempo esperando que "vuelvan".</p>
+      <p><strong>Solución:</strong> Aceptar que las pérdidas son parte del negocio ANTES de abrir cada operación. El stop loss es el costo del ticket de entrada, no un fracaso.</p>
+    </div>
+    <div class="card cp">
+      <div class="ceye">Sesgo cognitivo #2</div>
+      <h4 class="p">OVERCONFIDENCE (Sobreconfianza)</h4>
+      <p>Tras una racha ganadora, el trader siente que "dominó el mercado" y aumenta excesivamente el tamaño de posición o empieza a ignorar las reglas. El mercado tarda muy poco en restaurar la humildad.</p>
+      <p><strong>Solución:</strong> El tamaño de posición está determinado por el sistema de gestión de riesgo, NUNCA por el estado emocional. Después de una racha ganadora, el tamaño no cambia.</p>
+    </div>
+    <div class="card cp">
+      <div class="ceye">Sesgo cognitivo #3</div>
+      <h4 class="p">FOMO (Fear Of Missing Out)</h4>
+      <p>Ver que el precio se mueve sin ti y entrar tarde, en un punto de alto riesgo, solo para no "perderse" el movimiento. Generalmente resulta en entrar justo cuando los institucionales están distribuyendo.</p>
+      <p><strong>Solución:</strong> Hay miles de oportunidades cada semana. Una operación perdida no cambia tu año. Una operación FOMO fuera de tu sistema puede destruir semanas de trabajo.</p>
+    </div>
+    <div class="card cp">
+      <div class="ceye">Sesgo cognitivo #4</div>
+      <h4 class="p">REVENGE TRADING</h4>
+      <p>Después de una pérdida (especialmente si fue grande o "injusta"), el trader quiere "recuperar" y opera más grande, más frecuente y sin respetar las reglas. Resultado: la segunda pérdida es mayor que la primera.</p>
+      <p><strong>Solución:</strong> Regla rígida: si pierdes 2 operaciones seguidas, para el día. Cierra la plataforma. La mente en estado de "revenge" no es capaz de tomar decisiones racionales.</p>
+    </div>
+  </div>
+
+  <h3>EL PROCESO MENTAL DEL TRADER DE ÉLITE</h3>
+  <div class="g3">
+    <div class="card cb">
+      <div class="ceye">Mentalidad</div>
+      <h4 class="b">PROCESS ORIENTATION</h4>
+      <p>El trader de élite evalúa cada operación por si siguió el proceso correctamente, NO por si ganó o perdió. Una operación ganada que violó el sistema es <strong>peor</strong> que una operación perdida que siguió las reglas perfectamente.</p>
+      <p>Las ganancias son consecuencia de ejecutar bien el proceso. El proceso es lo único bajo tu control.</p>
+    </div>
+    <div class="card cb">
+      <div class="ceye">Mentalidad</div>
+      <h4 class="b">PROBABILISTIC THINKING</h4>
+      <p>El resultado de una operación individual es irrelevante. Lo que importa es el resultado de las próximas 100 operaciones. Un sistema con 55% de win rate perderá 45 de cada 100 operaciones. Eso incluye series de 5-10 pérdidas seguidas. <strong>Son estadísticamente inevitables y deben ser aceptadas.</strong></p>
+    </div>
+    <div class="card cb">
+      <div class="ceye">Mentalidad</div>
+      <h4 class="b">ESTADO DE FLOW</h4>
+      <p>El estado óptimo de trading es calmo, presente, sin apego emocional al resultado. No hay "necesidad" de ganar. El mercado no te debe nada. Tu trabajo es ejecutar las reglas; el mercado hace lo que hace.</p>
+      <p>Si sientes que "necesitas" que esta operación gane → el tamaño es demasiado grande. Reduce hasta que puedas estar indiferente al resultado individual.</p>
+    </div>
+  </div>
+
+  <h3>DIARIO DE TRADING — HERRAMIENTA DE ÉLITE</h3>
+  <div class="formula">
+REGISTRO MÍNIMO POR OPERACIÓN:
+  · Fecha y hora de entrada/salida
+  · Activo y timeframe de análisis y entrada
+  · Descripción del setup (¿qué vi?)
+  · Contexto de mercado en el momento
+  · Entrada, Stop Loss, Take Profit (precio exacto)
+  · Resultado en R (no en dinero: 1R, -1R, 2.3R, etc.)
+  · Capturas de pantalla: antes y después
+  · Calificación de la EJECUCIÓN (1-10): ¿Seguí el plan?
+  · Notas emocionales: ¿Cómo me sentí? ¿Hubo dudas?
+  · Lección aprendida (obligatoria en pérdidas)
+
+REVISIÓN SEMANAL:
+  · ¿Cuántos trades fuera del sistema?
+  · ¿Promedié pérdidas? (señal de alarma crítica)
+  · ¿Moví el SL en contra? (señal de alarma crítica)
+  · ¿Cuál fue el R total de la semana?
+  · ¿Qué mejorar la próxima semana?
+  </div>
+</section>
+
+<!-- M21 ANÁLISIS TÉCNICO INTERMARKET -->
+<section id="plan" class="fade">
+  <div class="eye">Módulo 21-22 · Nivel Profesional</div>
+  <h2>PLAN DE TRADING Y ANÁLISIS COMPLETO</h2>
+  <div class="sl"></div>
+  <p>El <strong>plan de trading</strong> es tu constitución como trader. Es el documento que defines cuando estás en calma, para seguirlo cuando el mercado provoque emociones. Un trader sin plan escrito es un apostador con gráficos.</p>
+
+  <h3>PROTOCOLO COMPLETO DE ANÁLISIS DIARIO</h3>
+  <div class="formula">
+PROTOCOLO DE ANÁLISIS — ANTES DE OPERAR CADA DÍA:
+
+PRE-MERCADO (30 minutos antes):
+  1. Revisar calendario económico (¿hay eventos de impacto alto?)
+  2. Análisis DXY: ¿tendencia? ¿zona clave?
+  3. Análisis W1 de cada activo: ¿tendencia dominante?
+  4. Análisis D1: ¿dónde estamos en la estructura? ¿Premium/Discount?
+  5. Análisis H4: ¿Zonas clave? ¿Order Blocks vigentes? ¿FVGs?
+  6. Definir BIAS del día: ¿alcista o bajista?
+  7. Identificar zonas de interés para HOY
+
+DURANTE LA SESIÓN:
+  8. H1: ¿Confirma o contradice el bias?
+  9. M15/M30: Buscar setup de entrada en las zonas definidas
+  10. Si setup válido → calcular tamaño, colocar órdenes
+  11. Ejecutar y NO TOCAR a menos que haya motivo técnico
+
+POST-MERCADO:
+  12. Registrar en el diario
+  13. Evaluar la ejecución (no el resultado)
+  14. Actualizar análisis para el día siguiente
+  </div>
+
+  <h3>LAS 10 REGLAS DE ORO DEL TRADER PROFESIONAL</h3>
+  <div class="g2">
+    <div class="box box-b">
+      <div class="btt">📋 Reglas 1–5 — Análisis y Entrada</div>
+      <p>
+        <strong>1. Contexto primero, siempre.</strong> Antes de buscar un setup, define el contexto macro, la tendencia del TF mayor y la zona de precio actual.<br><br>
+        <strong>2. Opera a favor de la tendencia dominante.</strong> Contra-tendencia solo en zonas de altísima probabilidad con confluencia múltiple.<br><br>
+        <strong>3. Confluencia mínima ×3.</strong> Un buen setup necesita al menos 3 factores confluentes: zona S/R + patrón de precio + indicador/volumen confirma.<br><br>
+        <strong>4. Espera la confirmación.</strong> No entres en anticipación. Espera el cierre de la vela de confirmación. La paciencia tiene valor monetario.<br><br>
+        <strong>5. El stop loss va en la lógica técnica.</strong> Nunca en un número redondo arbitrario. Detrás del Order Block, del mínimo de la mecha, del swing low relevante.
+      </p>
+    </div>
+    <div class="box box-r">
+      <div class="btt">📋 Reglas 6–10 — Gestión y Psicología</div>
+      <p>
+        <strong>6. Máximo 1-2% de riesgo por operación.</strong> Calcular el tamaño ANTES de entrar. Nunca después.<br><br>
+        <strong>7. El volumen confirma o invalida.</strong> Un setup de alta probabilidad sin respaldo de volumen baja a probabilidad media. Un setup mediocre con volumen excepcional sube en prioridad.<br><br>
+        <strong>8. Lleva el diario con cada operación.</strong> Sin registro, no hay aprendizaje sistemático. Sin aprendizaje, solo experiencia sin mejora.<br><br>
+        <strong>9. Si no es un "Hell Yes", es un "No".</strong> Solo opera en setups que cumplan todos tus criterios. La selectividad es rentabilidad.<br><br>
+        <strong>10. Las emociones informan, no deciden.</strong> Si sientes miedo, ansiedad o euforia → revisa si el tamaño de posición es correcto. Las emociones son datos, no instrucciones.
+      </p>
+    </div>
+  </div>
+
+  <h3>HOJA DE RUTA — PLAN DE DESARROLLO DEL TRADER</h3>
+  <table>
+    <tr><th>Etapa</th><th>Duración estimada</th><th>Objetivo</th><th>Señal de avance</th></tr>
+    <tr><td class="tg">Nivel 1 — Inicial</td><td>1–3 meses</td><td>Dominar vocabulario, mercados, órdenes, básicos de S/R</td><td>Puedo explicar el bid/ask, leer una vela, trazar S/R</td></tr>
+    <tr><td class="tb">Nivel 2 — Intermedio</td><td>3–9 meses</td><td>Análisis técnico sólido, indicadores, gestión de riesgo, primer sistema</td><td>Tengo un sistema backtestado con Profit Factor &gt;1.3</td></tr>
+    <tr><td class="ty">Nivel 3 — Avanzado</td><td>6–18 meses</td><td>Estructura de mercado, order flow, Fibonacci, Elliott, Wyckoff</td><td>Identifico BOS/ChoCH, Order Blocks, tejo Fibonacci correctamente</td></tr>
+    <tr><td class="tr">Nivel 4 — Profesional</td><td>12–36 meses</td><td>SMC, macro, sistemas robustos, psicología de élite, rentabilidad consistente</td><td>3–6 meses consecutivos de rentabilidad positiva en live</td></tr>
+    <tr><td class="tp">Nivel 5 — Maestro</td><td>3–5+ años</td><td>Adaptar el sistema a cualquier régimen de mercado, gestionar capital externo</td><td>Retornos consistentes ajustados por riesgo &gt;20% anual</td></tr>
+  </table>
+
+  <div class="disc">
+    ⚠️ DISCLAIMER: Este manual es EXCLUSIVAMENTE educativo y no constituye asesoramiento financiero, de inversión ni de ningún otro tipo. El trading de instrumentos financieros implica riesgo sustancial de pérdida de capital, incluyendo la posibilidad de perder más del capital invertido. Los conceptos presentados son herramientas probabilísticas, no garantías de éxito. Los resultados pasados no garantizan rendimientos futuros. Opera siempre en cuenta DEMO antes de usar capital real. Consulta a un asesor financiero registrado antes de tomar decisiones de inversión.
+  </div>
+</section>
+
+<footer>
+  <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:28px;letter-spacing:5px;color:var(--green);margin-bottom:14px;">MANUAL DEFINITIVO DE TRADING</div>
+  <p>Nivel Inicial · Intermedio · Avanzado · Profesional · 22 Módulos · 150+ Conceptos · Todos los Contextos</p>
+  <p style="margin-top:6px;color:#1e3048;">Mercados · Participantes · S&R · Tendencias · Volumen · Indicadores · Estructura · Order Flow · Fibonacci · Elliott · Wyckoff · SMC · Institucional · Macro · Sistemas · Psicología · Plan</p>
+  <p style="margin-top:6px;color:#162030;">Educación Financiera — Uso Personal · Sin asesoramiento financiero</p>
+</footer>
+
+<script>
+// Fade in observer
+const obs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{ if(e.isIntersecting) e.target.classList.add('vis'); });
+},{threshold:0.06});
+document.querySelectorAll('.fade').forEach(el=>obs.observe(el));
+
+// Active nav
+const secs = document.querySelectorAll('section[id]');
+const links = document.querySelectorAll('nav a[href]');
+window.addEventListener('scroll',()=>{
+  let cur='';
+  secs.forEach(s=>{ if(window.scrollY>=s.offsetTop-130) cur=s.id; });
+  links.forEach(a=>{ a.classList.remove('on'); if(a.getAttribute('href')==='#'+cur) a.classList.add('on'); });
+});
+</script>
+</main>
+</body>
+</html>

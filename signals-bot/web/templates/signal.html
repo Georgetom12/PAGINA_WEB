@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 style="margin-bottom:20px">Enviar señal manual al canal</h2>
+{% if sent %}<div class="alert-success">✅ Señal enviada correctamente al canal.</div>{% endif %}
+<div class="card">
+  <form method="post">
+    <label style="color:#8b949e;font-size:13px">Símbolo (opcional)</label>
+    <input type="text" name="symbol" placeholder="BTCUSDT, ETHUSDT...">
+
+    <label style="color:#8b949e;font-size:13px">Tipo de señal</label>
+    <select name="signal_type" style="background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#e6edf3;padding:8px;width:100%;margin-bottom:12px">
+      <option value="BUY">📈 COMPRA</option>
+      <option value="SELL">📉 VENTA</option>
+      <option value="STRONG_BUY">🚀 COMPRA FUERTE</option>
+      <option value="STRONG_SELL">💥 VENTA FUERTE</option>
+      <option value="ALERT">⚠️ ALERTA</option>
+      <option value="manual">📌 Mensaje libre</option>
+    </select>
+
+    <label style="color:#8b949e;font-size:13px">Contenido de la señal</label>
+    <textarea name="content" rows="8" placeholder="Escribe aquí el análisis y la señal..."></textarea>
+    <br><br>
+    <button type="submit" class="btn btn-green" style="font-size:15px;padding:10px 28px">📡 Enviar al canal</button>
+  </form>
+</div>
+{% endblock %}

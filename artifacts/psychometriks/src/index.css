@@ -1,0 +1,243 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;600;700;900&family=Space+Mono:wght@400;700&family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap');
+@plugin "@tailwindcss/typography";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-card-border: hsl(var(--card-border));
+
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-popover-border: hsl(var(--popover-border));
+
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-primary-border: var(--primary-border);
+
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-secondary-border: var(--secondary-border);
+
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-muted-border: var(--muted-border);
+
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-accent-border: var(--accent-border);
+
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-destructive-border: var(--destructive-border);
+
+  --color-chart-1: hsl(var(--chart-1));
+  --color-chart-2: hsl(var(--chart-2));
+  --color-chart-3: hsl(var(--chart-3));
+  --color-chart-4: hsl(var(--chart-4));
+  --color-chart-5: hsl(var(--chart-5));
+
+  --font-sans: var(--app-font-sans);
+  --font-serif: var(--app-font-serif);
+  --font-mono: var(--app-font-mono);
+  --font-display: var(--app-font-display);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --background: 213 43% 4%; /* #060a0f */
+  --foreground: 200 23% 93%; /* #eceff1 */
+  
+  --border: 210 38% 16%; /* #1a2a3a */
+  --input: 210 28% 20%; /* #243040 */
+  --ring: 186 100% 50%; /* #00e5ff */
+
+  --card: 210 43% 9%; /* #0d1520 */
+  --card-foreground: 200 23% 93%;
+  --card-border: 210 38% 16%;
+
+  --popover: 210 43% 9%;
+  --popover-foreground: 200 23% 93%;
+  --popover-border: 210 38% 16%;
+
+  --primary: 186 100% 50%; /* #00e5ff */
+  --primary-foreground: 213 43% 4%;
+  
+  --secondary: 211 41% 11%; /* #101a26 */
+  --secondary-foreground: 186 100% 50%;
+
+  --muted: 211 41% 11%;
+  --muted-foreground: 200 18% 40%; /* #546e7a */
+
+  --accent: 186 100% 50%;
+  --accent-foreground: 213 43% 4%;
+
+  --destructive: 348 100% 54%; /* #ff1744 */
+  --destructive-foreground: 200 23% 93%;
+
+  /* Dashboard specific colors */
+  --cyan: #00e5ff;
+  --green: #00e676;
+  --red: #ff1744;
+  --gold: #ffd700;
+  --orange: #ff6d00;
+  --purple: #e040fb;
+  --teal: #40c4ff;
+  --neut: #00ffcc;
+  --bg2: #0a1018;
+  --bg3: #0f1820;
+
+  --app-font-sans: 'Rajdhani', sans-serif;
+  --app-font-serif: 'Rajdhani', sans-serif;
+  --app-font-mono: 'Share Tech Mono', 'Space Mono', monospace;
+  --app-font-display: 'Bebas Neue', 'Orbitron', sans-serif;
+
+  --radius: 0.25rem;
+
+  color-scheme: dark;
+}
+
+.dark {
+  /* Using same values as root since it's dark theme only */
+  --background: 213 43% 4%;
+  --foreground: 200 23% 93%;
+  --border: 210 38% 16%;
+  --input: 210 28% 20%;
+  --ring: 186 100% 50%;
+  --card: 210 43% 9%;
+  --card-foreground: 200 23% 93%;
+  --card-border: 210 38% 16%;
+  --popover: 210 43% 9%;
+  --popover-foreground: 200 23% 93%;
+  --popover-border: 210 38% 16%;
+  --primary: 186 100% 50%;
+  --primary-foreground: 213 43% 4%;
+  --secondary: 211 41% 11%;
+  --secondary-foreground: 186 100% 50%;
+  --muted: 211 41% 11%;
+  --muted-foreground: 200 18% 40%;
+  --accent: 186 100% 50%;
+  --accent-foreground: 213 43% 4%;
+  --destructive: 348 100% 54%;
+  --destructive-foreground: 200 23% 93%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html, body {
+    @apply bg-background text-foreground font-sans min-h-[100dvh];
+    cursor: none; /* Custom cursor */
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0, 229, 255, 0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 229, 255, 0.025) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+}
+
+/* Custom Cursor */
+.cursor-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--cyan);
+  border-radius: 50%;
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 9999;
+  transition: transform 0.1s;
+  mix-blend-mode: screen;
+}
+
+.cursor-ring {
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgba(0, 229, 255, 0.35);
+  border-radius: 50%;
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 9998;
+  transition: transform 0.15s, width 0.2s, height 0.2s;
+}
+
+/* Animated gradient border */
+@keyframes borderFlow {
+  0% { background-position: 0%; }
+  100% { background-position: 200%; }
+}
+
+.border-flow {
+  position: relative;
+}
+.border-flow::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--cyan), var(--green), var(--gold), var(--purple), var(--cyan));
+  background-size: 200% 100%;
+  animation: borderFlow 3s linear infinite;
+  z-index: 10;
+}
+
+.glow-cyan {
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.3);
+  text-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
+}
+
+.font-orbitron { font-family: 'Orbitron', monospace; }
+.font-sharetech { font-family: 'Share Tech Mono', monospace; }
+.font-bebas { font-family: 'Bebas Neue', sans-serif; }
+.font-space { font-family: 'Space Mono', monospace; }
+.font-rajdhani { font-family: 'Rajdhani', sans-serif; }
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: hsl(var(--background));
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground));
+}
+
+@layer utilities {
+  .text-shadow-cyan {
+    text-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
+  }
+}

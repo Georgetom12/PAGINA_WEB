@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PSYCHOMETRIKS BID PRO v2.0</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Courier New', monospace; background: #0a0d0f; }
+  .db { background: #0a0d0f; min-height: 100vh; color: #e0e6ed; padding: 12px; font-family: 'Courier New', monospace; }
+  .header { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid #1a2530; margin-bottom: 12px; }
+  .logo { font-size: 13px; font-weight: 700; color: #00d4ff; letter-spacing: 3px; }
+  .status-row { display: flex; gap: 8px; align-items: center; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: #ff4466; }
+  .dot.live { background: #00ff88; animation: pulse 1.5s infinite; }
+  .dot.connecting { background: #ffc800; animation: pulse 0.8s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .status-txt { font-size: 11px; color: #6a8090; }
+  .status-txt.live { color: #00ff88; }
+  .status-txt.connecting { color: #ffc800; }
+  .pair-tabs { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+  .tab { padding: 5px 12px; font-size: 11px; border: 1px solid #1a2530; border-radius: 4px; cursor: pointer; color: #6a8090; background: #0e1318; transition: all 0.15s; letter-spacing: 1px; }
+  .tab.active { border-color: #00d4ff; color: #00d4ff; background: #061820; }
+  .tab:hover:not(.active) { border-color: #2a3a50; color: #a0b8cc; }
+  .grid-top { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
+  .metric-card { background: #0e1318; border: 1px solid #1a2530; border-radius: 6px; padding: 10px 12px; }
+  .mc-label { font-size: 10px; color: #4a6070; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 4px; }
+  .mc-val { font-size: 18px; font-weight: 700; transition: color 0.3s; }
+  .mc-sub { font-size: 10px; color: #4a6070; margin-top: 2px; }
+  .bull { color: #00ff88; }
+  .bear { color: #ff4466; }
+  .neutral { color: #00d4ff; }
+  .grid-main { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+  .grid-main-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+  .panel { background: #0e1318; border: 1px solid #1a2530; border-radius: 6px; padding: 10px 12px; }
+  .panel-title { font-size: 10px; color: #4a6070; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; border-bottom: 1px solid #1a2530; padding-bottom: 6px; }
+  .ob-row { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; position: relative; height: 20px; }
+  .ob-bar { position: absolute; left: 0; top: 0; height: 100%; border-radius: 2px; opacity: 0.25; transition: width 0.3s ease; }
+  .ob-bar.bid-bar { background: #00ff88; }
+  .ob-bar.ask-bar { background: #ff4466; right: 0; left: auto; }
+  .ob-price { font-size: 11px; width: 75px; text-align: right; position: relative; z-index: 1; }
+  .ob-size { font-size: 10px; color: #4a6070; width: 60px; text-align: right; position: relative; z-index: 1; }
+  .ob-total { font-size: 10px; width: 60px; text-align: right; position: relative; z-index: 1; }
+  .spread-row { display: flex; justify-content: center; align-items: center; gap: 8px; padding: 4px 0; border-top: 1px solid #1a2530; border-bottom: 1px solid #1a2530; margin: 4px 0; }
+  .spread-lbl { font-size: 10px; color: #4a6070; }
+  .spread-val { font-size: 11px; color: #00d4ff; font-weight: 700; }
+  .barrier-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; border-radius: 4px; margin-bottom: 4px; border-left: 3px solid; }
+  .barrier-bull { border-color: #00ff88; background: rgba(0,255,136,0.06); }
+  .barrier-bear { border-color: #ff4466; background: rgba(255,68,102,0.06); }
+  .barrier-price { font-size: 12px; font-weight: 700; }
+  .barrier-meta { font-size: 10px; color: #4a6070; }
+  .barrier-str { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 3px; }
+  .str-strong { background: rgba(0,255,136,0.2); color: #00ff88; }
+  .str-medium { background: rgba(255,200,0,0.2); color: #ffc800; }
+  .str-weak { background: rgba(255,68,102,0.2); color: #ff4466; }
+  .exch-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  .exch-table th { font-size: 10px; color: #4a6070; letter-spacing: 1px; text-align: left; padding: 4px 6px; border-bottom: 1px solid #1a2530; }
+  .exch-table td { padding: 5px 6px; border-bottom: 1px solid #0d1218; }
+  .exch-table tr:last-child td { border-bottom: none; }
+  .exch-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+  .heatbar { height: 6px; border-radius: 3px; background: linear-gradient(to right, #ff4466, #ffc800, #00ff88); position: relative; margin-top: 2px; }
+  .heatmarker { position: absolute; top: -2px; width: 10px; height: 10px; border-radius: 50%; background: #fff; border: 2px solid #0a0d0f; transform: translateX(-50%); transition: left 0.5s ease; }
+  .cvd-bar-wrap { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+  .cvd-lbl { font-size: 10px; color: #6a8090; width: 55px; }
+  .cvd-bar-outer { flex: 1; height: 8px; background: #0a0d0f; border-radius: 4px; overflow: hidden; }
+  .cvd-bar-inner { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+  .exhaust-meter { display: flex; flex-direction: column; gap: 6px; }
+  .ex-row { display: flex; align-items: center; justify-content: space-between; }
+  .ex-lbl { font-size: 10px; color: #6a8090; }
+  .ex-gauge { flex: 1; height: 4px; background: #0a0d0f; border-radius: 2px; margin: 0 8px; overflow: hidden; }
+  .ex-fill { height: 100%; border-radius: 2px; transition: width 0.5s ease; }
+  .ex-val { font-size: 10px; width: 30px; text-align: right; }
+  .footer { text-align: center; font-size: 9px; color: #2a3a50; padding-top: 8px; letter-spacing: 2px; }
+  .price-up { color: #00ff88 !important; }
+  .price-down { color: #ff4466 !important; }
+  .ws-badge { font-size: 9px; padding: 2px 6px; border-radius: 3px; background: rgba(0,255,136,0.15); color: #00ff88; margin-left: 8px; }
+  .ws-badge.offline { background: rgba(255,68,102,0.15); color: #ff4466; }
+  canvas { display: block; }
+</style>
+</head>
+<body>
+<h2 class="sr-only">PSYCHOMETRIKS BID PRO — Dashboard de Order Book en tiempo real conectado a Binance</h2>
+
+<div class="db">
+  <div class="header">
+    <div class="logo">PSY · BID PRO v2.0 <span class="ws-badge" id="data-badge">DATOS REALES</span></div>
+    <div class="status-row">
+      <div class="dot connecting" id="conn-dot"></div>
+      <span class="status-txt connecting" id="conn-status">CONECTANDO...</span>
+      <span style="font-size:10px;color:#2a3a50;margin-left:8px;" id="last-update">--:--:--</span>
+    </div>
+  </div>
+
+  <div class="pair-tabs" id="pair-tabs">
+    <div class="tab active" data-pair="BTCUSDT">BTC/USDT</div>
+    <div class="tab" data-pair="ETHUSDT">ETH/USDT</div>
+    <div class="tab" data-pair="SOLUSDT">SOL/USDT</div>
+    <div class="tab" data-pair="BNBUSDT">BNB/USDT</div>
+    <div class="tab" data-pair="XRPUSDT">XRP/USDT</div>
+    <div class="tab" data-pair="DOGEUSDT">DOGE/USDT</div>
+    <div class="tab" data-pair="ADAUSDT">ADA/USDT</div>
+    <div class="tab" data-pair="AVAXUSDT">AVAX/USDT</div>
+    <div class="tab" data-pair="LINKUSDT">LINK/USDT</div>
+    <div class="tab" data-pair="DOTUSDT">DOT/USDT</div>
+  </div>
+
+  <div class="grid-top">
+    <div class="metric-card">
+      <div class="mc-label">Precio Mid</div>
+      <div class="mc-val neutral" id="mid-price">--</div>
+      <div class="mc-sub" id="price-change">cambio --</div>
+    </div>
+    <div class="metric-card">
+      <div class="mc-label">Bid Total</div>
+      <div class="mc-val bull" id="total-bid">--</div>
+      <div class="mc-sub">profundidad 20 niveles</div>
+    </div>
+    <div class="metric-card">
+      <div class="mc-label">Ask Total</div>
+      <div class="mc-val bear" id="total-ask">--</div>
+      <div class="mc-sub">profundidad 20 niveles</div>
+    </div>
+    <div class="metric-card">
+      <div class="mc-label">Ratio B/A</div>
+      <div class="mc-val" id="ba-ratio" style="color:#ffc800">--</div>
+      <div class="mc-sub" id="ba-bias">--</div>
+    </div>
+  </div>
+
+  <div class="grid-main">
+    <div class="panel">
+      <div class="panel-title">Order Book — Bids (Compradores)</div>
+      <div id="ob-bids"></div>
+      <div class="spread-row">
+        <span class="spread-lbl">SPREAD</span>
+        <span class="spread-val" id="spread-val">--</span>
+        <span class="spread-lbl" id="spread-pct">( -- % )</span>
+      </div>
+      <div id="ob-asks"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Barreras Detectadas</div>
+      <div id="barriers-list">
+        <div style="font-size:11px;color:#2a3a50;text-align:center;padding:20px 0;">Cargando datos reales...</div>
+      </div>
+      <div style="margin-top:10px;">
+        <div style="font-size:10px;color:#4a6070;letter-spacing:1.5px;margin-bottom:6px;">PRESIÓN DE COMPRA/VENTA</div>
+        <div class="heatbar"><div class="heatmarker" id="heat-marker" style="left:50%"></div></div>
+        <div style="display:flex;justify-content:space-between;margin-top:4px;">
+          <span style="font-size:9px;color:#ff4466;">VENDEDORES</span>
+          <span style="font-size:9px;color:#4a6070;">NEUTRO</span>
+          <span style="font-size:9px;color:#00ff88;">COMPRADORES</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-main-3">
+    <div class="panel">
+      <div class="panel-title">Profundidad Book</div>
+      <div id="cvd-exchanges"><div style="font-size:11px;color:#2a3a50;text-align:center;padding:10px 0;">Cargando...</div></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Agotamiento del Bid</div>
+      <div class="exhaust-meter" id="exhaust-meter">
+        <div style="font-size:11px;color:#2a3a50;text-align:center;padding:10px 0;">Cargando...</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Estadísticas Precio</div>
+      <div id="price-stats"><div style="font-size:11px;color:#2a3a50;text-align:center;padding:10px 0;">Cargando...</div></div>
+    </div>
+  </div>
+
+  <div class="grid-main">
+    <div class="panel">
+      <div class="panel-title">Info del Par — Binance Spot</div>
+      <div id="pair-info"><div style="font-size:11px;color:#2a3a50;text-align:center;padding:12px;">Cargando datos de Binance...</div></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Histograma Bid/Ask Acumulado</div>
+      <div style="position:relative;width:100%;height:180px;">
+        <canvas id="bid-histogram"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">PSYCHOMETRIKS · BID PRO v2.0 · DATOS REALES — BINANCE WS API · LIVE ORDER BOOK</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+// ============================================================
+// PSYCHOMETRIKS BID PRO v2.0 — DATOS REALES BINANCE WS
+// ============================================================
+
+const PAIRS = ['BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT','XRPUSDT','DOGEUSDT','ADAUSDT','AVAXUSDT','LINKUSDT','DOTUSDT'];
+
+let state = {
+  pair: 'BTCUSDT',
+  books: {},       // order books por par
+  ticker24h: {},   // stats 24h por par
+  wsBook: null,    // websocket order book activo
+  wsTicker: null,  // websocket ticker activo
+  wsReconnectTimer: null,
+  barrierHistory: {},
+  lastPrice: {},
+  prevPrice: {}
+};
+
+PAIRS.forEach(p => {
+  state.books[p] = { bids: [], asks: [] };
+  state.barrierHistory[p] = [];
+  state.ticker24h[p] = null;
+  state.lastPrice[p] = 0;
+  state.prevPrice[p] = 0;
+});
+
+// ============================================================
+// UTILIDADES
+// ============================================================
+function fmt(n) {
+  if(n >= 10000) return n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+  if(n >= 100) return n.toFixed(2);
+  if(n >= 1) return n.toFixed(4);
+  if(n >= 0.01) return n.toFixed(5);
+  return n.toFixed(6);
+}
+
+function fmtVol(n) {
+  if(n >= 1e6) return (n/1e6).toFixed(2)+'M';
+  if(n >= 1e3) return (n/1e3).toFixed(2)+'K';
+  return n.toFixed(2);
+}
+
+function setStatus(text, type) {
+  const dot = document.getElementById('conn-dot');
+  const txt = document.getElementById('conn-status');
+  dot.className = 'dot ' + (type || '');
+  txt.className = 'status-txt ' + (type || '');
+  txt.textContent = text;
+}
+
+function updateTimestamp() {
+  document.getElementById('last-update').textContent = new Date().toTimeString().slice(0,8);
+}
+
+// ============================================================
+// WEBSOCKET ORDER BOOK — BINANCE
+// Usa el stream @depth20@100ms para top 20 bids/asks en tiempo real
+// ============================================================
+function connectOrderBook(pair) {
+  // Cerrar WS anterior si existe
+  if(state.wsBook) {
+    state.wsBook.onclose = null;
+    state.wsBook.close();
+    state.wsBook = null;
+  }
+
+  const symbol = pair.toLowerCase();
+  const url = `wss://stream.binance.com:9443/ws/${symbol}@depth20@100ms`;
+
+  setStatus('CONECTANDO — BINANCE', 'connecting');
+
+  const ws = new WebSocket(url);
+  state.wsBook = ws;
+
+  ws.onopen = () => {
+    setStatus('LIVE — BINANCE SPOT', 'live');
+    document.getElementById('conn-dot').className = 'dot live';
+    document.getElementById('data-badge').className = 'ws-badge';
+    document.getElementById('data-badge').textContent = '● DATOS REALES';
+  };
+
+  ws.onmessage = (evt) => {
+    try {
+      const data = JSON.parse(evt.data);
+      // Binance @depth20 devuelve {lastUpdateId, bids:[[price,qty],...], asks:[[price,qty],...]}
+      if(data.bids && data.asks) {
+        const bids = data.bids.map(([p,q]) => ({ price: parseFloat(p), size: parseFloat(q) }))
+          .filter(b => b.size > 0)
+          .sort((a,b) => b.price - a.price);
+
+        const asks = data.asks.map(([p,q]) => ({ price: parseFloat(p), size: parseFloat(q) }))
+          .filter(a => a.size > 0)
+          .sort((a,b) => a.price - b.price);
+
+        // Calcular totales acumulados
+        let bidTotal = 0, askTotal = 0;
+        bids.forEach(b => { bidTotal += b.size; b.total = bidTotal; });
+        asks.forEach(a => { askTotal += a.size; a.total = askTotal; });
+
+        state.books[pair] = { bids, asks };
+
+        // Precio mid real
+        if(bids.length && asks.length) {
+          const mid = (bids[0].price + asks[0].price) / 2;
+          state.prevPrice[pair] = state.lastPrice[pair] || mid;
+          state.lastPrice[pair] = mid;
+        }
+
+        detectBarriers(pair);
+
+        // Solo renderizar si es el par activo
+        if(pair === state.pair) {
+          renderOrderBook();
+          renderBarriers();
+          renderDepthStats();
+          renderExhaustion();
+          updateTimestamp();
+        }
+      }
+    } catch(e) { console.error('WS parse error:', e); }
+  };
+
+  ws.onerror = (err) => {
+    setStatus('ERROR WS', '');
+    document.getElementById('data-badge').className = 'ws-badge offline';
+    document.getElementById('data-badge').textContent = '✗ ERROR';
+  };
+
+  ws.onclose = () => {
+    setStatus('DESCONECTADO — RECONECTANDO...', 'connecting');
+    // Reconexión automática en 3s
+    if(state.wsReconnectTimer) clearTimeout(state.wsReconnectTimer);
+    state.wsReconnectTimer = setTimeout(() => connectOrderBook(state.pair), 3000);
+  };
+}
+
+// ============================================================
+// REST API — TICKER 24H (no requiere WS, se actualiza cada 5s)
+// ============================================================
+async function fetchTicker24h(pair) {
+  try {
+    const res = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=${pair}`);
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    state.ticker24h[pair] = {
+      priceChange: parseFloat(data.priceChangePercent),
+      high: parseFloat(data.highPrice),
+      low: parseFloat(data.lowPrice),
+      volume: parseFloat(data.volume),
+      quoteVolume: parseFloat(data.quoteVolume),
+      lastPrice: parseFloat(data.lastPrice),
+      openPrice: parseFloat(data.openPrice),
+      count: data.count
+    };
+    if(pair === state.pair) {
+      renderPairInfo();
+      renderPriceStats();
+      // Actualizar precio change en metric card
+      const t = state.ticker24h[pair];
+      if(t) {
+        const chg = t.priceChange;
+        const el = document.getElementById('price-change');
+        el.textContent = `${chg >= 0 ? '+' : ''}${chg.toFixed(2)}% 24h`;
+        el.style.color = chg >= 0 ? '#00ff88' : '#ff4466';
+      }
+    }
+  } catch(e) {
+    console.warn('Ticker fetch error:', e);
+  }
+}
+
+// ============================================================
+// DETECCIÓN DE BARRERAS
+// ============================================================
+function detectBarriers(pair) {
+  const book = state.books[pair];
+  if(!book.bids.length) return;
+
+  const avgBidSize = book.bids.reduce((a,b)=>a+b.size,0) / book.bids.length;
+  const avgAskSize = book.asks.reduce((a,b)=>a+b.size,0) / book.asks.length;
+  const threshold = 2.5;
+
+  const barriers = [];
+  book.bids.forEach(b => {
+    if(b.size > avgBidSize * threshold)
+      barriers.push({ price: b.price, size: b.size, type: 'bid', strength: b.size/avgBidSize });
+  });
+  book.asks.forEach(a => {
+    if(a.size > avgAskSize * threshold)
+      barriers.push({ price: a.price, size: a.size, type: 'ask', strength: a.size/avgAskSize });
+  });
+
+  const hist = state.barrierHistory[pair];
+  barriers.forEach(b => {
+    const existing = hist.find(h => Math.abs(h.price - b.price)/b.price < 0.0005);
+    if(existing) { existing.hits++; existing.size = b.size; existing.lastSeen = Date.now(); }
+    else hist.push({ ...b, hits: 1, firstSeen: Date.now(), lastSeen: Date.now() });
+  });
+  state.barrierHistory[pair] = hist
+    .filter(h => Date.now()-h.lastSeen < 180000)
+    .sort((a,b)=>b.hits-a.hits)
+    .slice(0,8);
+}
+
+// ============================================================
+// RENDER — ORDER BOOK
+// ============================================================
+function renderOrderBook() {
+  const pair = state.pair;
+  const book = state.books[pair];
+  if(!book.bids.length) return;
+
+  const maxBidTotal = book.bids[book.bids.length-1]?.total || 1;
+  const maxAskTotal = book.asks[book.asks.length-1]?.total || 1;
+
+  let bidsHtml = '';
+  book.bids.slice(0,10).forEach(b => {
+    const pct = (b.total/maxBidTotal*100).toFixed(0);
+    bidsHtml += `<div class="ob-row">
+      <div class="ob-bar bid-bar" style="width:${pct}%"></div>
+      <span class="ob-price bull">${fmt(b.price)}</span>
+      <span class="ob-size">${fmtVol(b.size)}</span>
+      <span class="ob-total" style="color:#4a6070">${fmtVol(b.total)}</span>
+    </div>`;
+  });
+
+  let asksHtml = '';
+  book.asks.slice(0,10).reverse().forEach(a => {
+    const pct = (a.total/maxAskTotal*100).toFixed(0);
+    asksHtml += `<div class="ob-row">
+      <div class="ob-bar ask-bar" style="width:${pct}%"></div>
+      <span class="ob-price bear">${fmt(a.price)}</span>
+      <span class="ob-size">${fmtVol(a.size)}</span>
+      <span class="ob-total" style="color:#4a6070">${fmtVol(a.total)}</span>
+    </div>`;
+  });
+
+  document.getElementById('ob-bids').innerHTML = bidsHtml;
+  document.getElementById('ob-asks').innerHTML = asksHtml;
+
+  // Spread
+  const spreadVal = book.asks[0].price - book.bids[0].price;
+  const midPrice = (book.bids[0].price + book.asks[0].price) / 2;
+  const spreadPct = (spreadVal/midPrice*100).toFixed(4);
+  document.getElementById('spread-val').textContent = fmt(spreadVal);
+  document.getElementById('spread-pct').textContent = `( ${spreadPct}% )`;
+
+  // Métricas top
+  const totalBid = book.bids.reduce((a,b)=>a+b.size,0);
+  const totalAsk = book.asks.reduce((a,b)=>a+b.size,0);
+  const ratio = totalBid/totalAsk;
+
+  // Precio con color según dirección
+  const priceEl = document.getElementById('mid-price');
+  const prev = state.prevPrice[pair];
+  const curr = state.lastPrice[pair];
+  priceEl.textContent = fmt(midPrice);
+  priceEl.className = 'mc-val ' + (curr > prev ? 'price-up' : curr < prev ? 'price-down' : 'neutral');
+
+  document.getElementById('total-bid').textContent = fmtVol(totalBid);
+  document.getElementById('total-ask').textContent = fmtVol(totalAsk);
+
+  const ratioEl = document.getElementById('ba-ratio');
+  ratioEl.textContent = ratio.toFixed(3);
+  ratioEl.style.color = ratio > 1.1 ? '#00ff88' : ratio < 0.9 ? '#ff4466' : '#ffc800';
+  document.getElementById('ba-bias').textContent = ratio > 1.1 ? 'PRESIÓN COMPRADORA' : ratio < 0.9 ? 'PRESIÓN VENDEDORA' : 'BALANCEADO';
+
+  // Heat marker
+  const heatPct = Math.min(Math.max((ratio-0.5)/1.5*100, 0), 100);
+  document.getElementById('heat-marker').style.left = heatPct.toFixed(1)+'%';
+}
+
+// ============================================================
+// RENDER — BARRERAS
+// ============================================================
+function renderBarriers() {
+  const barriers = state.barrierHistory[state.pair];
+  const el = document.getElementById('barriers-list');
+  if(!barriers.length) {
+    el.innerHTML = '<div style="font-size:11px;color:#2a3a50;text-align:center;padding:20px 0;">Sin barreras detectadas aún</div>';
+    return;
+  }
+
+  let html = '';
+  barriers.slice(0,6).forEach(b => {
+    const isBid = b.type === 'bid';
+    const strClass = b.hits >= 5 ? 'str-strong' : b.hits >= 3 ? 'str-medium' : 'str-weak';
+    const strLabel = b.hits >= 5 ? 'FUERTE' : b.hits >= 3 ? 'MEDIA' : 'DÉBIL';
+    html += `<div class="barrier-row ${isBid ? 'barrier-bull' : 'barrier-bear'}">
+      <div>
+        <div class="barrier-price ${isBid ? 'bull' : 'bear'}">${fmt(b.price)}</div>
+        <div class="barrier-meta">${isBid ? 'SOPORTE BID' : 'RESISTENCIA ASK'} · ${b.hits} toque${b.hits>1?'s':''}</div>
+      </div>
+      <span class="barrier-str ${strClass}">${strLabel}</span>
+    </div>`;
+  });
+  el.innerHTML = html;
+}
+
+// ============================================================
+// RENDER — PROFUNDIDAD DEL BOOK
+// ============================================================
+function renderDepthStats() {
+  const book = state.books[state.pair];
+  if(!book.bids.length) return;
+
+  const totalBid = book.bids.reduce((a,b)=>a+b.size,0);
+  const totalAsk = book.asks.reduce((a,b)=>a+b.size,0);
+  const total = totalBid + totalAsk;
+
+  const bidPct = (totalBid/total*100).toFixed(1);
+  const askPct = (totalAsk/total*100).toFixed(1);
+
+  // Top 5 órdenes más grandes
+  const topBids = [...book.bids].sort((a,b)=>b.size-a.size).slice(0,3);
+  const topAsks = [...book.asks].sort((a,b)=>b.size-a.size).slice(0,3);
+
+  let html = `
+    <div style="margin-bottom:8px;">
+      <div style="font-size:10px;color:#4a6070;margin-bottom:4px;">DISTRIBUCIÓN VOLUMEN</div>
+      <div style="display:flex;height:8px;border-radius:4px;overflow:hidden;">
+        <div style="width:${bidPct}%;background:#00ff88;transition:width 0.5s;"></div>
+        <div style="width:${askPct}%;background:#ff4466;"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:3px;">
+        <span style="font-size:10px;color:#00ff88;">BID ${bidPct}%</span>
+        <span style="font-size:10px;color:#ff4466;">ASK ${askPct}%</span>
+      </div>
+    </div>
+    <div style="font-size:10px;color:#4a6070;margin-bottom:4px;">TOP ÓRDENES BID</div>`;
+
+  topBids.forEach(b => {
+    html += `<div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:2px;">
+      <span class="bull">${fmt(b.price)}</span>
+      <span style="color:#4a6070">${fmtVol(b.size)} BTC</span>
+    </div>`;
+  });
+
+  html += `<div style="font-size:10px;color:#4a6070;margin:6px 0 4px;">TOP ÓRDENES ASK</div>`;
+  topAsks.forEach(a => {
+    html += `<div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:2px;">
+      <span class="bear">${fmt(a.price)}</span>
+      <span style="color:#4a6070">${fmtVol(a.size)} BTC</span>
+    </div>`;
+  });
+
+  document.getElementById('cvd-exchanges').innerHTML = html;
+}
+
+// ============================================================
+// RENDER — AGOTAMIENTO
+// ============================================================
+function renderExhaustion() {
+  const book = state.books[state.pair];
+  if(!book.bids.length) return;
+
+  const totalBid = book.bids.reduce((a,b)=>a+b.size,0);
+  const totalAsk = book.asks.reduce((a,b)=>a+b.size,0);
+  const ratio = totalBid/totalAsk;
+
+  // Top 3 bids vs total
+  const top3Bid = book.bids.slice(0,3).reduce((a,b)=>a+b.size,0);
+  const top3Ask = book.asks.slice(0,3).reduce((a,b)=>a+b.size,0);
+  const concentration = (top3Bid/totalBid*100);
+  const askConc = (top3Ask/totalAsk*100);
+
+  const spreadVal = book.asks[0].price - book.bids[0].price;
+  const midPrice = (book.bids[0].price + book.asks[0].price)/2;
+  const spreadBps = spreadVal/midPrice*10000;
+
+  const metrics = [
+    { lbl: 'Soporte bid', val: Math.min(ratio/2*100, 100), color: ratio > 1 ? '#00ff88' : '#ff4466' },
+    { lbl: 'Concentración bid', val: concentration, color: '#00d4ff' },
+    { lbl: 'Concentración ask', val: askConc, color: '#ff4466' },
+    { lbl: 'Spread bps', val: Math.min(spreadBps*10, 100), color: '#ffc800' },
+    { lbl: 'Profundidad total', val: Math.min((totalBid+totalAsk)/200*100, 100), color: '#aa66ff' }
+  ];
+
+  let html = '';
+  metrics.forEach(m => {
+    html += `<div class="ex-row">
+      <span class="ex-lbl">${m.lbl}</span>
+      <div class="ex-gauge"><div class="ex-fill" style="width:${m.val.toFixed(0)}%;background:${m.color}"></div></div>
+      <span class="ex-val" style="color:${m.color}">${m.val.toFixed(0)}%</span>
+    </div>`;
+  });
+  document.getElementById('exhaust-meter').innerHTML = html;
+}
+
+// ============================================================
+// RENDER — INFO DEL PAR (ticker 24h)
+// ============================================================
+function renderPairInfo() {
+  const t = state.ticker24h[state.pair];
+  if(!t) return;
+
+  const chgColor = t.priceChange >= 0 ? '#00ff88' : '#ff4466';
+  const html = `
+    <table class="exch-table">
+      <tr><td style="color:#4a6070">Precio Actual</td><td class="neutral" style="font-weight:700">${fmt(t.lastPrice)}</td></tr>
+      <tr><td style="color:#4a6070">Cambio 24h</td><td style="color:${chgColor};font-weight:700">${t.priceChange >= 0 ? '+' : ''}${t.priceChange.toFixed(2)}%</td></tr>
+      <tr><td style="color:#4a6070">Máximo 24h</td><td class="bull">${fmt(t.high)}</td></tr>
+      <tr><td style="color:#4a6070">Mínimo 24h</td><td class="bear">${fmt(t.low)}</td></tr>
+      <tr><td style="color:#4a6070">Apertura 24h</td><td style="color:#e0e6ed">${fmt(t.openPrice)}</td></tr>
+      <tr><td style="color:#4a6070">Volumen base</td><td style="color:#e0e6ed">${fmtVol(t.volume)}</td></tr>
+      <tr><td style="color:#4a6070">Volumen USDT</td><td style="color:#ffc800">${fmtVol(t.quoteVolume)}</td></tr>
+      <tr><td style="color:#4a6070">Nº operaciones</td><td style="color:#e0e6ed">${t.count.toLocaleString()}</td></tr>
+    </table>`;
+  document.getElementById('pair-info').innerHTML = html;
+}
+
+// ============================================================
+// RENDER — ESTADÍSTICAS PRECIO
+// ============================================================
+function renderPriceStats() {
+  const t = state.ticker24h[state.pair];
+  const book = state.books[state.pair];
+  if(!t || !book.bids.length) return;
+
+  const mid = (book.bids[0].price + book.asks[0].price) / 2;
+  const fromHigh = ((mid - t.high) / t.high * 100).toFixed(2);
+  const fromLow = ((mid - t.low) / t.low * 100).toFixed(2);
+  const range = t.high - t.low;
+  const posInRange = ((mid - t.low) / range * 100).toFixed(1);
+
+  const html = `
+    <div style="font-size:10px;color:#4a6070;margin-bottom:6px;letter-spacing:1px;">POSICIÓN EN RANGO 24H</div>
+    <div style="height:6px;background:#1a2530;border-radius:3px;margin-bottom:4px;overflow:hidden;">
+      <div style="height:100%;width:${posInRange}%;background:linear-gradient(to right,#ff4466,#ffc800,#00ff88);border-radius:3px;transition:width 0.5s;"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:10px;">
+      <span style="font-size:9px;color:#ff4466;">${fmt(t.low)}</span>
+      <span style="font-size:9px;color:#ffc800;">${posInRange}%</span>
+      <span style="font-size:9px;color:#00ff88;">${fmt(t.high)}</span>
+    </div>
+    <div style="font-size:10px;color:#4a6070;margin-bottom:6px;letter-spacing:1px;">DISTANCIA A EXTREMOS</div>
+    <div style="display:flex;justify-content:space-between;font-size:11px;">
+      <span>Desde máx: <span style="color:#ff4466">${fromHigh}%</span></span>
+      <span>Desde mín: <span style="color:#00ff88">+${fromLow}%</span></span>
+    </div>`;
+  document.getElementById('price-stats').innerHTML = html;
+}
+
+// ============================================================
+// HISTOGRAMA
+// ============================================================
+let histChart = null;
+function renderHistogram() {
+  const book = state.books[state.pair];
+  if(!book.bids.length) return;
+
+  const bids = book.bids.slice(0,12);
+  const asks = book.asks.slice(0,12);
+
+  const labels = [...asks.slice().reverse().map(a => fmt(a.price)), ...bids.map(b => fmt(b.price))];
+  const bidData = [...asks.map(()=>0), ...bids.map(b=>b.size)];
+  const askData = [...asks.slice().reverse().map(a=>a.size), ...bids.map(()=>0)];
+
+  const canvas = document.getElementById('bid-histogram');
+  if(histChart) { histChart.destroy(); histChart = null; }
+  histChart = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Bid', data: bidData, backgroundColor: 'rgba(0,255,136,0.6)', borderColor: '#00ff88', borderWidth: 1 },
+        { label: 'Ask', data: askData, backgroundColor: 'rgba(255,68,102,0.6)', borderColor: '#ff4466', borderWidth: 1 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#4a6070', font: { size: 8 }, maxRotation: 45, autoSkip: true, maxTicksLimit: 10 }, grid: { color: '#1a2530' } },
+        y: { ticks: { color: '#4a6070', font: { size: 9 } }, grid: { color: '#1a2530' } }
+      }
+    }
+  });
+}
+
+// ============================================================
+// CAMBIO DE PAR
+// ============================================================
+function switchPair(pair) {
+  state.pair = pair;
+  // Resetear libro para el nuevo par
+  document.getElementById('ob-bids').innerHTML = '<div style="font-size:11px;color:#2a3a50;text-align:center;padding:12px;">Cargando libro...</div>';
+  document.getElementById('ob-asks').innerHTML = '';
+  document.getElementById('barriers-list').innerHTML = '<div style="font-size:11px;color:#2a3a50;text-align:center;padding:12px;">Cargando barreras...</div>';
+  document.getElementById('mid-price').textContent = '--';
+
+  connectOrderBook(pair);
+  fetchTicker24h(pair);
+}
+
+// ============================================================
+// EVENTOS UI
+// ============================================================
+document.getElementById('pair-tabs').addEventListener('click', e => {
+  const tab = e.target.closest('.tab');
+  if(!tab) return;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  tab.classList.add('active');
+  switchPair(tab.dataset.pair);
+});
+
+// ============================================================
+// INIT
+// ============================================================
+connectOrderBook('BTCUSDT');
+fetchTicker24h('BTCUSDT');
+
+// Histograma cada 3s con datos reales del book
+setInterval(() => {
+  if(state.books[state.pair]?.bids?.length) renderHistogram();
+}, 3000);
+
+// Ticker 24h cada 10s
+setInterval(() => {
+  fetchTicker24h(state.pair);
+}, 10000);
+</script>
+</body>
+</html>

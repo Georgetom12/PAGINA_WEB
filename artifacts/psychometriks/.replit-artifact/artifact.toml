@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/psychometriks/"
+title = "PSYCHOMETRIKS Platform"
+version = "1.0.0"
+id = "artifacts/psychometriks"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/psychometriks/" ]
+localPort = 25268
+
+[services.development]
+run = "pnpm --filter @workspace/psychometriks run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/psychometriks", "run", "build" ]
+publicDir = "artifacts/psychometriks/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25268"
+BASE_PATH = "/psychometriks/"

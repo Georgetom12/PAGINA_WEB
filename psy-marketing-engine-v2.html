@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PSY MARKETING ENGINE</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --cyan:#00e5ff;
+  --cyan-dim:#0097a7;
+  --bg:#020b12;
+  --bg2:#071520;
+  --bg3:#0a1f2e;
+  --border:#0d3347;
+  --border2:#1a4a63;
+  --text:#c8e8f0;
+  --text2:#4a7a8a;
+  --green:#00ff88;
+  --red:#ff3b6b;
+  --amber:#ffb800;
+}
+body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;min-height:100vh;overflow-x:hidden}
+
+/* SCANLINE effect */
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,229,255,0.015) 2px,rgba(0,229,255,0.015) 4px);pointer-events:none;z-index:9999}
+
+/* HEADER */
+header{display:flex;align-items:center;justify-content:space-between;padding:16px 32px;border-bottom:1px solid var(--border);background:rgba(2,11,18,0.95);backdrop-filter:blur(10px);position:sticky;top:0;z-index:100}
+.logo{font-family:'Orbitron',monospace;font-size:16px;font-weight:700;color:var(--cyan);letter-spacing:3px}
+.logo span{color:var(--text2);font-weight:400}
+.status-bar{display:flex;gap:16px;align-items:center}
+.status-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.status-text{font-size:12px;color:var(--text2);font-family:'Share Tech Mono',monospace;letter-spacing:1px}
+.date-badge{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--cyan-dim);background:var(--bg3);border:1px solid var(--border);padding:4px 10px;border-radius:4px}
+
+/* LAYOUT */
+.app{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 57px)}
+
+/* SIDEBAR */
+.sidebar{background:var(--bg2);border-right:1px solid var(--border);padding:20px 0}
+.nav-section{padding:8px 16px;font-size:10px;color:var(--text2);letter-spacing:2px;text-transform:uppercase;font-family:'Share Tech Mono',monospace;margin-top:12px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 20px;cursor:pointer;transition:all 0.15s;border-left:2px solid transparent;font-size:14px;font-weight:500;color:var(--text2);letter-spacing:0.5px}
+.nav-item:hover{color:var(--cyan);background:rgba(0,229,255,0.03)}
+.nav-item.active{color:var(--cyan);border-left-color:var(--cyan);background:rgba(0,229,255,0.05)}
+.nav-icon{width:16px;text-align:center;font-size:14px}
+.nav-badge{margin-left:auto;font-size:10px;background:var(--cyan);color:var(--bg);padding:2px 6px;border-radius:99px;font-family:'Share Tech Mono',monospace}
+
+/* MAIN */
+.main{overflow-y:auto;padding:28px 32px}
+
+/* PANELS */
+.panel{display:none}
+.panel.active{display:block}
+
+/* SECTION HEADER */
+.section-header{margin-bottom:24px}
+.section-title{font-family:'Orbitron',monospace;font-size:18px;font-weight:700;color:var(--cyan);letter-spacing:2px}
+.section-sub{font-size:13px;color:var(--text2);margin-top:4px;letter-spacing:0.5px}
+
+/* CARDS */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px}
+.card-title{font-size:11px;color:var(--text2);letter-spacing:2px;text-transform:uppercase;font-family:'Share Tech Mono',monospace;margin-bottom:12px}
+
+/* GRID */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+
+/* METRIC */
+.metric{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:16px;text-align:center}
+.metric-val{font-family:'Orbitron',monospace;font-size:24px;font-weight:700;color:var(--cyan)}
+.metric-lbl{font-size:11px;color:var(--text2);margin-top:4px;letter-spacing:1px;text-transform:uppercase}
+
+/* GENERATOR */
+.gen-form{display:flex;flex-direction:column;gap:12px}
+.label{font-size:11px;color:var(--text2);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px;font-family:'Share Tech Mono',monospace}
+select,textarea,input[type=text]{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:6px;font-family:'Rajdhani',sans-serif;font-size:14px;transition:border 0.2s;outline:none}
+select:focus,textarea:focus,input[type=text]:focus{border-color:var(--cyan-dim)}
+select option{background:var(--bg3)}
+textarea{resize:vertical;min-height:80px;line-height:1.5}
+
+.btn-primary{background:var(--cyan);color:var(--bg);border:none;padding:12px 24px;border-radius:6px;font-family:'Orbitron',monospace;font-size:12px;font-weight:700;letter-spacing:2px;cursor:pointer;transition:all 0.2s;width:100%}
+.btn-primary:hover{background:#00b8d4;transform:translateY(-1px)}
+.btn-primary:disabled{opacity:0.4;cursor:not-allowed;transform:none}
+.btn-secondary{background:transparent;color:var(--cyan);border:1px solid var(--border2);padding:8px 18px;border-radius:6px;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;letter-spacing:0.5px}
+.btn-secondary:hover{border-color:var(--cyan);background:rgba(0,229,255,0.05)}
+
+/* OUTPUT */
+.output-box{background:var(--bg);border:1px solid var(--border2);border-radius:6px;padding:16px;font-size:13px;line-height:1.8;color:var(--text);white-space:pre-wrap;font-family:'Rajdhani',sans-serif;min-height:120px;position:relative;display:none}
+.output-box.show{display:block}
+.output-actions{display:flex;gap:8px;margin-top:10px;justify-content:flex-end}
+
+/* LOADER */
+.loader{display:none;align-items:center;gap:10px;padding:16px;color:var(--cyan-dim);font-family:'Share Tech Mono',monospace;font-size:12px}
+.loader.show{display:flex}
+.loader-bar{display:flex;gap:3px}
+.loader-bar span{width:3px;height:16px;background:var(--cyan);border-radius:2px;animation:bar 1s ease-in-out infinite}
+.loader-bar span:nth-child(2){animation-delay:0.15s}
+.loader-bar span:nth-child(3){animation-delay:0.3s}
+.loader-bar span:nth-child(4){animation-delay:0.45s}
+@keyframes bar{0%,100%{opacity:0.2;transform:scaleY(0.5)}50%{opacity:1;transform:scaleY(1)}}
+
+/* CONTENT CALENDAR */
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:16px}
+.cal-day{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px 8px;text-align:center}
+.cal-day-name{font-size:10px;color:var(--text2);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;font-family:'Share Tech Mono',monospace}
+.cal-type{font-size:11px;font-weight:600;color:var(--cyan);margin-bottom:4px;letter-spacing:0.5px}
+.cal-net{display:flex;gap:3px;justify-content:center;flex-wrap:wrap}
+.net-tag{font-size:9px;padding:1px 5px;border-radius:99px;font-weight:600}
+.net-tk{background:rgba(0,0,0,0.6);color:#fff;border:1px solid #333}
+.net-x{background:rgba(0,0,0,0.6);color:#fff;border:1px solid #555}
+.net-yt{background:rgba(255,0,0,0.15);color:#ff4444;border:1px solid rgba(255,0,0,0.3)}
+.net-tg{background:rgba(0,136,204,0.15);color:#0088cc;border:1px solid rgba(0,136,204,0.3)}
+
+/* HISTORY */
+.history-item{display:flex;align-items:flex-start;gap:14px;padding:14px 0;border-bottom:1px solid var(--border)}
+.history-item:last-child{border-bottom:none}
+.hist-net{width:32px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.hist-content{flex:1}
+.hist-type{font-size:10px;color:var(--text2);letter-spacing:1px;text-transform:uppercase;font-family:'Share Tech Mono',monospace}
+.hist-text{font-size:13px;color:var(--text);margin:4px 0;line-height:1.5}
+.hist-time{font-size:11px;color:var(--text2)}
+.hist-actions{display:flex;gap:6px;align-items:center}
+.copy-mini{padding:4px 10px;font-size:11px;background:transparent;border:1px solid var(--border2);color:var(--text2);border-radius:4px;cursor:pointer;transition:all 0.15s}
+.copy-mini:hover{border-color:var(--cyan);color:var(--cyan)}
+
+/* TAGS */
+.tag{display:inline-block;font-size:11px;padding:3px 8px;border-radius:99px;font-weight:600;margin:2px;letter-spacing:0.3px}
+.tag-green{background:rgba(0,255,136,0.1);color:var(--green);border:1px solid rgba(0,255,136,0.2)}
+.tag-cyan{background:rgba(0,229,255,0.1);color:var(--cyan);border:1px solid rgba(0,229,255,0.2)}
+.tag-amber{background:rgba(255,184,0,0.1);color:var(--amber);border:1px solid rgba(255,184,0,0.2)}
+.tag-red{background:rgba(255,59,107,0.1);color:var(--red);border:1px solid rgba(255,59,107,0.2)}
+
+/* SETTINGS */
+.setting-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border)}
+.setting-row:last-child{border-bottom:none}
+.setting-info .setting-name{font-size:14px;font-weight:600;color:var(--text)}
+.setting-info .setting-desc{font-size:12px;color:var(--text2);margin-top:2px}
+.toggle{width:40px;height:22px;background:var(--border2);border-radius:99px;position:relative;cursor:pointer;transition:background 0.2s;flex-shrink:0}
+.toggle.on{background:var(--cyan)}
+.toggle::after{content:'';position:absolute;width:16px;height:16px;background:#fff;border-radius:50%;top:3px;left:3px;transition:left 0.2s}
+.toggle.on::after{left:21px}
+.connected-badge{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--green);font-family:'Share Tech Mono',monospace}
+.conn-dot{width:6px;height:6px;border-radius:50%;background:var(--green)}
+
+/* DAILY BRIEF */
+.brief-card{background:linear-gradient(135deg,var(--bg3),var(--bg2));border:1px solid var(--border2);border-radius:8px;padding:20px;margin-bottom:16px;position:relative;overflow:hidden}
+.brief-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--cyan),transparent)}
+.brief-network{font-size:10px;color:var(--cyan);letter-spacing:2px;text-transform:uppercase;font-family:'Share Tech Mono',monospace;margin-bottom:8px}
+.brief-text{font-size:14px;color:var(--text);line-height:1.7;white-space:pre-wrap}
+.brief-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+
+/* GITHUB/RAILWAY STATUS */
+.conn-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:16px;display:flex;align-items:center;gap:16px}
+.conn-icon{width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.conn-info{flex:1}
+.conn-name{font-size:14px;font-weight:700;color:var(--text);letter-spacing:0.5px}
+.conn-status{font-size:12px;color:var(--text2);margin-top:2px}
+.conn-btn{padding:8px 16px;font-size:12px;border-radius:6px;cursor:pointer;font-weight:600;letter-spacing:0.5px;border:none;transition:all 0.2s}
+.conn-btn.connected{background:rgba(0,255,136,0.1);color:var(--green);border:1px solid rgba(0,255,136,0.3)}
+.conn-btn.disconnected{background:var(--cyan);color:var(--bg)}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+/* DEPLOY CARD */
+.deploy-step{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+.deploy-step:last-child{border-bottom:none}
+.step-num{width:24px;height:24px;border-radius:50%;border:1px solid var(--cyan);color:var(--cyan);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Share Tech Mono',monospace}
+.step-content .step-title{font-size:13px;font-weight:600;color:var(--text)}
+.step-content .step-desc{font-size:12px;color:var(--text2);margin-top:3px;line-height:1.5}
+code{background:var(--bg);border:1px solid var(--border);padding:2px 6px;border-radius:4px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--cyan)}
+
+.notification{position:fixed;bottom:24px;right:24px;background:var(--bg3);border:1px solid var(--cyan);border-radius:8px;padding:12px 18px;font-size:13px;color:var(--cyan);font-family:'Share Tech Mono',monospace;z-index:9998;transform:translateY(100px);opacity:0;transition:all 0.3s}
+.notification.show{transform:translateY(0);opacity:1}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">PSY <span>·</span> MARKETING ENGINE</div>
+  <div class="status-bar">
+    <div class="status-dot"></div>
+    <div class="status-text">IA ONLINE</div>
+    <div class="date-badge" id="current-date">--</div>
+  </div>
+</header>
+
+<div class="app">
+  <nav class="sidebar">
+    <div class="nav-section">Sistema</div>
+    <div class="nav-item active" onclick="showPanel('dashboard')">
+      <span class="nav-icon">⚡</span> Dashboard
+    </div>
+    <div class="nav-item" onclick="showPanel('generator')">
+      <span class="nav-icon">🤖</span> Generador IA
+      <span class="nav-badge">NEW</span>
+    </div>
+    <div class="nav-item" onclick="showPanel('daily')">
+      <span class="nav-icon">📅</span> Brief Diario
+    </div>
+
+    <div class="nav-section">Contenido</div>
+    <div class="nav-item" onclick="showPanel('calendar')">
+      <span class="nav-icon">🗓</span> Calendario
+    </div>
+    <div class="nav-item" onclick="showPanel('history')">
+      <span class="nav-icon">📂</span> Historial
+    </div>
+    <div class="nav-item" onclick="showPanel('hooks')">
+      <span class="nav-icon">🎣</span> Banco de Hooks
+    </div>
+
+    <div class="nav-section">Plataforma</div>
+    <div class="nav-item" onclick="showPanel('deploy')">
+      <span class="nav-icon">🚀</span> Deploy a Railway
+    </div>
+    <div class="nav-item" onclick="showPanel('settings')">
+      <span class="nav-icon">⚙</span> Configuración
+    </div>
+  </nav>
+
+  <main class="main">
+
+    <!-- DASHBOARD -->
+    <div class="panel active" id="panel-dashboard">
+      <div class="section-header">
+        <div class="section-title">COMMAND CENTER</div>
+        <div class="section-sub">Resumen de tu estrategia de marketing PSYCHOMETRIKS</div>
+      </div>
+
+      <div class="grid-4" style="margin-bottom:20px">
+        <div class="metric">
+          <div class="metric-val">0</div>
+          <div class="metric-lbl">Posts generados hoy</div>
+        </div>
+        <div class="metric">
+          <div class="metric-val" style="color:var(--green)">4</div>
+          <div class="metric-lbl">Redes activas</div>
+        </div>
+        <div class="metric">
+          <div class="metric-val" style="color:var(--amber)">80</div>
+          <div class="metric-lbl">Seguidores TikTok</div>
+        </div>
+        <div class="metric">
+          <div class="metric-val" style="color:var(--red)">0</div>
+          <div class="metric-lbl">Clientes ELITE</div>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-bottom:16px">
+        <div class="card">
+          <div class="card-title">Acción rápida — generar post</div>
+          <div class="gen-form">
+            <div>
+              <div class="label">Red social</div>
+              <select id="dash-red">
+                <option value="tiktok">TikTok</option>
+                <option value="x">X (Twitter)</option>
+                <option value="youtube">YouTube</option>
+                <option value="telegram">Telegram</option>
+              </select>
+            </div>
+            <div>
+              <div class="label">Tipo de contenido</div>
+              <select id="dash-tipo">
+                <option value="señal">Señal de trading</option>
+                <option value="analisis">Análisis de mercado</option>
+                <option value="educacion">Educación trading</option>
+                <option value="plataforma">Mostrar plataforma</option>
+                <option value="resultado">Resultado de señal</option>
+                <option value="macro">Contexto macro</option>
+                <option value="whale">Whale alert</option>
+              </select>
+            </div>
+            <button class="btn-primary" onclick="generateQuick()">⚡ GENERAR AHORA</button>
+          </div>
+          <div class="loader" id="dash-loader">
+            <div class="loader-bar"><span></span><span></span><span></span><span></span></div>
+            PSY ENGINE procesando...
+          </div>
+          <div class="output-box" id="dash-output"></div>
+          <div class="output-actions" id="dash-actions" style="display:none">
+            <button class="btn-secondary" onclick="copyOutput('dash-output')">Copiar</button>
+            <button class="btn-secondary" onclick="saveToHistory('dash-output','dash-red','dash-tipo')">Guardar</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Hoy toca publicar</div>
+          <div id="today-plan"></div>
+          <div style="margin-top:16px">
+            <div class="card-title">Meta 60 días</div>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
+              <div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+                  <span style="font-size:12px;color:var(--text2)">TikTok seguidores</span>
+                  <span style="font-size:12px;color:var(--cyan)">80 / 1000</span>
+                </div>
+                <div style="background:var(--bg);border-radius:99px;height:4px">
+                  <div style="width:8%;background:var(--cyan);height:4px;border-radius:99px"></div>
+                </div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+                  <span style="font-size:12px;color:var(--text2)">Clientes ELITE</span>
+                  <span style="font-size:12px;color:var(--cyan)">0 / 10</span>
+                </div>
+                <div style="background:var(--bg);border-radius:99px;height:4px">
+                  <div style="width:0%;background:var(--green);height:4px;border-radius:99px"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GENERATOR FULL -->
+    <div class="panel" id="panel-generator">
+      <div class="section-header">
+        <div class="section-title">GENERADOR IA</div>
+        <div class="section-sub">Motor de contenido profesional impulsado por Claude AI</div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Configurar contenido</div>
+          <div class="gen-form">
+            <div>
+              <div class="label">Red social destino</div>
+              <select id="gen-red">
+                <option value="tiktok">📱 TikTok (guión + descripción)</option>
+                <option value="x">🐦 X / Twitter (post + thread)</option>
+                <option value="youtube">▶️ YouTube (guión completo + SEO)</option>
+                <option value="telegram">✈️ Telegram (mensaje canal)</option>
+                <option value="todos">🌐 Todos (pack completo)</option>
+              </select>
+            </div>
+            <div>
+              <div class="label">Tipo de contenido</div>
+              <select id="gen-tipo">
+                <option value="señal activa">📊 Señal activa de trading</option>
+                <option value="análisis BTC">🔍 Análisis BTC institucional</option>
+                <option value="análisis altcoin">🔍 Análisis altcoin</option>
+                <option value="resultado señal">✅ Resultado de señal (win/loss)</option>
+                <option value="educación Wyckoff">🎓 Educación — Wyckoff</option>
+                <option value="educación SMC">🎓 Educación — Smart Money Concepts</option>
+                <option value="educación order blocks">🎓 Educación — Order Blocks</option>
+                <option value="fear and greed">😱 Fear & Greed + contexto</option>
+                <option value="whale alert">🐋 Whale Alert</option>
+                <option value="macro global">🌍 Contexto macro global</option>
+                <option value="plataforma PSYCHOMETRIKS">🚀 Mostrar plataforma</option>
+                <option value="win rate semanal">📈 Win rate semanal</option>
+              </select>
+            </div>
+            <div>
+              <div class="label">Activo / dato clave (opcional)</div>
+              <input type="text" id="gen-dato" placeholder="Ej: BTC en $80,920 | SOL +340% | Fear 38">
+            </div>
+            <div>
+              <div class="label">Tono</div>
+              <select id="gen-tono">
+                <option value="profesional e institucional">Profesional e institucional</option>
+                <option value="urgente y directo">Urgente y directo</option>
+                <option value="educativo y claro">Educativo y claro</option>
+                <option value="misterioso e intrigante">Misterioso e intrigante</option>
+              </select>
+            </div>
+            <div>
+              <div class="label">Instrucción extra (opcional)</div>
+              <textarea id="gen-extra" placeholder="Ej: Menciona que la señal fue detectada por PSY Oracle IA. Agrega urgencia al final." rows="3"></textarea>
+            </div>
+            <button class="btn-primary" id="gen-btn" onclick="generateFull()">🤖 GENERAR CON IA</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Contenido generado</div>
+          <div class="loader" id="gen-loader">
+            <div class="loader-bar"><span></span><span></span><span></span><span></span></div>
+            PSY ENGINE escribiendo contenido...
+          </div>
+          <div class="output-box show" id="gen-output" style="min-height:300px;display:block">
+            <span style="color:var(--text2);font-style:italic">El contenido generado por IA aparecerá aquí...\n\nConfigura los parámetros a la izquierda y haz clic en GENERAR CON IA.</span>
+          </div>
+          <div class="output-actions">
+            <button class="btn-secondary" onclick="copyOutput('gen-output')">📋 Copiar</button>
+            <button class="btn-secondary" onclick="saveToHistory('gen-output','gen-red','gen-tipo')">💾 Guardar</button>
+            <button class="btn-secondary" onclick="generateFull()">🔄 Regenerar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <div class="card-title">Guión para video (TikTok / YouTube)</div>
+        <div class="loader" id="script-loader">
+          <div class="loader-bar"><span></span><span></span><span></span><span></span></div>
+          Generando guión completo...
+        </div>
+        <div class="output-box show" id="script-output" style="display:block;min-height:150px">
+          <span style="color:var(--text2);font-style:italic">El guión del video aparecerá aquí después de generar contenido para TikTok o YouTube...</span>
+        </div>
+        <div class="output-actions">
+          <button class="btn-secondary" onclick="copyOutput('script-output')">📋 Copiar guión</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- DAILY BRIEF -->
+    <div class="panel" id="panel-daily">
+      <div class="section-header">
+        <div class="section-title">BRIEF DIARIO</div>
+        <div class="section-sub">Pack completo de contenido para hoy — generado por IA</div>
+      </div>
+
+      <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+        <button class="btn-primary" style="width:auto;padding:10px 24px" onclick="generateDailyBrief()">⚡ GENERAR BRIEF DE HOY</button>
+        <button class="btn-secondary" onclick="copyAllBrief()">📋 Copiar todo</button>
+      </div>
+
+      <div class="loader" id="brief-loader">
+        <div class="loader-bar"><span></span><span></span><span></span><span></span></div>
+        Generando pack completo de contenido para hoy...
+      </div>
+
+      <div id="brief-container"></div>
+    </div>
+
+    <!-- CALENDAR -->
+    <div class="panel" id="panel-calendar">
+      <div class="section-header">
+        <div class="section-title">CALENDARIO SEMANAL</div>
+        <div class="section-sub">Plan de contenido por red social — 7 días</div>
+      </div>
+
+      <div class="cal-grid">
+        <div class="cal-day">
+          <div class="cal-day-name">LUN</div>
+          <div class="cal-type">Análisis BTC</div>
+          <div class="cal-net">
+            <span class="net-tag net-tk">TK</span>
+            <span class="net-tag net-x">X</span>
+          </div>
+        </div>
+        <div class="cal-day">
+          <div class="cal-day-name">MAR</div>
+          <div class="cal-type">Señal en vivo</div>
+          <div class="cal-net">
+            <span class="net-tag net-tk">TK</span>
+            <span class="net-tag net-tg">TG</span>
+          </div>
+        </div>
+        <div class="cal-day">
+          <div class="cal-day-name">MIÉ</div>
+          <div class="cal-type">Educación</div>
+          <div class="cal-net">
+            <span class="net-tag net-tk">TK</span>
+            <span class="net-tag net-yt">YT</span>
+          </div>
+        </div>
+        <div class="cal-day">
+          <div class="cal-day-name">JUE</div>
+          <div class="cal-type">Resultado</div>
+          <div class="cal-net">
+            <span class="net-tag net-x">X</span>
+            <span class="net-tag net-tg">TG</span>
+          </div>
+        </div>
+        <div class="cal-day">
+          <div class="cal-day-name">VIE</div>
+          <div class="cal-type">Fear & Greed</div>
+          <div class="cal-net">
+            <span class="net-tag net-tk">TK</span>
+            <span class="net-tag net-x">X</span>
+          </div>
+        </div>
+        <div class="cal-day">
+          <div class="cal-day-name">SÁB</div>
+          <div class="cal-type">Plataforma</div>
+          <div class="cal-net">
+            <span class="net-tag net-tk">TK</span>
+            <span class="net-tag net-yt">YT</span>
+          </div>
+        </div>
+        <div class="cal-day">
+          <div class="cal-day-name">DOM</div>
+          <div class="cal-type">Win Rate</div>
+          <div class="cal-net">
+            <span class="net-tag net-x">X</span>
+            <span class="net-tag net-tg">TG</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Generar contenido para día específico</div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+          <select id="cal-dia" style="flex:1;min-width:140px">
+            <option value="lunes">Lunes — Análisis BTC</option>
+            <option value="martes">Martes — Señal en vivo</option>
+            <option value="miércoles">Miércoles — Educación</option>
+            <option value="jueves">Jueves — Resultado señal</option>
+            <option value="viernes">Viernes — Fear & Greed</option>
+            <option value="sábado">Sábado — Plataforma</option>
+            <option value="domingo">Domingo — Win Rate</option>
+          </select>
+          <button class="btn-secondary" onclick="generateForDay()">Generar para este día</button>
+        </div>
+        <div class="loader" id="cal-loader">
+          <div class="loader-bar"><span></span><span></span><span></span><span></span></div>
+          Generando...
+        </div>
+        <div class="output-box" id="cal-output"></div>
+        <div class="output-actions" id="cal-actions" style="display:none">
+          <button class="btn-secondary" onclick="copyOutput('cal-output')">Copiar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- HISTORY -->
+    <div class="panel" id="panel-history">
+      <div class="section-header">
+        <div class="section-title">HISTORIAL</div>
+        <div class="section-sub">Contenido generado y guardado</div>
+      </div>
+      <div class="card">
+        <div id="history-list">
+          <div style="color:var(--text2);font-size:13px;padding:20px;text-align:center;font-family:'Share Tech Mono',monospace">
+            Aún no hay contenido guardado.<br>Genera posts y guárdalos para verlos aquí.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HOOKS -->
+    <div class="panel" id="panel-hooks">
+      <div class="section-header">
+        <div class="section-title">BANCO DE HOOKS</div>
+        <div class="section-sub">Frases de apertura para captar atención en 2 segundos</div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Hooks para TikTok</div>
+          <div id="hooks-tiktok"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Hooks para X / YouTube</div>
+          <div id="hooks-x"></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <div class="card-title">Generar nuevo hook con IA</div>
+        <div style="display:flex;gap:10px">
+          <select id="hook-tema" style="flex:1">
+            <option value="señales crypto">Señales crypto</option>
+            <option value="análisis institucional">Análisis institucional</option>
+            <option value="resultado de trade">Resultado de trade</option>
+            <option value="educación trading">Educación trading</option>
+            <option value="plataforma PSYCHOMETRIKS">Plataforma PSYCHOMETRIKS</option>
+          </select>
+          <button class="btn-secondary" onclick="generateHooks()">Generar hooks</button>
+        </div>
+        <div class="loader" id="hook-loader" style="margin-top:10px">
+          <div class="loader-bar"><span></span><span></span><span></span><span></span></div>
+          Generando hooks virales...
+        </div>
+        <div class="output-box" id="hook-output" style="margin-top:10px"></div>
+      </div>
+    </div>
+
+    <!-- DEPLOY -->
+    <div class="panel" id="panel-deploy">
+      <div class="section-header">
+        <div class="section-title">DEPLOY A RAILWAY</div>
+        <div class="section-sub">Conecta y despliega el motor automático en tu servidor</div>
+      </div>
+
+      <div class="grid-2" style="margin-bottom:16px">
+        <div class="conn-card">
+          <div class="conn-icon" style="background:#24292e">🐙</div>
+          <div class="conn-info">
+            <div class="conn-name">GitHub</div>
+            <div class="conn-status">Georgetom12/PAGINA_WEB</div>
+          </div>
+          <button class="conn-btn connected">● Conectado</button>
+        </div>
+        <div class="conn-card">
+          <div class="conn-icon" style="background:#0f1923">🚄</div>
+          <div class="conn-info">
+            <div class="conn-name">Railway</div>
+            <div class="conn-status">api.psychometriks.trade</div>
+          </div>
+          <button class="conn-btn connected">● Activo</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Cómo convertir esto en un servicio automático en Railway</div>
+        <div class="deploy-step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <div class="step-title">Guarda este HTML en tu repo de GitHub</div>
+            <div class="step-desc">Súbelo a <code>artifacts/psychometriks/public/psy-marketing.html</code> — Railway lo sirve automáticamente en <code>psychometriks.trade/psy-marketing</code></div>
+          </div>
+        </div>
+        <div class="deploy-step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <div class="step-title">Agrega la ruta de marketing en el api-server</div>
+            <div class="step-desc">Crea <code>artifacts/api-server/src/routes/marketing.ts</code> con el endpoint <code>POST /api/marketing/generate</code> que llame a Anthropic API con el contexto de PSYCHOMETRIKS</div>
+          </div>
+        </div>
+        <div class="deploy-step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <div class="step-title">Configura el cron job diario en Railway</div>
+            <div class="step-desc">En Railway → tu servicio → <code>Settings → Cron</code> → agrega <code>0 9 * * *</code> para que genere el brief diario automáticamente a las 9am</div>
+          </div>
+        </div>
+        <div class="deploy-step">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <div class="step-title">Protege con tu token PSY</div>
+            <div class="step-desc">Esta página solo debe ser accesible para SUPERADMIN — agrega <code>X-PSY-Token</code> en el header igual que el resto de rutas privadas de PSYCHOMETRIKS</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="panel" id="panel-settings">
+      <div class="section-header">
+        <div class="section-title">CONFIGURACIÓN</div>
+        <div class="section-sub">Personaliza el motor de marketing</div>
+      </div>
+
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-title">Perfil de marca</div>
+        <div class="gen-form">
+          <div><div class="label">Nombre de plataforma</div><input type="text" value="PSYCHOMETRIKS"></div>
+          <div><div class="label">URL principal</div><input type="text" value="psychometriks.trade"></div>
+          <div><div class="label">Precio plan ELITE</div><input type="text" value="$49/mes"></div>
+          <div><div class="label">Hashtags principales</div><input type="text" value="#Psychometriks #Crypto #Trading #Bitcoin #Señales"></div>
+          <div><div class="label">Idioma del contenido</div>
+            <select><option>Español (LATAM)</option><option>Español (España)</option><option>English</option></select>
+          </div>
+          <button class="btn-primary" onclick="showNotif('Configuración guardada')">Guardar configuración</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Automatización</div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-name">Brief diario automático</div>
+            <div class="setting-desc">Genera el pack de contenido cada mañana a las 9am</div>
+          </div>
+          <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-name">Incluir datos reales de mercado</div>
+            <div class="setting-desc">Conecta con PSY Oracle para datos en vivo</div>
+          </div>
+          <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-name">Guardar historial automáticamente</div>
+            <div class="setting-desc">Todo el contenido generado queda en el historial</div>
+          </div>
+          <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-name">Modo agresivo (más hooks de urgencia)</div>
+            <div class="setting-desc">El contenido prioriza conversión sobre educación</div>
+          </div>
+          <div class="toggle" onclick="this.classList.toggle('on')"></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div class="notification" id="notification"></div>
+
+<script>
+// API proxied via psychometriks.trade/api/marketing/generate
+
+
+const BRAND_CONTEXT = `Eres el motor de marketing de PSYCHOMETRIKS, una plataforma profesional de análisis institucional para traders de crypto. 
+
+SOBRE PSYCHOMETRIKS:
+- URL: psychometriks.trade
+- Herramientas: PSY Oracle IA, Heatmap en vivo, Señales en tiempo real, Whale Alerts, Fear & Greed, Market Regime, PSY BRAIN (análisis institucional IA), Bóveda segura, Exchange integrado, Journal de trading, PSY Score, Aula educativa con 8 niveles
+- Precio ELITE: $49/mes
+- Público: traders de crypto LATAM
+- Tono de marca: profesional, institucional, tecnológico, oscuro/ciber
+- Colores: negro profundo + cyan eléctrico (#00e5ff)
+- Redes: TikTok @psychometriks, X @psychometriks, Telegram canal
+- Sin mostrar rostro en videos — pantalla de la plataforma + voz IA
+
+REGLAS DE CONTENIDO:
+- Siempre terminar con call to action a psychometriks.trade
+- Incluir hashtags relevantes al final
+- Mencionar herramientas específicas de la plataforma
+- Datos reales cuando sea posible (BTC ~$80,920, Fear & Greed 38, Market Regime BEAR CAUTION)
+- Tono: "traders institucionales", "smart money", "análisis real"
+- NUNCA decir "asesoramiento financiero" — siempre "solo educativo"`;
+
+const historyData = [];
+
+function showPanel(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  event.currentTarget.classList.add('active');
+
+  if (id === 'hooks') renderHooks();
+  if (id === 'history') renderHistory();
+  if (id === 'dashboard') renderTodayPlan();
+}
+
+function showNotif(msg) {
+  const n = document.getElementById('notification');
+  n.textContent = msg;
+  n.classList.add('show');
+  setTimeout(() => n.classList.remove('show'), 2500);
+}
+
+async function callClaude(prompt) {
+  const res = await fetch(ANTHROPIC_API, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      model: MODEL,
+      max_tokens: 1000,
+      messages: [{role:'user', content: BRAND_CONTEXT + '\n\n' + prompt}]
+    })
+  });
+  const data = await res.json();
+  return data.content?.[0]?.text || 'Error generando contenido';
+}
+
+async function generateQuick() {
+  const red = document.getElementById('dash-red').value;
+  const tipo = document.getElementById('dash-tipo').value;
+  const loader = document.getElementById('dash-loader');
+  const output = document.getElementById('dash-output');
+  const actions = document.getElementById('dash-actions');
+
+  loader.classList.add('show');
+  output.classList.remove('show');
+  actions.style.display = 'none';
+
+  const prompt = `Genera un post de ${tipo} para ${red}. 
+Tono: profesional e institucional. 
+Incluye hook poderoso al inicio, contenido de valor, CTA y hashtags.
+Para TikTok: incluye también el guión de voz (15-30 segundos).
+Para YouTube: incluye título SEO optimizado y descripción.
+Responde SOLO con el contenido listo para publicar, sin explicaciones.`;
+
+  try {
+    const result = await callClaude(prompt);
+    output.textContent = result;
+    output.classList.add('show');
+    actions.style.display = 'flex';
+  } catch(e) {
+    output.textContent = 'Error conectando con IA. Verifica la conexión.';
+    output.classList.add('show');
+  }
+  loader.classList.remove('show');
+}
+
+async function generateFull() {
+  const red = document.getElementById('gen-red').value;
+  const tipo = document.getElementById('gen-tipo').value;
+  const dato = document.getElementById('gen-dato').value;
+  const tono = document.getElementById('gen-tono').value;
+  const extra = document.getElementById('gen-extra').value;
+
+  const loader = document.getElementById('gen-loader');
+  const output = document.getElementById('gen-output');
+  const scriptLoader = document.getElementById('script-loader');
+  const scriptOutput = document.getElementById('script-output');
+
+  loader.classList.add('show');
+  output.textContent = '';
+  scriptLoader.classList.add('show');
+  scriptOutput.textContent = '';
+
+  const postPrompt = `Genera contenido de "${tipo}" para ${red}.
+Tono: ${tono}.
+${dato ? 'Dato clave a incluir: ' + dato : ''}
+${extra ? 'Instrucción extra: ' + extra : ''}
+Genera el post COMPLETO listo para publicar con hook, cuerpo, CTA y hashtags.
+Si es para X: máximo 280 caracteres por tweet, si es thread marca cada tweet con 1/, 2/, etc.
+Si es para YouTube: incluye título SEO (con keyword al inicio), descripción de 150 palabras y 5 tags.
+Si es para todos: genera versión para cada red separada con === NOMBRE RED ===
+Responde SOLO el contenido, sin explicaciones previas.`;
+
+  const scriptPrompt = `Genera el GUIÓN DE VIDEO para TikTok/YouTube Shorts sobre "${tipo}".
+${dato ? 'Dato: ' + dato : ''}
+Formato:
+[HOOK 0-3 seg]: texto que dice la voz
+[PANTALLA]: qué se muestra en la pantalla de psychometriks.trade
+[DESARROLLO 3-20 seg]: texto de voz
+[PANTALLA]: qué mostrar
+[CTA 20-30 seg]: texto final + qué mostrar
+Guión: máximo 80 palabras, voz IA natural.`;
+
+  try {
+    const [postResult, scriptResult] = await Promise.all([
+      callClaude(postPrompt),
+      callClaude(scriptPrompt)
+    ]);
+    output.textContent = postResult;
+    scriptOutput.textContent = scriptResult;
+  } catch(e) {
+    output.textContent = 'Error conectando con IA.';
+    scriptOutput.textContent = 'Error generando guión.';
+  }
+
+  loader.classList.remove('show');
+  scriptLoader.classList.remove('show');
+}
+
+async function generateDailyBrief() {
+  const loader = document.getElementById('brief-loader');
+  const container = document.getElementById('brief-container');
+  loader.classList.add('show');
+  container.innerHTML = '';
+
+  const day = new Date().toLocaleDateString('es-EC', {weekday:'long'});
+  const prompt = `Genera el PACK COMPLETO de contenido para hoy ${day} para PSYCHOMETRIKS.
+
+Genera exactamente estos 4 bloques separados por === BLOQUE ===:
+
+=== TIKTOK ===
+Post + guión de video (30 seg) para TikTok. Hook poderoso. Incluye indicaciones de pantalla.
+
+=== X TWITTER ===
+2 tweets para X. El primero corto e impactante. El segundo con más datos. Con hashtags.
+
+=== YOUTUBE ===
+Título SEO + descripción de video de 5 minutos sobre el tema del día. Con tags.
+
+=== TELEGRAM ===
+Mensaje para canal de señales con análisis breve del mercado de hoy y CTA a la plataforma.
+
+Hazlo todo en español, con datos actuales de mercado (BTC ~$80,920, ETH ~$3,180, Fear & Greed 38, BEAR CAUTION).`;
+
+  try {
+    const result = await callClaude(prompt);
+    const blocks = result.split(/===\s*(TIKTOK|X TWITTER|YOUTUBE|TELEGRAM)\s*===/i);
+    const networks = ['TIKTOK', 'X / TWITTER', 'YOUTUBE', 'TELEGRAM'];
+    const colors = ['#00e5ff', '#fff', '#ff0000', '#0088cc'];
+    let html = '';
+    for (let i = 1; i < blocks.length; i += 2) {
+      const netName = networks[Math.floor(i/2)] || blocks[i];
+      const color = colors[Math.floor(i/2)] || '#00e5ff';
+      const content = blocks[i+1]?.trim() || '';
+      html += `<div class="brief-card" id="brief-${Math.floor(i/2)}">
+        <div class="brief-network" style="color:${color}">● ${netName}</div>
+        <div class="brief-text">${content}</div>
+        <div class="brief-actions">
+          <button class="btn-secondary" onclick="copyText(this.closest('.brief-card').querySelector('.brief-text').textContent)">📋 Copiar</button>
+        </div>
+      </div>`;
+    }
+    container.innerHTML = html || `<div class="brief-card"><div class="brief-text">${result}</div></div>`;
+  } catch(e) {
+    container.innerHTML = '<div style="color:var(--red);padding:16px">Error generando brief. Verifica la conexión.</div>';
+  }
+  loader.classList.remove('show');
+}
+
+async function generateForDay() {
+  const dia = document.getElementById('cal-dia').value;
+  const loader = document.getElementById('cal-loader');
+  const output = document.getElementById('cal-output');
+  const actions = document.getElementById('cal-actions');
+
+  loader.classList.add('show');
+  output.classList.remove('show');
+  actions.style.display = 'none';
+
+  const prompt = `Genera el contenido completo de ${dia} para PSYCHOMETRIKS.
+${dia === 'lunes' ? 'Tema: Análisis semanal BTC con datos institucionales' : ''}
+${dia === 'martes' ? 'Tema: Señal de trading activa con todos los detalles (asset, entrada, TP1, TP2, SL, R/R, leverage)' : ''}
+${dia === 'miércoles' ? 'Tema: Educación — explica un concepto clave (Wyckoff, SMC o Order Blocks)' : ''}
+${dia === 'jueves' ? 'Tema: Resultado de señal (muestra win rate honesto, transparente)' : ''}
+${dia === 'viernes' ? 'Tema: Fear & Greed (38 - FEAR) y Market Regime BEAR CAUTION — qué significa' : ''}
+${dia === 'sábado' ? 'Tema: Mostrar PSYCHOMETRIKS en acción — todas las herramientas disponibles' : ''}
+${dia === 'domingo' ? 'Tema: Resumen semanal con win rate, mejores setups y preview de la próxima semana' : ''}
+
+Genera: post para TikTok + post para X + mensaje Telegram.
+Separados con === RED ===`;
+
+  try {
+    const result = await callClaude(prompt);
+    output.textContent = result;
+    output.classList.add('show');
+    actions.style.display = 'flex';
+  } catch(e) {
+    output.textContent = 'Error generando contenido.';
+    output.classList.add('show');
+  }
+  loader.classList.remove('show');
+}
+
+async function generateHooks() {
+  const tema = document.getElementById('hook-tema').value;
+  const loader = document.getElementById('hook-loader');
+  const output = document.getElementById('hook-output');
+
+  loader.classList.add('show');
+  output.classList.remove('show');
+
+  const prompt = `Genera 10 hooks VIRALES en español para contenido de "${tema}" en PSYCHOMETRIKS.
+Un hook es la primera frase de un video o post que engancha en los primeros 2 segundos.
+Reglas: directo, genera intriga o urgencia, menciona algo concreto, máximo 15 palabras.
+Formato: 1 hook por línea, numerados del 1 al 10.
+No uses comillas, no pongas explicaciones.`;
+
+  try {
+    const result = await callClaude(prompt);
+    output.textContent = result;
+    output.classList.add('show');
+  } catch(e) {
+    output.textContent = 'Error generando hooks.';
+    output.classList.add('show');
+  }
+  loader.classList.remove('show');
+}
+
+function copyOutput(id) {
+  const text = document.getElementById(id).textContent;
+  copyText(text);
+}
+
+function copyText(text) {
+  navigator.clipboard.writeText(text).then(() => showNotif('✓ Copiado al portapapeles'));
+}
+
+function copyAllBrief() {
+  const texts = [...document.querySelectorAll('.brief-text')].map(el => el.textContent).join('\n\n===\n\n');
+  if (!texts.trim()) { showNotif('Genera el brief primero'); return; }
+  copyText(texts);
+  showNotif('✓ Todo el brief copiado');
+}
+
+function saveToHistory(outputId, redId, tipoId) {
+  const text = document.getElementById(outputId).textContent;
+  const red = document.getElementById(redId)?.value || 'general';
+  const tipo = document.getElementById(tipoId)?.value || 'post';
+  if (!text || text.includes('aparecerá aquí')) { showNotif('Genera contenido primero'); return; }
+  historyData.unshift({ text, red, tipo, time: new Date().toLocaleTimeString('es-EC', {hour:'2-digit',minute:'2-digit'}) });
+  showNotif('✓ Guardado en historial');
+}
+
+function renderHistory() {
+  const list = document.getElementById('history-list');
+  if (historyData.length === 0) {
+    list.innerHTML = '<div style="color:var(--text2);font-size:13px;padding:20px;text-align:center;font-family:\'Share Tech Mono\',monospace">Aún no hay contenido guardado.</div>';
+    return;
+  }
+  list.innerHTML = historyData.map((item, i) => `
+    <div class="history-item">
+      <div class="hist-net" style="background:var(--bg3);color:var(--cyan);font-family:'Share Tech Mono',monospace;font-size:11px">${item.red.substring(0,2).toUpperCase()}</div>
+      <div class="hist-content">
+        <div class="hist-type">${item.red} · ${item.tipo}</div>
+        <div class="hist-text">${item.text.substring(0, 120)}...</div>
+        <div class="hist-time">${item.time}</div>
+      </div>
+      <div class="hist-actions">
+        <button class="copy-mini" onclick="copyText(historyData[${i}].text)">Copiar</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+const hooksData = {
+  tiktok: [
+    "El algoritmo detectó esto en BTC y nadie habla de ello",
+    "Así analiza el mercado un trader institucional real",
+    "Esta señal dio +340% en SOL — te muestro el setup exacto",
+    "Los whales movieron $820M esta noche. Mi sistema lo capturó",
+    "Construí la plataforma de trading que otros venden por $500/mes",
+  ],
+  x: [
+    "Fear & Greed en 38. Históricamente esto significa...",
+    "BEAR CAUTION en Market Regime. Lo que hacemos ahora:",
+    "Win rate esta semana: 7/9 señales. Sin filtros, sin edición",
+    "La IA institucional analizó ETH. 6 horas antes del movimiento dijo:",
+    "3 errores que destruyen traders. PSY Score los detecta automático",
+  ]
+};
+
+function renderHooks() {
+  const tk = document.getElementById('hooks-tiktok');
+  const x = document.getElementById('hooks-x');
+  tk.innerHTML = hooksData.tiktok.map((h, i) => `
+    <div class="history-item">
+      <div style="font-size:11px;color:var(--cyan);font-family:'Share Tech Mono',monospace;min-width:20px">${String(i+1).padStart(2,'0')}</div>
+      <div style="flex:1;font-size:13px;color:var(--text);line-height:1.5">${h}</div>
+      <button class="copy-mini" onclick="copyText('${h.replace(/'/g,"\\'")}')">Copiar</button>
+    </div>
+  `).join('');
+  x.innerHTML = hooksData.x.map((h, i) => `
+    <div class="history-item">
+      <div style="font-size:11px;color:var(--cyan);font-family:'Share Tech Mono',monospace;min-width:20px">${String(i+1).padStart(2,'0')}</div>
+      <div style="flex:1;font-size:13px;color:var(--text);line-height:1.5">${h}</div>
+      <button class="copy-mini" onclick="copyText('${h.replace(/'/g,"\\'")}')">Copiar</button>
+    </div>
+  `).join('');
+}
+
+function renderTodayPlan() {
+  const days = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+  const plans = {
+    lunes: {tipo:'Análisis BTC', redes:['TikTok','X'], desc:'Análisis institucional semanal de Bitcoin'},
+    martes: {tipo:'Señal en vivo', redes:['TikTok','Telegram'], desc:'Señal activa con SL/TP y R/R'},
+    miércoles: {tipo:'Educación', redes:['TikTok','YouTube'], desc:'Concepto de trading (Wyckoff/SMC)'},
+    jueves: {tipo:'Resultado', redes:['X','Telegram'], desc:'Win/Loss de la señal del martes'},
+    viernes: {tipo:'Fear & Greed', redes:['TikTok','X'], desc:'Market Regime + contexto macro'},
+    sábado: {tipo:'Plataforma', redes:['TikTok','YouTube'], desc:'Demo de PSYCHOMETRIKS en acción'},
+    domingo: {tipo:'Win Rate', redes:['X','Telegram'], desc:'Resumen semanal de señales'},
+  };
+  const today = days[new Date().getDay()];
+  const plan = plans[today];
+  const el = document.getElementById('today-plan');
+  el.innerHTML = `
+    <div style="margin-bottom:10px">
+      <span class="tag tag-cyan">${plan.tipo}</span>
+      ${plan.redes.map(r => `<span class="tag tag-green">${r}</span>`).join('')}
+    </div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:14px">${plan.desc}</div>
+    <button class="btn-secondary" onclick="showPanel('generator');document.getElementById('gen-tipo').value='${plan.tipo.toLowerCase()}'">Generar contenido de hoy →</button>
+  `;
+}
+
+// Init
+document.getElementById('current-date').textContent = new Date().toLocaleDateString('es-EC', {weekday:'short', day:'numeric', month:'short'}).toUpperCase();
+renderTodayPlan();
+renderHooks();
+</script>
+</body>
+</html>

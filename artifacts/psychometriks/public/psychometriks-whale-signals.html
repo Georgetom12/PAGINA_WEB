@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PSYCHOMETRIKS — Whale Signals + Gem Hunter</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#020408;--panel:#080f1a;--border:#0a3060;
+  --cyan:#00e5ff;--green:#00ff88;--red:#ff2255;
+  --gold:#ffd700;--gem:#b060ff;--orange:#ff8c00;
+  --text:#c8d8e8;--dim:#4a6080;
+  --glow-c:0 0 20px #00e5ff44;--glow-g:0 0 20px #00ff8844;
+  --hl:#7b5cff;--bybit:#f7a600;--binance:#f0b90b;--okx:#00d4aa;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,229,255,.012) 2px,rgba(0,229,255,.012) 4px);pointer-events:none;z-index:9999;}
+body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,.03) 1px,transparent 1px);background-size:50px 50px;pointer-events:none;z-index:0;}
+
+/* HEADER */
+header{position:relative;z-index:10;padding:16px 40px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:linear-gradient(180deg,#020d1a,transparent);}
+.logo{font-family:'Orbitron',monospace;font-size:1.1rem;font-weight:900;color:var(--cyan);letter-spacing:3px;text-shadow:var(--glow-c);}
+.logo span{color:var(--gold);}
+.live-badge{display:flex;align-items:center;gap:8px;font-family:'Share Tech Mono',monospace;font-size:.72rem;color:var(--green);letter-spacing:2px;}
+.pulse-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green);animation:pulse 1.5s infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+.clock{font-family:'Share Tech Mono',monospace;font-size:.82rem;color:var(--dim);}
+
+/* TICKER */
+.ticker-wrap{position:relative;z-index:10;border-bottom:1px solid var(--border);background:var(--panel);overflow:hidden;height:32px;}
+.ticker{display:flex;animation:tickMove 35s linear infinite;white-space:nowrap;height:100%;align-items:center;}
+.ticker-item{padding:0 26px;font-family:'Share Tech Mono',monospace;font-size:.66rem;letter-spacing:1px;border-right:1px solid var(--border);display:flex;align-items:center;gap:9px;height:100%;}
+.ticker-sym{color:var(--text);}.ticker-price{color:#fff;}
+.ticker-chg.pos{color:var(--green);}.ticker-chg.neg{color:var(--red);}
+@keyframes tickMove{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* NAV */
+.nav-tabs{position:relative;z-index:10;display:flex;border-bottom:2px solid var(--border);background:var(--panel);}
+.nav-tab{flex:1;padding:15px 20px;font-family:'Orbitron',monospace;font-size:.62rem;letter-spacing:3px;cursor:pointer;text-align:center;color:var(--dim);border-bottom:3px solid transparent;transition:all .25s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.nav-tab:hover{color:var(--text);background:rgba(255,255,255,.02);}
+.nav-tab.active{color:#fff;background:rgba(255,255,255,.03);}
+.nav-tab.signals.active{border-bottom-color:var(--cyan);color:var(--cyan);}
+.nav-tab.gems.active{border-bottom-color:var(--gem);color:var(--gem);}
+
+/* SECTIONS */
+.section{display:none;}.section.active{display:block;}
+
+/* HERO */
+.hero{position:relative;z-index:10;text-align:center;padding:46px 40px 28px;}
+.hero-tag{font-family:'Share Tech Mono',monospace;font-size:.66rem;letter-spacing:5px;color:var(--cyan);margin-bottom:12px;opacity:0;animation:fadeUp .6s .2s forwards;}
+.hero-tag.gem{color:var(--gem);}
+.hero h1{font-family:'Orbitron',monospace;font-size:clamp(1.8rem,5vw,3.6rem);font-weight:900;line-height:1.1;color:#fff;opacity:0;animation:fadeUp .6s .4s forwards;}
+.accent{color:var(--cyan);}.gold{color:var(--gold);}.gem-color{color:var(--gem);}
+.hero-sub{margin-top:12px;font-size:1rem;font-weight:300;color:var(--dim);letter-spacing:1px;opacity:0;animation:fadeUp .6s .6s forwards;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+
+/* STATS BAR */
+.stats-bar{position:relative;z-index:10;display:flex;margin:26px auto;max-width:960px;border:1px solid var(--border);background:var(--panel);opacity:0;animation:fadeUp .6s .8s forwards;}
+.stat-item{flex:1;padding:16px 18px;text-align:center;border-right:1px solid var(--border);}
+.stat-item:last-child{border-right:none;}
+.stat-label{font-family:'Share Tech Mono',monospace;font-size:.56rem;letter-spacing:3px;color:var(--dim);margin-bottom:4px;}
+.stat-value{font-family:'Orbitron',monospace;font-size:1.35rem;font-weight:700;}
+.sv-green{color:var(--green);text-shadow:var(--glow-g);}
+.sv-cyan{color:var(--cyan);text-shadow:var(--glow-c);}
+.sv-gold{color:var(--gold);}
+.sv-gem{color:var(--gem);text-shadow:0 0 20px #b060ff44;}
+.sv-orange{color:var(--orange);}
+.stat-change{font-size:.62rem;color:var(--green);margin-top:3px;font-family:'Share Tech Mono',monospace;}
+
+/* LAYOUT */
+.main-grid{position:relative;z-index:10;display:grid;grid-template-columns:1fr 340px;gap:18px;max-width:1300px;margin:0 auto;padding:0 26px 40px;}
+.panel{background:var(--panel);border:1px solid var(--border);overflow:hidden;}
+.panel-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);background:linear-gradient(90deg,#050d1a,#020408);}
+.panel-title{font-family:'Orbitron',monospace;font-size:.66rem;letter-spacing:3px;color:var(--cyan);}
+.panel-title.gem{color:var(--gem);}
+.panel-badge{font-family:'Share Tech Mono',monospace;font-size:.56rem;padding:2px 7px;border:1px solid;letter-spacing:2px;}
+.panel-badge.live{border-color:var(--green);color:var(--green);}
+.panel-badge.count{border-color:var(--border);color:var(--dim);}
+.panel-badge.gem{border-color:var(--gem);color:var(--gem);}
+.panel-badge.orange{border-color:var(--orange);color:var(--orange);}
+
+/* EXCHANGE TABS */
+.exchange-tabs{display:flex;border-bottom:1px solid var(--border);overflow-x:auto;}
+.exchange-tabs::-webkit-scrollbar{height:3px;}
+.exchange-tabs::-webkit-scrollbar-thumb{background:var(--border);}
+.ex-tab{flex-shrink:0;padding:10px 16px;font-family:'Share Tech Mono',monospace;font-size:.63rem;letter-spacing:2px;cursor:pointer;border-right:1px solid var(--border);border-bottom:3px solid transparent;color:var(--dim);transition:all .2s;display:flex;align-items:center;gap:7px;background:transparent;}
+.ex-tab:hover{color:var(--text);background:rgba(255,255,255,.02);}
+.ex-tab.active{color:#fff;background:rgba(255,255,255,.03);}
+.ex-tab.all.active{border-bottom-color:var(--cyan);color:var(--cyan);}
+.ex-tab.hl.active{border-bottom-color:var(--hl);color:var(--hl);}
+.ex-tab.bybit.active{border-bottom-color:var(--bybit);color:var(--bybit);}
+.ex-tab.binance.active{border-bottom-color:var(--binance);color:var(--binance);}
+.ex-tab.okx.active{border-bottom-color:var(--okx);color:var(--okx);}
+.ex-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.ex-dot.all{background:var(--cyan);box-shadow:0 0 5px var(--cyan);}
+.ex-dot.hl{background:var(--hl);box-shadow:0 0 5px var(--hl);}
+.ex-dot.bybit{background:var(--bybit);box-shadow:0 0 5px var(--bybit);}
+.ex-dot.binance{background:var(--binance);box-shadow:0 0 5px var(--binance);}
+.ex-dot.okx{background:var(--okx);box-shadow:0 0 5px var(--okx);}
+.ex-tab-count{font-size:.5rem;padding:1px 4px;border-radius:2px;background:rgba(255,255,255,.08);}
+
+/* SIGNAL CARDS */
+.signal-list{padding:9px;display:flex;flex-direction:column;gap:8px;max-height:640px;overflow-y:auto;}
+.signal-list::-webkit-scrollbar{width:3px;}
+.signal-list::-webkit-scrollbar-thumb{background:var(--border);}
+@keyframes slideIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+.signal-card{border:1px solid var(--border);padding:12px 14px;position:relative;cursor:pointer;transition:all .2s;}
+.signal-card:hover{background:rgba(0,229,255,.02);border-color:#1a4080;}
+.signal-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;}
+.signal-card.long::before{background:var(--green);box-shadow:0 0 7px var(--green);}
+.signal-card.short::before{background:var(--red);box-shadow:0 0 7px var(--red);}
+.signal-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.signal-left{display:flex;align-items:center;gap:9px;}
+.signal-pair{font-family:'Orbitron',monospace;font-size:.9rem;font-weight:700;color:#fff;}
+.signal-ex-badge{font-family:'Share Tech Mono',monospace;font-size:.5rem;padding:2px 6px;border:1px solid;border-radius:2px;letter-spacing:1px;}
+.signal-ex-badge.hl{border-color:var(--hl);color:var(--hl);background:rgba(123,92,255,.1);}
+.signal-ex-badge.bybit{border-color:var(--bybit);color:var(--bybit);background:rgba(247,166,0,.1);}
+.signal-ex-badge.binance{border-color:var(--binance);color:var(--binance);background:rgba(240,185,11,.1);}
+.signal-ex-badge.okx{border-color:var(--okx);color:var(--okx);background:rgba(0,212,170,.1);}
+.signal-right{display:flex;align-items:center;gap:7px;}
+.signal-dir{font-family:'Share Tech Mono',monospace;font-size:.6rem;padding:2px 9px;letter-spacing:2px;font-weight:700;}
+.signal-dir.long{background:rgba(0,255,136,.12);color:var(--green);border:1px solid var(--green);}
+.signal-dir.short{background:rgba(255,34,85,.12);color:var(--red);border:1px solid var(--red);}
+.whale-tier{display:inline-flex;align-items:center;gap:3px;font-family:'Share Tech Mono',monospace;font-size:.5rem;padding:2px 6px;border-radius:2px;letter-spacing:1px;}
+.whale-tier.mega{background:rgba(255,215,0,.1);color:var(--gold);border:1px solid var(--gold);}
+.whale-tier.large{background:rgba(0,229,255,.08);color:var(--cyan);border:1px solid var(--cyan);}
+.whale-tier.mid{background:rgba(0,255,136,.06);color:var(--green);border:1px solid #00ff8855;}
+.signal-row{display:flex;gap:14px;margin-bottom:7px;}
+.signal-field{flex:1;}
+.sf-label{font-family:'Share Tech Mono',monospace;font-size:.48rem;color:var(--dim);letter-spacing:2px;margin-bottom:2px;}
+.sf-val{font-family:'Share Tech Mono',monospace;font-size:.78rem;color:var(--text);}
+.sf-val.green{color:var(--green);}.sf-val.red{color:var(--red);}.sf-val.gold{color:var(--gold);}
+.bar-wrap{margin-top:7px;}
+.bar-label{display:flex;justify-content:space-between;font-family:'Share Tech Mono',monospace;font-size:.48rem;color:var(--dim);margin-bottom:3px;}
+.bar{height:3px;background:#0a1a2a;border-radius:2px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:2px;}
+.bar-fill.green{background:linear-gradient(90deg,#00ff88,#00cc66);box-shadow:0 0 5px #00ff8855;}
+.bar-fill.red{background:linear-gradient(90deg,#ff2255,#cc0033);box-shadow:0 0 5px #ff225555;}
+.card-time{margin-top:6px;font-family:'Share Tech Mono',monospace;font-size:.48rem;color:var(--dim);}
+.no-items{padding:36px;text-align:center;font-family:'Share Tech Mono',monospace;font-size:.68rem;color:var(--dim);letter-spacing:2px;}
+
+/* RIGHT COL */
+.right-col{display:flex;flex-direction:column;gap:18px;}
+.score-display{text-align:center;padding:24px 18px;}
+.score-ring{width:120px;height:120px;margin:0 auto 12px;position:relative;}
+.score-ring svg{width:100%;height:100%;transform:rotate(-90deg);}
+.score-ring-track{fill:none;stroke:#0a1a2a;stroke-width:8;}
+.score-ring-fill{fill:none;stroke:var(--green);stroke-width:8;stroke-linecap:round;stroke-dasharray:339.3;stroke-dashoffset:339.3;filter:drop-shadow(0 0 7px var(--green));animation:ringFill 1.5s 1s ease forwards;}
+@keyframes ringFill{to{stroke-dashoffset:61.07}}
+.score-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;}
+.score-number{font-family:'Orbitron',monospace;font-size:1.9rem;font-weight:900;color:var(--green);text-shadow:var(--glow-g);line-height:1;}
+.score-lbl{font-family:'Share Tech Mono',monospace;font-size:.46rem;color:var(--dim);letter-spacing:2px;margin-top:2px;}
+.score-title{font-family:'Orbitron',monospace;font-size:.6rem;letter-spacing:2px;color:var(--text);margin-bottom:3px;}
+.score-subtitle{font-family:'Share Tech Mono',monospace;font-size:.6rem;color:var(--dim);}
+.metric-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);border-top:1px solid var(--border);}
+.metric-cell{background:var(--panel);padding:12px;text-align:center;}
+.metric-cell-label{font-family:'Share Tech Mono',monospace;font-size:.5rem;color:var(--dim);letter-spacing:2px;margin-bottom:4px;}
+.metric-cell-val{font-family:'Orbitron',monospace;font-size:.9rem;font-weight:700;}
+.side-list{padding:12px;}
+.side-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #0a1a2a;}
+.side-row:last-child{border-bottom:none;}
+.side-info{display:flex;align-items:center;gap:8px;}
+.side-icon{font-size:1rem;}
+.side-name{font-family:'Share Tech Mono',monospace;font-size:.7rem;color:var(--text);}
+.side-addr{font-family:'Share Tech Mono',monospace;font-size:.5rem;color:var(--dim);}
+.side-val{font-family:'Orbitron',monospace;font-size:.8rem;font-weight:700;}
+
+/* ════════════════════════════════════════════════════════
+   GEM SECTION
+════════════════════════════════════════════════════════ */
+
+/* SOURCE TABS */
+.source-tabs{display:flex;border-bottom:1px solid var(--border);overflow-x:auto;background:rgba(0,0,0,.2);}
+.source-tabs::-webkit-scrollbar{height:3px;}
+.src-tab{flex-shrink:0;padding:11px 16px;font-family:'Share Tech Mono',monospace;font-size:.6rem;letter-spacing:2px;cursor:pointer;border-right:1px solid var(--border);border-bottom:3px solid transparent;color:var(--dim);transition:all .2s;display:flex;align-items:center;gap:7px;background:transparent;}
+.src-tab:hover{color:var(--text);background:rgba(255,255,255,.02);}
+.src-tab.active{background:rgba(255,255,255,.03);}
+.src-tab.all.active{border-bottom-color:var(--gem);color:var(--gem);}
+.src-tab.dex.active{border-bottom-color:#00d4aa;color:#00d4aa;}
+.src-tab.pump.active{border-bottom-color:var(--orange);color:var(--orange);}
+.src-tab.rug.active{border-bottom-color:var(--green);color:var(--green);}
+.src-tab.cmc.active{border-bottom-color:#3861fb;color:#3861fb;}
+.src-tab.cbase.active{border-bottom-color:#0052ff;color:#0052ff;}
+.src-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.src-dot.all{background:var(--gem);box-shadow:0 0 5px var(--gem);}
+.src-dot.dex{background:#00d4aa;box-shadow:0 0 5px #00d4aa;}
+.src-dot.pump{background:var(--orange);box-shadow:0 0 5px var(--orange);}
+.src-dot.rug{background:var(--green);box-shadow:0 0 5px var(--green);}
+.src-dot.cmc{background:#3861fb;box-shadow:0 0 5px #3861fb;}
+.src-dot.cbase{background:#0052ff;box-shadow:0 0 5px #0052ff;}
+.src-tab-count{font-size:.49rem;padding:1px 4px;border-radius:2px;background:rgba(255,255,255,.08);}
+
+/* GEM CARDS */
+.gem-list{padding:9px;display:flex;flex-direction:column;gap:9px;max-height:640px;overflow-y:auto;}
+.gem-list::-webkit-scrollbar{width:3px;}
+.gem-list::-webkit-scrollbar-thumb{background:var(--border);}
+
+.gem-card{border:1px solid #1a0840;padding:13px 14px;position:relative;transition:all .2s;cursor:pointer;}
+.gem-card:hover{border-color:#3a1880;background:rgba(176,96,255,.02);}
+.gem-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;}
+.gem-card.src-dex::before{background:#00d4aa;box-shadow:0 0 7px #00d4aa;}
+.gem-card.src-pump::before{background:var(--orange);box-shadow:0 0 7px var(--orange);}
+.gem-card.src-rug::before{background:var(--green);box-shadow:0 0 7px var(--green);}
+.gem-card.src-cmc::before{background:#3861fb;box-shadow:0 0 7px #3861fb;}
+.gem-card.src-cbase::before{background:#0052ff;box-shadow:0 0 7px #0052ff;}
+
+/* GEM SCORE RING (mini) */
+.gem-score-mini{width:44px;height:44px;position:relative;flex-shrink:0;}
+.gem-score-mini svg{width:100%;height:100%;transform:rotate(-90deg);}
+.gsm-track{fill:none;stroke:#0a1a2a;stroke-width:5;}
+.gsm-fill{fill:none;stroke-width:5;stroke-linecap:round;}
+.gsm-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'Orbitron',monospace;font-size:.58rem;font-weight:900;text-align:center;}
+
+.gem-top{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;}
+.gem-top-info{flex:1;}
+.gem-token-row{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
+.gem-token{font-family:'Orbitron',monospace;font-size:.9rem;font-weight:700;color:#fff;}
+.gem-src-badge{font-family:'Share Tech Mono',monospace;font-size:.48rem;padding:2px 6px;border:1px solid;border-radius:2px;letter-spacing:1px;}
+.gem-src-badge.dex{border-color:#00d4aa;color:#00d4aa;background:rgba(0,212,170,.08);}
+.gem-src-badge.pump{border-color:var(--orange);color:var(--orange);background:rgba(255,140,0,.08);}
+.gem-src-badge.rug{border-color:var(--green);color:var(--green);background:rgba(0,255,136,.06);}
+.gem-src-badge.cmc{border-color:#3861fb;color:#3861fb;background:rgba(56,97,251,.08);}
+.gem-src-badge.cbase{border-color:#0052ff;color:#0052ff;background:rgba(0,82,255,.08);}
+.gem-chain-badge{font-family:'Share Tech Mono',monospace;font-size:.46rem;padding:2px 5px;border-radius:2px;}
+.gcb-sol{background:rgba(153,69,255,.15);color:#9945ff;border:1px solid #9945ff55;}
+.gcb-eth{background:rgba(98,126,234,.15);color:#627eea;border:1px solid #627eea55;}
+.gcb-arb{background:rgba(18,170,255,.15);color:#12aaff;border:1px solid #12aaff55;}
+.gcb-bsc{background:rgba(240,185,11,.15);color:var(--binance);border:1px solid #f0b90b55;}
+.gcb-base{background:rgba(0,82,255,.15);color:#0052ff;border:1px solid #0052ff55;}
+.gcb-pol{background:rgba(130,71,229,.15);color:#8247e5;border:1px solid #8247e555;}
+
+/* SECURITY CHECKS */
+.sec-checks{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;}
+.sec-check{font-family:'Share Tech Mono',monospace;font-size:.46rem;padding:2px 6px;border-radius:2px;display:flex;align-items:center;gap:3px;}
+.sec-check.pass{background:rgba(0,255,136,.08);color:var(--green);border:1px solid #00ff8844;}
+.sec-check.fail{background:rgba(255,34,85,.08);color:var(--red);border:1px solid #ff225544;}
+.sec-check.warn{background:rgba(255,215,0,.08);color:var(--gold);border:1px solid #ffd70044;}
+
+/* GEM METRICS ROW */
+.gem-metrics{display:flex;gap:12px;margin-bottom:8px;}
+.gem-metric{flex:1;}
+
+/* GEM SCORE BAR */
+.gem-score-bar-wrap{margin-bottom:8px;}
+.gem-score-bar-label{display:flex;justify-content:space-between;font-family:'Share Tech Mono',monospace;font-size:.48rem;color:var(--dim);margin-bottom:3px;}
+.gem-score-bar{height:4px;background:#0a1a2a;border-radius:2px;overflow:hidden;}
+.gem-score-bar-fill{height:100%;border-radius:2px;transition:width 1s ease;}
+.gsb-legendary{background:linear-gradient(90deg,#ffd700,#ff8c00);box-shadow:0 0 8px #ffd70066;}
+.gsb-high{background:linear-gradient(90deg,var(--gem),#7030c0);box-shadow:0 0 8px #b060ff55;}
+.gsb-mid{background:linear-gradient(90deg,#00d4aa,#0090ff);box-shadow:0 0 5px #00d4aa44;}
+.gsb-low{background:linear-gradient(90deg,#4a6080,#2a3050);}
+
+/* SIGNAL LINE */
+.gem-signal-line{font-family:'Share Tech Mono',monospace;font-size:.6rem;color:var(--dim);font-style:italic;border-top:1px solid #0a1a2a;padding-top:7px;margin-top:2px;}
+
+/* GRADE BADGE */
+.grade-badge{font-family:'Orbitron',monospace;font-size:.62rem;font-weight:900;padding:3px 8px;border-radius:2px;}
+.grade-S{background:rgba(255,215,0,.15);color:var(--gold);border:1px solid var(--gold);text-shadow:0 0 8px var(--gold);}
+.grade-A{background:rgba(176,96,255,.15);color:var(--gem);border:1px solid var(--gem);}
+.grade-B{background:rgba(0,212,170,.12);color:#00d4aa;border:1px solid #00d4aa66;}
+.grade-C{background:rgba(74,96,128,.15);color:var(--dim);border:1px solid #4a608066;}
+
+/* COUNTERS / ACCUM */
+.accum-badge{position:absolute;top:10px;right:12px;font-family:'Orbitron',monospace;font-size:.66rem;font-weight:900;color:var(--gold);background:rgba(255,215,0,.1);border:1px solid var(--gold);padding:2px 8px;border-radius:2px;}
+
+/* SIDEBAR GEM */
+.gem-sidebar-list{padding:12px;display:flex;flex-direction:column;gap:0;}
+.gsb-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid #0a1a2a;}
+.gsb-row:last-child{border-bottom:none;}
+.gsb-left{display:flex;align-items:center;gap:8px;}
+.gsb-rank{font-family:'Orbitron',monospace;font-size:.58rem;color:var(--dim);width:18px;}
+.gsb-token{font-family:'Orbitron',monospace;font-size:.78rem;font-weight:700;color:#fff;}
+.gsb-src{font-family:'Share Tech Mono',monospace;font-size:.46rem;color:var(--dim);}
+.gsb-right{text-align:right;}
+.gsb-score{font-family:'Orbitron',monospace;font-size:.78rem;font-weight:700;}
+.gsb-grade{font-family:'Share Tech Mono',monospace;font-size:.5rem;}
+
+/* UPCOMING CEX */
+.cex-list{padding:12px;display:flex;flex-direction:column;gap:0;}
+.cex-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid #0a1a2a;}
+.cex-row:last-child{border-bottom:none;}
+.cex-token{font-family:'Orbitron',monospace;font-size:.8rem;font-weight:700;color:#fff;}
+.cex-platform{font-family:'Share Tech Mono',monospace;font-size:.5rem;}
+.cex-date{font-family:'Share Tech Mono',monospace;font-size:.56rem;color:var(--gold);}
+.cex-effect{font-family:'Share Tech Mono',monospace;font-size:.52rem;color:var(--green);}
+
+/* FLASH */
+.new-flash{position:fixed;top:62px;right:16px;background:var(--panel);border:1px solid var(--green);padding:12px 16px;z-index:1000;font-family:'Share Tech Mono',monospace;box-shadow:0 0 28px rgba(0,255,136,.22);transform:translateX(230px);opacity:0;transition:all .4s;max-width:265px;}
+.new-flash.show{transform:translateX(0);opacity:1;}
+.new-flash.gem-flash{border-color:var(--gem);box-shadow:0 0 28px rgba(176,96,255,.28);}
+.nf-title{letter-spacing:2px;margin-bottom:5px;font-size:.6rem;}
+.nf-title.signal{color:var(--green);}
+.nf-title.gem{color:var(--gem);}
+.nf-content{color:#fff;font-size:.85rem;margin-bottom:3px;}
+.nf-sub{color:var(--dim);font-size:.6rem;}
+
+/* CTA */
+.cta-section{position:relative;z-index:10;text-align:center;padding:46px 40px;border-top:1px solid var(--border);background:linear-gradient(180deg,transparent,#020d1a);}
+.cta-title{font-family:'Orbitron',monospace;font-size:1.35rem;font-weight:900;color:#fff;margin-bottom:10px;text-shadow:0 0 28px rgba(0,229,255,.28);}
+.cta-sub{font-size:.95rem;color:var(--dim);margin-bottom:26px;font-weight:300;}
+.cta-btn{display:inline-flex;align-items:center;gap:10px;padding:14px 36px;background:transparent;border:1px solid var(--cyan);color:var(--cyan);font-family:'Orbitron',monospace;font-size:.7rem;letter-spacing:3px;cursor:pointer;text-decoration:none;transition:all .3s;position:relative;overflow:hidden;}
+.cta-btn::before{content:'';position:absolute;inset:0;background:var(--cyan);transform:translateX(-100%);transition:transform .3s;z-index:-1;}
+.cta-btn:hover{color:#000;box-shadow:0 0 28px rgba(0,229,255,.45);}
+.cta-btn:hover::before{transform:translateX(0);}
+.cta-note{margin-top:12px;font-family:'Share Tech Mono',monospace;font-size:.6rem;color:var(--dim);letter-spacing:2px;}
+
+@media(max-width:900px){.main-grid{grid-template-columns:1fr}header{padding:13px 16px}.hero{padding:32px 16px 20px}.stats-bar{flex-wrap:wrap;margin:16px}}
+</style>
+</head>
+<body>
+
+<div class="new-flash" id="flashNotif">
+  <div class="nf-title signal" id="flashTitle">⚡ NUEVA SEÑAL</div>
+  <div class="nf-content" id="flashContent"></div>
+  <div class="nf-sub" id="flashSub"></div>
+</div>
+
+<header>
+  <div class="logo">PSY<span>CHOMETRIKS</span></div>
+  <div class="live-badge"><div class="pulse-dot"></div>LIVE FEED ACTIVO</div>
+  <div class="clock" id="clock">--:--:-- GMT-5</div>
+</header>
+
+<div class="ticker-wrap"><div class="ticker" id="ticker"></div></div>
+
+<div class="nav-tabs">
+  <div class="nav-tab signals active" onclick="switchSection('signals')">🐋 COPY TRADE BALLENAS</div>
+  <div class="nav-tab gems" onclick="switchSection('gems')">💎 CACERÍA DE GEMAS</div>
+</div>
+
+<!-- ══ SECTION: SIGNALS ══════════════════════════════════ -->
+<div class="section active" id="section-signals">
+  <div class="hero">
+    <div class="hero-tag">▸ PSYCHOMETRIKS WHALE INTELLIGENCE SYSTEM</div>
+    <h1>COPY TRADE <span class="accent">BALLENAS</span><br><span class="gold">TIEMPO REAL</span></h1>
+    <div class="hero-sub">Detectamos posiciones de ballenas institucionales · Señales automáticas · 0 retraso</div>
+  </div>
+  <div class="stats-bar">
+    <div class="stat-item"><div class="stat-label">SEÑALES HOY</div><div class="stat-value sv-cyan" id="sigCount">0</div><div class="stat-change" id="sigCountSub">cargando...</div></div>
+    <div class="stat-item"><div class="stat-label">WIN RATE 7D</div><div class="stat-value sv-green">78.4%</div><div class="stat-change">↑ 3.2% vs sem. anterior</div></div>
+    <div class="stat-item"><div class="stat-label">VOL BALLENAS 24H</div><div class="stat-value sv-gold">$2.84B</div><div class="stat-change">multi-exchange</div></div>
+    <div class="stat-item"><div class="stat-label">SCORE PROMEDIO</div><div class="stat-value sv-green">82<span style="font-size:.72rem;color:var(--dim)">/100</span></div><div class="stat-change">Solo señales A+</div></div>
+  </div>
+  <div class="main-grid">
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">SEÑALES EN VIVO</div>
+        <div style="display:flex;gap:7px">
+          <div class="panel-badge live">● LIVE</div>
+          <div class="panel-badge count" id="feedCount">-- señales</div>
+        </div>
+      </div>
+      <div class="exchange-tabs" id="exchangeTabs"></div>
+      <div class="signal-list" id="signalList"></div>
+    </div>
+    <div class="right-col">
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title">INTENT SCORE GLOBAL</div><div class="panel-badge live">TIEMPO REAL</div></div>
+        <div class="score-display">
+          <div class="score-ring">
+            <svg viewBox="0 0 120 120"><circle class="score-ring-track" cx="60" cy="60" r="54"/><circle class="score-ring-fill" cx="60" cy="60" r="54"/></svg>
+            <div class="score-center"><div class="score-number">82</div><div class="score-lbl">/ 100</div></div>
+          </div>
+          <div class="score-title">PRESIÓN ALCISTA DOMINANTE</div>
+          <div class="score-subtitle">Multi-exchange · BTC + ETH + SOL</div>
+        </div>
+        <div class="metric-grid">
+          <div class="metric-cell"><div class="metric-cell-label">LONGS</div><div class="metric-cell-val" style="color:var(--green)">64.3%</div></div>
+          <div class="metric-cell"><div class="metric-cell-label">SHORTS</div><div class="metric-cell-val" style="color:var(--red)">35.7%</div></div>
+          <div class="metric-cell"><div class="metric-cell-label">OI 24H</div><div class="metric-cell-val" style="color:var(--cyan)">+8.2%</div></div>
+          <div class="metric-cell"><div class="metric-cell-label">FUNDING</div><div class="metric-cell-val" style="color:var(--gold)">+0.032%</div></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title">TOP BALLENAS ACTIVAS</div><div class="panel-badge count">últimas 4h</div></div>
+        <div class="side-list" id="whaleMap"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SECTION: GEMS ══════════════════════════════════════ -->
+<div class="section" id="section-gems">
+  <div class="hero">
+    <div class="hero-tag gem">▸ PSYCHOMETRIKS GEM HUNTER ALGORITHM v1.0</div>
+    <h1>CACERÍA DE <span class="gem-color">GEMAS</span><br><span class="gold">DETECCIÓN TEMPRANA</span></h1>
+    <div class="hero-sub">DexScreener · Pump.fun Graduados · RugCheck · CMC Upcoming · Coinbase Listings</div>
+  </div>
+
+  <div class="stats-bar">
+    <div class="stat-item"><div class="stat-label">GEMAS SCORE S/A</div><div class="stat-value sv-gem" id="gemCountS">0</div><div class="stat-change">score ≥ 75/100</div></div>
+    <div class="stat-item"><div class="stat-label">PUMP GRADUADOS</div><div class="stat-value sv-orange" id="pumpCount">0</div><div class="stat-change">en pools Raydium</div></div>
+    <div class="stat-item"><div class="stat-label">PRÓX. LISTADOS CEX</div><div class="stat-value sv-cyan" id="cexCount">0</div><div class="stat-change">CMC + Coinbase</div></div>
+    <div class="stat-item"><div class="stat-label">RUGCHECK SAFE</div><div class="stat-value sv-green" id="rugCount">0</div><div class="stat-change">score riesgo &lt; 10</div></div>
+  </div>
+
+  <div class="main-grid">
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title gem">💎 GEM HUNTER</div>
+        <div style="display:flex;gap:7px">
+          <div class="panel-badge gem">● LIVE</div>
+          <div class="panel-badge count" id="gemFeedCount">-- gemas</div>
+        </div>
+      </div>
+      <div class="source-tabs" id="sourceTabs"></div>
+      <div class="gem-list" id="gemList"></div>
+    </div>
+
+    <div class="right-col">
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title gem">TOP GEMAS HOY</div><div class="panel-badge gem">RANKING</div></div>
+        <div class="gem-sidebar-list" id="gemRanking"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title" style="color:#3861fb">PRÓXIMOS LISTADOS CEX</div><div class="panel-badge" style="border-color:#0052ff;color:#0052ff">COINBASE+CMC</div></div>
+        <div class="cex-list" id="cexList"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="cta-section">
+  <div class="cta-title">ACCEDE A LAS SEÑALES COMPLETAS</div>
+  <div class="cta-sub">Conecta tu Telegram · Recibe alertas instantáneas de ballenas y gemas</div>
+  <a href="#" class="cta-btn">▸ ACTIVAR SEÑALES VÍA TELEGRAM</a>
+  <div class="cta-note">PSYCHOMETRIKS · GEM HUNTER + WHALE INTEL · GMT-5 GUAYAQUIL</div>
+</div>
+
+<script>
+// ── AUTH GATE — Elite / Institucional only ─────────────
+(function(){
+  try {
+    const r = localStorage.getItem('psyko_auth');
+    if (!r) { window.location.replace('/login?redirect=' + encodeURIComponent(window.location.pathname)); return; }
+    const a = JSON.parse(r);
+    const plan = (a.plan || '').toLowerCase();
+    const role = (a.role || '').toLowerCase();
+    const isAdmin = role === 'superadmin' || role === 'operator';
+    const isElite = ['institucional','elite'].includes(plan);
+    if (!isAdmin && !isElite) { window.location.replace('/pricing?upgrade=elite'); return; }
+  } catch(e) { window.location.replace('/login'); }
+})();
+
+// ── BRIDGE CONFIG ───────────────────────────────────────
+const BRIDGE_URL = '';  // ej: 'https://psychometriks-bridge.up.railway.app'
+
+// ── LIVE PRICE ENGINE ────────────────────────────────────
+const LIVE_PRICES = {'BTC-USDT':0,'ETH-USDT':0,'SOL-USDT':0,'BNB-USDT':0,'XRP-USDT':0};
+const PAGE_START  = Date.now();
+
+async function fetchLivePrices(){
+  const pairs = Object.keys(LIVE_PRICES);
+  await Promise.allSettled(pairs.map(async p=>{
+    try{
+      const r = await fetch(`https://www.okx.com/api/v5/market/ticker?instId=${p}`);
+      const d = await r.json();
+      if(d.data && d.data[0]) LIVE_PRICES[p]=parseFloat(d.data[0].last);
+    }catch(e){}
+  }));
+  buildSignalsFromPrices();
+  buildTabs(); renderSignals();
+  updateLiveTicker();
+}
+
+function fmtPrice(n){
+  if(!n||n<=0) return '—';
+  if(n>=10000) return n.toLocaleString('en',{maximumFractionDigits:0});
+  if(n>=1000)  return n.toLocaleString('en',{minimumFractionDigits:1,maximumFractionDigits:1});
+  if(n>=10)    return n.toFixed(2);
+  if(n>=1)     return n.toFixed(3);
+  return n.toFixed(5);
+}
+
+function updateLiveTicker(){
+  const rows=[
+    {s:'BTC/USDT',k:'BTC-USDT',pos:true},{s:'ETH/USDT',k:'ETH-USDT',pos:true},
+    {s:'SOL/USDT',k:'SOL-USDT',pos:true},{s:'BNB/USDT',k:'BNB-USDT',pos:true},
+    {s:'XRP/USDT',k:'XRP-USDT',pos:false},{s:'BTC DOM',k:'BTC-USDT',pos:true},
+  ];
+  const el=document.getElementById('ticker');
+  if(!el) return;
+  el.innerHTML=[...rows,...rows].map(d=>`<div class="ticker-item">
+    <span class="ticker-sym">${d.s}</span>
+    <span class="ticker-price">${fmtPrice(LIVE_PRICES[d.k])}</span>
+    <span class="ticker-chg ${d.pos?'pos':'neg'}">${d.pos?'▲':'▼'} LIVE</span>
+  </div>`).join('');
+}
+
+// ── SIGNAL TEMPLATES (% offsets — prices auto-calc from live) ──
+const SIGNAL_TEMPLATES=[
+  {id:'hl-BTC-L-50', exchange:'hl', pair:'BTC-USDT',dir:'LONG', lev:'50x',tier:'MEGA',  size:'$4.2M', slPct:1.6,tpPct:3.9,score:94,offsetPct:-0.15,ageMs:2*60000},
+  {id:'hl-ETH-L-25', exchange:'hl', pair:'ETH-USDT',dir:'LONG', lev:'25x',tier:'LARGE', size:'$1.8M', slPct:1.8,tpPct:4.1,score:87,offsetPct:-0.12,ageMs:5*60000},
+  {id:'hl-SOL-S-20', exchange:'hl', pair:'SOL-USDT',dir:'SHORT',lev:'20x',tier:'MID',   size:'$620K', slPct:2.0,tpPct:3.5,score:76,offsetPct:0.10, ageMs:11*60000},
+  {id:'by-BNB-L-30', exchange:'bybit',pair:'BNB-USDT',dir:'LONG',lev:'30x',tier:'LARGE',size:'$2.1M', slPct:2.0,tpPct:4.4,score:89,offsetPct:-0.08,ageMs:18*60000},
+  {id:'by-XRP-L-40', exchange:'bybit',pair:'XRP-USDT',dir:'LONG',lev:'40x',tier:'MEGA', size:'$3.6M', slPct:2.4,tpPct:7.1,score:91,offsetPct:-0.06,ageMs:31*60000},
+  {id:'bn-BTC-S-25', exchange:'binance',pair:'BTC-USDT',dir:'SHORT',lev:'25x',tier:'MEGA',size:'$5.1M',slPct:1.6,tpPct:4.4,score:88,offsetPct:0.06,ageMs:7*60000},
+  {id:'bn-ETH-S-20', exchange:'binance',pair:'ETH-USDT',dir:'SHORT',lev:'20x',tier:'LARGE',size:'$2.4M',slPct:1.9,tpPct:5.1,score:83,offsetPct:0.09,ageMs:14*60000},
+  {id:'okx-BTC-L-20',exchange:'okx',  pair:'BTC-USDT',dir:'LONG', lev:'20x',tier:'MEGA', size:'$3.0M', slPct:1.5,tpPct:4.2,score:90,offsetPct:-0.19,ageMs:9*60000},
+  {id:'okx-BNB-S-15',exchange:'okx',  pair:'BNB-USDT',dir:'SHORT',lev:'15x',tier:'MID',  size:'$520K', slPct:1.8,tpPct:3.5,score:74,offsetPct:0.08, ageMs:38*60000},
+];
+
+const SIGNALS=[];
+function buildSignalsFromPrices(){
+  SIGNALS.length=0;
+  for(const t of SIGNAL_TEMPLATES){
+    const live=LIVE_PRICES[t.pair];
+    if(!live||live<=0) continue;
+    const isLong=t.dir==='LONG';
+    const entry=live*(1+(isLong?-Math.abs(t.offsetPct):Math.abs(t.offsetPct))/100);
+    const sl=isLong?entry*(1-t.slPct/100):entry*(1+t.slPct/100);
+    const tp=isLong?entry*(1+t.tpPct/100):entry*(1-t.tpPct/100);
+    SIGNALS.push({
+      id:t.id, exchange:t.exchange,
+      pair:t.pair.replace('-','/'),
+      dir:t.dir, lev:t.lev, tier:t.tier, size:t.size,
+      entry:fmtPrice(entry), sl:fmtPrice(sl), tp:fmtPrice(tp),
+      score:t.score, startedAt:PAGE_START-t.ageMs,
+    });
+  }
+}
+
+// ── CLOCK ──────────────────────────────────────────────
+function updateClock(){
+  const g=new Date(new Date().getTime()-(new Date().getTimezoneOffset()+300)*60000);
+  const p=n=>String(n).padStart(2,'0');
+  document.getElementById('clock').textContent=`${p(g.getUTCHours())}:${p(g.getUTCMinutes())}:${p(g.getUTCSeconds())} GMT-5`;
+}
+setInterval(updateClock,1000);updateClock();
+
+function switchSection(s){
+  document.querySelectorAll('.section').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(x=>x.classList.remove('active'));
+  document.getElementById('section-'+s).classList.add('active');
+  document.querySelector('.nav-tab.'+s).classList.add('active');
+}
+
+// ── TICKER placeholder (replaced by updateLiveTicker) ──
+(function(){
+  const el=document.getElementById('ticker');
+  if(el) el.innerHTML=['BTC/USDT','ETH/USDT','SOL/USDT','BNB/USDT','XRP/USDT'].flatMap(s=>[s,s]).map(s=>`<div class="ticker-item"><span class="ticker-sym">${s}</span><span class="ticker-price" style="color:#4a6070">Cargando...</span></div>`).join('');
+})();
+const EXCHANGES={all:{label:'TODOS',cls:'all'},hl:{label:'HYPERLIQUID',cls:'hl'},bybit:{label:'BYBIT',cls:'bybit'},binance:{label:'BINANCE',cls:'binance'},okx:{label:'OKX',cls:'okx'}};
+let activeTab='all';
+const seenIds=new Set();
+
+function buildTabs(){
+  document.getElementById('exchangeTabs').innerHTML=Object.entries(EXCHANGES).map(([k,ex])=>{
+    const c=k==='all'?SIGNALS.length:SIGNALS.filter(s=>s.exchange===k).length;
+    return `<div class="ex-tab ${ex.cls} ${k===activeTab?'active':''}" onclick="switchTab('${k}')"><div class="ex-dot ${ex.cls}"></div>${ex.label}<span class="ex-tab-count">${c}</span></div>`;
+  }).join('');
+}
+function switchTab(t){activeTab=t;buildTabs();renderSignals();}
+function timeLabel(startedAt){
+  const ms=Date.now()-startedAt;
+  const m=Math.max(0,Math.floor(ms/60000));
+  return m<60?`hace ${m}m`:`hace ${Math.floor(m/60)}h${m%60?m%60+'m':''}`;
+}
+function tierBadge(t){const m={MEGA:'🐋 MEGA',LARGE:'🦈 GRANDE',MID:'🐬 MID'};return `<div class="whale-tier ${t.toLowerCase()}">${m[t]||t}</div>`;}
+
+function renderSignals(){
+  const list=document.getElementById('signalList');
+  if(!SIGNALS.length){
+    list.innerHTML=`<div class="no-items" style="color:var(--dim);padding:48px;text-align:center;font-family:'Share Tech Mono',monospace;font-size:.65rem;letter-spacing:2px">
+      <div style="font-size:2rem;margin-bottom:12px">📡</div>
+      CONECTANDO CON PRECIOS EN VIVO...
+    </div>`;
+    document.getElementById('feedCount').textContent='0 señales';
+    return;
+  }
+  const f=activeTab==='all'?SIGNALS:SIGNALS.filter(s=>s.exchange===activeTab);
+  document.getElementById('feedCount').textContent=`${f.length} señales`;
+  if(!f.length){list.innerHTML=`<div class="no-items">SIN SEÑALES EN ESTE EXCHANGE</div>`;return;}
+  list.innerHTML=f.map((s,i)=>`
+    <div class="signal-card ${s.dir.toLowerCase()}" style="animation:slideIn .3s ${i*.055}s both">
+      <div class="signal-top">
+        <div class="signal-left"><div class="signal-pair">${s.pair}</div><div class="signal-ex-badge ${s.exchange}">${EXCHANGES[s.exchange]?.label||s.exchange}</div></div>
+        <div class="signal-right">${tierBadge(s.tier)}<div class="signal-dir ${s.dir.toLowerCase()}">${s.dir} ${s.lev}</div></div>
+      </div>
+      <div class="signal-row">
+        <div class="signal-field"><div class="sf-label">ENTRADA</div><div class="sf-val">${s.entry}</div></div>
+        <div class="signal-field"><div class="sf-label">TAMAÑO</div><div class="sf-val gold">${s.size}</div></div>
+        <div class="signal-field"><div class="sf-label">SL</div><div class="sf-val red">${s.sl}</div></div>
+        <div class="signal-field"><div class="sf-label">TP</div><div class="sf-val green">${s.tp}</div></div>
+      </div>
+      <div class="bar-wrap">
+        <div class="bar-label"><span>SCORE</span><span>${s.score}/100</span></div>
+        <div class="bar"><div class="bar-fill ${s.dir==='LONG'?'green':'red'}" style="width:${s.score}%"></div></div>
+      </div>
+      <div class="card-time">⏱ ${timeLabel(s.startedAt)}</div>
+    </div>`).join('');
+}
+// Actualizar tiempo cada minuto sin refetch de precios
+setInterval(()=>{ if(SIGNALS.length>0) renderSignals(); },60000);
+
+// ══════════════════════════════════════════════════════
+// GEM HUNTER ALGORITHM
+// ══════════════════════════════════════════════════════
+/*
+  GEM SCORE 0-100 — PSYCHOMETRIKS ALGORITHM v1.0
+  ─────────────────────────────────────────────────
+  FUENTES:
+  1. DexScreener  — liquidez, volumen, age, holders, security checks
+  2. Pump.fun     — graduado + en pool (Raydium/Orca)
+  3. RugCheck     — risk score bajo = bueno, chequea mint/freeze/honeypot
+  4. CMC Upcoming — próximo listado en CoinMarketCap
+  5. Coinbase     — próximo listado = "Coinbase Effect"
+
+  PUNTAJE POR CATEGORÍA:
+  ── Seguridad (35pts) ──────────────────────────────
+  • Mint authority revocada        +12
+  • Freeze authority revocada      +10
+  • RugCheck risk score < 10       +8   (< 30: +4)
+  • No honeypot                    +5
+
+  ── Liquidez y Volumen (30pts) ─────────────────────
+  • Liquidez > $100K               +10  (>$50K: +6, >$10K: +3)
+  • Volumen 24h > $500K            +10  (>$100K: +6, >$20K: +3)
+  • Vol/Liq ratio > 2x             +5
+  • Holders > 500                  +5   (>100: +2)
+
+  ── Momentum y Señales (25pts) ─────────────────────
+  • Pump.fun graduado + en pool    +15
+  • Pump.fun graduado sin pool     +8
+  • Volumen subiendo +50% 1h       +5
+  • Precio +20% 24h                +5
+
+  ── CEX Catalyst (10pts) ───────────────────────────
+  • Próximo listado Coinbase       +10
+  • Próximo listado CMC tracking   +6
+
+  CLASIFICACIÓN:
+  S  ≥ 85  🏆 LEGENDARIA  — máxima oportunidad
+  A  ≥ 70  💎 GEMA PURA   — alta confianza
+  B  ≥ 55  ⭐ POTENCIAL   — monitorear
+  C  ≥ 40  👀 ESPECULATIVA — alto riesgo
+*/
+
+const GEMS=[
+  // ── DEXSCREENER ─────────────────────────────────
+  {
+    id:'dex-BOME-sol',source:'dex',token:'BOME',chain:'sol',
+    liq:'$2.4M',vol24:'$8.2M',age:'142d',holders:4820,
+    checks:{mintRevoked:true,freezeRevoked:true,honeypot:false,rugRisk:3},
+    pumpGraduated:false,pumpInPool:false,
+    cexCatalyst:null,accumTimes:6,totalAccum:'$284K',
+    score:82,grade:'A',
+    signal:'Liquidez sólida · mint/freeze revocados · acumulación whale ×6',
+  },
+  {
+    id:'dex-WIF-sol',source:'dex',token:'WIF',chain:'sol',
+    liq:'$18.4M',vol24:'$42.1M',age:'198d',holders:28400,
+    checks:{mintRevoked:true,freezeRevoked:true,honeypot:false,rugRisk:1},
+    pumpGraduated:false,pumpInPool:false,
+    cexCatalyst:null,accumTimes:10,totalAccum:'$521K',
+    score:88,grade:'A',
+    signal:'Volumen masivo · seguridad máxima · ballenas acumulando ×10',
+  },
+  {
+    id:'dex-PEPE-eth',source:'dex',token:'PEPE',chain:'eth',
+    liq:'$94M',vol24:'$312M',age:'748d',holders:182000,
+    checks:{mintRevoked:true,freezeRevoked:true,honeypot:false,rugRisk:0},
+    pumpGraduated:false,pumpInPool:false,
+    cexCatalyst:null,accumTimes:3,totalAccum:'$182K',
+    score:91,grade:'S',
+    signal:'Top memecoin Ethereum · contratos 100% seguros · vol institucional',
+  },
+  {
+    id:'dex-BRETT-base',source:'dex',token:'BRETT',chain:'base',
+    liq:'$3.1M',vol24:'$6.8M',age:'89d',holders:9200,
+    checks:{mintRevoked:true,freezeRevoked:true,honeypot:false,rugRisk:2},
+    pumpGraduated:false,pumpInPool:false,
+    cexCatalyst:null,accumTimes:1,totalAccum:'$68K',
+    score:74,grade:'A',
+    signal:'Líder en Base · liquidez creciente · seguridad verificada',
+  },
+  {
+    id:'dex-BONK-sol',source:'dex',token:'BONK',chain:'sol',
+    liq:'$22.8M',vol24:'$88.4M',age:'520d',holders:94000,
+    checks:{mintRevoked:true,freezeRevoked:true,honeypot:false,rugRisk:0},
+    pumpGraduated:false,pumpInPool:false,
+    cexCatalyst:'Coinbase',accumTimes:4,totalAccum:'$340K',
+    score:95,grade:'S',
+    signal:'Próximo listado Coinbase confirmado · acumulación ballenas ×4',
+  },
+  // ── PUMP.FUN GRADUADOS ───────────────────────────
+  {
+    id:'pump-MOODENG-sol',source:'pump',token:'MOODENG',chain:'sol',
+    liq:'$1.8M',vol24:'$4.2M',age:'12d',holders:3100,
+    checks:{mintRevoked:true,freezeRevoked:false,honeypot:false,rugRisk:8},
+    pumpGraduated:true,pumpInPool:true,
+    cexCatalyst:null,accumTimes:2,totalAccum:'$94K',
+    score:78,grade:'A',
+    signal:'Graduado Pump.fun · ya en pool Raydium · liquidez estabilizándose',
+  },
+  {
+    id:'pump-PNUT-sol',source:'pump',token:'PNUT',chain:'sol',
+    liq:'$4.2M',vol24:'$18.7M',age:'8d',holders:7800,
+    checks:{mintRevoked:true,freezeRevoked:true,honeypot:false,rugRisk:4},
+    pumpGraduated:true,pumpInPool:true,
+    cexCatalyst:'CMC',accumTimes:5,totalAccum:'$412K',
+    score:86,grade:'A',
+    signal:'Pump.fun graduado + Raydium pool activo · próximo tracking CMC',
+  },
+  {
+    id:'pump-FWOG-sol',source:'pump',token:'FWOG',chain:'sol',
+    liq:'$620K',vol24:'$2.1M',age:'3d',holders:1240,
+    checks:{mintRevoked:true,freezeRevoked:false,honeypot:false,rugRisk:14},
+    pumpGraduated:true,pumpInPool:true,
+    cexCatalyst:null,accumTimes:1,totalAccum:'$42K',
+    score:61,grade:'B',
+    signal:'Recién graduado · en pool Raydium · holders creciendo rápido',
+  },
+  {
+    id:'pump-CHILLGUY-sol',source:'pump',token:'CHILLGUY',chain:'sol',
+    liq:'$8.4M',vol24:'$32.1M',age:'18d',holders:14200,
+    checks:{mintRevoked:true,freezeRevoked:true,honeypot:false,rugRisk:2},
+    pumpGraduated:true,pumpInPool:true,
+    cexCatalyst:'Coinbase',accumTimes:7,totalAccum:'$680K',
+    score:92,grade:'S',
+    signal:'Graduado · pool consolidado · listado Coinbase inminente · acumulación ×7',
+  },
+  // ── RUGCHECK SAFE ────────────────────────────────
+  {
+    id:'rug-TURBO-eth',source:'rug',token:'TURBO',chain:'eth',
+    liq:'$4.8M',vol24:'$12.4M',age:'380d',holders:21000,
+    checks:{mintRevoked:true,freezeRevoked:true,honeypot:false,rugRisk:1},
+    pumpGraduated:false,pumpInPool:false,
+    cexCatalyst:null,accumTimes:2,totalAccum:'$128K',
+    score:80,grade:'A',
+    signal:'RugCheck score 1/100 · contratos auditados · comunidad activa ETH',
+  },
+  {
+    id:'rug-MYRO-sol',source:'rug',token:'MYRO',chain:'sol',
+    liq:'$1.2M',vol24:'$3.8M',age:'94d',holders:8400,
+    checks:{mintRevoked:true,freezeRevoked:true,honeypot:false,rugRisk:0},
+    pumpGraduated:false,pumpInPool:false,
+    cexCatalyst:'CMC',accumTimes:3,totalAccum:'$210K',
+    score:83,grade:'A',
+    signal:'RugCheck 0/100 riesgo · mint/freeze revocados · próximo CMC',
+  },
+  // ── CMC UPCOMING ────────────────────────────────
+  {
+    id:'cmc-GRASS-sol',source:'cmc',token:'GRASS',chain:'sol',
+    liq:'$6.2M',vol24:'$24.8M',age:'62d',holders:18200,
+    checks:{mintRevoked:true,freezeRevoked:true,honeypot:false,rugRisk:3},
+    pumpGraduated:false,pumpInPool:false,
+    cexCatalyst:'CMC',accumTimes:4,totalAccum:'$320K',
+    score:84,grade:'A',
+    signal:'Listado CMC confirmado próxima semana · fuerte acumulación institucional',
+  },
+  // ── COINBASE EFFECT ──────────────────────────────
+  {
+    id:'cbase-RENDER-eth',source:'cbase',token:'RENDER',chain:'eth',
+    liq:'$48M',vol24:'$142M',age:'1820d',holders:124000,
+    checks:{mintRevoked:true,freezeRevoked:true,honeypot:false,rugRisk:0},
+    pumpGraduated:false,pumpInPool:false,
+    cexCatalyst:'Coinbase',accumTimes:8,totalAccum:'$1.2M',
+    score:96,grade:'S',
+    signal:'COINBASE EFFECT · listado oficial confirmado · acumulación masiva ×8',
+  },
+  {
+    id:'cbase-ONDO-eth',source:'cbase',token:'ONDO',chain:'eth',
+    liq:'$92M',vol24:'$284M',age:'620d',holders:84000,
+    checks:{mintRevoked:true,freezeRevoked:true,honeypot:false,rugRisk:0},
+    pumpGraduated:false,pumpInPool:false,
+    cexCatalyst:'Coinbase',accumTimes:6,totalAccum:'$840K',
+    score:94,grade:'S',
+    signal:'COINBASE EFFECT · RWA narrative · ballenas comprando fuerte ×6',
+  },
+];
+
+// CEX upcoming listings sidebar
+const CEX_LISTINGS=[
+  {token:'BONK',platform:'Coinbase',date:'Jun 12',effect:'+180% histórico',cbase:true},
+  {token:'CHILLGUY',platform:'Coinbase',date:'Jun 15',effect:'+240% proyectado',cbase:true},
+  {token:'RENDER',platform:'Coinbase',date:'Jun 8',effect:'Confirmado',cbase:true},
+  {token:'ONDO',platform:'Coinbase',date:'Jun 10',effect:'Confirmado',cbase:true},
+  {token:'PNUT',platform:'CMC Track',date:'Jun 6',effect:'Listing inminente',cbase:false},
+  {token:'MYRO',platform:'CMC Track',date:'Jun 9',effect:'Listing inminente',cbase:false},
+  {token:'GRASS',platform:'CMC Track',date:'Jun 14',effect:'Listing confirmado',cbase:false},
+];
+
+// SOURCE TABS
+const SOURCES={
+  all:{label:'TODAS',cls:'all'},
+  dex:{label:'DEXSCREENER',cls:'dex'},
+  pump:{label:'PUMP.FUN',cls:'pump'},
+  rug:{label:'RUGCHECK',cls:'rug'},
+  cmc:{label:'CMC',cls:'cmc'},
+  cbase:{label:'COINBASE',cls:'cbase'},
+};
+let activeSrc='all';
+
+function buildSourceTabs(){
+  document.getElementById('sourceTabs').innerHTML=Object.entries(SOURCES).map(([k,s])=>{
+    const c=k==='all'?GEMS.length:GEMS.filter(g=>g.source===k).length;
+    return `<div class="src-tab ${s.cls} ${k===activeSrc?'active':''}" onclick="switchSrc('${k}')">
+      <div class="src-dot ${s.cls}"></div>${s.label}<span class="src-tab-count">${c}</span></div>`;
+  }).join('');
+}
+function switchSrc(s){activeSrc=s;buildSourceTabs();renderGems();}
+
+// SCORE → color/grade
+function gradeColor(score){
+  if(score>=85) return {cls:'gsb-legendary',gcls:'grade-S',label:'S'};
+  if(score>=70) return {cls:'gsb-high',gcls:'grade-A',label:'A'};
+  if(score>=55) return {cls:'gsb-mid',gcls:'grade-B',label:'B'};
+  return {cls:'gsb-low',gcls:'grade-C',label:'C'};
+}
+
+function miniRing(score,grade){
+  const r=18,circ=2*Math.PI*r,fill=circ-(circ*score/100);
+  const col=grade==='S'?'#ffd700':grade==='A'?'#b060ff':grade==='B'?'#00d4aa':'#4a6080';
+  const textCol=col;
+  return `<div class="gem-score-mini">
+    <svg viewBox="0 0 44 44">
+      <circle class="gsm-track" cx="22" cy="22" r="${r}"/>
+      <circle class="gsm-fill" cx="22" cy="22" r="${r}" stroke="${col}"
+        stroke-dasharray="${circ}" stroke-dashoffset="${fill}"
+        style="filter:drop-shadow(0 0 4px ${col})" stroke-linecap="round"/>
+    </svg>
+    <div class="gsm-center" style="color:${textCol}">${score}</div>
+  </div>`;
+}
+
+function secCheck(label,pass,warn=false){
+  const cls=warn?'warn':pass?'pass':'fail';
+  const ico=warn?'⚠️':pass?'✓':'✗';
+  return `<div class="sec-check ${cls}">${ico} ${label}</div>`;
+}
+
+function chainBadge(chain){
+  const m={sol:'gcb-sol SOL',eth:'gcb-eth ETH',arb:'gcb-arb ARB',bsc:'gcb-bsc BSC',base:'gcb-base BASE',pol:'gcb-pol POL'};
+  const [cls,label]=(m[chain]||'gcb-eth ETH').split(' ');
+  return `<div class="gem-chain-badge ${cls}">${label}</div>`;
+}
+
+function renderGems(){
+  const list=document.getElementById('gemList');
+  const filtered=activeSrc==='all'?GEMS:GEMS.filter(g=>g.source===activeSrc);
+  const sorted=[...filtered].sort((a,b)=>b.score-a.score);
+  document.getElementById('gemFeedCount').textContent=`${sorted.length} gemas`;
+
+  list.innerHTML=sorted.map((g,i)=>{
+    const {cls,gcls,label}=gradeColor(g.score);
+    const isAccum=g.accumTimes>1;
+    const rugWarn=g.checks.rugRisk>20;
+    const rugPass=g.checks.rugRisk<=10;
+    return `
+    <div class="gem-card src-${g.source}" style="animation:slideIn .3s ${i*.06}s both">
+      ${isAccum?`<div class="accum-badge">🔄 ×${g.accumTimes}</div>`:''}
+      <div class="gem-top">
+        ${miniRing(g.score,label)}
+        <div class="gem-top-info">
+          <div class="gem-token-row">
+            <div class="gem-token">${g.token}</div>
+            <div class="gem-src-badge ${g.source}">${g.source==='dex'?'DEXSCREENER':g.source==='pump'?'PUMP.FUN':g.source==='rug'?'RUGCHECK':g.source==='cmc'?'CMC UPCOMING':'COINBASE'}</div>
+            ${chainBadge(g.chain)}
+            <div class="grade-badge ${gcls}">${label}</div>
+          </div>
+          <div class="sec-checks">
+            ${secCheck('MINT REVOCADA',g.checks.mintRevoked)}
+            ${secCheck('FREEZE REVOCADA',g.checks.freezeRevoked)}
+            ${secCheck('NO HONEYPOT',!g.checks.honeypot)}
+            ${secCheck(`RUGCHECK ${g.checks.rugRisk}/100`,rugPass,rugWarn)}
+            ${g.pumpGraduated?secCheck('PUMP GRADUADO',true):''}
+            ${g.pumpInPool?secCheck('EN POOL RAYDIUM',true):''}
+            ${g.cexCatalyst?`<div class="sec-check pass">🚀 ${g.cexCatalyst} LISTING</div>`:''}
+          </div>
+        </div>
+      </div>
+      <div class="gem-metrics">
+        <div class="gem-metric"><div class="sf-label">LIQUIDEZ</div><div class="sf-val gold">${g.liq}</div></div>
+        <div class="gem-metric"><div class="sf-label">VOL 24H</div><div class="sf-val green">${g.vol24}</div></div>
+        <div class="gem-metric"><div class="sf-label">EDAD</div><div class="sf-val">${g.age}</div></div>
+        <div class="gem-metric"><div class="sf-label">HOLDERS</div><div class="sf-val">${g.holders.toLocaleString()}</div></div>
+        ${isAccum?`<div class="gem-metric"><div class="sf-label">ACUM WHALE</div><div class="sf-val" style="color:var(--gold)">${g.totalAccum}</div></div>`:''}
+      </div>
+      <div class="gem-score-bar-wrap">
+        <div class="gem-score-bar-label"><span>GEM SCORE PSYCHOMETRIKS</span><span>${g.score}/100</span></div>
+        <div class="gem-score-bar"><div class="gem-score-bar-fill ${cls}" style="width:${g.score}%"></div></div>
+      </div>
+      <div class="gem-signal-line">💡 ${g.signal}</div>
+      <div class="card-time">⏱ ${timeLabel(Math.floor(Math.random()*60)+1)}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderGemRanking(){
+  const top=[...GEMS].sort((a,b)=>b.score-a.score).slice(0,8);
+  document.getElementById('gemRanking').innerHTML=top.map((g,i)=>{
+    const {gcls,label}=gradeColor(g.score);
+    const srcLabel={dex:'DEX',pump:'PUMP',rug:'RUG',cmc:'CMC',cbase:'CBASE'}[g.source];
+    return `<div class="gsb-row">
+      <div class="gsb-left">
+        <div class="gsb-rank">#${i+1}</div>
+        <div><div class="gsb-token">${g.token}</div><div class="gsb-src">${srcLabel} · ${g.chain.toUpperCase()}</div></div>
+      </div>
+      <div class="gsb-right">
+        <div class="gsb-score" style="color:${label==='S'?'var(--gold)':label==='A'?'var(--gem)':'#00d4aa'}">${g.score}</div>
+        <div class="gsb-grade ${gcls}" style="font-size:.48rem;font-family:'Share Tech Mono',monospace">${label} GRADE</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderCexList(){
+  document.getElementById('cexList').innerHTML=CEX_LISTINGS.map(c=>`
+    <div class="cex-row">
+      <div>
+        <div class="cex-token">${c.token}</div>
+        <div class="cex-platform" style="color:${c.cbase?'#0052ff':'#3861fb'}">${c.platform}</div>
+      </div>
+      <div style="text-align:right">
+        <div class="cex-date">📅 ${c.date}</div>
+        <div class="cex-effect">${c.effect}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ── STATS ──────────────────────────────────────────────
+function animCount(el,n){
+  let c=0;const s=Math.ceil(n/40);
+  const t=setInterval(()=>{c=Math.min(c+s,n);el.textContent=c;if(c>=n)clearInterval(t);},28);
+}
+animCount(document.getElementById('sigCount'),SIGNALS.length);
+document.getElementById('sigCountSub').textContent=`en ${Object.keys(EXCHANGES).length-1} exchanges`;
+animCount(document.getElementById('gemCountS'),GEMS.filter(g=>g.score>=75).length);
+animCount(document.getElementById('pumpCount'),GEMS.filter(g=>g.pumpInPool).length);
+animCount(document.getElementById('cexCount'),CEX_LISTINGS.length);
+animCount(document.getElementById('rugCount'),GEMS.filter(g=>g.checks.rugRisk<=10).length);
+
+// ── WHALE MAP ──────────────────────────────────────────
+document.getElementById('whaleMap').innerHTML=[
+  {n:'WHALE_0x4f2a',a:'0x4f2a...8c91',v:'+$284K',p:true,i:'🐋'},
+  {n:'WHALE_0xb819',a:'0xb819...3d40',v:'+$182K',p:true,i:'🐋'},
+  {n:'WHALE_0x9c3e',a:'0x9c3e...7f12',v:'-$43K',p:false,i:'🦈'},
+  {n:'WHALE_0x2a77',a:'0x2a77...1b09',v:'+$97K',p:true,i:'🦈'},
+].map(w=>`<div class="side-row">
+  <div class="side-info"><div class="side-icon">${w.i}</div>
+    <div><div class="side-name">${w.n}</div><div class="side-addr">${w.a}</div></div>
+  </div>
+  <div class="side-val" style="color:${w.p?'var(--green)':'var(--red)'}">${w.v}</div>
+</div>`).join('');
+
+// ── FLASH ──────────────────────────────────────────────
+let flashIdx=0;
+function getFlashPool(){
+  return [
+    ...SIGNALS.map(s=>({type:'signal',c:`${s.pair} — ${s.dir} ${s.lev}`,s:`${EXCHANGES[s.exchange]?.label} · ${s.size} · Score ${s.score}/100`})),
+    ...GEMS.filter(g=>g.score>=75).map(g=>({type:'gem',c:`💎 ${g.token} (${g.chain.toUpperCase()}) — Score ${g.score}/100`,s:`${g.source==='cbase'?'🚀 COINBASE EFFECT':g.source==='pump'?'🟠 PUMP GRADUADO':'✓ GEM SEGURA'} · ${g.liq} liquidez`})),
+  ];
+}
+function showFlash(){
+  const pool=getFlashPool();
+  if(!pool.length) return;
+  const item=pool[flashIdx%pool.length];
+  const f=document.getElementById('flashNotif');
+  const t=document.getElementById('flashTitle');
+  t.textContent=item.type==='gem'?'💎 GEMA DETECTADA':'⚡ NUEVA SEÑAL';
+  t.className='nf-title '+(item.type==='gem'?'gem':'signal');
+  f.className='new-flash'+(item.type==='gem'?' gem-flash':'');
+  document.getElementById('flashContent').textContent=item.c;
+  document.getElementById('flashSub').textContent=item.s;
+  f.classList.add('show');
+  setTimeout(()=>f.classList.remove('show'),4500);
+  flashIdx++;
+}
+setTimeout(()=>{showFlash();setInterval(showFlash,16000);},2000);
+
+// ── INIT ───────────────────────────────────────────────
+buildTabs();renderSignals();   // muestra "Conectando..." hasta que lleguen precios
+buildSourceTabs();renderGems();
+renderGemRanking();renderCexList();
+
+// ── BRIDGE LIVE FEED ────────────────────────────────────
+function normalizeGem(g){
+  return Object.assign({},g,{
+    pumpGraduated: g.pump_graduated ?? g.pumpGraduated ?? false,
+    pumpInPool:    g.pump_in_pool   ?? g.pumpInPool    ?? false,
+    cexCatalyst:   g.cex_catalyst   ?? g.cexCatalyst   ?? null,
+    accumTimes:    g.accum_times    ?? g.accumTimes     ?? 1,
+    totalAccum:    g.total_accum    ?? g.totalAccum     ?? '?',
+    checks: Object.assign(
+      {mintRevoked:false,freezeRevoked:false,honeypot:true,rugRisk:100},
+      g.checks||{}
+    ),
+  });
+}
+
+async function fetchBridgeData(){
+  if(!BRIDGE_URL) return;
+  const dot = document.querySelector('.pulse-dot');
+  if(dot) dot.style.background='var(--gold)';
+  try {
+    const [sr,gr,smr] = await Promise.allSettled([
+      fetch(`${BRIDGE_URL}/api/signals?limit=100`).then(r=>r.json()),
+      fetch(`${BRIDGE_URL}/api/gems?limit=100`).then(r=>r.json()),
+      fetch(`${BRIDGE_URL}/api/summary`).then(r=>r.json()),
+    ]);
+    let updated = false;
+    if(sr.status==='fulfilled' && Array.isArray(sr.value) && sr.value.length>0){
+      SIGNALS.length=0; sr.value.forEach(s=>SIGNALS.push(s)); updated=true;
+    }
+    if(gr.status==='fulfilled' && Array.isArray(gr.value) && gr.value.length>0){
+      GEMS.length=0; gr.value.map(normalizeGem).forEach(g=>GEMS.push(g)); updated=true;
+    }
+    if(updated){
+      buildTabs(); renderSignals();
+      buildSourceTabs(); renderGems();
+      renderGemRanking();
+      animCount(document.getElementById('sigCount'), SIGNALS.length);
+      animCount(document.getElementById('gemCountS'), GEMS.filter(g=>g.score>=75).length);
+      animCount(document.getElementById('pumpCount'), GEMS.filter(g=>g.pumpInPool).length);
+      animCount(document.getElementById('rugCount'),  GEMS.filter(g=>g.checks&&g.checks.rugRisk<=10).length);
+    }
+    if(smr.status==='fulfilled'){
+      const s=smr.value;
+      const biasEl=document.querySelector('.score-title');
+      if(biasEl && s.bias) biasEl.textContent=
+        s.bias==='BULLISH'?'PRESIÓN ALCISTA DOMINANTE':
+        s.bias==='BEARISH'?'PRESIÓN BAJISTA DOMINANTE':'MERCADO NEUTRAL';
+      const lEl=document.querySelector('.metric-cell-val[data-metric="longs"]');
+      const shEl=document.querySelector('.metric-cell-val[data-metric="shorts"]');
+      if(lEl && s.long_pct!=null) lEl.textContent=s.long_pct.toFixed(1)+'%';
+      if(shEl && s.long_pct!=null) shEl.textContent=(100-s.long_pct).toFixed(1)+'%';
+    }
+    if(dot) dot.style.background='var(--green)';
+  } catch(e){
+    console.warn('[BRIDGE]',e);
+    if(dot) dot.style.background='var(--red)';
+    setTimeout(()=>{ if(dot) dot.style.background='var(--green)'; },3000);
+  }
+}
+
+// ── INIT: precios en vivo + polling cada 30s ─────────────
+fetchLivePrices();
+setInterval(fetchLivePrices, 30000);
+
+if(BRIDGE_URL){
+  setTimeout(()=>{ fetchBridgeData(); setInterval(fetchBridgeData,30000); },1500);
+}
+</script>
+</body>
+</html>

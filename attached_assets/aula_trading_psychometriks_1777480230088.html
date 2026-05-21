@@ -1,0 +1,2308 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PSYCHOMETRIKS — Aula Virtual de Trading</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #070a0f;
+    --bg2: #0d1117;
+    --bg3: #111820;
+    --border: #1e2d3d;
+    --accent: #00d4ff;
+    --accent2: #f7c948;
+    --accent3: #7f5af0;
+    --accent4: #2cb67d;
+    --text: #e8edf5;
+    --text2: #8899aa;
+    --text3: #4a6070;
+    --card: #0d1520;
+    --glow: rgba(0,212,255,0.15);
+    --glow2: rgba(247,201,72,0.12);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    position: fixed;
+    left: 0; top: 0;
+    width: 270px;
+    height: 100vh;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    z-index: 100;
+    overflow: hidden;
+  }
+
+  .sidebar-logo {
+    padding: 24px 24px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .logo-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 800;
+    background: linear-gradient(90deg, var(--accent), var(--accent3));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.5px;
+  }
+
+  .logo-sub {
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 2px;
+    font-weight: 300;
+  }
+
+  .sidebar-search {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sidebar-search input {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    padding: 7px 12px;
+    outline: none;
+    transition: border 0.2s;
+  }
+  .sidebar-search input:focus { border-color: var(--accent); }
+  .sidebar-search input::placeholder { color: var(--text3); }
+
+  .sidebar-nav {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 0 24px;
+  }
+  .sidebar-nav::-webkit-scrollbar { width: 3px; }
+
+  .nav-section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--text3);
+    padding: 16px 20px 6px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 20px;
+    cursor: pointer;
+    transition: all 0.18s;
+    border-left: 2px solid transparent;
+    text-decoration: none;
+    color: var(--text2);
+    font-size: 13.5px;
+  }
+  .nav-item:hover { color: var(--text); background: rgba(0,212,255,0.05); border-left-color: var(--accent); }
+  .nav-item.active { color: var(--accent); background: rgba(0,212,255,0.08); border-left-color: var(--accent); font-weight: 500; }
+
+  .nav-icon {
+    width: 20px; height: 20px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .nav-badge {
+    margin-left: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    background: var(--bg3);
+    color: var(--text3);
+  }
+
+  .nav-item.active .nav-badge { background: rgba(0,212,255,0.15); color: var(--accent); }
+
+  .sidebar-footer {
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--text3);
+  }
+
+  /* ── MAIN CONTENT ── */
+  .main {
+    margin-left: 270px;
+    min-height: 100vh;
+  }
+
+  /* ── TOPBAR ── */
+  .topbar {
+    position: sticky; top: 0;
+    background: rgba(7,10,15,0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 40px;
+    height: 58px;
+    display: flex; align-items: center; justify-content: space-between;
+    z-index: 50;
+  }
+
+  .breadcrumb {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; color: var(--text3);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .breadcrumb span { color: var(--text2); }
+  .breadcrumb .sep { color: var(--text3); }
+
+  .topbar-right { display: flex; align-items: center; gap: 16px; }
+  .progress-bar-wrap { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--text3); }
+  .prog-bar { width: 120px; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .prog-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent3)); border-radius: 2px; width: 0%; transition: width 0.4s; }
+
+  /* ── CONTENT AREA ── */
+  .content {
+    padding: 0;
+    max-width: 100%;
+  }
+
+  /* ── MODULE HERO ── */
+  .module-hero {
+    padding: 52px 60px 40px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .module-hero::before {
+    content: '';
+    position: absolute;
+    top: -80px; right: -80px;
+    width: 400px; height: 400px;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--glow) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .hero-eyebrow {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .module-number {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    background: rgba(0,212,255,0.1);
+    border: 1px solid rgba(0,212,255,0.2);
+    padding: 3px 10px; border-radius: 4px;
+    letter-spacing: 1px;
+  }
+
+  .module-tag {
+    font-size: 11px;
+    color: var(--text3);
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+
+  .hero-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 40px;
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -1px;
+    margin-bottom: 14px;
+  }
+
+  .hero-desc {
+    font-size: 16px;
+    color: var(--text2);
+    max-width: 680px;
+    font-weight: 300;
+    line-height: 1.8;
+  }
+
+  .hero-meta {
+    display: flex; gap: 24px; margin-top: 24px;
+    flex-wrap: wrap;
+  }
+
+  .meta-chip {
+    display: flex; align-items: center; gap: 7px;
+    font-size: 12px; color: var(--text3);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .meta-chip .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent4); }
+
+  /* ── LESSON TABS ── */
+  .lesson-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    padding: 0 60px;
+    background: var(--bg2);
+    overflow-x: auto;
+  }
+  .lesson-tabs::-webkit-scrollbar { display: none; }
+
+  .tab-btn {
+    padding: 14px 22px;
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text3);
+    cursor: pointer;
+    border: none;
+    background: none;
+    border-bottom: 2px solid transparent;
+    transition: all 0.18s;
+    white-space: nowrap;
+  }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* ── LESSON BODY ── */
+  .lesson-body {
+    padding: 48px 60px;
+    display: none;
+  }
+  .lesson-body.active { display: block; }
+
+  /* ── SECTION ── */
+  .section { margin-bottom: 52px; }
+
+  .section-header {
+    display: flex; align-items: baseline; gap: 16px;
+    margin-bottom: 24px; padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+
+  /* ── CONTENT ELEMENTS ── */
+  .lead {
+    font-size: 16px;
+    color: var(--text);
+    font-weight: 300;
+    line-height: 1.85;
+    margin-bottom: 20px;
+  }
+
+  p {
+    color: var(--text2);
+    line-height: 1.8;
+    margin-bottom: 16px;
+    font-size: 14.5px;
+  }
+
+  /* ── INFO BOXES ── */
+  .info-box {
+    border-radius: 8px;
+    padding: 18px 22px;
+    margin: 20px 0;
+    border-left: 3px solid;
+    position: relative;
+  }
+  .info-box.key { background: rgba(0,212,255,0.06); border-color: var(--accent); }
+  .info-box.warn { background: rgba(247,201,72,0.07); border-color: var(--accent2); }
+  .info-box.tip { background: rgba(44,182,125,0.07); border-color: var(--accent4); }
+  .info-box.pro { background: rgba(127,90,240,0.07); border-color: var(--accent3); }
+
+  .info-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .info-box.key .info-label { color: var(--accent); }
+  .info-box.warn .info-label { color: var(--accent2); }
+  .info-box.tip .info-label { color: var(--accent4); }
+  .info-box.pro .info-label { color: var(--accent3); }
+
+  .info-box p { color: var(--text); margin: 0; font-size: 14px; }
+
+  /* ── TABLE ── */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 13.5px;
+  }
+
+  .data-table th {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text3);
+    padding: 10px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg3);
+  }
+
+  .data-table td {
+    padding: 11px 14px;
+    border-bottom: 1px solid rgba(30,45,61,0.5);
+    color: var(--text2);
+  }
+
+  .data-table tr:hover td { background: rgba(0,212,255,0.03); }
+
+  .val-accent { color: var(--accent); font-family: 'JetBrains Mono', monospace; font-weight: 500; }
+  .val-yellow { color: var(--accent2); font-family: 'JetBrains Mono', monospace; }
+  .val-green { color: var(--accent4); font-family: 'JetBrains Mono', monospace; }
+  .val-purple { color: var(--accent3); font-family: 'JetBrains Mono', monospace; }
+
+  /* ── GRID CARDS ── */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+    margin: 24px 0;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    transition: border-color 0.2s;
+  }
+  .card:hover { border-color: rgba(0,212,255,0.3); }
+
+  .card-icon { font-size: 22px; margin-bottom: 10px; }
+  .card-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+  .card p { font-size: 13px; color: var(--text2); margin: 0; }
+
+  /* ── LIST ── */
+  .styled-list {
+    list-style: none;
+    display: flex; flex-direction: column; gap: 10px;
+    margin: 16px 0;
+  }
+  .styled-list li {
+    display: flex; align-items: flex-start; gap: 12px;
+    font-size: 14px; color: var(--text2);
+    line-height: 1.6;
+  }
+  .styled-list li::before {
+    content: '→';
+    color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  /* ── FORMULA BOX ── */
+  .formula {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--accent2);
+    margin: 16px 0;
+    overflow-x: auto;
+  }
+
+  /* ── STEP LIST ── */
+  .steps { display: flex; flex-direction: column; gap: 14px; margin: 20px 0; }
+  .step {
+    display: flex; gap: 16px;
+    align-items: flex-start;
+  }
+  .step-num {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: rgba(0,212,255,0.12);
+    border: 1px solid rgba(0,212,255,0.25);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .step-content { flex: 1; }
+  .step-title { font-weight: 600; font-size: 14px; margin-bottom: 4px; color: var(--text); }
+  .step-desc { font-size: 13px; color: var(--text2); }
+
+  /* ── COLUMNS ── */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin: 20px 0; }
+
+  /* ── MODULE SELECTOR (HOME) ── */
+  .home-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+    padding: 48px 60px;
+  }
+
+  .module-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 26px;
+    cursor: pointer;
+    transition: all 0.22s;
+    position: relative;
+    overflow: hidden;
+  }
+  .module-card::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), transparent);
+    opacity: 0;
+    transition: opacity 0.22s;
+  }
+  .module-card:hover {
+    border-color: rgba(0,212,255,0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+  }
+  .module-card:hover::after { opacity: 1; }
+
+  .mc-number {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; letter-spacing: 2px;
+    color: var(--text3); margin-bottom: 12px;
+  }
+  .mc-icon { font-size: 28px; margin-bottom: 12px; }
+  .mc-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 17px; font-weight: 700;
+    margin-bottom: 8px; color: var(--text);
+    line-height: 1.2;
+  }
+  .mc-desc { font-size: 13px; color: var(--text3); line-height: 1.6; }
+  .mc-lessons {
+    margin-top: 16px; padding-top: 14px;
+    border-top: 1px solid var(--border);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; color: var(--text3);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .mc-arrow { color: var(--accent); font-size: 14px; }
+
+  /* ── COLOR VARIANTS FOR MODULE CARDS ── */
+  .mc-blue::after { background: linear-gradient(90deg, var(--accent), transparent); }
+  .mc-yellow::after { background: linear-gradient(90deg, var(--accent2), transparent); }
+  .mc-purple::after { background: linear-gradient(90deg, var(--accent3), transparent); }
+  .mc-green::after { background: linear-gradient(90deg, var(--accent4), transparent); }
+
+  .mc-blue:hover { border-color: rgba(0,212,255,0.3); }
+  .mc-yellow:hover { border-color: rgba(247,201,72,0.3); }
+  .mc-purple:hover { border-color: rgba(127,90,240,0.3); }
+  .mc-green:hover { border-color: rgba(44,182,125,0.3); }
+
+  /* ── HOME HERO ── */
+  .home-hero {
+    padding: 64px 60px 40px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, var(--bg2) 0%, var(--bg) 100%);
+  }
+  .home-hero::before {
+    content: '';
+    position: absolute;
+    top: -100px; right: -50px;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(127,90,240,0.08) 0%, transparent 65%);
+    pointer-events: none;
+  }
+  .home-eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 16px;
+  }
+  .home-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 52px; font-weight: 800;
+    line-height: 1.05; letter-spacing: -2px;
+    margin-bottom: 20px;
+  }
+  .home-title span { background: linear-gradient(90deg, var(--accent), var(--accent3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .home-sub { font-size: 17px; color: var(--text2); font-weight: 300; max-width: 600px; line-height: 1.8; margin-bottom: 32px; }
+
+  .stats-row { display: flex; gap: 40px; flex-wrap: wrap; }
+  .stat { }
+  .stat-val { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; color: var(--text); }
+  .stat-label { font-size: 12px; color: var(--text3); font-family: 'JetBrains Mono', monospace; letter-spacing: 1px; }
+
+  /* ── HIDDEN SECTIONS ── */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 900px) {
+    .sidebar { width: 220px; }
+    .main { margin-left: 220px; }
+    .home-title { font-size: 36px; }
+    .two-col { grid-template-columns: 1fr; }
+    .lesson-body, .home-grid, .module-hero, .home-hero { padding-left: 24px; padding-right: 24px; }
+    .lesson-tabs { padding: 0 16px; }
+    .topbar { padding: 0 20px; }
+  }
+
+  /* ── CHART VISUAL ── */
+  .visual-block {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    margin: 20px 0;
+    text-align: center;
+  }
+  .visual-title { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text3); letter-spacing: 2px; margin-bottom: 14px; text-transform: uppercase; }
+
+  .fib-visual {
+    position: relative;
+    height: 200px;
+    background: linear-gradient(180deg, rgba(0,212,255,0.03) 0%, transparent 100%);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .fib-level {
+    position: absolute; left: 0; right: 0;
+    height: 1px;
+    display: flex; align-items: center;
+  }
+  .fib-level .line { flex: 1; height: 1px; }
+  .fib-level .lbl {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    white-space: nowrap;
+    padding: 0 8px;
+    color: var(--text3);
+  }
+
+  /* Animación entrada */
+  .lesson-body { animation: fadeIn 0.25s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  .home-grid { animation: fadeIn 0.3s ease; }
+
+  /* Badge new */
+  .badge-new {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    padding: 2px 6px; border-radius: 3px;
+    background: rgba(44,182,125,0.15);
+    color: var(--accent4);
+    letter-spacing: 1px;
+    margin-left: 6px;
+  }
+
+  .divider { height: 1px; background: var(--border); margin: 40px 0; }
+
+  h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 17px; font-weight: 700;
+    color: var(--text);
+    margin: 28px 0 12px;
+  }
+  h4 {
+    font-size: 14px; font-weight: 600;
+    color: var(--text);
+    margin: 20px 0 8px;
+    font-family: 'Syne', sans-serif;
+  }
+
+  strong { color: var(--text); font-weight: 600; }
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 1px 6px;
+    font-size: 12px;
+    color: var(--accent2);
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════
+     SIDEBAR
+══════════════════════════════════════════════ -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-tag">▸ Sistema de Trading</div>
+    <div class="logo-title">PSYCHOMETRIKS</div>
+    <div class="logo-sub">Aula Virtual — Edición 2026</div>
+  </div>
+
+  <div class="sidebar-search">
+    <input type="text" placeholder="Buscar módulo..." id="searchInput" oninput="filterNav(this.value)">
+  </div>
+
+  <nav class="sidebar-nav" id="sidebarNav">
+
+    <div class="nav-section-label">General</div>
+    <a class="nav-item active" onclick="showHome()" href="#">
+      <span class="nav-icon">⌂</span>
+      Inicio del Aula
+    </a>
+
+    <div class="nav-section-label">Módulo 1 — Fibonacci</div>
+    <a class="nav-item" onclick="showModule('fib')" href="#">
+      <span class="nav-icon">φ</span>
+      Fundamentos de Fibonacci
+      <span class="nav-badge">6 lec</span>
+    </a>
+
+    <div class="nav-section-label">Módulo 2 — Price Action</div>
+    <a class="nav-item" onclick="showModule('pa')" href="#">
+      <span class="nav-icon">◈</span>
+      Soportes &amp; Resistencias
+      <span class="nav-badge">4 lec</span>
+    </a>
+    <a class="nav-item" onclick="showModule('pa2')" href="#">
+      <span class="nav-icon">◇</span>
+      Tendencias &amp; Estructura
+      <span class="nav-badge">5 lec</span>
+    </a>
+    <a class="nav-item" onclick="showModule('pat')" href="#">
+      <span class="nav-icon">△</span>
+      Patrones Gráficos
+      <span class="nav-badge">6 lec</span>
+    </a>
+
+    <div class="nav-section-label">Módulo 3 — Indicadores</div>
+    <a class="nav-item" onclick="showModule('ma')" href="#">
+      <span class="nav-icon">∿</span>
+      Medias Móviles (MA)
+      <span class="nav-badge">4 lec</span>
+    </a>
+    <a class="nav-item" onclick="showModule('rsi')" href="#">
+      <span class="nav-icon">◉</span>
+      RSI &amp; Momentum
+      <span class="nav-badge">4 lec</span>
+    </a>
+    <a class="nav-item" onclick="showModule('macd')" href="#">
+      <span class="nav-icon">≋</span>
+      MACD &amp; Señales
+      <span class="nav-badge">3 lec</span>
+    </a>
+    <a class="nav-item" onclick="showModule('vol')" href="#">
+      <span class="nav-icon">▦</span>
+      Volumen &amp; Liquidez
+      <span class="nav-badge">4 lec</span>
+    </a>
+
+    <div class="nav-section-label">Módulo 4 — Elliott &amp; Ondas</div>
+    <a class="nav-item" onclick="showModule('ew')" href="#">
+      <span class="nav-icon">〜</span>
+      Ondas de Elliott
+      <span class="nav-badge">5 lec</span>
+    </a>
+    <a class="nav-item" onclick="showModule('abc')" href="#">
+      <span class="nav-icon">⌇</span>
+      Estructuras Correctivas ABC
+      <span class="nav-badge">4 lec</span>
+    </a>
+
+    <div class="nav-section-label">Módulo 5 — Gestión</div>
+    <a class="nav-item" onclick="showModule('risk')" href="#">
+      <span class="nav-icon">⚖</span>
+      Gestión de Riesgo
+      <span class="nav-badge">5 lec</span>
+    </a>
+    <a class="nav-item" onclick="showModule('mtf')" href="#">
+      <span class="nav-icon">⊞</span>
+      Multi-Timeframe
+      <span class="nav-badge">3 lec</span>
+    </a>
+
+    <div class="nav-section-label">Módulo 6 — Wyckoff</div>
+    <a class="nav-item" onclick="showModule('wyck')" href="#">
+      <span class="nav-icon">⊛</span>
+      Método Wyckoff
+      <span class="nav-badge">5 lec</span>
+    </a>
+
+    <div class="nav-section-label">Herramientas</div>
+    <a class="nav-item" onclick="showModule('checklist')" href="#">
+      <span class="nav-icon">✓</span>
+      Checklist del Trader
+      <span class="nav-badge">ref</span>
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    PSYCHOMETRIKS © 2026 · v3.0
+  </div>
+</aside>
+
+<!-- ══════════════════════════════════════════════
+     MAIN
+══════════════════════════════════════════════ -->
+<main class="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="breadcrumb">
+      <span id="breadcrumb1">Aula Virtual</span>
+      <span class="sep">/</span>
+      <span id="breadcrumb2">Inicio</span>
+    </div>
+    <div class="topbar-right">
+      <div class="progress-bar-wrap">
+        <span>Progreso</span>
+        <div class="prog-bar"><div class="prog-fill" id="progFill"></div></div>
+        <span id="progPct">0%</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ══ HOME PAGE ══ -->
+    <div id="page-home" class="page active">
+      <div class="home-hero">
+        <div class="home-eyebrow">▸ PSYCHOMETRIKS TRADING SYSTEM</div>
+        <h1 class="home-title">Aula Virtual<br><span>de Trading</span></h1>
+        <p class="home-sub">De trader principiante a trader estructurado. Domina las técnicas que realmente funcionan: Fibonacci, Price Action, Indicadores, Ondas de Elliott, Gestión de Riesgo y más.</p>
+        <div class="stats-row">
+          <div class="stat"><div class="stat-val">8</div><div class="stat-label">MÓDULOS</div></div>
+          <div class="stat"><div class="stat-val">44+</div><div class="stat-label">LECCIONES</div></div>
+          <div class="stat"><div class="stat-val">2026</div><div class="stat-label">EDICIÓN</div></div>
+        </div>
+      </div>
+
+      <div class="home-grid">
+
+        <div class="module-card mc-blue" onclick="showModule('fib')">
+          <div class="mc-number">MÓDULO 01</div>
+          <div class="mc-icon">φ</div>
+          <div class="mc-title">Fibonacci & Retrocesos</div>
+          <div class="mc-desc">La técnica base del sistema. Aprende a medir retrocesos, extensiones y confluencias como un profesional.</div>
+          <div class="mc-lessons"><span>6 lecciones · Nivel Fundamental</span><span class="mc-arrow">→</span></div>
+        </div>
+
+        <div class="module-card mc-yellow" onclick="showModule('pa')">
+          <div class="mc-number">MÓDULO 02</div>
+          <div class="mc-icon">◈</div>
+          <div class="mc-title">Price Action Puro</div>
+          <div class="mc-desc">Lee el mercado sin indicadores. Soportes, resistencias, estructura de mercado y tendencias reales.</div>
+          <div class="mc-lessons"><span>9 lecciones · Nivel Intermedio</span><span class="mc-arrow">→</span></div>
+        </div>
+
+        <div class="module-card mc-purple" onclick="showModule('ma')">
+          <div class="mc-number">MÓDULO 03</div>
+          <div class="mc-icon">∿</div>
+          <div class="mc-title">Indicadores Técnicos</div>
+          <div class="mc-desc">Medias Móviles, RSI, MACD, Volumen. Cómo usarlos como confirmación, no como señal primaria.</div>
+          <div class="mc-lessons"><span>15 lecciones · Nivel Intermedio</span><span class="mc-arrow">→</span></div>
+        </div>
+
+        <div class="module-card mc-green" onclick="showModule('ew')">
+          <div class="mc-number">MÓDULO 04</div>
+          <div class="mc-icon">〜</div>
+          <div class="mc-title">Ondas de Elliott</div>
+          <div class="mc-desc">La teoría de ondas completa: impulsos, correcciones ABC, WXY y su integración con Fibonacci.</div>
+          <div class="mc-lessons"><span>9 lecciones · Nivel Avanzado</span><span class="mc-arrow">→</span></div>
+        </div>
+
+        <div class="module-card mc-yellow" onclick="showModule('risk')">
+          <div class="mc-number">MÓDULO 05</div>
+          <div class="mc-icon">⚖</div>
+          <div class="mc-title">Gestión de Riesgo</div>
+          <div class="mc-desc">La habilidad más importante. Stop Loss, Risk-Reward, sizing de posición y psicología del trader.</div>
+          <div class="mc-lessons"><span>8 lecciones · Nivel Fundamental</span><span class="mc-arrow">→</span></div>
+        </div>
+
+        <div class="module-card mc-purple" onclick="showModule('wyck')">
+          <div class="mc-number">MÓDULO 06</div>
+          <div class="mc-icon">⊛</div>
+          <div class="mc-title">Método Wyckoff</div>
+          <div class="mc-desc">Acumulación, distribución, Springs y UPTHRUSTs. Cómo leer el smart money en el chart.</div>
+          <div class="mc-lessons"><span>5 lecciones · Nivel Avanzado</span><span class="mc-arrow">→</span></div>
+        </div>
+
+        <div class="module-card mc-blue" onclick="showModule('checklist')">
+          <div class="mc-number">REFERENCIA</div>
+          <div class="mc-icon">✓</div>
+          <div class="mc-title">Checklist Profesional</div>
+          <div class="mc-desc">Tu checklist pre-trade, tabla de confluencias y errores más comunes que debes evitar.</div>
+          <div class="mc-lessons"><span>Referencia rápida · Usar a diario</span><span class="mc-arrow">→</span></div>
+        </div>
+
+      </div>
+    </div><!-- /home -->
+
+    <!-- ══ MÓDULO 1: FIBONACCI ══ -->
+    <div id="page-fib" class="page">
+      <div class="module-hero">
+        <div class="hero-eyebrow">
+          <span class="module-number">MÓDULO 01</span>
+          <span class="module-tag">Técnica Fundamental</span>
+        </div>
+        <h1 class="hero-title">Fibonacci &<br>Retrocesos</h1>
+        <p class="hero-desc">La base matemática del trading estructurado. Aprende a identificar zonas de alta probabilidad usando los niveles de Fibonacci en cualquier mercado y timeframe.</p>
+        <div class="hero-meta">
+          <span class="meta-chip"><span class="dot"></span> 6 Lecciones</span>
+          <span class="meta-chip"><span class="dot"></span> Nivel Fundamental</span>
+          <span class="meta-chip"><span class="dot"></span> Aplicable en Crypto / Forex / Acciones</span>
+        </div>
+      </div>
+
+      <div class="lesson-tabs">
+        <button class="tab-btn active" onclick="switchTab('fib', 0, this)">1. ¿Qué es Fibo?</button>
+        <button class="tab-btn" onclick="switchTab('fib', 1, this)">2. Niveles Clave</button>
+        <button class="tab-btn" onclick="switchTab('fib', 2, this)">3. Cómo Medir</button>
+        <button class="tab-btn" onclick="switchTab('fib', 3, this)">4. Confluencias</button>
+        <button class="tab-btn" onclick="switchTab('fib', 4, this)">5. Extensiones</button>
+        <button class="tab-btn" onclick="switchTab('fib', 5, this)">6. Errores Comunes</button>
+      </div>
+
+      <!-- TAB 0 -->
+      <div class="lesson-body active" data-module="fib" data-tab="0">
+        <div class="section">
+          <div class="section-header"><span class="section-num">1.1</span><h2 class="section-title">¿Qué es Fibonacci en Trading?</h2></div>
+          <p class="lead">Leonardo Fibonacci fue un matemático del siglo XIII que descubrió una secuencia numérica que aparece en toda la naturaleza. En trading, esta secuencia se utiliza para identificar zonas de soporte y resistencia donde el precio tiende a reaccionar.</p>
+          <div class="formula">Secuencia: 0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233...</div>
+          <p>Cada número es la suma de los dos anteriores. La <strong>magia está en las proporciones</strong>: 89 ÷ 144 = 0.618 — el famoso número áureo. El mercado, al estar compuesto por millones de decisiones humanas, reproduce estos patrones matemáticos de forma natural.</p>
+          <div class="info-box key">
+            <div class="info-label">📐 Concepto Clave</div>
+            <p>Fibonacci NO predice el futuro. Lo que hace es identificar <strong>zonas de probabilidad alta</strong> donde el precio históricamente tiende a rebotar o acelerarse. Siempre necesita confirmación.</p>
+          </div>
+          <div class="card-grid">
+            <div class="card">
+              <div class="card-icon">🔄</div>
+              <div class="card-title">Retrocesos</div>
+              <p>Zonas donde el precio corrige DENTRO de un movimiento. Te dicen dónde comprar en un pullback.</p>
+            </div>
+            <div class="card">
+              <div class="card-icon">🎯</div>
+              <div class="card-title">Extensiones</div>
+              <p>Targets MÁS ALLÁ del 100%. Te dicen hasta dónde puede llegar el precio después del retroceso.</p>
+            </div>
+            <div class="card">
+              <div class="card-icon">⚡</div>
+              <div class="card-title">Confluencias</div>
+              <p>Cuando Fibo coincide con soporte, MA o estructura. La zona más poderosa para operar.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 1 -->
+      <div class="lesson-body" data-module="fib" data-tab="1">
+        <div class="section">
+          <div class="section-header"><span class="section-num">1.2</span><h2 class="section-title">Los Niveles de Fibonacci Clave</h2></div>
+          <p class="lead">Existen dos grupos: <strong>retrocesos</strong> (dentro del 0-100%) y <strong>extensiones</strong> (más allá del 100%). No todos los niveles tienen el mismo peso.</p>
+
+          <h3>Retrocesos — Para buscar entradas</h3>
+          <table class="data-table">
+            <thead><tr><th>Nivel</th><th>Uso Principal</th><th>Tipo de Retroceso</th><th>Peso</th></tr></thead>
+            <tbody>
+              <tr><td class="val-accent">0.236</td><td>Retroceso mínimo, tendencias fuertes</td><td>Superficial</td><td>★★☆☆☆</td></tr>
+              <tr><td class="val-accent">0.382</td><td>Entrada en impulsos fuertes (Onda 2)</td><td>Leve</td><td>★★★★☆</td></tr>
+              <tr><td class="val-accent">0.500</td><td>Zona media — psicológica</td><td>Normal</td><td>★★★☆☆</td></tr>
+              <tr><td class="val-accent">0.618</td><td>El nivel MÁS importante. "Golden Ratio"</td><td>Profundo</td><td>★★★★★</td></tr>
+              <tr><td class="val-accent">0.786</td><td>Retroceso extremo antes de continuar</td><td>Muy profundo</td><td>★★★★☆</td></tr>
+              <tr><td class="val-yellow">0.886</td><td>Último soporte antes de invalidación</td><td>Extremo</td><td>★★★☆☆</td></tr>
+            </tbody>
+          </table>
+
+          <div class="info-box warn">
+            <div class="info-label">⚡ Regla de Oro</div>
+            <p>El nivel <strong>0.618</strong> (Golden Ratio) es el más respetado por el mercado. Si el precio retrocede y rebota aquí con volumen y confirmación, es la entrada de mayor calidad.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2 -->
+      <div class="lesson-body" data-module="fib" data-tab="2">
+        <div class="section">
+          <div class="section-header"><span class="section-num">1.3</span><h2 class="section-title">Cómo Medir Fibonacci Correctamente</h2></div>
+          <p class="lead">La regla de oro: siempre mides de <strong>swing point a swing point</strong>. El error más común es no identificar correctamente los extremos.</p>
+
+          <h3>En tendencia ALCISTA</h3>
+          <div class="steps">
+            <div class="step"><div class="step-num">1</div><div class="step-content"><div class="step-title">Identifica el mínimo significativo (Swing Low)</div><div class="step-desc">El punto más bajo antes del movimiento que quieres medir. Debe ser un giro claro del mercado.</div></div></div>
+            <div class="step"><div class="step-num">2</div><div class="step-content"><div class="step-title">Identifica el máximo significativo (Swing High)</div><div class="step-desc">El punto más alto del movimiento impulsivo. El techo del impulso que estás analizando.</div></div></div>
+            <div class="step"><div class="step-num">3</div><div class="step-content"><div class="step-title">Mide desde el MÍNIMO (0%) hasta el MÁXIMO (100%)</div><div class="step-desc">En TradingView: herramienta Fibonacci Retracement. Clic en el mínimo, arrastra al máximo.</div></div></div>
+            <div class="step"><div class="step-num">4</div><div class="step-content"><div class="step-title">Los retrocesos te dan zonas de COMPRA</div><div class="step-desc">El precio debería bajar hasta esas zonas y rebotar para continuar alcista.</div></div></div>
+          </div>
+
+          <h3>En tendencia BAJISTA</h3>
+          <div class="steps">
+            <div class="step"><div class="step-num">1</div><div class="step-content"><div class="step-title">Identifica el máximo (Swing High)</div><div class="step-desc">El punto de origen del movimiento bajista. El techo antes de la caída.</div></div></div>
+            <div class="step"><div class="step-num">2</div><div class="step-content"><div class="step-title">Identifica el mínimo (Swing Low)</div><div class="step-desc">El punto más bajo del movimiento. El piso del impulso bajista.</div></div></div>
+            <div class="step"><div class="step-num">3</div><div class="step-content"><div class="step-title">Mide desde el MÁXIMO (0%) hasta el MÍNIMO (100%)</div><div class="step-desc">Los retrocesos te marcan zonas de VENTA en el rebote correctivo.</div></div></div>
+          </div>
+
+          <div class="info-box tip">
+            <div class="info-label">💡 Tamaño Esperado de Retrocesos</div>
+            <p>Tendencias fuertes: retroceso leve al <strong>38.2%</strong>. Tendencias normales: retroceso al <strong>50-61.8%</strong>. Tendencias débiles: retroceso al <strong>78.6%</strong> o más.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3 -->
+      <div class="lesson-body" data-module="fib" data-tab="3">
+        <div class="section">
+          <div class="section-header"><span class="section-num">1.4</span><h2 class="section-title">Confluencias: El Secreto del Profesional</h2></div>
+          <p class="lead">Un solo nivel de Fibonacci <strong>NO es suficiente</strong>. Los traders profesionales buscan CONFLUENCIAS — cuando varios factores apuntan exactamente a la misma zona de precio.</p>
+          <div class="card-grid">
+            <div class="card">
+              <div class="card-icon">🔵</div>
+              <div class="card-title">Fibo + Soporte/Resistencia</div>
+              <p>El nivel 0.618 coincide con un soporte histórico previo. La zona tiene doble validación.</p>
+            </div>
+            <div class="card">
+              <div class="card-icon">🟡</div>
+              <div class="card-title">Fibo + Media Móvil</div>
+              <p>El precio retrocede al 0.618 justo donde está la EMA 200. Confluencia de precio y tiempo.</p>
+            </div>
+            <div class="card">
+              <div class="card-icon">🟢</div>
+              <div class="card-title">Fibo + Estructura</div>
+              <p>El retroceso cae exactamente donde hay un patrón ABC terminando o un triángulo resolviendo.</p>
+            </div>
+            <div class="card">
+              <div class="card-icon">🟣</div>
+              <div class="card-title">Fibo + Volumen</div>
+              <p>La zona Fibonacci coincide con una zona de alto volumen previo (Value Area). Más poderosa.</p>
+            </div>
+          </div>
+          <div class="info-box pro">
+            <div class="info-label">🏆 Regla Pro</div>
+            <p>Espera mínimo <strong>2-3 confluencias</strong> antes de entrar. Cuanto más confluencias, menor riesgo necesitas y mayor confianza en el trade.</p>
+          </div>
+          <table class="data-table">
+            <thead><tr><th>Confluencias</th><th>Calidad del Setup</th><th>Acción Recomendada</th></tr></thead>
+            <tbody>
+              <tr><td>1</td><td class="val-accent">Baja</td><td>No operar, esperar confirmación</td></tr>
+              <tr><td>2</td><td class="val-yellow">Media</td><td>Entrada pequeña con SL ajustado</td></tr>
+              <tr><td>3</td><td class="val-green">Alta</td><td>Entrada estándar de tu plan</td></tr>
+              <tr><td>4+</td><td class="val-purple">Premium</td><td>Entrada máxima autorizada por tu plan</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB 4 -->
+      <div class="lesson-body" data-module="fib" data-tab="4">
+        <div class="section">
+          <div class="section-header"><span class="section-num">1.5</span><h2 class="section-title">Extensiones de Fibonacci — Tus Targets</h2></div>
+          <p class="lead">Las extensiones te permiten proyectar <strong>hasta dónde puede llegar el precio</strong> después de un retroceso. Son los Take Profits (TP) del trader estructurado.</p>
+          <table class="data-table">
+            <thead><tr><th>Extensión</th><th>Uso</th><th>Cuándo Aplica</th></tr></thead>
+            <tbody>
+              <tr><td class="val-accent">1.272</td><td>TP1 — Target conservador</td><td>Tendencias normales, primer objetivo</td></tr>
+              <tr><td class="val-accent">1.414</td><td>TP entre 1.272 y 1.618</td><td>Momentum moderado</td></tr>
+              <tr><td class="val-accent">1.618</td><td>TP2 — Target estándar ✓</td><td>La extensión más común en crypto</td></tr>
+              <tr><td class="val-yellow">2.0</td><td>TP3 — Target ampliado</td><td>Impulsos fuertes con volumen</td></tr>
+              <tr><td class="val-purple">2.618</td><td>TP4 — Target extremo</td><td>Mercados en euforia / bull run</td></tr>
+              <tr><td class="val-green">4.236</td><td>Target de ciclo largo</td><td>Análisis macro de Bitcoin / altcoins</td></tr>
+            </tbody>
+          </table>
+          <div class="info-box tip">
+            <div class="info-label">💡 Estrategia de Salida por Partes</div>
+            <p>El profesional <strong>NO espera el TP final</strong>. Cierra 30% en el 1.272, otro 40% en el 1.618, y deja correr el 30% restante con SL en breakeven hacia el 2.618. Así asegura ganancia y maximiza potencial.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 5 -->
+      <div class="lesson-body" data-module="fib" data-tab="5">
+        <div class="section">
+          <div class="section-header"><span class="section-num">1.6</span><h2 class="section-title">Errores Comunes con Fibonacci</h2></div>
+          <ul class="styled-list">
+            <li><strong>Medir desde puntos incorrectos.</strong> Siempre usa swings significativos (giros claros del mercado), no ruido intradía aleatorio.</li>
+            <li><strong>Operar en un solo nivel sin confluencia.</strong> Un nivel solo no es suficiente. Necesitas soporte, MA, o estructura que lo confirme.</li>
+            <li><strong>Ignorar el contexto del timeframe mayor.</strong> Si en el diario el precio está en resistencia mayor, no entres largo aunque el 0.618 del 15M diga que sí.</li>
+            <li><strong>No poner Stop Loss.</strong> Siempre. El SL va por debajo del swing low (en longs) con margen para el wick.</li>
+            <li><strong>Mover el SL para "darle espacio" al trade.</strong> Esto destruye tu gestión de riesgo y te lleva a pérdidas mayores.</li>
+            <li><strong>Usar demasiados niveles.</strong> Quédate con 0.382, 0.5, 0.618 y 0.786 para retrocesos, y 1.272 / 1.618 para extensiones. Simple y efectivo.</li>
+          </ul>
+          <div class="info-box warn">
+            <div class="info-label">⚠️ La trampa más común</div>
+            <p>Ver Fibonacci en todo y forzar el análisis. Si tienes que inventar el swing o el nivel, la oportunidad <strong>no existe</strong>. Espera setups claros.</p>
+          </div>
+        </div>
+      </div>
+    </div><!-- /fib -->
+
+    <!-- ══ MÓDULO 2A: PRICE ACTION — S&R ══ -->
+    <div id="page-pa" class="page">
+      <div class="module-hero">
+        <div class="hero-eyebrow"><span class="module-number">MÓDULO 02A</span><span class="module-tag">Price Action</span></div>
+        <h1 class="hero-title">Soportes &<br>Resistencias</h1>
+        <p class="hero-desc">La base del análisis técnico real. Antes de cualquier indicador, debes saber leer las zonas donde el precio ha reaccionado históricamente.</p>
+        <div class="hero-meta"><span class="meta-chip"><span class="dot"></span> 4 Lecciones</span><span class="meta-chip"><span class="dot"></span> Nivel Intermedio</span></div>
+      </div>
+
+      <div class="lesson-tabs">
+        <button class="tab-btn active" onclick="switchTab('pa', 0, this)">1. Qué son S&amp;R</button>
+        <button class="tab-btn" onclick="switchTab('pa', 1, this)">2. Cómo Dibujarlos</button>
+        <button class="tab-btn" onclick="switchTab('pa', 2, this)">3. Zonas vs Niveles</button>
+        <button class="tab-btn" onclick="switchTab('pa', 3, this)">4. Flip de Niveles</button>
+      </div>
+
+      <div class="lesson-body active" data-module="pa" data-tab="0">
+        <div class="section">
+          <div class="section-header"><span class="section-num">2.1</span><h2 class="section-title">¿Qué son Soportes y Resistencias?</h2></div>
+          <p class="lead">Un <strong>soporte</strong> es una zona de precio donde la demanda supera a la oferta, haciendo que el precio rebote hacia arriba. Una <strong>resistencia</strong> es lo opuesto: la oferta supera a la demanda y el precio frena o cae.</p>
+          <div class="two-col">
+            <div class="info-box tip">
+              <div class="info-label">📗 SOPORTE</div>
+              <p>El precio ha bajado hasta aquí múltiples veces y ha rebotado. Los compradores defienden esta zona. Cuanto más veces se testee, más sólido... hasta que se rompe.</p>
+            </div>
+            <div class="info-box warn">
+              <div class="info-label">📕 RESISTENCIA</div>
+              <p>El precio ha subido hasta aquí y ha caído. Los vendedores dominan. Los compradores que compraron aquí antes quieren recuperar su dinero.</p>
+            </div>
+          </div>
+          <div class="info-box key">
+            <div class="info-label">🔑 Principio de Polarity (Inversión)</div>
+            <p>Cuando un soporte se rompe con fuerza, <strong>se convierte en resistencia</strong>. Y viceversa. Este concepto (S&R Flip) es fundamental para leer el mercado profesionalmente.</p>
+          </div>
+        </div>
+      </div>
+      <div class="lesson-body" data-module="pa" data-tab="1">
+        <div class="section">
+          <div class="section-header"><span class="section-num">2.2</span><h2 class="section-title">Cómo Dibujar S&R Correctamente</h2></div>
+          <ul class="styled-list">
+            <li>Busca zonas donde el precio haya tocado <strong>2 o más veces</strong> y reaccionado.</li>
+            <li>Usa cierres de vela como referencia, no solo wicks extremos.</li>
+            <li>Los S&R de <strong>timeframes mayores</strong> (diario, semanal) son más importantes.</li>
+            <li>No dibujes demasiadas líneas — selecciona las 2-3 zonas más relevantes.</li>
+            <li>Las zonas <strong>redondeadas de precio</strong> (10,000 / 50,000 / 100,000) tienen valor psicológico adicional.</li>
+          </ul>
+          <div class="info-box pro">
+            <div class="info-label">🏆 Tip Profesional</div>
+            <p>Dibuja S&R en el <strong>gráfico semanal o diario primero</strong>. Luego baja a H4 o H1 para afinar. Nunca empieces desde timeframes pequeños.</p>
+          </div>
+        </div>
+      </div>
+      <div class="lesson-body" data-module="pa" data-tab="2">
+        <div class="section">
+          <div class="section-header"><span class="section-num">2.3</span><h2 class="section-title">Zonas vs Niveles Exactos</h2></div>
+          <p class="lead">El mercado no respeta líneas exactas. Trabaja con <strong>zonas de precio</strong> (rangos) en lugar de líneas precisas.</p>
+          <table class="data-table">
+            <thead><tr><th>Error (Principiante)</th><th>Correcto (Profesional)</th></tr></thead>
+            <tbody>
+              <tr><td>"El soporte es exactamente $42,000"</td><td class="val-green">"La zona de soporte es $41,500 - $42,300"</td></tr>
+              <tr><td>Cancela el trade si el precio toca $42,001</td><td class="val-green">Evalúa si la zona se mantiene estructuralmente</td></tr>
+              <tr><td>Usa solo una línea horizontal</td><td class="val-green">Dibuja una caja o rango de precio</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="lesson-body" data-module="pa" data-tab="3">
+        <div class="section">
+          <div class="section-header"><span class="section-num">2.4</span><h2 class="section-title">El Flip de S&R — La Señal más Poderosa</h2></div>
+          <p class="lead">Cuando un soporte se rompe y el precio vuelve a testearlo <strong>desde abajo</strong>, ese nivel se convierte en resistencia. Este "flip" es una de las entradas más limpias del Price Action.</p>
+          <div class="steps">
+            <div class="step"><div class="step-num">1</div><div class="step-content"><div class="step-title">Identifica el soporte previo</div><div class="step-desc">Zona que ha sido testada múltiples veces como soporte.</div></div></div>
+            <div class="step"><div class="step-num">2</div><div class="step-content"><div class="step-title">El precio rompe el soporte con fuerza</div><div class="step-desc">Cierre de vela por debajo, idealmente con volumen.</div></div></div>
+            <div class="step"><div class="step-num">3</div><div class="step-content"><div class="step-title">El precio retestea la zona desde abajo</div><div class="step-desc">Vuelve a la zona rota — ahora es resistencia.</div></div></div>
+            <div class="step"><div class="step-num">4</div><div class="step-content"><div class="step-title">Entrada short en el retest con confirmación</div><div class="step-desc">Aquí entran los traders que entienden el Flip.</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /pa -->
+
+    <!-- ══ MÓDULO 2B: TENDENCIAS ══ -->
+    <div id="page-pa2" class="page">
+      <div class="module-hero">
+        <div class="hero-eyebrow"><span class="module-number">MÓDULO 02B</span><span class="module-tag">Price Action</span></div>
+        <h1 class="hero-title">Tendencias &<br>Estructura de Mercado</h1>
+        <p class="hero-desc">El mercado siempre tiene una dirección dominante. Aprender a identificarla te pone de lado correcto del trade el 80% del tiempo.</p>
+        <div class="hero-meta"><span class="meta-chip"><span class="dot"></span> 5 Lecciones</span><span class="meta-chip"><span class="dot"></span> Nivel Intermedio</span></div>
+      </div>
+      <div class="lesson-tabs">
+        <button class="tab-btn active" onclick="switchTab('pa2', 0, this)">1. HH / HL / LL / LH</button>
+        <button class="tab-btn" onclick="switchTab('pa2', 1, this)">2. BOS &amp; CHoCH</button>
+        <button class="tab-btn" onclick="switchTab('pa2', 2, this)">3. Canales</button>
+        <button class="tab-btn" onclick="switchTab('pa2', 3, this)">4. Rangos</button>
+        <button class="tab-btn" onclick="switchTab('pa2', 4, this)">5. Zonas OB</button>
+      </div>
+      <div class="lesson-body active" data-module="pa2" data-tab="0">
+        <div class="section">
+          <div class="section-header"><span class="section-num">2.5</span><h2 class="section-title">Estructura del Mercado: HH, HL, LL, LH</h2></div>
+          <p class="lead">La forma más pura de leer una tendencia es analizar los <strong>swings del mercado</strong>. No necesitas indicadores para esto.</p>
+          <table class="data-table">
+            <thead><tr><th>Abreviatura</th><th>Nombre</th><th>Señal</th></tr></thead>
+            <tbody>
+              <tr><td class="val-green">HH</td><td>Higher High (Máximo más alto)</td><td>El precio supera el máximo anterior → tendencia alcista</td></tr>
+              <tr><td class="val-green">HL</td><td>Higher Low (Mínimo más alto)</td><td>El precio no cae al anterior mínimo → compradores en control</td></tr>
+              <tr><td class="val-accent">LH</td><td>Lower High (Máximo más bajo)</td><td>Los vendedores frenan antes del máximo anterior → debilidad</td></tr>
+              <tr><td class="val-accent">LL</td><td>Lower Low (Mínimo más bajo)</td><td>El precio hace nuevos mínimos → tendencia bajista confirmada</td></tr>
+            </tbody>
+          </table>
+          <div class="info-box key">
+            <div class="info-label">📌 La Secuencia de Tendencias</div>
+            <p>Tendencia ALCISTA: HH → HL → HH → HL... cada corrección es un HL. &nbsp;|&nbsp; Tendencia BAJISTA: LH → LL → LH → LL... cada rebote es un LH.</p>
+          </div>
+        </div>
+      </div>
+      <div class="lesson-body" data-module="pa2" data-tab="1">
+        <div class="section">
+          <div class="section-header"><span class="section-num">2.6</span><h2 class="section-title">BOS & CHoCH — Cambios de Estructura</h2></div>
+          <div class="card-grid">
+            <div class="card">
+              <div class="card-icon">💥</div>
+              <div class="card-title">BOS — Break of Structure</div>
+              <p>El precio rompe el swing previo en la dirección de la tendencia. <strong>Confirma continuación</strong>. Busca entrar en el retroceso posterior.</p>
+            </div>
+            <div class="card">
+              <div class="card-icon">🔄</div>
+              <div class="card-title">CHoCH — Change of Character</div>
+              <p>El precio rompe el swing en dirección CONTRARIA a la tendencia. <strong>Señal de cambio de dirección</strong>. Alerta de reversión potencial.</p>
+            </div>
+          </div>
+          <div class="info-box tip">
+            <div class="info-label">💡 Aplicación Práctica</div>
+            <p>En tendencia alcista: espera un BOS alcista → espera retroceso hacia zona de demanda → entra long con SL bajo el HL. El BOS te confirma que la tendencia sigue activa.</p>
+          </div>
+        </div>
+      </div>
+      <div class="lesson-body" data-module="pa2" data-tab="2">
+        <div class="section">
+          <div class="section-header"><span class="section-num">2.7</span><h2 class="section-title">Canales de Precio</h2></div>
+          <p>Un canal es una tendencia contenida entre dos líneas paralelas. Son zonas donde el precio rebota de forma predecible.</p>
+          <table class="data-table">
+            <thead><tr><th>Tipo</th><th>Dirección</th><th>Trade</th></tr></thead>
+            <tbody>
+              <tr><td>Canal Alcista</td><td class="val-green">Sube</td><td>Compra en la línea inferior, TP en la superior</td></tr>
+              <tr><td>Canal Bajista</td><td class="val-accent">Baja</td><td>Vende en la línea superior, TP en la inferior</td></tr>
+              <tr><td>Canal Lateral</td><td class="val-yellow">Rango</td><td>Opera el rebote en los extremos o espera el breakout</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="lesson-body" data-module="pa2" data-tab="3">
+        <div class="section">
+          <div class="section-header"><span class="section-num">2.8</span><h2 class="section-title">Rangos y Laterales</h2></div>
+          <p class="lead">El mercado pasa el <strong>70-80% del tiempo en rangos</strong>. La mayoría de traders pierde dinero intentando operar dentro del rango con estrategias de tendencia.</p>
+          <div class="info-box warn">
+            <div class="info-label">⚡ Regla del Rango</div>
+            <p>En rango, compra en el <strong>soporte del rango</strong> con TP en la resistencia. O espera el <strong>breakout con volumen</strong> para operar la continuación en tendencia.</p>
+          </div>
+          <ul class="styled-list">
+            <li>Identifica el techo (resistencia del rango) y el piso (soporte del rango).</li>
+            <li>Mide el tamaño del rango: te da el objetivo del breakout.</li>
+            <li>Un breakout falso (fakeout) suele ser seguido de un movimiento fuerte en dirección contraria.</li>
+            <li>El volumen confirma el breakout real. Sin volumen = sospechoso.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="lesson-body" data-module="pa2" data-tab="4">
+        <div class="section">
+          <div class="section-header"><span class="section-num">2.9</span><h2 class="section-title">Order Blocks (Zonas OB)</h2></div>
+          <p class="lead">Un <strong>Order Block</strong> es la última vela contraria antes de un movimiento impulsivo fuerte. Representa donde las instituciones colocaron órdenes grandes.</p>
+          <div class="steps">
+            <div class="step"><div class="step-num">1</div><div class="step-content"><div class="step-title">Identifica un impulso fuerte</div><div class="step-desc">Un movimiento de 3+ velas en la misma dirección con fuerza.</div></div></div>
+            <div class="step"><div class="step-num">2</div><div class="step-content"><div class="step-title">Busca la última vela contraria antes del impulso</div><div class="step-desc">En un rally alcista, la última vela bajista antes de la subida = Bullish OB.</div></div></div>
+            <div class="step"><div class="step-num">3</div><div class="step-content"><div class="step-title">Marca esa vela (su apertura y cierre)</div><div class="step-desc">Crea una caja de precio con ese rango. Ahí están las órdenes institucionales.</div></div></div>
+            <div class="step"><div class="step-num">4</div><div class="step-content"><div class="step-title">Espera que el precio vuelva a ese OB</div><div class="step-desc">Si el precio retestea el OB y reacciona → entrada de alta calidad.</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /pa2 -->
+
+    <!-- ══ MÓDULO: PATRONES GRÁFICOS ══ -->
+    <div id="page-pat" class="page">
+      <div class="module-hero">
+        <div class="hero-eyebrow"><span class="module-number">MÓDULO 02C</span><span class="module-tag">Price Action</span></div>
+        <h1 class="hero-title">Patrones<br>Gráficos</h1>
+        <p class="hero-desc">Los patrones son las huellas que dejan los participantes del mercado. Reconocerlos te permite anticipar el movimiento siguiente con alta probabilidad.</p>
+        <div class="hero-meta"><span class="meta-chip"><span class="dot"></span> 6 Patrones Clave</span><span class="meta-chip"><span class="dot"></span> Reversión + Continuación</span></div>
+      </div>
+      <div class="lesson-tabs">
+        <button class="tab-btn active" onclick="switchTab('pat', 0, this)">Cabeza &amp; Hombros</button>
+        <button class="tab-btn" onclick="switchTab('pat', 1, this)">Doble Techo/Suelo</button>
+        <button class="tab-btn" onclick="switchTab('pat', 2, this)">Banderas</button>
+        <button class="tab-btn" onclick="switchTab('pat', 3, this)">Triángulos</button>
+        <button class="tab-btn" onclick="switchTab('pat', 4, this)">Cuñas</button>
+        <button class="tab-btn" onclick="switchTab('pat', 5, this)">Armónicos</button>
+      </div>
+      <div class="lesson-body active" data-module="pat" data-tab="0">
+        <div class="section">
+          <div class="section-header"><span class="section-num">P.1</span><h2 class="section-title">Cabeza y Hombros — El Patrón Más Fiable de Reversión</h2></div>
+          <p class="lead">El patrón <strong>H&S bajista</strong> es la formación de reversión más reconocida. Aparece al final de una tendencia alcista y señala un cambio de dirección.</p>
+          <div class="two-col">
+            <div>
+              <h3>Estructura</h3>
+              <ul class="styled-list">
+                <li><strong>Hombro izquierdo:</strong> Máximo + retroceso</li>
+                <li><strong>Cabeza:</strong> Máximo más alto + retroceso</li>
+                <li><strong>Hombro derecho:</strong> Máximo más bajo (similar al izquierdo)</li>
+                <li><strong>Neckline:</strong> La línea que conecta los dos mínimos</li>
+              </ul>
+            </div>
+            <div>
+              <h3>Cómo Operar</h3>
+              <ul class="styled-list">
+                <li>Espera el <strong>cierre bajo la neckline</strong></li>
+                <li>Entrada en el retest de la neckline desde abajo</li>
+                <li>Stop Loss por encima del hombro derecho</li>
+                <li>Target = distancia de la cabeza a la neckline</li>
+              </ul>
+            </div>
+          </div>
+          <div class="info-box key">
+            <div class="info-label">📌 H&S Invertido</div>
+            <p>Es el espejo alcista. Aparece al final de tendencias bajistas. La entrada es al cierre sobre la neckline con target igual a la profundidad de la cabeza.</p>
+          </div>
+        </div>
+      </div>
+      <div class="lesson-body" data-module="pat" data-tab="1">
+        <div class="section">
+          <div class="section-header"><span class="section-num">P.2</span><h2 class="section-title">Doble Techo y Doble Suelo</h2></div>
+          <p class="lead">Uno de los patrones más comunes y tradables. El precio intenta dos veces romper un nivel y falla — señal clara de agotamiento.</p>
+          <table class="data-table">
+            <thead><tr><th>Patrón</th><th>Formación</th><th>Señal</th><th>Target</th></tr></thead>
+            <tbody>
+              <tr><td class="val-accent">Doble Techo (M)</td><td>Dos máximos iguales</td><td>Bajista — vende en el retest</td><td>Altura del patrón hacia abajo</td></tr>
+              <tr><td class="val-green">Doble Suelo (W)</td><td>Dos mínimos iguales</td><td>Alcista — compra en el breakout</td><td>Altura del patrón hacia arriba</td></tr>
+            </tbody>
+          </table>
+          <div class="info-box tip">
+            <div class="info-label">💡 Cómo validarlo</div>
+            <p>El segundo techo/suelo idealmente tiene <strong>divergencia en RSI</strong> — el precio hace el mismo nivel pero el RSI es más débil. Eso confirma el agotamiento real.</p>
+          </div>
+        </div>
+      </div>
+      <div class="lesson-body" data-module="pat" data-tab="2">
+        <div class="section">
+          <div class="section-header"><span class="section-num">P.3</span><h2 class="section-title">Banderas y Banderines — Continuación</h2></div>
+          <p class="lead">Las banderas son correcciones ordenadas dentro de una tendencia fuerte. Son los mejores setups de continuación porque tienen alta probabilidad y R:R claro.</p>
+          <div class="card-grid">
+            <div class="card">
+              <div class="card-icon">🚩</div>
+              <div class="card-title">Bandera Alcista (Bull Flag)</div>
+              <p>Impulso fuerte hacia arriba → consolidación en canal bajista → breakout. Target = tamaño del impulso previo proyectado desde el breakout.</p>
+            </div>
+            <div class="card">
+              <div class="card-icon">🏴</div>
+              <div class="card-title">Bandera Bajista (Bear Flag)</div>
+              <p>Caída fuerte → rebote en canal alcista → continuación bajista. Target = tamaño de la caída previa proyectado desde el breakout.</p>
+            </div>
+            <div class="card">
+              <div class="card-icon">📐</div>
+              <div class="card-title">Banderín (Pennant)</div>
+              <p>Similar a la bandera pero la consolidación forma un triángulo simétrico. Igual de potente, breakout más explosivo.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="lesson-body" data-module="pat" data-tab="3">
+        <div class="section">
+          <div class="section-header"><span class="section-num">P.4</span><h2 class="section-title">Triángulos</h2></div>
+          <table class="data-table">
+            <thead><tr><th>Tipo</th><th>Formación</th><th>Señal</th></tr></thead>
+            <tbody>
+              <tr><td class="val-accent">Simétrico</td><td>Compresión — HLs y LHs convergiendo</td><td>Neutral, espera el breakout con volumen</td></tr>
+              <tr><td class="val-green">Ascendente</td><td>Techo plano + mínimos más altos</td><td>Alcista — los compradores ganan presión</td></tr>
+              <tr><td class="val-yellow">Descendente</td><td>Piso plano + máximos más bajos</td><td>Bajista — los vendedores dominan</td></tr>
+              <tr><td class="val-purple">Cuña Correctiva</td><td>Canal convergente contra tendencia</td><td>Señal de continuación al romperse</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="lesson-body" data-module="pat" data-tab="4">
+        <div class="section">
+          <div class="section-header"><span class="section-num">P.5</span><h2 class="section-title">Cuñas (Wedges)</h2></div>
+          <div class="two-col">
+            <div class="info-box tip">
+              <div class="info-label">📈 CUÑA BAJISTA (Falling Wedge)</div>
+              <p>Precio cae en canal que se contrae. Señal <strong>alcista</strong> — el precio estará acumulando presión. Al romper hacia arriba con volumen → entrada long.</p>
+            </div>
+            <div class="info-box warn">
+              <div class="info-label">📉 CUÑA ALCISTA (Rising Wedge)</div>
+              <p>Precio sube en canal que se contrae. Señal <strong>bajista</strong> — la subida pierde momentum. Al romper hacia abajo → entrada short.</p>
+            </div>
+          </div>
+          <div class="info-box key">
+            <div class="info-label">🔑 Diferencia con un canal normal</div>
+            <p>En la cuña, <strong>ambas líneas convergen</strong>. En un canal normal son paralelas. La convergencia es lo que crea la presión y el breakout explosivo.</p>
+          </div>
+        </div>
+      </div>
+      <div class="lesson-body" data-module="pat" data-tab="5">
+        <div class="section">
+          <div class="section-header"><span class="section-num">P.6</span><h2 class="section-title">Patrones Armónicos</h2></div>
+          <p class="lead">Los patrones armónicos combinan Price Action + Fibonacci para crear setups de alta precisión. Identifican puntos de giro llamados <strong>PRZ (Potential Reversal Zone)</strong>.</p>
+          <table class="data-table">
+            <thead><tr><th>Patrón</th><th>Estructura</th><th>Tipo</th></tr></thead>
+            <tbody>
+              <tr><td class="val-accent">Gartley</td><td>X→A→B(0.618A)→C→D(0.786XA)</td><td>Reversión — el más común</td></tr>
+              <tr><td class="val-yellow">Bat (Murciélago)</td><td>B retrocede 0.382-0.5 de XA</td><td>Reversión profunda</td></tr>
+              <tr><td class="val-purple">Butterfly</td><td>D se extiende más allá de X</td><td>Extensión + reversión</td></tr>
+              <tr><td class="val-green">Crab</td><td>D al 1.618 de XA</td><td>La extensión más extrema</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div><!-- /pat -->
+
+    <!-- ══ MÓDULO: MEDIAS MÓVILES ══ -->
+    <div id="page-ma" class="page">
+      <div class="module-hero">
+        <div class="hero-eyebrow"><span class="module-number">MÓDULO 03A</span><span class="module-tag">Indicadores</span></div>
+        <h1 class="hero-title">Medias Móviles</h1>
+        <p class="hero-desc">Las medias móviles son los indicadores más usados en el mundo. Aprende a usarlos como filtro de tendencia y zona dinámica de soporte/resistencia.</p>
+        <div class="hero-meta"><span class="meta-chip"><span class="dot"></span> 4 Lecciones</span><span class="meta-chip"><span class="dot"></span> Nivel Intermedio</span></div>
+      </div>
+      <div class="lesson-tabs">
+        <button class="tab-btn active" onclick="switchTab('ma', 0, this)">1. Tipos de MA</button>
+        <button class="tab-btn" onclick="switchTab('ma', 1, this)">2. MAs Clave</button>
+        <button class="tab-btn" onclick="switchTab('ma', 2, this)">3. Cruces</button>
+        <button class="tab-btn" onclick="switchTab('ma', 3, this)">4. MA + Fibo</button>
+      </div>
+      <div class="lesson-body active" data-module="ma" data-tab="0">
+        <div class="section">
+          <div class="section-header"><span class="section-num">3.1</span><h2 class="section-title">Tipos de Medias Móviles</h2></div>
+          <table class="data-table">
+            <thead><tr><th>Tipo</th><th>Cálculo</th><th>Uso ideal</th><th>Ventaja</th></tr></thead>
+            <tbody>
+              <tr><td class="val-accent">SMA</td><td>Promedio simple de N períodos</td><td>Soporte/resistencia dinámica</td><td>Más estable, menos ruido</td></tr>
+              <tr><td class="val-yellow">EMA</td><td>Promedio ponderado (más peso al precio reciente)</td><td>Seguimiento de tendencia</td><td>Más reactiva a cambios</td></tr>
+              <tr><td class="val-green">WMA</td><td>Peso lineal descendente</td><td>Señales más rápidas</td><td>Menos lag que EMA</td></tr>
+              <tr><td class="val-purple">VWMA</td><td>Promedio ponderado por volumen</td><td>Zonas institucionales</td><td>Más precisa en rangos</td></tr>
+            </tbody>
+          </table>
+          <div class="info-box key">
+            <div class="info-label">📌 ¿EMA o SMA?</div>
+            <p>Para crypto/trading activo: usa <strong>EMA</strong>. Es más reactiva y respeta mejor los movimientos rápidos. Para análisis macro o posicional: usa <strong>SMA</strong> para tener perspectiva sin ruido.</p>
+          </div>
+        </div>
+      </div>
+      <div class="lesson-body" data-module="ma" data-tab="1">
+        <div class="section">
+          <div class="section-header"><span class="section-num">3.2</span><h2 class="section-title">Las Medias Móviles Clave</h2></div>
+          <table class="data-table">
+            <thead><tr><th>Período</th><th>Nombre</th><th>Rol en el mercado</th></tr></thead>
+            <tbody>
+              <tr><td class="val-accent">EMA 9</td><td>MA rápida</td><td>Tendencia de corto plazo (scalping / day trading)</td></tr>
+              <tr><td class="val-accent">EMA 21</td><td>MA media</td><td>Estructura de swing. Muy respetada en crypto</td></tr>
+              <tr><td class="val-yellow">EMA 50</td><td>MA de tendencia</td><td>Divide bull/bear en swing trading</td></tr>
+              <tr><td class="val-green">SMA 100</td><td>MA institucional</td><td>Soporte/resistencia importante en diario</td></tr>
+              <tr><td class="val-purple">SMA/EMA 200</td><td>La MA más importante</td><td>Separador macro bull/bear. Nivel institucional máximo</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="lesson-body" data-module="ma" data-tab="2">
+        <div class="section">
+          <div class="section-header"><span class="section-num">3.3</span><h2 class="section-title">Cruces de Medias Móviles</h2></div>
+          <div class="card-grid">
+            <div class="card">
+              <div class="card-icon">✨</div>
+              <div class="card-title">Golden Cross</div>
+              <p>La MA 50 cruza SOBRE la MA 200. Señal alcista de largo plazo. Históricamente bullish en Bitcoin y acciones.</p>
+            </div>
+            <div class="card">
+              <div class="card-icon">💀</div>
+              <div class="card-title">Death Cross</div>
+              <p>La MA 50 cruza BAJO la MA 200. Señal bajista de largo plazo. Históricamente precede a bear markets.</p>
+            </div>
+          </div>
+          <div class="info-box warn">
+            <div class="info-label">⚠️ El Problema de los Cruces</div>
+            <p>Los cruces son indicadores <strong>rezagados</strong>. Para cuando ocurren, el movimiento ya fue. Úsalos como confirmación de tendencia, no como señal de entrada exacta.</p>
+          </div>
+        </div>
+      </div>
+      <div class="lesson-body" data-module="ma" data-tab="3">
+        <div class="section">
+          <div class="section-header"><span class="section-num">3.4</span><h2 class="section-title">Medias Móviles + Fibonacci</h2></div>
+          <p class="lead">La combinación más poderosa: cuando el nivel de Fibonacci <strong>coincide exactamente</strong> con una EMA importante, tienes una zona de confluencia institucional.</p>
+          <div class="info-box pro">
+            <div class="info-label">🏆 Setup Premium: EMA 200 + Fibo 0.618</div>
+            <p>El precio retrocede al 61.8% de Fibonacci Y ese nivel está exactamente donde está la EMA 200. Esto es lo que los institucionales usan como zona de compra. Alta probabilidad de rebote.</p>
+          </div>
+          <div class="steps">
+            <div class="step"><div class="step-num">1</div><div class="step-content"><div class="step-title">Aplica Fibonacci al impulso previo</div><div class="step-desc">Mide el swing completo.</div></div></div>
+            <div class="step"><div class="step-num">2</div><div class="step-content"><div class="step-title">Verifica si alguna EMA está en zona Fibo</div><div class="step-desc">EMA 21, 50 o 200 en el 38.2%, 50% o 61.8%.</div></div></div>
+            <div class="step"><div class="step-num">3</div><div class="step-content"><div class="step-title">Espera confirmación de precio</div><div class="step-desc">Vela de reversión, pin bar, o rechazo claro en esa zona.</div></div></div>
+            <div class="step"><div class="step-num">4</div><div class="step-content"><div class="step-title">Entra con SL bajo la zona</div><div class="step-desc">Si la confluencia falla, el trade no era válido.</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /ma -->
+
+    <!-- ══ MÓDULO: RSI ══ -->
+    <div id="page-rsi" class="page">
+      <div class="module-hero">
+        <div class="hero-eyebrow"><span class="module-number">MÓDULO 03B</span><span class="module-tag">Indicadores</span></div>
+        <h1 class="hero-title">RSI &<br>Momentum</h1>
+        <p class="hero-desc">El RSI es el oscilador más usado del mundo. Pero la mayoría lo usa mal. Aprende a leer el momentum real y las divergencias que preceden grandes movimientos.</p>
+        <div class="hero-meta"><span class="meta-chip"><span class="dot"></span> 4 Lecciones</span><span class="meta-chip"><span class="dot"></span> Nivel Intermedio</span></div>
+      </div>
+      <div class="lesson-tabs">
+        <button class="tab-btn active" onclick="switchTab('rsi', 0, this)">1. ¿Qué es el RSI?</button>
+        <button class="tab-btn" onclick="switchTab('rsi', 1, this)">2. Niveles RSI</button>
+        <button class="tab-btn" onclick="switchTab('rsi', 2, this)">3. Divergencias</button>
+        <button class="tab-btn" onclick="switchTab('rsi', 3, this)">4. RSI + Fibo</button>
+      </div>
+      <div class="lesson-body active" data-module="rsi" data-tab="0">
+        <div class="section">
+          <div class="section-header"><span class="section-num">4.1</span><h2 class="section-title">¿Qué es el RSI?</h2></div>
+          <p class="lead">El RSI (Relative Strength Index) mide la <strong>velocidad y magnitud</strong> de los cambios de precio en una escala de 0 a 100. Fue creado por J. Welles Wilder Jr. en 1978.</p>
+          <div class="formula">RSI = 100 — [100 / (1 + (Promedio subidas / Promedio bajadas))]</div>
+          <p>El período estándar es <strong>14 velas</strong>. Para crypto y trading activo, muchos usan 7 o 9 para mayor sensibilidad.</p>
+          <div class="info-box key">
+            <div class="info-label">📌 Lo que mide REALMENTE</div>
+            <p>El RSI NO mide si el precio es alto o bajo. Mide si el <strong>momentum alcista supera al bajista</strong> en las últimas N velas. Es un medidor de fuerza relativa interna.</p>
+          </div>
+        </div>
+      </div>
+      <div class="lesson-body" data-module="rsi" data-tab="1">
+        <div class="section">
+          <div class="section-header"><span class="section-num">4.2</span><h2 class="section-title">Niveles del RSI y Su Significado</h2></div>
+          <table class="data-table">
+            <thead><tr><th>Nivel RSI</th><th>Zona</th><th>Significado Real</th></tr></thead>
+            <tbody>
+              <tr><td class="val-green">70-100</td><td>Sobrecompra</td><td>Momentum alcista fuerte. NO significa "vender ya" — puede seguir subiendo</td></tr>
+              <tr><td class="val-yellow">50-70</td><td>Zona alcista</td><td>Tendencia alcista confirmada. El precio suele mantenerse aquí en uptrend</td></tr>
+              <tr><td class="val-accent">45-55</td><td>Neutral</td><td>Indecisión o rango. Esperar dirección clara</td></tr>
+              <tr><td class="val-yellow">30-50</td><td>Zona bajista</td><td>Tendencia bajista. En downtrend, el RSI suele rechazar el 50</td></tr>
+              <tr><td class="val-accent">0-30</td><td>Sobreventa</td><td>Momentum bajista fuerte. NO significa "comprar ya" — puede seguir cayendo</td></tr>
+            </tbody>
+          </table>
+          <div class="info-box warn">
+            <div class="info-label">⚠️ El Error Más Común</div>
+            <p>"El RSI está en 80, vendo ya". INCORRECTO. En mercados en tendencia, el RSI puede mantenerse sobrecomprado por días o semanas. La sobrecompra/sobreventa necesita <strong>confirmación adicional</strong>.</p>
+          </div>
+        </div>
+      </div>
+      <div class="lesson-body" data-module="rsi" data-tab="2">
+        <div class="section">
+          <div class="section-header"><span class="section-num">4.3</span><h2 class="section-title">Divergencias RSI — La Señal Más Poderosa</h2></div>
+          <p class="lead">Una divergencia ocurre cuando el <strong>precio y el RSI se mueven en direcciones opuestas</strong>. Es la señal más confiable de agotamiento de tendencia.</p>
+          <table class="data-table">
+            <thead><tr><th>Tipo</th><th>Precio</th><th>RSI</th><th>Señal</th></tr></thead>
+            <tbody>
+              <tr><td class="val-accent">Divergencia Bajista</td><td>Hace nuevo máximo (HH)</td><td>NO hace nuevo máximo</td><td>La fuerza alcista se agota → posible caída</td></tr>
+              <tr><td class="val-green">Divergencia Alcista</td><td>Hace nuevo mínimo (LL)</td><td>NO hace nuevo mínimo</td><td>La fuerza bajista se agota → posible rebote</td></tr>
+              <tr><td class="val-yellow">Div. Bajista Oculta</td><td>Hace máximo más bajo (LH)</td><td>Hace máximo más alto</td><td>Continuación bajista en corrección</td></tr>
+              <tr><td class="val-purple">Div. Alcista Oculta</td><td>Hace mínimo más alto (HL)</td><td>Hace mínimo más bajo</td><td>Continuación alcista en pullback</td></tr>
+            </tbody>
+          </table>
+          <div class="info-box pro">
+            <div class="info-label">🏆 Divergencia + Fibonacci</div>
+            <p>La divergencia bajista ocurriendo exactamente en el nivel de extensión 1.618 de Fibonacci. La divergencia alcista en el retroceso al 0.618. Estas combinaciones son setups de alta precisión.</p>
+          </div>
+        </div>
+      </div>
+      <div class="lesson-body" data-module="rsi" data-tab="3">
+        <div class="section">
+          <div class="section-header"><span class="section-num">4.4</span><h2 class="section-title">RSI como Confirmación de Fibonacci</h2></div>
+          <ul class="styled-list">
+            <li>El precio llega al <strong>0.618 de Fibonacci</strong> + el RSI está en zona de sobreventa (30-40) → señal alcista fuerte.</li>
+            <li>El precio toca una extensión <strong>1.618</strong> + el RSI muestra divergencia bajista → zona de toma de ganancias.</li>
+            <li>En tendencia alcista, el RSI que rebota desde <strong>40-50</strong> (sin llegar a sobreventa) es señal de tendencia fuerte — compra en el retroceso al Fibo.</li>
+            <li>El RSI que no puede subir sobre 60 en un rally = la tendencia está perdiendo fuerza. Reduce exposición.</li>
+          </ul>
+        </div>
+      </div>
+    </div><!-- /rsi -->
+
+    <!-- ══ MÓDULO: MACD ══ -->
+    <div id="page-macd" class="page">
+      <div class="module-hero">
+        <div class="hero-eyebrow"><span class="module-number">MÓDULO 03C</span><span class="module-tag">Indicadores</span></div>
+        <h1 class="hero-title">MACD &<br>Señales</h1>
+        <p class="hero-desc">El MACD combina tendencia y momentum en un solo indicador. Uno de los más versátiles cuando se usa correctamente.</p>
+        <div class="hero-meta"><span class="meta-chip"><span class="dot"></span> 3 Lecciones</span></div>
+      </div>
+      <div class="lesson-tabs">
+        <button class="tab-btn active" onclick="switchTab('macd', 0, this)">1. Qué es el MACD</button>
+        <button class="tab-btn" onclick="switchTab('macd', 1, this)">2. Señales</button>
+        <button class="tab-btn" onclick="switchTab('macd', 2, this)">3. Divergencias MACD</button>
+      </div>
+      <div class="lesson-body active" data-module="macd" data-tab="0">
+        <div class="section">
+          <div class="section-header"><span class="section-num">5.1</span><h2 class="section-title">¿Qué es el MACD?</h2></div>
+          <p class="lead">MACD = Moving Average Convergence Divergence. Creado por Gerald Appel. Mide la <strong>diferencia entre dos EMAs</strong> para identificar cambios de momentum.</p>
+          <div class="formula">MACD Line = EMA(12) — EMA(26)
+Signal Line = EMA(9) del MACD
+Histograma = MACD Line — Signal Line</div>
+          <div class="card-grid">
+            <div class="card"><div class="card-icon">📈</div><div class="card-title">Línea MACD</div><p>La diferencia entre EMA rápida y lenta. Cuando es positiva, la EMA rápida está encima → momentum alcista.</p></div>
+            <div class="card"><div class="card-icon">〰️</div><div class="card-title">Línea Signal</div><p>EMA de la línea MACD. El cruce entre MACD y Signal genera las señales principales.</p></div>
+            <div class="card"><div class="card-icon">▦</div><div class="card-title">Histograma</div><p>Visualiza la diferencia entre MACD y Signal. Barras crecientes = momentum aumentando.</p></div>
+          </div>
+        </div>
+      </div>
+      <div class="lesson-body" data-module="macd" data-tab="1">
+        <div class="section">
+          <div class="section-header"><span class="section-num">5.2</span><h2 class="section-title">Señales del MACD</h2></div>
+          <table class="data-table">
+            <thead><tr><th>Señal</th><th>Descripción</th><th>Calidad</th></tr></thead>
+            <tbody>
+              <tr><td class="val-green">Cruce alcista</td><td>MACD cruza sobre la Signal line</td><td>Buena — especialmente si ocurre bajo el cero</td></tr>
+              <tr><td class="val-accent">Cruce bajista</td><td>MACD cruza bajo la Signal line</td><td>Buena — especialmente si ocurre sobre el cero</td></tr>
+              <tr><td class="val-yellow">Cruce de cero alcista</td><td>MACD pasa de negativo a positivo</td><td>Excelente — tendencia cambia a alcista</td></tr>
+              <tr><td class="val-yellow">Cruce de cero bajista</td><td>MACD pasa de positivo a negativo</td><td>Excelente — tendencia cambia a bajista</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="lesson-body" data-module="macd" data-tab="2">
+        <div class="section">
+          <div class="section-header"><span class="section-num">5.3</span><h2 class="section-title">Divergencias en el MACD</h2></div>
+          <p>Las divergencias en MACD funcionan igual que en RSI. Son de las señales más poderosas:</p>
+          <ul class="styled-list">
+            <li><strong>Divergencia bajista:</strong> Precio HH + MACD histograma más bajo → agotamiento alcista.</li>
+            <li><strong>Divergencia alcista:</strong> Precio LL + MACD histograma menos negativo → agotamiento bajista.</li>
+            <li>Las divergencias en el <strong>histograma</strong> son más tempranas que en la línea MACD directamente.</li>
+            <li>Combina con nivel Fibonacci o soporte para mayor confiabilidad.</li>
+          </ul>
+        </div>
+      </div>
+    </div><!-- /macd -->
+
+    <!-- ══ MÓDULO: VOLUMEN ══ -->
+    <div id="page-vol" class="page">
+      <div class="module-hero">
+        <div class="hero-eyebrow"><span class="module-number">MÓDULO 03D</span><span class="module-tag">Indicadores</span></div>
+        <h1 class="hero-title">Volumen &<br>Liquidez</h1>
+        <p class="hero-desc">El volumen es el indicador que nunca miente. Aprende a leer la participación real del mercado detrás de cada movimiento de precio.</p>
+        <div class="hero-meta"><span class="meta-chip"><span class="dot"></span> 4 Lecciones</span></div>
+      </div>
+      <div class="lesson-tabs">
+        <button class="tab-btn active" onclick="switchTab('vol', 0, this)">1. Volumen Básico</button>
+        <button class="tab-btn" onclick="switchTab('vol', 1, this)">2. Volume Profile</button>
+        <button class="tab-btn" onclick="switchTab('vol', 2, this)">3. OBV</button>
+        <button class="tab-btn" onclick="switchTab('vol', 3, this)">4. Liquidez</button>
+      </div>
+      <div class="lesson-body active" data-module="vol" data-tab="0">
+        <div class="section">
+          <div class="section-header"><span class="section-num">6.1</span><h2 class="section-title">Principios del Volumen</h2></div>
+          <table class="data-table">
+            <thead><tr><th>Situación</th><th>Precio</th><th>Volumen</th><th>Interpretación</th></tr></thead>
+            <tbody>
+              <tr><td>Tendencia sana</td><td class="val-green">Sube</td><td class="val-green">Alto</td><td>Movimiento fuerte y legítimo</td></tr>
+              <tr><td>Tendencia débil</td><td class="val-green">Sube</td><td class="val-accent">Bajo</td><td>Poca participación — desconfía</td></tr>
+              <tr><td>Caída fuerte</td><td class="val-accent">Baja</td><td class="val-green">Alto</td><td>Venta institucional o capitulación</td></tr>
+              <tr><td>Rebote falso</td><td class="val-green">Sube</td><td class="val-accent">Muy bajo</td><td>Dead cat bounce — cuidado</td></tr>
+              <tr><td>Breakout válido</td><td>Rompe nivel</td><td class="val-green">Muy alto</td><td>El movimiento es real</td></tr>
+              <tr><td>Breakout falso</td><td>Rompe nivel</td><td class="val-accent">Bajo</td><td>Alta probabilidad de reversión</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="lesson-body" data-module="vol" data-tab="1">
+        <div class="section">
+          <div class="section-header"><span class="section-num">6.2</span><h2 class="section-title">Volume Profile — Donde Están las Órdenes</div>
+          <p class="lead">El Volume Profile muestra cuánto volumen se ha negociado a <strong>cada nivel de precio</strong> (no en el tiempo, sino por precio). Identifica zonas de alta y baja liquidez.</p>
+          <div class="card-grid">
+            <div class="card"><div class="card-icon">🔴</div><div class="card-title">POC — Point of Control</div><p>El precio con mayor volumen negociado. Actúa como imán — el mercado tiende a volver aquí.</p></div>
+            <div class="card"><div class="card-icon">🟡</div><div class="card-title">Value Area (VA)</div><td>El rango donde se negoció el 70% del volumen. Dentro de la VA hay soporte y resistencia dinámica.</p></div>
+            <div class="card"><div class="card-icon">⬆️</div><div class="card-title">VAH / VAL</div><p>Value Area High y Low. Los extremos del 70%. Breaks de VAH/VAL con volumen son señales de continuación.</p></div>
+            <div class="card"><div class="card-icon">⬜</div><div class="card-title">Low Volume Nodes</div><p>Zonas con poco volumen. El precio suele cruzar rápido estas áreas — buenas para proyectar targets.</p></div>
+          </div>
+        </div>
+      </div>
+      <div class="lesson-body" data-module="vol" data-tab="2">
+        <div class="section">
+          <div class="section-header"><span class="section-num">6.3</span><h2 class="section-title">OBV — On Balance Volume</h2></div>
+          <p>El OBV suma el volumen en días alcistas y lo resta en días bajistas, creando una línea que muestra la <strong>presión compradora vs vendedora acumulada</strong>.</p>
+          <ul class="styled-list">
+            <li><strong>OBV sube con el precio:</strong> Confirmación — los compradores están activos con volumen real.</li>
+            <li><strong>OBV diverge del precio (precio sube, OBV baja):</strong> Distribución silenciosa — peligro de reversión.</li>
+            <li><strong>OBV sube antes que el precio:</strong> Acumulación — el smart money está entrando antes de la subida.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="lesson-body" data-module="vol" data-tab="3">
+        <div class="section">
+          <div class="section-header"><span class="section-num">6.4</span><h2 class="section-title">Liquidez — Dónde Están los Stop Loss</h2></div>
+          <p class="lead">El mercado busca activamente las zonas de alta liquidez — donde hay muchos stop loss agrupados. Las instituciones necesitan esa liquidez para ejecutar sus órdenes grandes.</p>
+          <div class="info-box warn">
+            <div class="info-label">🎯 Zonas de Liquidez típicas</div>
+            <p>Bajo los mínimos previos obvios. Sobre los máximos previos obvios. Números redondos (10,000 / 50,000). Estos son los niveles que el precio visita antes de revertir — el "stop hunt" o barrida de liquidez.</p>
+          </div>
+          <div class="info-box pro">
+            <div class="info-label">🏆 Estrategia Anti-Stop Hunt</div>
+            <p>Pon tu Stop Loss <strong>más allá</strong> del nivel obvio. Si todos ponen el SL bajo el mínimo, el mercado lo barrerá brevemente. Pon el tuyo 1-2% más abajo del nivel obvio para evitar la trampa.</p>
+          </div>
+        </div>
+      </div>
+    </div><!-- /vol -->
+
+    <!-- ══ MÓDULO: ELLIOTT ══ -->
+    <div id="page-ew" class="page">
+      <div class="module-hero">
+        <div class="hero-eyebrow"><span class="module-number">MÓDULO 04A</span><span class="module-tag">Ondas</span></div>
+        <h1 class="hero-title">Ondas de<br>Elliott</h1>
+        <p class="hero-desc">Ralph Elliott descubrió que el mercado se mueve en patrones de ondas repetitivos. Dominar esta teoría te da la visión macro que pocos traders tienen.</p>
+        <div class="hero-meta"><span class="meta-chip"><span class="dot"></span> 5 Lecciones</span><span class="meta-chip"><span class="dot"></span> Nivel Avanzado</span></div>
+      </div>
+      <div class="lesson-tabs">
+        <button class="tab-btn active" onclick="switchTab('ew', 0, this)">1. Teoría Base</button>
+        <button class="tab-btn" onclick="switchTab('ew', 1, this)">2. Reglas Irrompibles</button>
+        <button class="tab-btn" onclick="switchTab('ew', 2, this)">3. La Onda 3</button>
+        <button class="tab-btn" onclick="switchTab('ew', 3, this)">4. Ondas + Fibo</button>
+        <button class="tab-btn" onclick="switchTab('ew', 4, this)">5. Fractal</button>
+      </div>
+      <div class="lesson-body active" data-module="ew" data-tab="0">
+        <div class="section">
+          <div class="section-header"><span class="section-num">7.1</span><h2 class="section-title">La Teoría de Elliott — Estructura Completa</h2></div>
+          <p class="lead">Elliott descubrió que el mercado se mueve en un ciclo completo de <strong>8 ondas</strong>: 5 de impulso y 3 correctivas.</p>
+          <div class="formula">CICLO COMPLETO: [1-2-3-4-5] → [A-B-C]
+5 ondas impulsivas + 3 ondas correctivas = 1 ciclo</div>
+          <table class="data-table">
+            <thead><tr><th>Onda</th><th>Tipo</th><th>Carácter</th></tr></thead>
+            <tbody>
+              <tr><td class="val-green">Onda 1</td><td>Impulso</td><td>Inicio del movimiento. Pocos lo ven. Difícil de identificar en tiempo real</td></tr>
+              <tr><td class="val-accent">Onda 2</td><td>Correctiva</td><td>Retrocede profundo (38-78%). Parece que la tendencia terminó</td></tr>
+              <tr><td class="val-green">Onda 3</td><td>Impulso ★</td><td>La más larga y fuerte. Noticias positivas. El "trade perfecto"</td></tr>
+              <tr><td class="val-accent">Onda 4</td><td>Correctiva</td><td>Retroceso más suave. No entra en territorio de Onda 1</td></tr>
+              <tr><td class="val-green">Onda 5</td><td>Impulso</td><td>Última subida. Divergencia RSI frecuente. Señal de agotamiento</td></tr>
+              <tr><td class="val-yellow">Onda A</td><td>Correctiva</td><td>Inicio de la corrección mayor. Muchos creen que es un pullback</td></tr>
+              <tr><td class="val-yellow">Onda B</td><td>Correctiva</td><td>Rebote en la corrección. La trampa — muchos entran aquí pensando que sigue</td></tr>
+              <tr><td class="val-yellow">Onda C</td><td>Correctiva</td><td>La caída más dolorosa. Limpia a los compradores de B</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="lesson-body" data-module="ew" data-tab="1">
+        <div class="section">
+          <div class="section-header"><span class="section-num">7.2</span><h2 class="section-title">Las 3 Reglas Irrompibles de Elliott</h2></div>
+          <div class="card-grid">
+            <div class="card">
+              <div class="card-icon">❌</div>
+              <div class="card-title">Regla 1 — Onda 2</div>
+              <p>La Onda 2 NUNCA retrocede más del 100% de la Onda 1. Si lo hace, el conteo está mal.</p>
+            </div>
+            <div class="card">
+              <div class="card-icon">❌</div>
+              <div class="card-title">Regla 2 — Onda 3</div>
+              <p>La Onda 3 NUNCA puede ser la más corta de las ondas 1, 3 y 5. Siempre es igual o más larga.</p>
+            </div>
+            <div class="card">
+              <div class="card-icon">❌</div>
+              <div class="card-title">Regla 3 — Onda 4</div>
+              <p>La Onda 4 NUNCA entra en el territorio de precio de la Onda 1. Si lo hace, no es una Onda 4.</p>
+            </div>
+          </div>
+          <div class="info-box warn">
+            <div class="info-label">⚠️ Si se rompe una regla...</div>
+            <p>El conteo de ondas está incorrecto. Debes <strong>recontár desde cero</strong>. No fuercen el análisis — si las reglas no se cumplen, la estructura no es Elliott.</p>
+          </div>
+        </div>
+      </div>
+      <div class="lesson-body" data-module="ew" data-tab="2">
+        <div class="section">
+          <div class="section-header"><span class="section-num">7.3</span><h2 class="section-title">La Onda 3 — El Trade Perfecto</h2></div>
+          <p class="lead">La Onda 3 es el movimiento más rentable y poderoso de todo el ciclo. La meta de todo trader de Elliott es capturar la Onda 3.</p>
+          <ul class="styled-list">
+            <li>Siempre la más larga o igual a las demás — mínimo <strong>1.618 x Onda 1</strong>, puede ir a 2.618 x Onda 1.</li>
+            <li>Volumen máximo durante todo el ciclo — los institucionales están activos.</li>
+            <li>Noticias fundamentales positivas suelen coincidir aquí.</li>
+            <li>Gaps de continuación son comunes dentro de la Onda 3.</li>
+          </ul>
+          <div class="info-box pro">
+            <div class="info-label">🏆 Cómo capturar la Onda 3</div>
+            <p>Espera que termine la Onda 2 (retroceso al 38-62% de la Onda 1). Identifica la zona de soporte + Fibonacci + vela de reversión. Entra con SL bajo el inicio de Onda 1. Target mínimo: 1.618 × Onda 1.</p>
+          </div>
+        </div>
+      </div>
+      <div class="lesson-body" data-module="ew" data-tab="3">
+        <div class="section">
+          <div class="section-header"><span class="section-num">7.4</span><h2 class="section-title">Relaciones Fibonacci entre Ondas</h2></div>
+          <table class="data-table">
+            <thead><tr><th>Onda</th><th>Referencia</th><th>Niveles Fibonacci</th></tr></thead>
+            <tbody>
+              <tr><td class="val-green">Onda 2</td><td>% de Onda 1</td><td>38.2% — 50% — 61.8% — 78.6%</td></tr>
+              <tr><td class="val-green">Onda 3</td><td>Extensión de Onda 1</td><td>1.618 — 2.0 — 2.618 × Onda 1</td></tr>
+              <tr><td class="val-yellow">Onda 4</td><td>% de Onda 3</td><td>23.6% — 38.2% — 50%</td></tr>
+              <tr><td class="val-green">Onda 5</td><td>Igual a Onda 1</td><td>0.618 — 1.0 × Onda 1</td></tr>
+              <tr><td class="val-yellow">Onda A</td><td>% del ciclo 1-5</td><td>Varía — analizar con Fibo retroceso</td></tr>
+              <tr><td class="val-yellow">Onda C</td><td>Extensión de Onda A</td><td>1.0 — 1.272 — 1.618 × Onda A</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="lesson-body" data-module="ew" data-tab="4">
+        <div class="section">
+          <div class="section-header"><span class="section-num">7.5</span><h2 class="section-title">El Principio Fractal</h2></div>
+          <p class="lead">FRACTAL significa que el mismo patrón se repite en <strong>todos los timeframes</strong>. Un retroceso en el gráfico diario contiene dentro suyo impulsos y retrocesos en el de 4 horas.</p>
+          <div class="info-box key">
+            <div class="info-label">📌 Concepto Fractal</div>
+            <p>Lo que parece una Onda 2 en el semanal, es un ciclo completo 1-2-3-4-5 + ABC en el diario. Nunca existe un solo timeframe correcto — todos son válidos simultáneamente en distintas escalas.</p>
+          </div>
+          <div class="steps">
+            <div class="step"><div class="step-num">W</div><div class="step-content"><div class="step-title">Semanal: estás en Onda 2 del ciclo mayor</div><div class="step-desc">La corrección desde el ATH parece una gran corrección.</div></div></div>
+            <div class="step"><div class="step-num">D</div><div class="step-content"><div class="step-title">Diario: esa Onda 2 es un ABC completo</div><div class="step-desc">Dentro del semanal, el diario muestra la estructura A-B-C de la corrección.</div></div></div>
+            <div class="step"><div class="step-num">4H</div><div class="step-content"><div class="step-title">4H: cada sub-onda tiene su propio impulso</div><div class="step-desc">La Onda B del diario es un 1-2-3-4-5 en el 4H.</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /ew -->
+
+    <!-- ══ MÓDULO: ABC ══ -->
+    <div id="page-abc" class="page">
+      <div class="module-hero">
+        <div class="hero-eyebrow"><span class="module-number">MÓDULO 04B</span><span class="module-tag">Ondas</span></div>
+        <h1 class="hero-title">Estructuras<br>Correctivas ABC</h1>
+        <p class="hero-desc">Las correcciones son donde la mayoría pierde dinero. Aprende a identificarlas, proyectarlas y convertirlas en oportunidades.</p>
+        <div class="hero-meta"><span class="meta-chip"><span class="dot"></span> 4 Lecciones</span><span class="meta-chip"><span class="dot"></span> Nivel Avanzado</span></div>
+      </div>
+      <div class="lesson-tabs">
+        <button class="tab-btn active" onclick="switchTab('abc', 0, this)">1. Zigzag ABC</button>
+        <button class="tab-btn" onclick="switchTab('abc', 1, this)">2. WXY Doble</button>
+        <button class="tab-btn" onclick="switchTab('abc', 2, this)">3. Flat (Plana)</button>
+        <button class="tab-btn" onclick="switchTab('abc', 3, this)">4. Triángulo ABCDE</button>
+      </div>
+      <div class="lesson-body active" data-module="abc" data-tab="0">
+        <div class="section">
+          <div class="section-header"><span class="section-num">8.1</span><h2 class="section-title">La Estructura ABC — Zigzag</h2></div>
+          <p class="lead">Es la corrección más común y la más importante. Tiene tres componentes: A (primera caída), B (rebote), C (segunda caída/target).</p>
+          <table class="data-table">
+            <thead><tr><th>Sub-onda</th><th>Carácter</th><th>Fibonacci</th></tr></thead>
+            <tbody>
+              <tr><td class="val-yellow">Onda A</td><td>Primer movimiento correctivo — 5 sub-ondas</td><td>38.2% - 61.8% del impulso previo</td></tr>
+              <tr><td class="val-yellow">Onda B</td><td>Rebote dentro de la corrección — 3 sub-ondas</td><td>50% - 78.6% de la Onda A</td></tr>
+              <tr><td class="val-yellow">Onda C</td><td>Segunda pierna correctiva — 5 sub-ondas</td><td>1.0 - 1.618 × Onda A desde fin de B</td></tr>
+            </tbody>
+          </table>
+          <div class="info-box pro">
+            <div class="info-label">🏆 El Trade de la Onda B</div>
+            <p>La Onda B es la trampa más popular del mercado. Los que compraron en el impulso ven el rebote y piensan que la tendencia retomó. Luego llega la Onda C y los destruye. <strong>No compres Onda B sin confluencia clara de reversión del ABC completo.</strong></p>
+          </div>
+        </div>
+      </div>
+      <div class="lesson-body" data-module="abc" data-tab="1">
+        <div class="section">
+          <div class="section-header"><span class="section-num">8.2</span><h2 class="section-title">Doble Zigzag WXY</h2></div>
+          <p>Una corrección más compleja formada por DOS zigzags (W y Y) conectados por una onda de enlace X. Señal de tendencia muy fuerte en la dirección opuesta.</p>
+          <div class="formula">W (zigzag ABC) → X (enlace) → Y (zigzag ABC)</div>
+          <ul class="styled-list">
+            <li>Más compleja que el ABC simple — indica mercado que no puede recuperarse fácilmente.</li>
+            <li>La onda X suele retroceder el 50-78% de W.</li>
+            <li>El target de Y es típicamente la extensión 1.0 de W desde X.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="lesson-body" data-module="abc" data-tab="2">
+        <div class="section">
+          <div class="section-header"><span class="section-num">8.3</span><h2 class="section-title">Flat — Corrección Plana</h2></div>
+          <p>A diferencia del zigzag, en el flat la <strong>onda B llega al 100% o más de A</strong>. Parece que la tendencia continúa pero luego viene la C.</p>
+          <div class="info-box key">
+            <div class="info-label">📌 Tipos de Flat</div>
+            <p><strong>Flat normal:</strong> B llega al 100% de A. C llega al 100% de A. &nbsp;|&nbsp; <strong>Flat expandida (irregular):</strong> B supera el máximo de A. C cae más allá del mínimo de A — la más trampa.</p>
+          </div>
+        </div>
+      </div>
+      <div class="lesson-body" data-module="abc" data-tab="3">
+        <div class="section">
+          <div class="section-header"><span class="section-num">8.4</span><h2 class="section-title">Triángulo Correctivo ABCDE</h2></div>
+          <p class="lead">Un patrón lateral que se contrae. Los 5 puntos del triángulo se llaman A, B, C, D, E. Típicamente es la Onda 4 o una onda B.</p>
+          <ul class="styled-list">
+            <li>Cada onda retrocede menos que la anterior.</li>
+            <li>Las líneas convergen formando un triángulo.</li>
+            <li><strong>SIEMPRE precede al último impulso</strong> — señal de continuación.</li>
+            <li>El target del breakout = altura máxima del triángulo proyectado desde el punto E.</li>
+          </ul>
+          <div class="info-box tip">
+            <div class="info-label">💡 Regla Práctica</div>
+            <p>Si ves un triángulo que se comprime en un 4H o diario, <strong>el breakout viene</strong>. Posiciona con anticipación o en el breakout. Es uno de los patrones más predecibles en crypto.</p>
+          </div>
+        </div>
+      </div>
+    </div><!-- /abc -->
+
+    <!-- ══ MÓDULO: GESTIÓN DE RIESGO ══ -->
+    <div id="page-risk" class="page">
+      <div class="module-hero">
+        <div class="hero-eyebrow"><span class="module-number">MÓDULO 05</span><span class="module-tag">Gestión</span></div>
+        <h1 class="hero-title">Gestión de<br>Riesgo</h1>
+        <p class="hero-desc">La única habilidad que separa a los traders que sobreviven de los que desaparecen. Sin gestión de riesgo, el mejor análisis del mundo no sirve de nada.</p>
+        <div class="hero-meta"><span class="meta-chip"><span class="dot"></span> 5 Lecciones</span><span class="meta-chip"><span class="dot"></span> Nivel Fundamental</span></div>
+      </div>
+      <div class="lesson-tabs">
+        <button class="tab-btn active" onclick="switchTab('risk', 0, this)">1. La Regla del 1-2%</button>
+        <button class="tab-btn" onclick="switchTab('risk', 1, this)">2. Stop Loss</button>
+        <button class="tab-btn" onclick="switchTab('risk', 2, this)">3. R:R Ratio</button>
+        <button class="tab-btn" onclick="switchTab('risk', 3, this)">4. Sizing</button>
+        <button class="tab-btn" onclick="switchTab('risk', 4, this)">4. Psicología</button>
+      </div>
+      <div class="lesson-body active" data-module="risk" data-tab="0">
+        <div class="section">
+          <div class="section-header"><span class="section-num">9.1</span><h2 class="section-title">La Regla Más Importante del Trading</h2></div>
+          <p class="lead"><strong>Nunca arriesgues más del 1%-2% de tu capital total en un solo trade.</strong> Esta regla es la razón por la que los traders profesionales siguen en el juego años después.</p>
+          <div class="info-box key">
+            <div class="info-label">📌 ¿Por qué el 1-2%?</div>
+            <p>Si arriesgas 2% por trade y pierdes 10 trades seguidos (una racha mala), habrás perdido solo el 18% de tu capital. Sigues vivo. Si arriesgas 10%, 10 pérdidas = -65% del capital. Game over.</p>
+          </div>
+          <table class="data-table">
+            <thead><tr><th>Riesgo por Trade</th><th>10 Pérdidas Seguidas</th><th>Cuenta Restante</th></tr></thead>
+            <tbody>
+              <tr><td class="val-green">1%</td><td>10 consecutivas</td><td class="val-green">90.4%</td></tr>
+              <tr><td class="val-yellow">2%</td><td>10 consecutivas</td><td class="val-yellow">81.7%</td></tr>
+              <tr><td class="val-accent">5%</td><td>10 consecutivas</td><td class="val-accent">59.9%</td></tr>
+              <tr><td class="val-accent">10%</td><td>10 consecutivas</td><td class="val-accent">34.9%</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="lesson-body" data-module="risk" data-tab="1">
+        <div class="section">
+          <div class="section-header"><span class="section-num">9.2</span><h2 class="section-title">Stop Loss — Dónde Colocarlo con Fibonacci</h2></div>
+          <table class="data-table">
+            <thead><tr><th>Tipo de Entrada</th><th>Dónde va el SL</th></tr></thead>
+            <tbody>
+              <tr><td>Long en retroceso al 0.618</td><td class="val-green">Bajo el 0.786 o bajo el swing low con margen</td></tr>
+              <tr><td>Long en retroceso al 0.382</td><td class="val-green">Bajo el 0.618 — le das espacio para un retroceso mayor</td></tr>
+              <tr><td>Short en extensión 1.618</td><td class="val-accent">Sobre la extensión 2.0 con margen del 1-2%</td></tr>
+              <tr><td>Long en soporte + Fibo</td><td class="val-green">Bajo el soporte más cercano — si se rompe, el setup invalidó</td></tr>
+              <tr><td>Elliott — long fin de Onda 2</td><td class="val-green">Bajo el inicio de la Onda 1 — si se toca, el conteo es incorrecto</td></tr>
+            </tbody>
+          </table>
+          <div class="info-box warn">
+            <div class="info-label">⚠️ La Regla del SL</div>
+            <p>El SL se coloca donde el <strong>análisis queda invalidado</strong>. No donde "duela menos". Si el precio llega al SL, significa que estabas equivocado en el análisis — no en el SL.</p>
+          </div>
+        </div>
+      </div>
+      <div class="lesson-body" data-module="risk" data-tab="2">
+        <div class="section">
+          <div class="section-header"><span class="section-num">9.3</span><h2 class="section-title">Risk-Reward Ratio (R:R)</h2></div>
+          <p class="lead">Es la relación entre lo que arriesgas y lo que puedes ganar. Un buen trader puede ser rentable ganando solo el 40% de sus trades si su R:R es adecuado.</p>
+          <table class="data-table">
+            <thead><tr><th>R:R</th><th>Win Rate para Breakeven</th><th>Clasificación</th></tr></thead>
+            <tbody>
+              <tr><td class="val-accent">1:1</td><td>50%</td><td>Mínimo aceptable</td></tr>
+              <tr><td class="val-yellow">1:2</td><td>33%</td><td>Estándar — bueno</td></tr>
+              <tr><td class="val-green">1:3</td><td>25%</td><td>Muy bueno</td></tr>
+              <tr><td class="val-green">1:5+</td><td>17%</td><td>Excelente — swing trade con Fibo</td></tr>
+            </tbody>
+          </table>
+          <div class="info-box tip">
+            <div class="info-label">💡 R:R con Fibonacci</div>
+            <p>Entras en el 0.618, SL bajo el 0.786, TP1 en 1.272, TP2 en 1.618. El riesgo es ~12% del movimiento y la ganancia potencial es 60%+. Eso es un R:R de 1:5 — el tipo de trade que hace traders rentables.</p>
+          </div>
+        </div>
+      </div>
+      <div class="lesson-body" data-module="risk" data-tab="3">
+        <div class="section">
+          <div class="section-header"><span class="section-num">9.4</span><h2 class="section-title">Sizing de Posición</h2></div>
+          <p class="lead">El tamaño de tu posición lo determina el riesgo, no el análisis. Siempre.</p>
+          <div class="formula">Tamaño = (Capital × Riesgo%) / Distancia al SL%
+
+Ejemplo:
+Capital: $10,000
+Riesgo: 1% = $100
+SL: 5% bajo la entrada
+Tamaño de posición: $100 / 0.05 = $2,000</div>
+          <div class="info-box key">
+            <div class="info-label">📌 Nunca al Revés</div>
+            <p>El error fatal: decidir "compro $5,000 de BTC" y después poner el SL. Correcto: primero defines cuánto rieskas ($100), después calculas el tamaño. El SL determina el tamaño, no el capital disponible.</p>
+          </div>
+        </div>
+      </div>
+      <div class="lesson-body" data-module="risk" data-tab="4">
+        <div class="section">
+          <div class="section-header"><span class="section-num">9.5</span><h2 class="section-title">Psicología del Trader</h2></div>
+          <div class="card-grid">
+            <div class="card"><div class="card-icon">😰</div><div class="card-title">FOMO</div><p>Fear Of Missing Out. Te hace entrar tarde en movimientos ya maduros. La solución: espera el próximo setup, siempre habrá más oportunidades.</p></div>
+            <div class="card"><div class="card-icon">🤞</div><div class="card-title">Revenge Trading</div><p>Operar de más para "recuperar" una pérdida. Lleva a pérdidas mayores. Regla: después de 2 pérdidas seguidas, para el día.</p></div>
+            <div class="card"><div class="card-icon">💎</div><div class="card-title">Diamond Hands Mal Usado</div><p>Aguantar trades perdedores "porque va a subir". El SL existe por esto. Respeta el plan o el mercado te enseñará.</p></div>
+            <div class="card"><div class="card-icon">📋</div><div class="card-title">Trading Journal</div><p>Registra cada trade: entrada, SL, TP, razón, resultado, emoción. Los patrones de tus errores aparecerán con el tiempo.</p></div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /risk -->
+
+    <!-- ══ MÓDULO: MULTI-TIMEFRAME ══ -->
+    <div id="page-mtf" class="page">
+      <div class="module-hero">
+        <div class="hero-eyebrow"><span class="module-number">MÓDULO 05B</span><span class="module-tag">Gestión</span></div>
+        <h1 class="hero-title">Análisis<br>Multi-Timeframe</h1>
+        <p class="hero-desc">El timeframe mayor siempre domina. Aprende el proceso Top-Down para alinear tus trades con el movimiento macro.</p>
+        <div class="hero-meta"><span class="meta-chip"><span class="dot"></span> 3 Lecciones</span></div>
+      </div>
+      <div class="lesson-tabs">
+        <button class="tab-btn active" onclick="switchTab('mtf', 0, this)">1. Jerarquía TF</button>
+        <button class="tab-btn" onclick="switchTab('mtf', 1, this)">2. Top-Down</button>
+        <button class="tab-btn" onclick="switchTab('mtf', 2, this)">3. TFs Desalineados</button>
+      </div>
+      <div class="lesson-body active" data-module="mtf" data-tab="0">
+        <div class="section">
+          <div class="section-header"><span class="section-num">10.1</span><h2 class="section-title">La Jerarquía de los Timeframes</h2></div>
+          <p>El timeframe mayor <strong>SIEMPRE domina</strong> sobre el menor. Los niveles de Fibonacci de TFs mayores tienen más importancia.</p>
+          <table class="data-table">
+            <thead><tr><th>Timeframe</th><th>Uso</th><th>Perfil de Trader</th></tr></thead>
+            <tbody>
+              <tr><td class="val-purple">Mensual / Semanal</td><td>Tendencia macro, zonas Fibonacci mayores</td><td>Posicional / Inversor</td></tr>
+              <tr><td class="val-accent">Diario</td><td>Estructura de swing, confluencias importantes</td><td>Swing Trader</td></tr>
+              <tr><td class="val-yellow">4H / 1H</td><td>Setups, entradas y salidas</td><td>Swing / Day Trader</td></tr>
+              <tr><td class="val-green">15M / 5M</td><td>Afinar entrada, SL exacto</td><td>Day Trader / Scalper</td></tr>
+              <tr><td class="val-green">1M</td><td>Ejecución de entrada precisa</td><td>Scalper</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="lesson-body" data-module="mtf" data-tab="1">
+        <div class="section">
+          <div class="section-header"><span class="section-num">10.2</span><h2 class="section-title">El Proceso Top-Down</h2></div>
+          <div class="steps">
+            <div class="step"><div class="step-num">1</div><div class="step-content"><div class="step-title">Mensual / Semanal — Contexto macro</div><div class="step-desc">¿Cuál es la tendencia principal? ¿En qué zona Fibonacci macro estamos? ¿Hay soporte/resistencia mayor?</div></div></div>
+            <div class="step"><div class="step-num">2</div><div class="step-content"><div class="step-title">Diario — Confluencias y estructura</div><div class="step-desc">¿Hay confluencia con la zona macro? ¿Qué estructura se está formando? ¿Elliott? ¿Patrón gráfico?</div></div></div>
+            <div class="step"><div class="step-num">3</div><div class="step-content"><div class="step-title">4H / 1H — Momentum y setup</div><div class="step-desc">¿Cuál es el momentum actual? ¿Hay un setup válido? ¿RSI, MACD, Fibonacci confirmando?</div></div></div>
+            <div class="step"><div class="step-num">4</div><div class="step-content"><div class="step-title">15M / 5M — Entrada precisa</div><div class="step-desc">Afinar la entrada, definir SL exacto y TP. Buscar vela de confirmación.</div></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="lesson-body" data-module="mtf" data-tab="2">
+        <div class="section">
+          <div class="section-header"><span class="section-num">10.3</span><h2 class="section-title">Cuando los Timeframes NO Están Alineados</h2></div>
+          <div class="info-box warn">
+            <div class="info-label">⚠️ Regla de Oro</div>
+            <p>Si el diario dice alcista pero el semanal dice bajista → <strong>NO operes long</strong>. Espera alineación. Operar contra el TF mayor es operar contra la marea.</p>
+          </div>
+          <table class="data-table">
+            <thead><tr><th>Semanal</th><th>Diario</th><th>4H</th><th>Acción</th></tr></thead>
+            <tbody>
+              <tr><td class="val-green">Alcista</td><td class="val-green">Alcista</td><td class="val-green">Alcista</td><td class="val-green">Setup premium — máxima confianza</td></tr>
+              <tr><td class="val-green">Alcista</td><td class="val-green">Alcista</td><td class="val-accent">Bajista</td><td class="val-yellow">Pullback normal — busca entrada long</td></tr>
+              <tr><td class="val-green">Alcista</td><td class="val-accent">Bajista</td><td class="val-accent">Bajista</td><td class="val-yellow">Corrección mayor — espera o reduce</td></tr>
+              <tr><td class="val-accent">Bajista</td><td class="val-accent">Bajista</td><td class="val-green">Alcista</td><td class="val-accent">Rebote en downtrend — no operar long</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div><!-- /mtf -->
+
+    <!-- ══ MÓDULO: WYCKOFF ══ -->
+    <div id="page-wyck" class="page">
+      <div class="module-hero">
+        <div class="hero-eyebrow"><span class="module-number">MÓDULO 06</span><span class="module-tag">Wyckoff</span></div>
+        <h1 class="hero-title">Método<br>Wyckoff</h1>
+        <p class="hero-desc">Richard Wyckoff desarrolló en los años 1930 un método para leer las intenciones del "Composite Man" — los grandes operadores que mueven el mercado.</p>
+        <div class="hero-meta"><span class="meta-chip"><span class="dot"></span> 5 Lecciones</span><span class="meta-chip"><span class="dot"></span> Nivel Avanzado</span></div>
+      </div>
+      <div class="lesson-tabs">
+        <button class="tab-btn active" onclick="switchTab('wyck', 0, this)">1. Composite Man</button>
+        <button class="tab-btn" onclick="switchTab('wyck', 1, this)">2. Acumulación</button>
+        <button class="tab-btn" onclick="switchTab('wyck', 2, this)">3. Distribución</button>
+        <button class="tab-btn" onclick="switchTab('wyck', 3, this)">4. Springs</button>
+        <button class="tab-btn" onclick="switchTab('wyck', 4, this)">4. En Crypto</button>
+      </div>
+      <div class="lesson-body active" data-module="wyck" data-tab="0">
+        <div class="section">
+          <div class="section-header"><span class="section-num">11.1</span><h2 class="section-title">El Composite Man</h2></div>
+          <p class="lead">Wyckoff propone imaginar que hay un único operador grande — el <strong>"Composite Man"</strong> — que manipula el precio para acumular y distribuir activos a su favor.</p>
+          <div class="card-grid">
+            <div class="card"><div class="card-icon">🏦</div><div class="card-title">Acumula bajo</div><p>Compra silenciosamente cuando nadie quiere el activo. Crea el rango de acumulación sin que el retail lo note.</p></div>
+            <div class="card"><div class="card-icon">📈</div><div class="card-title">Markup</div><p>Una vez acumulado, sube el precio (markup). Ahora el retail entra con FOMO. Las noticias se vuelven positivas.</p></div>
+            <div class="card"><div class="card-icon">🔄</div><div class="card-title">Distribuye alto</div><p>Vende silenciosamente al retail en el techo. Crea el rango de distribución mientras el retail sigue comprando.</p></div>
+            <div class="card"><div class="card-icon">📉</div><div class="card-title">Markdown</div><p>Con el activo distribuido, lo deja caer (markdown). El retail mantiene y pierde, el Composite Man ya salió.</p></div>
+          </div>
+        </div>
+      </div>
+      <div class="lesson-body" data-module="wyck" data-tab="1">
+        <div class="section">
+          <div class="section-header"><span class="section-num">11.2</span><h2 class="section-title">Fase de Acumulación</h2></div>
+          <p>La acumulación ocurre después de una tendencia bajista prolongada. El precio entra en un rango lateral mientras los institucionales acumulan posición.</p>
+          <table class="data-table">
+            <thead><tr><th>Evento</th><th>Código</th><th>Descripción</th></tr></thead>
+            <tbody>
+              <tr><td>Preliminary Support</td><td class="val-accent">PS</td><td>Primera parada de la caída — compradores aparecen</td></tr>
+              <tr><td>Selling Climax</td><td class="val-accent">SC</td><td>Pánico vendedor máximo — el volumen explota</td></tr>
+              <tr><td>Automatic Rally</td><td class="val-green">AR</td><td>Rebote fuerte desde el SC — define el techo del rango</td></tr>
+              <tr><td>Secondary Test</td><td class="val-yellow">ST</td><td>Retest del SC — debe ser con menos volumen y precio más alto</td></tr>
+              <tr><td>Spring</td><td class="val-purple">SP</td><td>Falsa ruptura bajo el rango — la última trampa bajista</td></tr>
+              <tr><td>Sign of Strength</td><td class="val-green">SOS</td><td>Rally fuerte que rompe el techo del rango — inicio del markup</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="lesson-body" data-module="wyck" data-tab="2">
+        <div class="section">
+          <div class="section-header"><span class="section-num">11.3</span><h2 class="section-title">Fase de Distribución</h2></div>
+          <p>Lo inverso a la acumulación. Ocurre después de una tendencia alcista. El precio entra en rango mientras los institucionales venden.</p>
+          <table class="data-table">
+            <thead><tr><th>Evento</th><th>Código</th><th>Descripción</th></tr></thead>
+            <tbody>
+              <tr><td>Preliminary Supply</td><td class="val-yellow">PSY</td><td>Primera resistencia en la subida — vendedores aparecen</td></tr>
+              <tr><td>Buying Climax</td><td class="val-yellow">BC</td><td>Euforia compradora máxima — el volumen explota arriba</td></tr>
+              <tr><td>Automatic Reaction</td><td class="val-accent">AR</td><td>Caída brusca — define el piso del rango</td></tr>
+              <tr><td>Upthrust After Distribution</td><td class="val-accent">UTAD</td><td>Falsa ruptura del techo — la trampa alcista final</td></tr>
+              <tr><td>Sign of Weakness</td><td class="val-accent">SOW</td><td>Ruptura bajista del rango con volumen — inicio del markdown</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="lesson-body" data-module="wyck" data-tab="3">
+        <div class="section">
+          <div class="section-header"><span class="section-num">11.4</span><h2 class="section-title">Springs y Upthrusts — Las Trampas</h2></div>
+          <div class="two-col">
+            <div class="info-box tip">
+              <div class="info-label">📗 SPRING (Trampa Bajista)</div>
+              <p>El precio rompe brevemente el soporte del rango hacia abajo, activa los stops de los longs, y <strong>rápidamente regresa al rango</strong>. Es la señal de acumulación más poderosa — el momento donde entran los institucionales.</p>
+            </div>
+            <div class="info-box warn">
+              <div class="info-label">📕 UPTHRUST (Trampa Alcista)</div>
+              <p>El precio rompe brevemente la resistencia del rango hacia arriba, activa los stops de los shorts y los longs del retail, y <strong>rápidamente regresa al rango</strong>. Señal de distribución — los institucionales están vendiendo en la euforia.</p>
+            </div>
+          </div>
+          <div class="info-box pro">
+            <div class="info-label">🏆 Cómo operar el Spring</div>
+            <p>Identifica el rango de acumulación. Espera el Spring (breakout falso bajo soporte). Confirma el retorno al rango con volumen decreciente. Entra long con SL bajo el Spring. Target: parte superior del rango y más allá.</p>
+          </div>
+        </div>
+      </div>
+      <div class="lesson-body" data-module="wyck" data-tab="4">
+        <div class="section">
+          <div class="section-header"><span class="section-num">11.5</span><h2 class="section-title">Wyckoff en Crypto — Aplicación Real</h2></div>
+          <p class="lead">Bitcoin y las altcoins son perfectos para Wyckoff porque los ciclos de acumulación/distribución son muy claros y repetitivos.</p>
+          <ul class="styled-list">
+            <li>Los <strong>bear markets</strong> son fases de acumulación de ciclo largo. Los institucionales compran mientras el retail vende por pánico.</li>
+            <li>El <strong>Spring en Bitcoin</strong> suele ser el último wick de capitulación antes de un rebote violento.</li>
+            <li>Los <strong>ATH falsos</strong> (donde el precio supera el máximo brevemente y cae) son UTAD clásicos.</li>
+            <li>En altcoins: el UTAD suele ocurrir en el pico de los rumores antes de que el anuncio se confirme y el precio caiga.</li>
+          </ul>
+          <div class="info-box key">
+            <div class="info-label">🔑 Wyckoff + Elliott + Fibonacci</div>
+            <p>El Spring de Wyckoff suele coincidir con el fin de la Onda A o C de Elliott, en la zona Fibonacci del 61.8%-78.6% de retroceso. Esta triple confluencia es uno de los setups más poderosos del trading.</p>
+          </div>
+        </div>
+      </div>
+    </div><!-- /wyck -->
+
+    <!-- ══ CHECKLIST ══ -->
+    <div id="page-checklist" class="page">
+      <div class="module-hero">
+        <div class="hero-eyebrow"><span class="module-number">REFERENCIA</span><span class="module-tag">Herramienta Diaria</span></div>
+        <h1 class="hero-title">Checklist del<br>Trader Pro</h1>
+        <p class="hero-desc">Úsalo antes de cada trade. La disciplina de revisar cada punto es lo que separa al trader rentable del trader impulsivo.</p>
+        <div class="hero-meta"><span class="meta-chip"><span class="dot"></span> Referencia Rápida</span><span class="meta-chip"><span class="dot"></span> Usar a Diario</span></div>
+      </div>
+
+      <div class="lesson-body active" style="display:block;">
+        <div class="section">
+          <div class="section-header"><span class="section-num">✓</span><h2 class="section-title">Pre-Trade Checklist</h2></div>
+
+          <h3>1. Contexto Macro</h3>
+          <ul class="styled-list">
+            <li>¿Cuál es la tendencia en el semanal y diario?</li>
+            <li>¿En qué zona Fibonacci del ciclo mayor estamos?</li>
+            <li>¿Hay soporte/resistencia mayor cerca?</li>
+          </ul>
+
+          <h3>2. Confluencias del Setup</h3>
+          <ul class="styled-list">
+            <li>¿Hay nivel Fibonacci relevante (0.618 preferible)?</li>
+            <li>¿Hay soporte/resistencia o estructura que confirme?</li>
+            <li>¿Alguna media móvil (EMA 21/50/200) en la zona?</li>
+            <li>¿RSI o MACD confirman el momentum esperado?</li>
+            <li>¿El volumen apoya el movimiento?</li>
+          </ul>
+
+          <h3>3. Plan del Trade</h3>
+          <ul class="styled-list">
+            <li>¿Tengo definido el Stop Loss?</li>
+            <li>¿El R:R es mínimo 1:2?</li>
+            <li>¿El tamaño de posición respeta el 1-2% de riesgo?</li>
+            <li>¿Tengo TP1, TP2 y TP3 definidos?</li>
+          </ul>
+
+          <div class="divider"></div>
+
+          <div class="section-header"><span class="section-num">⚡</span><h2 class="section-title">Tabla de Confluencias para Bitcoin / Crypto</h2></div>
+          <table class="data-table">
+            <thead><tr><th>Señal</th><th>Valor</th></tr></thead>
+            <tbody>
+              <tr><td>Nivel Fibonacci (0.618/0.382)</td><td class="val-green">+2 pts</td></tr>
+              <tr><td>Soporte/Resistencia histórico</td><td class="val-green">+2 pts</td></tr>
+              <tr><td>Media Móvil 200 (EMA/SMA)</td><td class="val-green">+2 pts</td></tr>
+              <tr><td>Divergencia RSI/MACD</td><td class="val-yellow">+1.5 pts</td></tr>
+              <tr><td>Patrón gráfico confirmado</td><td class="val-yellow">+1.5 pts</td></tr>
+              <tr><td>Volumen alto en la zona</td><td class="val-yellow">+1 pt</td></tr>
+              <tr><td>POC del Volume Profile</td><td class="val-yellow">+1 pt</td></tr>
+              <tr><td>Wyckoff Spring / Upthrust</td><td class="val-purple">+2 pts</td></tr>
+              <tr><td>Alineación de 3+ timeframes</td><td class="val-purple">+2 pts</td></tr>
+            </tbody>
+          </table>
+          <div class="info-box key">
+            <div class="info-label">📊 Interpretación</div>
+            <p>Menos de 4 pts: No operes. &nbsp;|&nbsp; 4-6 pts: Setup válido, tamaño pequeño. &nbsp;|&nbsp; 7-9 pts: Setup fuerte, tamaño estándar. &nbsp;|&nbsp; 10+ pts: Setup premium, máximo autorizado.</p>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="section-header"><span class="section-num">✗</span><h2 class="section-title">Los Errores Más Comunes</h2></div>
+          <ul class="styled-list">
+            <li>Operar sin Stop Loss porque "estoy seguro que sube".</li>
+            <li>Revenge trading después de una pérdida.</li>
+            <li>Entrar en FOMO al ver que el precio ya subió mucho.</li>
+            <li>Cambiar el análisis a mitad del trade para justificar no cerrar una pérdida.</li>
+            <li>Operar contra la tendencia del timeframe mayor.</li>
+            <li>Usar apalancamiento excesivo sin entender la gestión de riesgo.</li>
+            <li>No registrar los trades en un journal.</li>
+            <li>Confundir una Onda B con el inicio de una nueva tendencia.</li>
+          </ul>
+
+          <div class="info-box pro">
+            <div class="info-label">🎯 La Cita Final</div>
+            <p>"El mercado no te debe nada. La <strong>disciplina, el estudio y la gestión de riesgo</strong> son lo que separa a los traders rentables del resto."</p>
+          </div>
+        </div>
+      </div>
+    </div><!-- /checklist -->
+
+  </div><!-- /content -->
+</main>
+
+<script>
+  // ── STATE ──
+  let activeModule = 'home';
+  const modules = ['home','fib','pa','pa2','pat','ma','rsi','macd','vol','ew','abc','risk','mtf','wyck','checklist'];
+  const moduleNames = {
+    home:'Inicio', fib:'Fibonacci', pa:'Soportes & Resistencias',
+    pa2:'Tendencias & Estructura', pat:'Patrones Gráficos',
+    ma:'Medias Móviles', rsi:'RSI & Momentum', macd:'MACD & Señales',
+    vol:'Volumen & Liquidez', ew:'Ondas de Elliott', abc:'Estructuras ABC',
+    risk:'Gestión de Riesgo', mtf:'Multi-Timeframe',
+    wyck:'Método Wyckoff', checklist:'Checklist Pro'
+  };
+  let visitedModules = new Set(['home']);
+
+  function showHome() {
+    setActivePage('home');
+    document.getElementById('breadcrumb1').textContent = 'Aula Virtual';
+    document.getElementById('breadcrumb2').textContent = 'Inicio';
+    updateNavActive(null);
+    updateProgress();
+  }
+
+  function showModule(mod) {
+    setActivePage(mod);
+    document.getElementById('breadcrumb1').textContent = 'Módulos';
+    document.getElementById('breadcrumb2').textContent = moduleNames[mod] || mod;
+    updateNavActive(mod);
+    visitedModules.add(mod);
+    updateProgress();
+  }
+
+  function setActivePage(mod) {
+    modules.forEach(m => {
+      const el = document.getElementById('page-' + m);
+      if (el) el.classList.toggle('active', m === mod);
+    });
+    activeModule = mod;
+    window.scrollTo(0, 0);
+  }
+
+  function switchTab(mod, tabIndex, btn) {
+    // Deactivate all tabs in this module
+    const allBodies = document.querySelectorAll(`[data-module="${mod}"]`);
+    allBodies.forEach(b => b.classList.remove('active'));
+
+    // Find and activate the right one
+    let count = 0;
+    allBodies.forEach(b => {
+      if (parseInt(b.dataset.tab) === tabIndex) {
+        b.classList.add('active');
+      }
+    });
+
+    // Update tab buttons
+    const tabContainer = btn.closest('.lesson-tabs');
+    tabContainer.querySelectorAll('.tab-btn').forEach((b, i) => {
+      b.classList.toggle('active', i === tabIndex);
+    });
+  }
+
+  function updateNavActive(mod) {
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.classList.remove('active');
+    });
+    if (!mod) {
+      document.querySelector('.nav-item').classList.add('active');
+    }
+  }
+
+  function updateProgress() {
+    const total = modules.length - 1; // exclude home
+    const visited = [...visitedModules].filter(m => m !== 'home').length;
+    const pct = Math.round((visited / total) * 100);
+    document.getElementById('progFill').style.width = pct + '%';
+    document.getElementById('progPct').textContent = pct + '%';
+  }
+
+  function filterNav(query) {
+    const q = query.toLowerCase();
+    document.querySelectorAll('.nav-item').forEach(item => {
+      const text = item.textContent.toLowerCase();
+      item.style.display = text.includes(q) ? 'flex' : 'none';
+    });
+    document.querySelectorAll('.nav-section-label').forEach(label => {
+      label.style.display = q ? 'none' : 'block';
+    });
+  }
+</script>
+</body>
+</html>

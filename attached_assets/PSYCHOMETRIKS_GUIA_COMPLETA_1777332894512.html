@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PSYCHOMETRIKS — Guía Completa del Trader</title>
+<style>
+  :root {
+    --bg: #0A0A0F;
+    --bg2: #0F0F1A;
+    --bg3: #141420;
+    --border: #2A2A40;
+    --purple: #BB86FC;
+    --green: #00E676;
+    --red: #FF1744;
+    --yellow: #FFD700;
+    --cyan: #00BCD4;
+    --orange: #FF6D00;
+    --white: #E8E8F0;
+    --gray: #9090A0;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--white); font-family: 'Segoe UI', sans-serif; line-height: 1.7; }
+
+  /* HEADER */
+  .hero {
+    background: linear-gradient(135deg, #0A0A0F 0%, #1A0A2E 50%, #0A0A0F 100%);
+    border-bottom: 2px solid var(--purple);
+    padding: 60px 40px;
+    text-align: center;
+  }
+  .hero h1 { font-size: 3em; color: var(--purple); letter-spacing: 4px; text-transform: uppercase; }
+  .hero h2 { font-size: 1.4em; color: var(--yellow); margin-top: 10px; font-weight: 300; }
+  .hero p  { color: var(--gray); margin-top: 15px; font-size: 0.95em; }
+
+  /* NAVEGACIÓN */
+  nav {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 15px 40px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  nav a {
+    color: var(--purple);
+    text-decoration: none;
+    font-size: 0.8em;
+    padding: 5px 12px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    transition: all 0.2s;
+  }
+  nav a:hover { background: var(--purple); color: #000; }
+
+  /* CONTENIDO */
+  .container { max-width: 1100px; margin: 0 auto; padding: 40px 20px; }
+
+  /* SECCIONES */
+  section { margin-bottom: 60px; }
+  h2.section-title {
+    font-size: 1.8em;
+    color: var(--yellow);
+    border-bottom: 2px solid var(--yellow);
+    padding-bottom: 10px;
+    margin-bottom: 30px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+  h3.sub-title {
+    font-size: 1.2em;
+    color: var(--purple);
+    margin: 25px 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  p { color: var(--gray); margin-bottom: 12px; }
+
+  /* CARDS */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 15px;
+  }
+  .card.green  { border-left: 4px solid var(--green); }
+  .card.red    { border-left: 4px solid var(--red); }
+  .card.yellow { border-left: 4px solid var(--yellow); }
+  .card.purple { border-left: 4px solid var(--purple); }
+  .card.cyan   { border-left: 4px solid var(--cyan); }
+  .card.orange { border-left: 4px solid var(--orange); }
+  .card h4 { color: var(--white); margin-bottom: 8px; font-size: 1em; }
+  .card p  { margin-bottom: 0; font-size: 0.9em; }
+
+  /* GRID */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; }
+  @media(max-width:768px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+  /* TABLA */
+  table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 0.88em; }
+  th { background: var(--bg3); color: var(--purple); padding: 10px 14px; text-align: left; border: 1px solid var(--border); }
+  td { padding: 9px 14px; border: 1px solid var(--border); color: var(--gray); }
+  tr:nth-child(even) td { background: var(--bg2); }
+  td.green  { color: var(--green); }
+  td.red    { color: var(--red); }
+  td.yellow { color: var(--yellow); }
+  td.purple { color: var(--purple); }
+  td.cyan   { color: var(--cyan); }
+
+  /* BADGE */
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 3px;
+    font-size: 0.8em;
+    font-weight: 600;
+    margin: 2px;
+  }
+  .badge.green  { background: rgba(0,230,118,0.15); color: var(--green); border: 1px solid var(--green); }
+  .badge.red    { background: rgba(255,23,68,0.15);  color: var(--red);   border: 1px solid var(--red); }
+  .badge.yellow { background: rgba(255,215,0,0.15);  color: var(--yellow);border: 1px solid var(--yellow); }
+  .badge.purple { background: rgba(187,134,252,0.15);color: var(--purple);border: 1px solid var(--purple); }
+  .badge.cyan   { background: rgba(0,188,212,0.15);  color: var(--cyan);  border: 1px solid var(--cyan); }
+  .badge.orange { background: rgba(255,109,0,0.15);  color: var(--orange);border: 1px solid var(--orange); }
+
+  /* NIVEL */
+  .nivel {
+    display: inline-block;
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 0.85em;
+    font-weight: 700;
+    margin-bottom: 15px;
+  }
+  .nivel.novato { background: rgba(0,230,118,0.2); color: var(--green); border: 1px solid var(--green); }
+  .nivel.inter  { background: rgba(255,215,0,0.2);  color: var(--yellow);border: 1px solid var(--yellow); }
+  .nivel.avanz  { background: rgba(255,109,0,0.2);  color: var(--orange);border: 1px solid var(--orange); }
+  .nivel.pro    { background: rgba(187,134,252,0.2);color: var(--purple);border: 1px solid var(--purple); }
+
+  /* STEPS */
+  .step {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+    align-items: flex-start;
+  }
+  .step-num {
+    background: var(--purple);
+    color: #000;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    flex-shrink: 0;
+    font-size: 0.85em;
+  }
+  .step-content h4 { color: var(--white); margin-bottom: 4px; }
+  .step-content p  { margin: 0; font-size: 0.9em; }
+
+  /* EJEMPLO SETUP */
+  .setup-box {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 15px 0;
+  }
+  .setup-box h4 { color: var(--yellow); margin-bottom: 12px; font-size: 1em; }
+  .setup-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 0.88em; }
+  .setup-row:last-child { border-bottom: none; }
+  .setup-label { color: var(--gray); }
+  .setup-val   { color: var(--white); font-weight: 600; }
+  .setup-val.green  { color: var(--green); }
+  .setup-val.red    { color: var(--red); }
+  .setup-val.yellow { color: var(--yellow); }
+
+  /* COMBO CARD */
+  .combo {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 10px;
+  }
+  .combo-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .combo-score  { font-size: 1.2em; }
+  .combo-name   { color: var(--white); font-weight: 600; font-size: 0.95em; }
+  .combo-dir    { margin-left: auto; }
+  .combo p      { font-size: 0.85em; color: var(--gray); margin: 0; }
+
+  /* SEPARADOR */
+  hr { border: none; border-top: 1px solid var(--border); margin: 30px 0; }
+
+  /* ALERTA */
+  .alert {
+    border-radius: 8px;
+    padding: 15px 20px;
+    margin: 15px 0;
+    font-size: 0.9em;
+  }
+  .alert.info    { background: rgba(0,188,212,0.1);  border: 1px solid var(--cyan);   color: var(--cyan); }
+  .alert.warning { background: rgba(255,215,0,0.1);  border: 1px solid var(--yellow); color: var(--yellow); }
+  .alert.danger  { background: rgba(255,23,68,0.1);  border: 1px solid var(--red);    color: var(--red); }
+  .alert.success { background: rgba(0,230,118,0.1);  border: 1px solid var(--green);  color: var(--green); }
+
+  /* FIBO TABLE */
+  .fibo-row { display: flex; gap: 10px; margin-bottom: 8px; align-items: center; }
+  .fibo-level { width: 60px; color: var(--purple); font-weight: 700; font-size: 0.9em; }
+  .fibo-bar   { flex: 1; height: 8px; border-radius: 4px; }
+  .fibo-desc  { color: var(--gray); font-size: 0.85em; width: 200px; }
+
+  /* FOOTER */
+  footer {
+    background: var(--bg2);
+    border-top: 2px solid var(--purple);
+    padding: 30px 40px;
+    text-align: center;
+    color: var(--gray);
+    font-size: 0.85em;
+  }
+  footer strong { color: var(--purple); }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <h1>⚡ PSYCHOMETRIKS</h1>
+  <h2>Guía Completa del Trader — Del Novato al Pro</h2>
+  <p>Serie PROBABILITY SERIES · P-01 al P-09 · Guía de uso, confluencias y ejemplos prácticos</p>
+  <p style="margin-top:8px; font-size:0.8em; color:#555">Solo educativo — Gestiona siempre tu riesgo</p>
+</div>
+
+<!-- NAVEGACIÓN -->
+<nav>
+  <a href="#intro">Introducción</a>
+  <a href="#patrones">Los 9 Indicadores</a>
+  <a href="#novato">Nivel Novato</a>
+  <a href="#intermedio">Nivel Intermedio</a>
+  <a href="#avanzado">Nivel Avanzado</a>
+  <a href="#pro">Nivel Pro</a>
+  <a href="#fibo">Fibonacci</a>
+  <a href="#velas">Velas + Patrones</a>
+  <a href="#confluencia">Confluencias</a>
+  <a href="#ejemplos">Ejemplos</a>
+  <a href="#riesgo">Gestión de Riesgo</a>
+  <a href="#sesiones">Sesiones</a>
+</nav>
+
+<div class="container">
+
+<!-- ═══════════════════════════════════════════════════════════
+     INTRODUCCIÓN
+═══════════════════════════════════════════════════════════ -->
+<section id="intro">
+  <h2 class="section-title">🧠 Introducción — La Filosofía PSYCHOMETRIKS</h2>
+
+  <p>La suite PSYCHOMETRIKS PROBABILITY SERIES está diseñada para leer el mercado como lo hacen los institucionales. No se basa en indicadores de retraso como RSI o MACD aislados — se basa en <strong style="color:var(--yellow)">estructura de precio, liquidez y comportamiento algorítmico.</strong></p>
+
+  <div class="alert info">
+    💡 <strong>Principio fundamental:</strong> El precio no se mueve al azar. El algoritmo institucional SIEMPRE busca liquidez antes de moverse en la dirección real. PSYCHOMETRIKS detecta estos movimientos.
+  </div>
+
+  <h3 class="sub-title">🏛️ Cómo piensan los institucionales</h3>
+
+  <div class="grid-3">
+    <div class="card cyan">
+      <h4>1. Acumulan</h4>
+      <p>Compran o venden en silencio durante rangos laterales sin que el retail lo note.</p>
+    </div>
+    <div class="card orange">
+      <h4>2. Manipulan</h4>
+      <p>Hacen un movimiento falso para cazar los stops del retail en ambos lados.</p>
+    </div>
+    <div class="card green">
+      <h4>3. Distribuyen</h4>
+      <p>Ejecutan el movimiento real cuando el retail está atrapado en la dirección equivocada.</p>
+    </div>
+  </div>
+
+  <div class="alert warning" style="margin-top:20px">
+    ⚠️ <strong>Regla de oro:</strong> NUNCA operes durante la manipulación. Espera siempre el cierre de vela y la confirmación de regreso al rango.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     LOS 9 INDICADORES
+═══════════════════════════════════════════════════════════ -->
+<section id="patrones">
+  <h2 class="section-title">📊 Los 9 Indicadores PSYCHOMETRIKS</h2>
+
+  <table>
+    <tr>
+      <th>Indicador</th>
+      <th>Concepto</th>
+      <th>TF Ideal</th>
+      <th>Fortaleza</th>
+    </tr>
+    <tr>
+      <td class="purple"><strong>P-01 · CRT</strong></td>
+      <td>Candle Range Theory — Vela base y sus extensiones Fibo</td>
+      <td>15m · 1H · 4H · 1D</td>
+      <td class="yellow">★★★★★</td>
+    </tr>
+    <tr>
+      <td class="purple"><strong>P-02 · SKD</strong></td>
+      <td>Seigan Destroy — Vela que sale a cazar liquidez externa</td>
+      <td>1H · 4H · 1D</td>
+      <td class="yellow">★★★★★</td>
+    </tr>
+    <tr>
+      <td class="purple"><strong>P-03 · AMD</strong></td>
+      <td>Acumulación · Manipulación · Distribución</td>
+      <td>15m · 1H · 4H</td>
+      <td class="yellow">★★★★★</td>
+    </tr>
+    <tr>
+      <td class="purple"><strong>P-04 · LIQ</strong></td>
+      <td>Liquidez — Stop Hunts · Equal H/L · Buy/Sell Side</td>
+      <td>1H · 4H · 1D</td>
+      <td class="yellow">★★★★</td>
+    </tr>
+    <tr>
+      <td class="purple"><strong>P-05 · SMC</strong></td>
+      <td>Smart Money — Order Blocks · BOS · CHoCH</td>
+      <td>1H · 4H · 1D</td>
+      <td class="yellow">★★★★</td>
+    </tr>
+    <tr>
+      <td class="purple"><strong>P-06 · CMD</strong></td>
+      <td>Consolidación · Manipulación · Distribución (rangos cortos)</td>
+      <td>15m · 1H · 4H</td>
+      <td class="yellow">★★★★</td>
+    </tr>
+    <tr>
+      <td class="purple"><strong>P-07 · SES</strong></td>
+      <td>Sesiones — Asia · Londres · NY · Judas Swing</td>
+      <td>5m · 15m · 1H</td>
+      <td class="yellow">★★★★</td>
+    </tr>
+    <tr>
+      <td class="purple"><strong>P-08 · IPDA</strong></td>
+      <td>Algoritmo Interbancario — Rangos 20/40/60D · Premium/Discount</td>
+      <td>4H · 1D · 1W</td>
+      <td class="yellow">★★★★★</td>
+    </tr>
+    <tr>
+      <td class="purple"><strong>P-09 · VELAS</strong></td>
+      <td>Patrones de velas japonesas con confluencia P-01 a P-08</td>
+      <td>15m · 1H · 4H · 1D</td>
+      <td class="yellow">★★★★</td>
+    </tr>
+  </table>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     NIVEL NOVATO
+═══════════════════════════════════════════════════════════ -->
+<section id="novato">
+  <h2 class="section-title">🌱 Nivel Novato — Primeros Pasos</h2>
+  <span class="nivel novato">NIVEL 1 · NOVATO</span>
+
+  <p>Empieza con solo <strong style="color:var(--yellow)">2 indicadores:</strong> P-01 CRT y P-09 VELAS. Aprende a leer el CRT antes de añadir más capas.</p>
+
+  <h3 class="sub-title">📌 Los conceptos que DEBES dominar primero</h3>
+
+  <div class="grid-2">
+    <div class="card purple">
+      <h4>1. La Vela Base (CRT)</h4>
+      <p>La vela anterior define el campo de juego. Sus extremos (alto y bajo) son zonas donde hay liquidez acumulada. El precio SIEMPRE tiende a visitar estas zonas antes de moverse.</p>
+    </div>
+    <div class="card cyan">
+      <h4>2. Esperar el Cierre</h4>
+      <p>NUNCA tomes decisiones durante la formación de una vela. El patrón solo es válido cuando la vela CIERRA. Una vela que parece Hammer puede cerrar como Marubozu bajista.</p>
+    </div>
+    <div class="card green">
+      <h4>3. Las 3 Probabilidades</h4>
+      <p>Siempre hay 3 escenarios: A (el más probable), B (alternativo) y C (el inesperado). Planifica los 3 ANTES de entrar. Nunca te sorprendas.</p>
+    </div>
+    <div class="card yellow">
+      <h4>4. Stop Loss Siempre</h4>
+      <p>Sin SL no eres trader, eres apostador. El SL va SIEMPRE fuera del nivel que invalida el patrón. Si el patrón falla, acepta la pérdida pequeña.</p>
+    </div>
+  </div>
+
+  <h3 class="sub-title">🎯 Tu primer setup como novato</h3>
+
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-content">
+      <h4>Abre P-01 CRT en timeframe Diario</h4>
+      <p>Observa el alto y bajo de la vela anterior. Esos son tus niveles de liquidez clave.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-content">
+      <h4>Activa P-09 VELAS</h4>
+      <p>Espera a que detecte un patrón de 4-5 estrellas. No operes patrones de 1-2 estrellas.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-content">
+      <h4>Verifica que la vela Y el CRT apunten en la misma dirección</h4>
+      <p>Si el CRT dice Alcista y la vela es Hammer = VERDE. Si apuntan en direcciones distintas = NO entres.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-content">
+      <h4>Coloca entrada, SL y TP antes de abrir la operación</h4>
+      <p>TP1 = Fibo 1.27 de la vela base. SL = por debajo del bajo de la vela base. RR mínimo 1:2.</p>
+    </div>
+  </div>
+
+  <div class="alert danger">
+    🚫 <strong>Errores del novato más comunes:</strong> Entrar durante la vela · Mover el SL hacia pérdidas · Operar sin TP definido · Usar demasiados indicadores al mismo tiempo
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     NIVEL INTERMEDIO
+═══════════════════════════════════════════════════════════ -->
+<section id="intermedio">
+  <h2 class="section-title">📈 Nivel Intermedio — Añadiendo Capas</h2>
+  <span class="nivel inter">NIVEL 2 · INTERMEDIO</span>
+
+  <p>Ahora agregas <strong style="color:var(--yellow)">P-02 SKD, P-03 AMD y P-04 LIQ</strong>. El objetivo es entender que el precio siempre busca liquidez antes del movimiento real.</p>
+
+  <h3 class="sub-title">🔄 Entendiendo AMD + SKD juntos</h3>
+
+  <div class="card purple">
+    <h4>El ciclo completo del mercado</h4>
+    <p style="margin-bottom:8px">El precio sigue un ciclo predecible que puedes ver con AMD y SKD:</p>
+    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px">
+      <span class="badge cyan">1. Acumulación (Asia)</span>
+      <span style="color:var(--gray); align-self:center">→</span>
+      <span class="badge orange">2. Manipulación (Londres)</span>
+      <span style="color:var(--gray); align-self:center">→</span>
+      <span class="badge green">3. Distribución (NY)</span>
+      <span style="color:var(--gray); align-self:center">→</span>
+      <span class="badge purple">4. SKD caza stops</span>
+      <span style="color:var(--gray); align-self:center">→</span>
+      <span class="badge yellow">5. Movimiento real</span>
+    </div>
+  </div>
+
+  <h3 class="sub-title">💧 Leyendo la liquidez con P-04 LIQ</h3>
+
+  <div class="grid-2">
+    <div class="card green">
+      <h4>Buy Side Liquidity (BSL)</h4>
+      <p>Son los stops de los que están SHORT. Están ARRIBA del precio. El mercado sube a cazarlos antes de bajar. Cuando los caza → oportunidad de SHORT.</p>
+    </div>
+    <div class="card red">
+      <h4>Sell Side Liquidity (SSL)</h4>
+      <p>Son los stops de los que están LONG. Están ABAJO del precio. El mercado baja a cazarlos antes de subir. Cuando los caza → oportunidad de LONG.</p>
+    </div>
+    <div class="card yellow">
+      <h4>Equal Highs (EQH)</h4>
+      <p>Dos o más máximos al mismo nivel = imán de liquidez. El precio irá a tocarlos para cazar los stops de los shorts que pusieron SL encima.</p>
+    </div>
+    <div class="card yellow">
+      <h4>Equal Lows (EQL)</h4>
+      <p>Dos o más mínimos al mismo nivel = imán de liquidez. El precio irá a tocarlos para cazar los stops de los longs que pusieron SL debajo.</p>
+    </div>
+  </div>
+
+  <h3 class="sub-title">🎯 Setup intermedio: AMD + LIQ + VELAS</h3>
+
+  <div class="setup-box">
+    <h4>Ejemplo: Long después del sweep de SSL</h4>
+    <div class="setup-row"><span class="setup-label">P-03 AMD</span><span class="setup-val green">Manipulación Bajista detectada → Distribución ALCISTA</span></div>
+    <div class="setup-row"><span class="setup-label">P-04 LIQ</span><span class="setup-val">Stop Hunt Alcista confirmado · SSL cazado</span></div>
+    <div class="setup-row"><span class="setup-label">P-09 VELAS</span><span class="setup-val yellow">Hammer ★★★★ o Engulfing Alcista ★★★★★</span></div>
+    <div class="setup-row"><span class="setup-label">Entrada</span><span class="setup-val green">Al cierre de la vela Hammer</span></div>
+    <div class="setup-row"><span class="setup-label">SL</span><span class="setup-val red">Por debajo del mínimo del sweep</span></div>
+    <div class="setup-row"><span class="setup-label">TP1</span><span class="setup-val yellow">Alto del rango de acumulación</span></div>
+    <div class="setup-row"><span class="setup-label">TP2</span><span class="setup-val yellow">Fibo 1.27 del rango</span></div>
+    <div class="setup-row"><span class="setup-label">RR</span><span class="setup-val green">Mínimo 1:3</span></div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     NIVEL AVANZADO
+═══════════════════════════════════════════════════════════ -->
+<section id="avanzado">
+  <h2 class="section-title">🔥 Nivel Avanzado — Smart Money</h2>
+  <span class="nivel avanz">NIVEL 3 · AVANZADO</span>
+
+  <p>Incorporas <strong style="color:var(--yellow)">P-05 SMC, P-06 CMD y P-07 SES</strong>. Ahora puedes leer la estructura del mercado y el timing de sesiones como un institucional.</p>
+
+  <h3 class="sub-title">🏗️ Estructura del Mercado (SMC)</h3>
+
+  <div class="grid-2">
+    <div class="card green">
+      <h4>BOS — Break of Structure</h4>
+      <p>El precio rompe un swing previo con fuerza. Confirma que la tendencia continúa. Un BOS alcista = la tendencia alcista sigue. Busca entradas en el retesteo del Order Block.</p>
+    </div>
+    <div class="card orange">
+      <h4>CHoCH — Change of Character</h4>
+      <p>El precio rompe en CONTRA de la tendencia previa. Señala posible reversión. Es MÁS IMPORTANTE que el BOS. Cuando hay CHoCH, la distribución puede estar comenzando.</p>
+    </div>
+    <div class="card purple">
+      <h4>Order Block Alcista</h4>
+      <p>La última vela BAJISTA antes de un impulso alcista fuerte. Es donde los institucionales compraron. Cuando el precio retestea ese OB = zona de entrada ideal.</p>
+    </div>
+    <div class="card red">
+      <h4>Order Block Bajista</h4>
+      <p>La última vela ALCISTA antes de un impulso bajista fuerte. Es donde los institucionales vendieron. Cuando el precio retestea ese OB = zona de short ideal.</p>
+    </div>
+  </div>
+
+  <h3 class="sub-title">🕐 El Timing de Sesiones (SES)</h3>
+
+  <table>
+    <tr>
+      <th>Sesión</th>
+      <th>Horario UTC</th>
+      <th>Rol en AMD</th>
+      <th>Qué buscar</th>
+    </tr>
+    <tr>
+      <td class="cyan">🌏 Asia</td>
+      <td>02:00 – 09:00</td>
+      <td>Acumulación</td>
+      <td class="gray">Rango lateral, poca volatilidad. Define los niveles del día.</td>
+    </tr>
+    <tr>
+      <td class="orange">🇬🇧 Londres</td>
+      <td>08:00 – 16:00</td>
+      <td>Manipulación</td>
+      <td class="gray">Judas Swing al inicio. Rompe el rango de Asia para cazar stops.</td>
+    </tr>
+    <tr>
+      <td class="green">🗽 Nueva York</td>
+      <td>13:00 – 21:00</td>
+      <td>Distribución</td>
+      <td class="gray">Movimiento real del día. La dirección contraria al Judas de Londres.</td>
+    </tr>
+  </table>
+
+  <div class="alert info">
+    💡 <strong>El Judas Swing:</strong> Al inicio de la sesión de Londres o NY, el precio hace un movimiento FALSO en una dirección para cazar stops. Luego revierte y se mueve en la dirección real. P-07 SES detecta esto automáticamente.
+  </div>
+
+  <h3 class="sub-title">🎯 Setup avanzado: SMC + SES + AMD</h3>
+
+  <div class="setup-box">
+    <h4>Ejemplo: Short después de Judas alcista en Londres</h4>
+    <div class="setup-row"><span class="setup-label">P-07 SES</span><span class="setup-val red">Judas Swing Bajista detectado · Sesión Londres</span></div>
+    <div class="setup-row"><span class="setup-label">P-05 SMC</span><span class="setup-val red">Order Block Bajista en zona del Judas</span></div>
+    <div class="setup-row"><span class="setup-label">P-03 AMD</span><span class="setup-val red">Fase: Distribución BAJISTA</span></div>
+    <div class="setup-row"><span class="setup-label">P-09 VELAS</span><span class="setup-val yellow">Shooting Star ★★★★ o Evening Star ★★★★★</span></div>
+    <div class="setup-row"><span class="setup-label">Contexto IPDA</span><span class="setup-val red">Precio en zona Premium del rango 40D</span></div>
+    <div class="setup-row"><span class="setup-label">Entrada</span><span class="setup-val red">Al cierre de la vela de confirmación</span></div>
+    <div class="setup-row"><span class="setup-label">SL</span><span class="setup-val red">Por encima del máximo del Judas</span></div>
+    <div class="setup-row"><span class="setup-label">TP1</span><span class="setup-val yellow">SSL más cercano · Bajo de Asia</span></div>
+    <div class="setup-row"><span class="setup-label">RR</span><span class="setup-val green">1:4 a 1:6</span></div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     NIVEL PRO
+═══════════════════════════════════════════════════════════ -->
+<section id="pro">
+  <h2 class="section-title">💎 Nivel Pro — IPDA y Confluencia Total</h2>
+  <span class="nivel pro">NIVEL 4 · PRO</span>
+
+  <p>Incorporas <strong style="color:var(--yellow)">P-08 IPDA</strong> y usas los 9 indicadores en conjunto. Ahora lees el mercado en múltiples timeframes simultáneamente.</p>
+
+  <h3 class="sub-title">🏛️ IPDA — El Algoritmo Interbancario</h3>
+
+  <div class="card purple">
+    <h4>¿Qué es IPDA?</h4>
+    <p>El mercado de divisas y oro es manejado por algoritmos institucionales que entregan el precio en rangos de tiempo específicos. Estos rangos son de <strong style="color:var(--cyan)">20, 40 y 60 días.</strong></p>
+    <p style="margin-top:8px">El algoritmo tiene un sesgo: cuando el precio está en <strong style="color:var(--red)">Premium (arriba del 50% del rango)</strong>, busca bajar. Cuando está en <strong style="color:var(--green)">Discount (abajo del 50%)</strong>, busca subir.</p>
+  </div>
+
+  <div class="grid-3" style="margin-top:15px">
+    <div class="card red">
+      <h4>🔴 Premium Extremo (&gt;75%)</h4>
+      <p>Precio muy caro. Alta probabilidad bajista. Busca setups SHORT con confluencia SMC + AMD.</p>
+    </div>
+    <div class="card yellow">
+      <h4>🟡 Premium (50-75%)</h4>
+      <p>Precio caro. Sesgo bajista. Más cauteloso con longs. Prioriza shorts con confirmación.</p>
+    </div>
+    <div class="card green">
+      <h4>🟢 Discount Extremo (&lt;25%)</h4>
+      <p>Precio muy barato. Alta probabilidad alcista. Busca setups LONG con confluencia SMC + AMD.</p>
+    </div>
+  </div>
+
+  <h3 class="sub-title">🏆 El Setup Pro Completo — 7 Confluencias</h3>
+
+  <div class="setup-box">
+    <h4>Setup máxima probabilidad (7 confluencias)</h4>
+    <div class="setup-row"><span class="setup-label">P-08 IPDA</span><span class="setup-val green">Discount Extremo (&lt;25%) · Sesgo alcista macro</span></div>
+    <div class="setup-row"><span class="setup-label">P-07 SES</span><span class="setup-val green">Judas Swing bajista al inicio de Londres</span></div>
+    <div class="setup-row"><span class="setup-label">P-05 SMC</span><span class="setup-val green">CHoCH Alcista + Order Block Alcista</span></div>
+    <div class="setup-row"><span class="setup-label">P-04 LIQ</span><span class="setup-val green">Stop Hunt Alcista · SSL cazado</span></div>
+    <div class="setup-row"><span class="setup-label">P-03 AMD</span><span class="setup-val green">Distribución ALCISTA confirmada</span></div>
+    <div class="setup-row"><span class="setup-label">P-02 SKD</span><span class="setup-val green">SKD Alcista · Regreso al rango</span></div>
+    <div class="setup-row"><span class="setup-label">P-01 CRT</span><span class="setup-val green">Hammer en zona 0.618 del rango CRT</span></div>
+    <div class="setup-row"><span class="setup-label">P-09 VELAS</span><span class="setup-val yellow">Morning Star ★★★★★ o Engulfing ★★★★★</span></div>
+    <div class="setup-row"><span class="setup-label">RESULTADO</span><span class="setup-val green">Probabilidad &gt;80% · RR objetivo 1:6+</span></div>
+  </div>
+
+  <div class="alert success">
+    ✅ <strong>Clave Pro:</strong> No necesitas 7 confluencias en cada operación. Con 4-5 confluencias fuertes ya tienes un setup de alta probabilidad. La calidad importa más que la cantidad de señales.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     FIBONACCI
+═══════════════════════════════════════════════════════════ -->
+<section id="fibo">
+  <h2 class="section-title">📐 Fibonacci — La Geometría del Mercado</h2>
+
+  <p>Fibonacci no es magia — es la herramienta que usan los algoritmos institucionales para definir zonas de reversión y extensión. Todos los indicadores PSYCHOMETRIKS usan Fibo internamente.</p>
+
+  <h3 class="sub-title">🎯 Los niveles más importantes</h3>
+
+  <table>
+    <tr>
+      <th>Nivel</th>
+      <th>Nombre</th>
+      <th>Uso Principal</th>
+      <th>Confluencia con</th>
+    </tr>
+    <tr>
+      <td class="yellow">0.236</td>
+      <td>Retroceso menor</td>
+      <td>Primer soporte/resistencia en tendencias fuertes</td>
+      <td class="purple">CRT rápido · BOS</td>
+    </tr>
+    <tr>
+      <td class="yellow">0.382</td>
+      <td>Retroceso moderado</td>
+      <td>Zona de entrada en tendencias claras</td>
+      <td class="purple">CRT · AMD</td>
+    </tr>
+    <tr>
+      <td class="yellow">0.500</td>
+      <td>Equilibrio (50%)</td>
+      <td>Equilibrio del rango — IPDA midpoint</td>
+      <td class="purple">IPDA · SMC OB</td>
+    </tr>
+    <tr>
+      <td class="green">0.618</td>
+      <td>Golden Zone</td>
+      <td>La zona más poderosa de retroceso — entrada ideal</td>
+      <td class="purple">CRT + SMC + AMD</td>
+    </tr>
+    <tr>
+      <td class="green">0.705</td>
+      <td>Deep Golden Zone</td>
+      <td>Extensión del Golden Zone — alta probabilidad</td>
+      <td class="purple">Order Block + CRT</td>
+    </tr>
+    <tr>
+      <td class="green">0.786</td>
+      <td>Retroceso profundo</td>
+      <td>Zona de reversión en sweeps profundos</td>
+      <td class="purple">SKD + LIQ</td>
+    </tr>
+    <tr>
+      <td class="cyan">1.000</td>
+      <td>Proyección 100%</td>
+      <td>Target igual al rango base — TP estándar</td>
+      <td class="purple">AMD · SKD</td>
+    </tr>
+    <tr>
+      <td class="cyan">1.272</td>
+      <td>Extensión 1.27</td>
+      <td>Primer target externo — CRT sale a buscar esto</td>
+      <td class="purple">CRT P-01</td>
+    </tr>
+    <tr>
+      <td class="cyan">1.382</td>
+      <td>Extensión 1.38</td>
+      <td>Segundo target externo del CRT</td>
+      <td class="purple">CRT P-01</td>
+    </tr>
+    <tr>
+      <td class="cyan">1.618</td>
+      <td>Golden Extension</td>
+      <td>Target de alta probabilidad en movimientos impulsivos</td>
+      <td class="purple">AMD · SKD · IPDA</td>
+    </tr>
+    <tr>
+      <td class="red">2.000</td>
+      <td>Extensión 2.0</td>
+      <td>Target de movimientos extremos — SKD fuera del rango</td>
+      <td class="purple">SKD P-02</td>
+    </tr>
+  </table>
+
+  <h3 class="sub-title">🔑 Golden Zone 0.618 — La zona más importante</h3>
+
+  <div class="card green">
+    <h4>¿Por qué el 0.618 es especial?</h4>
+    <p>El 0.618 es la proporción áurea de la naturaleza. Los algoritmos institucionales están programados para reconocer esta zona. Cuando el precio retrocede al 0.618 de un impulso Y hay confluencia con un Order Block o AMD, tienes uno de los setups más potentes del mercado.</p>
+    <p style="margin-top:8px; color:var(--yellow)"><strong>Regla:</strong> Busca siempre que el precio llegue al 0.618 del rango con una vela de confirmación ★★★★ o más.</p>
+  </div>
+
+  <h3 class="sub-title">📊 Cómo usar Fibo con CRT (P-01)</h3>
+
+  <div class="grid-2">
+    <div class="card cyan">
+      <h4>Fibo como TP (Extensiones)</h4>
+      <p>Cuando el CRT detecta una vela de rango, proyecta los targets 1.27, 1.38 y 1.61 FUERA del rango. El algoritmo va a buscar esa liquidez externa antes de revertir. Esos son tus TPs.</p>
+    </div>
+    <div class="card purple">
+      <h4>Fibo como entrada (Retrocesos)</h4>
+      <p>Después de un impulso, el precio retrocede al 0.618 antes de continuar. Espera el retroceso al 0.618 del impulso previo con vela de confirmación. Ahí es tu entrada de menor riesgo.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     VELAS + PATRONES
+═══════════════════════════════════════════════════════════ -->
+<section id="velas">
+  <h2 class="section-title">🕯️ Velas Japonesas + Patrones PSYCHOMETRIKS</h2>
+
+  <p>Las velas no operan solas. Su poder viene de la <strong style="color:var(--yellow)">confluencia con los patrones institutcionales</strong> detectados por P-01 a P-08.</p>
+
+  <h3 class="sub-title">⭐ Patrones de 1 Vela — Cuándo actúan</h3>
+
+  <table>
+    <tr>
+      <th>Vela</th>
+      <th>Score</th>
+      <th>Dirección</th>
+      <th>Mejor confluencia</th>
+      <th>Evitar cuando</th>
+    </tr>
+    <tr>
+      <td class="white">🔨 Hammer</td>
+      <td class="yellow">★★★★</td>
+      <td class="green">Alcista</td>
+      <td>CRT Alcista + LIQ Hunt + AMD Alcista</td>
+      <td>AMD bajista activo · tendencia bajista fuerte</td>
+    </tr>
+    <tr>
+      <td class="white">💫 Shooting Star</td>
+      <td class="yellow">★★★★</td>
+      <td class="red">Bajista</td>
+      <td>SMC OB Bajista + IPDA Premium + SES Judas</td>
+      <td>Discount extremo · AMD alcista</td>
+    </tr>
+    <tr>
+      <td class="white">🟢 Marubozu Alc.</td>
+      <td class="yellow">★★★★★</td>
+      <td class="green">Alcista</td>
+      <td>SKD Alcista + AMD Alcista = Tendencia real</td>
+      <td>IPDA Premium extremo · BOS bajista previo</td>
+    </tr>
+    <tr>
+      <td class="white">🔴 Marubozu Baj.</td>
+      <td class="yellow">★★★★★</td>
+      <td class="red">Bajista</td>
+      <td>SKD Bajista + AMD Bajista = Tendencia real</td>
+      <td>IPDA Discount extremo · CHoCH alcista</td>
+    </tr>
+    <tr>
+      <td class="white">➕ Doji</td>
+      <td class="yellow">★★</td>
+      <td class="yellow">Neutro</td>
+      <td>Sirve como confirmación solo · Esperar siguiente vela</td>
+      <td>Doji + Doji = NO operar nunca</td>
+    </tr>
+    <tr>
+      <td class="white">🪝 Hanging Man</td>
+      <td class="yellow">★★★</td>
+      <td class="red">Bajista</td>
+      <td>CMD Fake Alcista + IPDA Premium</td>
+      <td>Discount · AMD alcista</td>
+    </tr>
+  </table>
+
+  <h3 class="sub-title">⭐⭐ Patrones de 2-3 Velas — Más poderosos</h3>
+
+  <table>
+    <tr>
+      <th>Patrón</th>
+      <th>Score</th>
+      <th>Dirección</th>
+      <th>Mejor confluencia</th>
+    </tr>
+    <tr>
+      <td class="white">🔄 Engulfing Alcista</td>
+      <td class="yellow">★★★★★</td>
+      <td class="green">Alcista</td>
+      <td>AMD Distribución Alcista + SKD Alcista · Setup institucional</td>
+    </tr>
+    <tr>
+      <td class="white">🔄 Engulfing Bajista</td>
+      <td class="yellow">★★★★★</td>
+      <td class="red">Bajista</td>
+      <td>AMD Distribución Bajista + SKD Bajista · Setup institucional</td>
+    </tr>
+    <tr>
+      <td class="white">⭐ Morning Star</td>
+      <td class="yellow">★★★★★</td>
+      <td class="green">Alcista</td>
+      <td>IPDA Discount + LIQ SSL + CRT Alcista · Reversión de alta confianza</td>
+    </tr>
+    <tr>
+      <td class="white">⭐ Evening Star</td>
+      <td class="yellow">★★★★★</td>
+      <td class="red">Bajista</td>
+      <td>IPDA Premium + LIQ BSL + SES Judas · Reversión de alta confianza</td>
+    </tr>
+    <tr>
+      <td class="white">💪 3 Soldados Blancos</td>
+      <td class="yellow">★★★★</td>
+      <td class="green">Alcista</td>
+      <td>SMC BOS Alcista + IPDA Discount · Continuación fuerte</td>
+    </tr>
+    <tr>
+      <td class="white">🐦 3 Cuervos Negros</td>
+      <td class="yellow">★★★★</td>
+      <td class="red">Bajista</td>
+      <td>SMC BOS Bajista + IPDA Premium · Continuación fuerte</td>
+    </tr>
+    <tr>
+      <td class="white">📌 Tweezer Bottom</td>
+      <td class="yellow">★★★</td>
+      <td class="green">Alcista</td>
+      <td>LIQ Equal Lows + SKD Alcista · Doble suelo con sweep</td>
+    </tr>
+    <tr>
+      <td class="white">📌 Tweezer Top</td>
+      <td class="yellow">★★★</td>
+      <td class="red">Bajista</td>
+      <td>LIQ Equal Highs + SKD Bajista · Doble techo con sweep</td>
+    </tr>
+  </table>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     CONFLUENCIAS
+═══════════════════════════════════════════════════════════ -->
+<section id="confluencia">
+  <h2 class="section-title">🔗 Tabla de Confluencias — Combos Ganadores</h2>
+
+  <p>Cuantos más indicadores apunten en la misma dirección, mayor es la probabilidad. Aquí están los combos más potentes:</p>
+
+  <h3 class="sub-title">🏆 Combos de MÁXIMA probabilidad (4+ confluencias)</h3>
+
+  <div class="combo">
+    <div class="combo-header">
+      <span class="combo-score">🥇</span>
+      <span class="combo-name">El Setup Institucional Completo</span>
+      <span class="combo-dir"><span class="badge green">ALCISTA</span></span>
+    </div>
+    <p>IPDA Discount + Judas Swing bajista (SES) + SKD Alcista + AMD Distribución alcista + Hammer/Morning Star · <strong style="color:var(--yellow)">Probabilidad: 80%+</strong></p>
+  </div>
+
+  <div class="combo">
+    <div class="combo-header">
+      <span class="combo-score">🥇</span>
+      <span class="combo-name">El Short Institucional Completo</span>
+      <span class="combo-dir"><span class="badge red">BAJISTA</span></span>
+    </div>
+    <p>IPDA Premium + Judas Swing alcista (SES) + SKD Bajista + AMD Distribución bajista + Shooting Star/Evening Star · <strong style="color:var(--yellow)">Probabilidad: 80%+</strong></p>
+  </div>
+
+  <div class="combo">
+    <div class="combo-header">
+      <span class="combo-score">🥈</span>
+      <span class="combo-name">Reversión SMC Clásica</span>
+      <span class="combo-dir"><span class="badge green">ALCISTA</span></span>
+    </div>
+    <p>CHoCH Alcista (SMC) + Order Block alcista + LIQ SSL cazado + Engulfing alcista ★★★★★ · <strong style="color:var(--yellow)">Probabilidad: 72-78%</strong></p>
+  </div>
+
+  <div class="combo">
+    <div class="combo-header">
+      <span class="combo-score">🥈</span>
+      <span class="combo-name">CRT + SKD Poderoso</span>
+      <span class="combo-dir"><span class="badge green">ALCISTA / BAJISTA</span></span>
+    </div>
+    <p>CRT vela base + SKD sweep confirmado + Marubozu en dirección del sweep + AMD confirmando · <strong style="color:var(--yellow)">Probabilidad: 70-76%</strong></p>
+  </div>
+
+  <div class="combo">
+    <div class="combo-header">
+      <span class="combo-score">🥉</span>
+      <span class="combo-name">AMD + Vela de Confirmación</span>
+      <span class="combo-dir"><span class="badge yellow">ALCISTA / BAJISTA</span></span>
+    </div>
+    <p>AMD Distribución confirmada + vela ★★★★ o más en dirección de distribución · <strong style="color:var(--yellow)">Probabilidad: 62-68%</strong></p>
+  </div>
+
+  <h3 class="sub-title">⚠️ Combos a EVITAR — Señales contradictorias</h3>
+
+  <div class="card red">
+    <h4>❌ Señales que se contradicen</h4>
+    <p>• Hammer + AMD bajista activo = contradicción — NO operar</p>
+    <p>• Marubozu alcista + IPDA Premium extremo = riesgo alto — reducir tamaño</p>
+    <p>• BOS alcista + CHoCH bajista en mismo TF = indecisión — esperar</p>
+    <p>• Doji + Doji seguidos + rango CMD = máxima indecisión — alejarse</p>
+    <p>• Vela alcista contra tendencia macro bajista sin confluencia = evitar</p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     EJEMPLOS PRÁCTICOS
+═══════════════════════════════════════════════════════════ -->
+<section id="ejemplos">
+  <h2 class="section-title">📚 Ejemplos Prácticos — De la Teoría a la Acción</h2>
+
+  <h3 class="sub-title">Ejemplo 1 — Long de Novato (solo CRT + VELAS)</h3>
+  <div class="setup-box">
+    <h4>Escenario: XAU/USD 4H — Hammer en zona 0.618 CRT</h4>
+    <div class="setup-row"><span class="setup-label">Situación</span><span class="setup-val">Precio bajó al 0.618 de la vela base del día anterior</span></div>
+    <div class="setup-row"><span class="setup-label">P-01 CRT dice</span><span class="setup-val green">Alcista · Hammer detectado · Validez 65%</span></div>
+    <div class="setup-row"><span class="setup-label">P-09 VELAS</span><span class="setup-val yellow">Hammer ★★★★</span></div>
+    <div class="setup-row"><span class="setup-label">Entrada</span><span class="setup-val green">Cierre de la vela Hammer</span></div>
+    <div class="setup-row"><span class="setup-label">SL</span><span class="setup-val red">Bajo del Hammer − 5 puntos</span></div>
+    <div class="setup-row"><span class="setup-label">TP1</span><span class="setup-val yellow">Fibo 1.27 de la vela base (P-01 lo muestra)</span></div>
+    <div class="setup-row"><span class="setup-label">TP2</span><span class="setup-val yellow">Fibo 1.38 de la vela base</span></div>
+    <div class="setup-row"><span class="setup-label">RR</span><span class="setup-val green">1:2.5</span></div>
+  </div>
+
+  <h3 class="sub-title">Ejemplo 2 — Long Intermedio (AMD + LIQ + VELAS)</h3>
+  <div class="setup-box">
+    <h4>Escenario: BTC/USDT 1H — Después de sweep de SSL</h4>
+    <div class="setup-row"><span class="setup-label">P-03 AMD</span><span class="setup-val orange">Fase: Manipulación Bajista → Distribución ALCISTA esperada</span></div>
+    <div class="setup-row"><span class="setup-label">P-04 LIQ</span><span class="setup-val green">Stop Hunt Alcista confirmado · SSL en 42,000 cazado</span></div>
+    <div class="setup-row"><span class="setup-label">P-02 SKD</span><span class="setup-val green">SKD Alcista · Regreso al rango confirmado</span></div>
+    <div class="setup-row"><span class="setup-label">P-09 VELAS</span><span class="setup-val yellow">Engulfing Alcista ★★★★★</span></div>
+    <div class="setup-row"><span class="setup-label">Entrada</span><span class="setup-val green">Cierre del Engulfing</span></div>
+    <div class="setup-row"><span class="setup-label">SL</span><span class="setup-val red">Por debajo del SSL cazado (42,000 − buffer)</span></div>
+    <div class="setup-row"><span class="setup-label">TP1</span><span class="setup-val yellow">Alto del rango de acumulación AMD</span></div>
+    <div class="setup-row"><span class="setup-label">TP2</span><span class="setup-val yellow">Fibo 1.27 del rango AMD</span></div>
+    <div class="setup-row"><span class="setup-label">TP3</span><span class="setup-val yellow">BSL más cercano (zona de stops de shorts)</span></div>
+    <div class="setup-row"><span class="setup-label">RR</span><span class="setup-val green">1:4</span></div>
+  </div>
+
+  <h3 class="sub-title">Ejemplo 3 — Short Pro (7 confluencias)</h3>
+  <div class="setup-box">
+    <h4>Escenario: XAU/USD 1H — Londres Judas Swing alcista</h4>
+    <div class="setup-row"><span class="setup-label">P-08 IPDA</span><span class="setup-val red">Premium 78% del rango 40D — precio caro</span></div>
+    <div class="setup-row"><span class="setup-label">P-07 SES</span><span class="setup-val red">Judas Swing Bajista · Sesión Londres</span></div>
+    <div class="setup-row"><span class="setup-label">P-05 SMC</span><span class="setup-val red">Order Block Bajista en zona del Judas + BOS bajista</span></div>
+    <div class="setup-row"><span class="setup-label">P-04 LIQ</span><span class="setup-val red">BSL cazado · Buy Side Liquidez sweepada</span></div>
+    <div class="setup-row"><span class="setup-label">P-03 AMD</span><span class="setup-val red">Fake Alcista detectado → Distribución BAJISTA</span></div>
+    <div class="setup-row"><span class="setup-label">P-02 SKD</span><span class="setup-val red">SKD Bajista · Regreso al rango</span></div>
+    <div class="setup-row"><span class="setup-label">P-01 CRT</span><span class="setup-val red">Shooting Star en Fibo 1.27 CRT</span></div>
+    <div class="setup-row"><span class="setup-label">Confluencias</span><span class="setup-val yellow">7/7 ← Máxima confluencia</span></div>
+    <div class="setup-row"><span class="setup-label">Entrada</span><span class="setup-val red">Cierre de la vela de confirmación bajista</span></div>
+    <div class="setup-row"><span class="setup-label">SL</span><span class="setup-val red">Por encima del máximo del Judas Swing</span></div>
+    <div class="setup-row"><span class="setup-label">TP1</span><span class="setup-val yellow">SSL más cercano</span></div>
+    <div class="setup-row"><span class="setup-label">TP2</span><span class="setup-val yellow">Bajo del rango Asia</span></div>
+    <div class="setup-row"><span class="setup-label">TP3</span><span class="setup-val yellow">Fibo -1.27 del rango CRT</span></div>
+    <div class="setup-row"><span class="setup-label">RR</span><span class="setup-val green">1:6 estimado</span></div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     GESTIÓN DE RIESGO
+═══════════════════════════════════════════════════════════ -->
+<section id="riesgo">
+  <h2 class="section-title">🛡️ Gestión de Riesgo — La Base de Todo</h2>
+
+  <div class="alert danger">
+    🚨 <strong>Sin gestión de riesgo, ningún indicador te hará ganador.</strong> Un trader con 50% de acierto y buena gestión de riesgo gana dinero. Un trader con 70% de acierto y mala gestión de riesgo pierde dinero.
+  </div>
+
+  <h3 class="sub-title">📏 Reglas fundamentales de riesgo</h3>
+
+  <div class="grid-2">
+    <div class="card yellow">
+      <h4>Regla del 1-2% por operación</h4>
+      <p>Nunca arriesgues más del 1-2% de tu capital total en una sola operación. Si tienes $1,000, tu pérdida máxima por trade es $10-20. Esto te permite sobrevivir rachas perdedoras largas.</p>
+    </div>
+    <div class="card green">
+      <h4>RR mínimo 1:2</h4>
+      <p>Si arriesgas $10, tu target mínimo es $20. Con RR 1:2 puedes ganar dinero incluso siendo correcto solo el 40% de las veces. Con los setups PSYCHOMETRIKS busca 1:3 o más.</p>
+    </div>
+    <div class="card purple">
+      <h4>Tamaño de posición escalable</h4>
+      <p>Más confluencias = mayor tamaño. 2 confluencias = 0.5% riesgo. 4 confluencias = 1% riesgo. 6+ confluencias = 1.5-2% riesgo. Nunca más del 2%.</p>
+    </div>
+    <div class="card cyan">
+      <h4>Breakeven después de TP1</h4>
+      <p>Cuando el precio llegue a TP1, mueve el SL a tu precio de entrada (breakeven). Así nunca conviertes un ganador en perdedor. Deja correr el resto hacia TP2 y TP3.</p>
+    </div>
+  </div>
+
+  <h3 class="sub-title">📊 Escala de riesgo según confluencias</h3>
+
+  <table>
+    <tr>
+      <th>Confluencias</th>
+      <th>Probabilidad</th>
+      <th>Riesgo % capital</th>
+      <th>RR objetivo</th>
+    </tr>
+    <tr>
+      <td class="gray">1-2</td>
+      <td class="red">Baja (&lt;55%)</td>
+      <td class="red">0% — No operar</td>
+      <td class="gray">—</td>
+    </tr>
+    <tr>
+      <td class="yellow">3</td>
+      <td class="yellow">Media (55-65%)</td>
+      <td class="yellow">0.5%</td>
+      <td class="yellow">1:2 mínimo</td>
+    </tr>
+    <tr>
+      <td class="green">4-5</td>
+      <td class="green">Alta (65-75%)</td>
+      <td class="green">1%</td>
+      <td class="green">1:3 objetivo</td>
+    </tr>
+    <tr>
+      <td class="purple">6+</td>
+      <td class="purple">Muy alta (&gt;75%)</td>
+      <td class="purple">1.5-2%</td>
+      <td class="purple">1:4 a 1:6</td>
+    </tr>
+  </table>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SESIONES
+═══════════════════════════════════════════════════════════ -->
+<section id="sesiones">
+  <h2 class="section-title">🕐 Cuándo Usar Cada Indicador por Sesión</h2>
+
+  <h3 class="sub-title">🌏 Sesión Asia (02:00 – 09:00 UTC)</h3>
+  <div class="grid-3">
+    <div class="card cyan"><h4>✅ Usar</h4><p>P-08 IPDA (definir sesgo del día) · P-01 CRT (identificar rango) · P-04 LIQ (marcar niveles)</p></div>
+    <div class="card yellow"><h4>⚠️ Con cuidado</h4><p>P-03 AMD (acumulación en progreso) · P-05 SMC (estructuras formándose)</p></div>
+    <div class="card red"><h4>❌ Evitar</h4><p>No operar durante Asia generalmente. Muy poca volatilidad. Solo observar y preparar el plan.</p></div>
+  </div>
+
+  <h3 class="sub-title">🇬🇧 Sesión Londres (08:00 – 16:00 UTC)</h3>
+  <div class="grid-3">
+    <div class="card green"><h4>✅ Usar activamente</h4><p>P-07 SES (Judas Swing al inicio) · P-03 AMD (manipulación) · P-04 LIQ (stop hunts) · P-05 SMC (BOS/CHoCH)</p></div>
+    <div class="card cyan"><h4>✅ Complementar</h4><p>P-01 CRT (confirmación) · P-09 VELAS (entrada) · P-02 SKD (sweep)</p></div>
+    <div class="card yellow"><h4>⚠️ Momento clave</h4><p>Los primeros 30-60 minutos de Londres son los más manipulados. El Judas Swing suele ocurrir aquí.</p></div>
+  </div>
+
+  <h3 class="sub-title">🗽 Sesión Nueva York (13:00 – 21:00 UTC)</h3>
+  <div class="grid-3">
+    <div class="card green"><h4>✅ Usar activamente</h4><p>Todos los indicadores activos. Es la sesión de mayor volumen y movimientos más limpios.</p></div>
+    <div class="card purple"><h4>✅ Momento ideal</h4><p>P-06 CMD (rangos intradiarios) · P-05 SMC (estructura clara) · P-08 IPDA (entrega de precio)</p></div>
+    <div class="card yellow"><h4>⚠️ Cuidado</h4><p>Evitar los últimos 30 minutos antes del cierre (20:30-21:00 UTC). Movimientos erráticos de cierre.</p></div>
+  </div>
+
+  <hr>
+
+  <div class="alert success" style="margin-top:20px">
+    🏆 <strong>Resumen final del Trader Pro PSYCHOMETRIKS:</strong>
+    1. Define el sesgo macro con IPDA (P-08) en 4H/Diario →
+    2. Identifica la fase AMD (P-03) en 1H →
+    3. Ubica la liquidez (P-04) y espera el hunt →
+    4. Confirma con SMC (P-05) Order Block + BOS/CHoCH →
+    5. Valida el timing con SES (P-07) Judas Swing →
+    6. Espera vela de confirmación ★★★★+ (P-09) →
+    7. Revisa CRT (P-01) para los targets Fibo →
+    8. Opera con RR mínimo 1:3 y máximo 1-2% de riesgo
+  </div>
+</section>
+
+</div><!-- end container -->
+
+<!-- FOOTER -->
+<footer>
+  <strong>PSYCHOMETRIKS PROBABILITY SERIES</strong> · P-01 CRT · P-02 SKD · P-03 AMD · P-04 LIQ · P-05 SMC · P-06 CMD · P-07 SES · P-08 IPDA · P-09 VELAS<br>
+  <span style="margin-top:8px; display:block">⚠️ Solo educativo. No es asesoría financiera. Gestiona siempre tu riesgo. PSY © 2025</span>
+</footer>
+
+</body>
+</html>

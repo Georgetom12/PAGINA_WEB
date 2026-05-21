@@ -1,0 +1,38 @@
+PSY SCORE PÚBLICO
+Una URL pública psychometriks.trade/score que muestra el número 0-100 en tiempo real. La gente lo comparte en Twitter todos los días. Marketing gratis.
+3. ALERTA TELEGRAM AUTOMÁTICA
+Cuando el Score PSY baja de 30 o sube de 80, el bot manda alerta automática al canal. La gente espera esas alertas como señales sagradas.
+
+💰 NIVEL 2 — Monetización directa
+4. CERTIFICADO PSY DIGITAL
+Cuando un alumno completa los 8 niveles del aula, recibe un certificado PDF con su nombre, fecha y código único verificable. Compartible en LinkedIn. Marketing viral gratis.
+5. CHALLENGE 30 DÍAS
+Reto público: 30 días usando los indicadores PSY con diario de trades. El que gana recibe 1 mes gratis. Genera comunidad y contenido.
+6. AFFILIATE PROGRAM
+Cada miembro tiene un link único. Si trae un nuevo suscriptor, recibe 30% de comisión. Automatizado con Railway.
+
+🚀 NIVEL 3 — Lo que nadie tiene en crypto latino
+7. PSY MARKET HOURS
+Página que muestra qué sesión de mercado está activa AHORA (Asia, Londres, NY) con el horario de Guayaquil, el volumen esperado y qué pares conviene operar en cada sesión.
+8. PSY REPLAY
+Reproducís momentos históricos clave de BTC — el crash de FTX, el bottom de 2022, el ATH de 2021 — con tus indicadores encima mostrando qué decían en ese momento. Educativo y viral.
+9. WHALE ALERT DASHBOARD
+Conectado a Whale Alert API + Telegram. Muestra en tiempo real las transacciones grandes con impacto estimado en el precio según tu metodología.
+10. PSY JOURNAL IA
+El trader registra sus trades diarios. Al final de la semana Claude genera un reporte psicológico: "Tu mayor error esta semana fue entrar en FOMO — 3 de tus 5 pérdidas fueron en las primeras 2 horas de la sesión de NY".
+
+🌍 NIVEL 4 — Expansión del ecosistema
+11. PSYCHOMETRIKS EN INGLÉS
+La misma plataforma pero en inglés. Mercado 10x más grande. Claude traduce todo automáticamente.
+12. API PÚBLICA PSY
+Desarrolladores pueden consultar el Score PSY via API por $9/mes. Los traders lo integran en sus propios bots.
+13. PSY MOBILE APP
+App iOS/Android con notificaciones push cuando el Score cambia, alertas de liquidación, y acceso al aula. Con React Native es rápido.
+14. PSYCHOMETRIKS LIVE
+Stream semanal automatizado donde Claude analiza el mercado en vivo con tus indicadores y lo publica en YouTube/TikTok automáticamente.
+
+🤯 NIVEL GOD — El futuro
+15. PSY COPY TRADING
+Los miembros Elite pueden conectar su Bybit y copiar automáticamente las señales del bot Railway. Revenue share del PnL.
+16. PSYCHOMETRIKS TOKEN
+Token propio que da acceso a la plataforma, staking para descuentos, y governance. Largo plazo pero brutal.

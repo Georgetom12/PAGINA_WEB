@@ -1,0 +1,98 @@
+.aula-info-box {
+  padding: 16px 20px;
+  border-left: 3px solid;
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+.aula-info-box .info-label {
+  font-family: 'Orbitron', monospace;
+  font-size: 11px;
+  letter-spacing: 2px;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+.aula-info-box.key   { background: rgba(0,229,255,0.06); border-color: #00e5ff; color: #00e5ff; }
+.aula-info-box.warn  { background: rgba(255,215,0,0.06); border-color: #ffd700; color: #ffd700; }
+.aula-info-box.tip   { background: rgba(0,230,118,0.06); border-color: #00e676; color: #00e676; }
+.aula-info-box.danger{ background: rgba(255,23,68,0.06); border-color: #ff1744; color: #ff1744; }
+.aula-info-box.pro   { background: rgba(224,64,251,0.06); border-color: #e040fb; color: #e040fb; }
+
+.aula-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 13px;
+  margin-bottom: 20px;
+}
+.aula-data-table th {
+  background: #0f1820;
+  border: 1px solid #243040;
+  padding: 10px 14px;
+  text-align: left;
+  color: #00e5ff;
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.aula-data-table td {
+  border: 1px solid #1a2a3a;
+  padding: 10px 14px;
+  color: #b0bec5;
+  background: #060a0f;
+}
+.aula-data-table tr:nth-child(even) td { background: #0a1018; }
+.aula-data-table tr:hover td { background: rgba(0,229,255,0.04); }
+
+.aula-formula-box {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 15px;
+  background: linear-gradient(135deg, #0f1820, #080d14);
+  border: 1px solid #243040;
+  border-left: 3px solid #00e5ff;
+  padding: 20px 24px;
+  color: #00e5ff;
+  letter-spacing: 1px;
+  margin-bottom: 20px;
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+}
+.aula-formula-box::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, #00e5ff, transparent);
+}
+
+.aula-fade-in {
+  animation: aulaFadeIn 0.4s ease;
+}
+@keyframes aulaFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.aula-module-card:hover {
+  border-color: #00e5ff !important;
+  transform: translateY(-2px);
+}
+
+.aula-level-header-btn:hover {
+  background: rgba(255,255,255,0.04) !important;
+}
+
+@media (max-width: 768px) {
+  .aula-mobile-topbar { display: flex !important; }
+  .aula-mobile-overlay { display: block !important; }
+  .aula-sidebar {
+    position: fixed !important;
+    left: -280px;
+    transition: left 0.25s ease;
+    height: 100vh;
+    z-index: 50;
+  }
+  .aula-sidebar.open {
+    left: 0;
+  }
+}

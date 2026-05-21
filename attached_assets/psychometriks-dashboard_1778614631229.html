@@ -1,0 +1,2221 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PSYCHOMETRIKS — Command Center</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #020408;
+    --bg2: #060d14;
+    --bg3: #0a1520;
+    --panel: #0d1b2a;
+    --border: #0f3460;
+    --border2: #1a4a7a;
+    --accent: #00d4ff;
+    --accent2: #00ff88;
+    --accent3: #ff6b35;
+    --accent4: #c084fc;
+    --red: #ff3b5c;
+    --gold: #fbbf24;
+    --text: #c8d8e8;
+    --text2: #6b8fa8;
+    --text3: #3a5a7a;
+    --glow: 0 0 20px rgba(0,212,255,0.3);
+    --glow2: 0 0 20px rgba(0,255,136,0.3);
+    --glow-red: 0 0 20px rgba(255,59,92,0.3);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* SCANLINES */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* GRID BACKGROUND */
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* HEADER */
+  .header {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(6,13,20,0.95);
+    backdrop-filter: blur(10px);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-icon {
+    width: 36px;
+    height: 36px;
+    border: 1.5px solid var(--accent);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--glow);
+    animation: pulse-border 3s infinite;
+  }
+
+  @keyframes pulse-border {
+    0%, 100% { box-shadow: 0 0 10px rgba(0,212,255,0.3); }
+    50% { box-shadow: 0 0 25px rgba(0,212,255,0.7); }
+  }
+
+  .logo-icon svg { width: 20px; height: 20px; }
+
+  .logo-text {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 18px;
+    font-weight: 900;
+    letter-spacing: 3px;
+    color: var(--accent);
+    text-shadow: 0 0 20px rgba(0,212,255,0.5);
+  }
+
+  .logo-sub {
+    font-size: 10px;
+    color: var(--text2);
+    letter-spacing: 2px;
+    margin-top: 2px;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .live-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--accent2);
+    letter-spacing: 2px;
+  }
+
+  .live-dot {
+    width: 7px;
+    height: 7px;
+    background: var(--accent2);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--accent2);
+    animation: blink 1.5s infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.2; }
+  }
+
+  .clock {
+    font-size: 13px;
+    color: var(--text2);
+    letter-spacing: 1px;
+  }
+
+  /* NAV TABS */
+  .nav {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    gap: 0;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .nav::-webkit-scrollbar { display: none; }
+
+  .nav-tab {
+    padding: 12px 24px;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--text2);
+    cursor: pointer;
+    border-right: 1px solid var(--border);
+    transition: all 0.2s;
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    border-top: none;
+    border-left: none;
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  .nav-tab:hover { color: var(--accent); background: rgba(0,212,255,0.05); }
+  .nav-tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+    background: rgba(0,212,255,0.08);
+    text-shadow: 0 0 10px rgba(0,212,255,0.5);
+  }
+
+  /* MAIN LAYOUT */
+  .main {
+    position: relative;
+    z-index: 1;
+    padding: 20px 24px;
+  }
+
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* PANELS */
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0.5;
+  }
+
+  .panel-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--text2);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .panel-title::before {
+    content: '';
+    display: block;
+    width: 3px;
+    height: 12px;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+  }
+
+  /* GRID LAYOUTS */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; }
+  .stack { display: flex; flex-direction: column; gap: 16px; }
+
+  /* ============================================
+     SECTION 1: OVERVIEW DASHBOARD
+  ============================================ */
+
+  .overview-layout {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    grid-template-rows: auto auto;
+    gap: 16px;
+  }
+
+  /* FEAR & GREED GAUGE */
+  .gauge-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 0;
+  }
+
+  .gauge-svg { overflow: visible; }
+
+  .gauge-value {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 52px;
+    font-weight: 900;
+    text-anchor: middle;
+    fill: var(--accent);
+    filter: drop-shadow(0 0 15px rgba(0,212,255,0.6));
+  }
+
+  .gauge-label-main {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 13px;
+    text-anchor: middle;
+    letter-spacing: 3px;
+    font-weight: 700;
+  }
+
+  .gauge-label-sub {
+    font-size: 10px;
+    text-anchor: middle;
+    fill: #6b8fa8;
+    letter-spacing: 2px;
+  }
+
+  /* METRICS ROW */
+  .metric-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 14px;
+  }
+
+  .metric-label {
+    font-size: 10px;
+    color: var(--text2);
+    letter-spacing: 2px;
+    margin-bottom: 6px;
+  }
+
+  .metric-value {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+  }
+
+  .metric-change {
+    font-size: 12px;
+    margin-top: 4px;
+  }
+
+  .up { color: var(--accent2); }
+  .down { color: var(--red); }
+  .neutral { color: var(--text2); }
+
+  /* MINI CHART */
+  .mini-chart {
+    width: 100%;
+    height: 60px;
+    margin-top: 8px;
+  }
+
+  /* SIGNAL FEED */
+  .signal-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(15,52,96,0.5);
+    font-size: 12px;
+  }
+
+  .signal-item:last-child { border-bottom: none; }
+
+  .signal-badge {
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    min-width: 48px;
+    text-align: center;
+  }
+
+  .badge-long { background: rgba(0,255,136,0.15); color: var(--accent2); border: 1px solid rgba(0,255,136,0.3); }
+  .badge-short { background: rgba(255,59,92,0.15); color: var(--red); border: 1px solid rgba(255,59,92,0.3); }
+  .badge-neutral { background: rgba(107,143,168,0.15); color: var(--text2); border: 1px solid rgba(107,143,168,0.3); }
+
+  .signal-pair { color: var(--accent); font-weight: 700; min-width: 70px; }
+  .signal-info { flex: 1; color: var(--text2); font-size: 11px; }
+  .signal-time { color: var(--text3); font-size: 10px; }
+  .signal-score { font-family: 'Orbitron', sans-serif; font-size: 13px; font-weight: 700; }
+
+  /* ============================================
+     SECTION 2: MARKET SCANNER
+  ============================================ */
+
+  .scanner-header {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .filter-btn {
+    padding: 6px 14px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text2);
+    border-radius: 4px;
+    font-size: 11px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    font-family: 'Share Tech Mono', monospace;
+    transition: all 0.2s;
+  }
+
+  .filter-btn:hover, .filter-btn.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(0,212,255,0.08);
+  }
+
+  .scanner-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .scanner-table th {
+    text-align: left;
+    padding: 8px 12px;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--text2);
+    border-bottom: 1px solid var(--border);
+    font-family: 'Orbitron', sans-serif;
+    cursor: pointer;
+  }
+
+  .scanner-table th:hover { color: var(--accent); }
+
+  .scanner-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(15,52,96,0.3);
+    vertical-align: middle;
+  }
+
+  .scanner-table tr:hover td { background: rgba(0,212,255,0.04); }
+
+  .coin-name { display: flex; align-items: center; gap: 8px; }
+  .coin-icon {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--accent);
+  }
+
+  .score-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .score-bar {
+    flex: 1;
+    height: 4px;
+    background: var(--bg3);
+    border-radius: 2px;
+    overflow: hidden;
+    max-width: 80px;
+  }
+
+  .score-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 1s ease;
+  }
+
+  .signal-pill {
+    padding: 3px 10px;
+    border-radius: 99px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    display: inline-block;
+  }
+
+  /* ============================================
+     SECTION 3: PORTFOLIO
+  ============================================ */
+
+  .portfolio-layout {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 16px;
+  }
+
+  .donut-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    position: relative;
+  }
+
+  .donut-center {
+    position: absolute;
+    text-align: center;
+  }
+
+  .donut-total {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  .donut-label {
+    font-size: 10px;
+    color: var(--text2);
+    letter-spacing: 2px;
+  }
+
+  .position-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(15,52,96,0.4);
+    font-size: 12px;
+  }
+
+  .position-row:last-child { border-bottom: none; }
+
+  .pos-color { width: 4px; height: 36px; border-radius: 2px; flex-shrink: 0; }
+  .pos-name { font-weight: 700; color: var(--accent); min-width: 60px; }
+  .pos-details { flex: 1; color: var(--text2); font-size: 11px; line-height: 1.6; }
+  .pos-pnl { text-align: right; }
+  .pos-pnl .amount { font-family: 'Orbitron', sans-serif; font-size: 14px; font-weight: 700; }
+  .pos-pnl .pct { font-size: 11px; margin-top: 2px; }
+
+  .add-position {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+  }
+
+  .input-field {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: 'Share Tech Mono', monospace;
+    outline: none;
+    flex: 1;
+    min-width: 80px;
+    transition: border-color 0.2s;
+  }
+
+  .input-field:focus { border-color: var(--accent); }
+  .input-field::placeholder { color: var(--text3); }
+
+  .btn-primary {
+    padding: 8px 16px;
+    background: rgba(0,212,255,0.1);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    border-radius: 4px;
+    font-size: 11px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    font-family: 'Share Tech Mono', monospace;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .btn-primary:hover {
+    background: rgba(0,212,255,0.2);
+    box-shadow: var(--glow);
+  }
+
+  /* ============================================
+     SECTION 4: PSY AI
+  ============================================ */
+
+  .ai-layout {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 16px;
+    height: calc(100vh - 180px);
+  }
+
+  .chat-wrap {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+    background: var(--bg2);
+    border-radius: 6px 6px 0 0;
+    border: 1px solid var(--border);
+    border-bottom: none;
+    min-height: 0;
+  }
+
+  .chat-messages::-webkit-scrollbar { width: 4px; }
+  .chat-messages::-webkit-scrollbar-track { background: transparent; }
+  .chat-messages::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  .msg {
+    max-width: 85%;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .msg-user {
+    align-self: flex-end;
+    background: rgba(0,212,255,0.1);
+    border: 1px solid rgba(0,212,255,0.3);
+    color: var(--text);
+  }
+
+  .msg-ai {
+    align-self: flex-start;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  .msg-ai-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    font-family: 'Orbitron', sans-serif;
+  }
+
+  .typing-indicator {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    padding: 14px 16px;
+  }
+
+  .typing-dot {
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: typing 1.2s infinite;
+  }
+
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes typing {
+    0%, 80%, 100% { opacity: 0.3; transform: scale(1); }
+    40% { opacity: 1; transform: scale(1.3); }
+  }
+
+  .chat-input-wrap {
+    display: flex;
+    gap: 8px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 0 0 6px 6px;
+    padding: 12px;
+  }
+
+  .chat-input {
+    flex: 1;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 14px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: 'Share Tech Mono', monospace;
+    outline: none;
+    resize: none;
+    height: 44px;
+    transition: border-color 0.2s;
+  }
+
+  .chat-input:focus { border-color: var(--accent); }
+  .chat-input::placeholder { color: var(--text3); }
+
+  .send-btn {
+    padding: 10px 18px;
+    background: rgba(0,212,255,0.15);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 1px;
+    transition: all 0.2s;
+    align-self: flex-start;
+  }
+
+  .send-btn:hover { background: rgba(0,212,255,0.25); box-shadow: var(--glow); }
+  .send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .ai-sidebar { display: flex; flex-direction: column; gap: 12px; }
+
+  .quick-btn {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    padding: 10px 14px;
+    border-radius: 4px;
+    font-size: 11px;
+    cursor: pointer;
+    font-family: 'Share Tech Mono', monospace;
+    transition: all 0.2s;
+    line-height: 1.4;
+  }
+
+  .quick-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(0,212,255,0.06);
+  }
+
+  .quick-btn .q-tag {
+    font-size: 9px;
+    color: var(--accent4);
+    letter-spacing: 1px;
+    display: block;
+    margin-bottom: 3px;
+    font-family: 'Orbitron', sans-serif;
+  }
+
+  /* ============================================
+     SECTION 5: LIQUIDATIONS
+  ============================================ */
+
+  .liq-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .liq-chart-area {
+    position: relative;
+    background: var(--bg2);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .price-line {
+    position: absolute;
+    left: 0; right: 0;
+    height: 2px;
+    background: var(--gold);
+    box-shadow: 0 0 10px var(--gold);
+    z-index: 5;
+    transition: top 0.5s ease;
+  }
+
+  .price-label {
+    position: absolute;
+    right: 8px;
+    background: var(--gold);
+    color: #000;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 3px;
+    z-index: 6;
+    transform: translateY(-50%);
+    font-family: 'Orbitron', sans-serif;
+    transition: top 0.5s ease;
+    white-space: nowrap;
+  }
+
+  .liq-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 3px 8px;
+    position: relative;
+    font-size: 11px;
+  }
+
+  .liq-price {
+    width: 70px;
+    text-align: right;
+    color: var(--text2);
+    font-size: 10px;
+    flex-shrink: 0;
+  }
+
+  .liq-bar-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 16px;
+  }
+
+  .liq-bar-long {
+    height: 12px;
+    background: rgba(0,255,136,0.5);
+    border-radius: 0 2px 2px 0;
+    position: relative;
+    transition: width 1s ease;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 4px;
+  }
+
+  .liq-bar-short {
+    height: 12px;
+    background: rgba(255,59,92,0.5);
+    border-radius: 2px 0 0 2px;
+    position: relative;
+    transition: width 1s ease;
+    display: flex;
+    align-items: center;
+    padding-left: 4px;
+  }
+
+  .liq-val {
+    font-size: 9px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .liq-legend {
+    display: flex;
+    gap: 20px;
+    font-size: 11px;
+    padding: 0 8px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text2);
+  }
+
+  .legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 2px;
+  }
+
+  /* SCROLL ANIMATION */
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .section.active { animation: slideIn 0.3s ease; }
+
+  /* RESPONSIVE */
+  @media (max-width: 900px) {
+    .overview-layout { grid-template-columns: 1fr; }
+    .portfolio-layout { grid-template-columns: 1fr; }
+    .ai-layout { grid-template-columns: 1fr; height: auto; }
+    .grid-4 { grid-template-columns: 1fr 1fr; }
+    .grid-2 { grid-template-columns: 1fr; }
+  }
+
+  /* SCROLLBAR GLOBAL */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* LOADING SHIMMER */
+  @keyframes shimmer {
+    0% { opacity: 0.5; }
+    50% { opacity: 1; }
+    100% { opacity: 0.5; }
+  }
+  .loading { animation: shimmer 1.5s infinite; }
+
+  /* TOOLTIP */
+  [data-tip] { position: relative; cursor: help; }
+  [data-tip]::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: 110%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+    z-index: 100;
+  }
+  [data-tip]:hover::after { opacity: 1; }
+
+  /* OVERVIEW FULL LAYOUT */
+  .overview-full {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    grid-template-rows: auto auto;
+    gap: 16px;
+  }
+
+  .fg-panel { grid-row: 1 / 3; }
+
+  .metrics-panel { }
+  .signals-panel { }
+
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="10,2 18,7 18,13 10,18 2,13 2,7" stroke="#00d4ff" stroke-width="1.5" fill="none"/>
+        <polygon points="10,5 15,8 15,12 10,15 5,12 5,8" stroke="#00d4ff" stroke-width="0.8" fill="rgba(0,212,255,0.15)"/>
+        <circle cx="10" cy="10" r="2" fill="#00d4ff"/>
+      </svg>
+    </div>
+    <div>
+      <div class="logo-text">PSYCHOMETRIKS</div>
+      <div class="logo-sub">COMMAND CENTER v1.0</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="live-badge">
+      <div class="live-dot"></div>
+      LIVE
+    </div>
+    <div class="clock" id="clock">--:--:--</div>
+  </div>
+</header>
+
+<!-- NAV -->
+<nav class="nav">
+  <button class="nav-tab active" onclick="showSection('overview', this)">◈ MACRO BTC</button>
+  <button class="nav-tab" onclick="showSection('scanner', this)">⊞ SCANNER</button>
+  <button class="nav-tab" onclick="showSection('portfolio', this)">◎ PORTFOLIO</button>
+  <button class="nav-tab" onclick="showSection('liq', this)">⚡ OI TRACKER</button>
+  <button class="nav-tab" onclick="showSection('ai', this)">✦ PSY AI</button>
+</nav>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- ============================
+       MACRO BTC DASHBOARD
+  ============================ -->
+  <section class="section active" id="s-overview">
+
+    <!-- ROW 1: Price strip -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px;">
+      <div class="panel" style="padding:12px 16px;">
+        <div class="metric-label">BTC/USDT</div>
+        <div style="display:flex;align-items:baseline;gap:8px;margin-top:4px;">
+          <div class="metric-value" id="btc-price" style="font-size:26px;color:var(--accent)">--</div>
+        </div>
+        <div class="metric-change" id="btc-change" style="margin-top:3px;">--</div>
+      </div>
+      <div class="panel" style="padding:12px 16px;">
+        <div class="metric-label">ETH/USDT</div>
+        <div style="margin-top:4px;"><div class="metric-value" id="eth-price" style="font-size:26px;color:var(--accent4)">--</div></div>
+        <div class="metric-change" id="eth-change" style="margin-top:3px;">--</div>
+      </div>
+      <div class="panel" style="padding:12px 16px;">
+        <div class="metric-label">XAU/USD</div>
+        <div style="margin-top:4px;"><div class="metric-value" id="xau-price" style="font-size:26px;color:var(--gold)">--</div></div>
+        <div class="metric-change" id="xau-change" style="margin-top:3px;">--</div>
+      </div>
+      <div class="panel" style="padding:12px 16px;">
+        <div class="metric-label">TOTAL MCAP</div>
+        <div style="margin-top:4px;"><div class="metric-value" id="total-mcap" style="font-size:22px;color:var(--accent2)">--</div></div>
+        <div class="metric-change" id="mcap-change" style="margin-top:3px;">--</div>
+      </div>
+    </div>
+
+    <!-- ROW 2: Elliott + Wyckoff + Niveles + Macro -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px;">
+
+      <!-- ELLIOTT WAVE -->
+      <div class="panel">
+        <div class="panel-title">ELLIOTT WAVE — BTC</div>
+        <div style="position:relative;height:160px;margin-bottom:10px;">
+          <canvas id="elliott-canvas" width="300" height="160" style="width:100%;height:160px;"></canvas>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:8px;">
+            <div class="metric-label" style="font-size:9px;">ONDA ACTUAL</div>
+            <div id="ew-wave" style="font-family:'Orbitron',sans-serif;font-size:20px;font-weight:700;color:var(--accent2);margin-top:2px;">--</div>
+          </div>
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:8px;">
+            <div class="metric-label" style="font-size:9px;">ESTRUCTURA</div>
+            <div id="ew-struct" style="font-size:12px;color:var(--accent4);margin-top:4px;line-height:1.4;">--</div>
+          </div>
+        </div>
+        <div style="margin-top:8px;font-size:11px;">
+          <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(15,52,96,0.4);">
+            <span style="color:var(--text2);">Target extensión</span>
+            <span id="ew-target" style="color:var(--accent2);font-family:'Orbitron',sans-serif;font-size:11px;">--</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;">
+            <span style="color:var(--text2);">Invalidación</span>
+            <span id="ew-invalid" style="color:var(--red);font-family:'Orbitron',sans-serif;font-size:11px;">--</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- WYCKOFF -->
+      <div class="panel">
+        <div class="panel-title">WYCKOFF — FASE ACTUAL</div>
+        <div id="wyckoff-diagram" style="position:relative;height:160px;margin-bottom:10px;">
+          <canvas id="wyckoff-canvas" width="300" height="160" style="width:100%;height:160px;"></canvas>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:8px;">
+            <div class="metric-label" style="font-size:9px;">FASE</div>
+            <div id="wy-phase" style="font-family:'Orbitron',sans-serif;font-size:14px;font-weight:700;color:var(--gold);margin-top:2px;">--</div>
+          </div>
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:8px;">
+            <div class="metric-label" style="font-size:9px;">EVENTO</div>
+            <div id="wy-event" style="font-size:11px;color:var(--accent4);margin-top:3px;line-height:1.4;">--</div>
+          </div>
+        </div>
+        <div style="margin-top:8px;font-size:11px;">
+          <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(15,52,96,0.4);">
+            <span style="color:var(--text2);">Composite Man</span>
+            <span id="wy-cm" style="color:var(--accent);font-size:11px;">--</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;">
+            <span style="color:var(--text2);">Próximo evento</span>
+            <span id="wy-next" style="color:var(--accent2);font-size:11px;">--</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- NIVELES CLAVE -->
+      <div class="panel">
+        <div class="panel-title">NIVELES CLAVE BTC</div>
+        <div id="key-levels" style="font-size:12px;">
+          <div style="color:var(--text3);padding:20px;text-align:center;">Cargando...</div>
+        </div>
+        <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
+          <div class="metric-label" style="margin-bottom:6px;">PSY BIAS</div>
+          <div id="macro-bias" style="display:flex;align-items:center;gap:10px;">
+            <div id="bias-bar" style="flex:1;height:8px;background:var(--bg3);border-radius:4px;overflow:hidden;">
+              <div id="bias-fill" style="height:100%;border-radius:4px;width:50%;transition:width 1s ease;"></div>
+            </div>
+            <span id="bias-label" style="font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;min-width:60px;">--</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW 3: Macro indicators -->
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px;">
+      <div class="metric-card" data-tip="Porcentaje de supply de BTC en ganancia no realizada">
+        <div class="metric-label">NUPL</div>
+        <div class="metric-value" id="m-nupl" style="font-size:18px;">--</div>
+        <div id="nupl-zone" style="font-size:10px;margin-top:3px;letter-spacing:1px;">--</div>
+      </div>
+      <div class="metric-card" data-tip="Market Value vs Realized Value ratio">
+        <div class="metric-label">MVRV</div>
+        <div class="metric-value" id="m-mvrv" style="font-size:18px;">--</div>
+        <div id="mvrv-zone" style="font-size:10px;margin-top:3px;letter-spacing:1px;">--</div>
+      </div>
+      <div class="metric-card" data-tip="Funding rate promedio todas las exchanges">
+        <div class="metric-label">FUNDING AVG</div>
+        <div class="metric-value" id="m-funding" style="font-size:18px;">--</div>
+        <div id="funding-zone" style="font-size:10px;margin-top:3px;">--</div>
+      </div>
+      <div class="metric-card" data-tip="Dominancia de Bitcoin en el mercado total">
+        <div class="metric-label">BTC DOM</div>
+        <div class="metric-value" id="btc-dom" style="font-size:18px;color:var(--accent)">--</div>
+        <div id="dom-trend" style="font-size:10px;margin-top:3px;color:var(--text2);">--</div>
+      </div>
+      <div class="metric-card" data-tip="Altcoin Season Index">
+        <div class="metric-label">ALT SEASON</div>
+        <div class="metric-value" id="alt-season" style="font-size:18px;color:var(--accent4)">--</div>
+        <div id="alt-trend" style="font-size:10px;margin-top:3px;color:var(--text2);">--</div>
+      </div>
+    </div>
+
+    <!-- ROW 4: Signal Feed -->
+    <div class="panel">
+      <div class="panel-title" style="justify-content:space-between;">
+        SEÑALES PSYCHOMETRIKS — LIVE FEED
+        <span id="feed-timestamp" style="font-size:10px;color:var(--text3);font-family:'Share Tech Mono',monospace;letter-spacing:0;">actualizado hace --s</span>
+      </div>
+      <div id="signal-feed" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+        <div style="color:var(--text3);font-size:12px;padding:10px;grid-column:1/-1;">Cargando señales...</div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ============================
+       SCANNER
+  ============================ -->
+  <section class="section" id="s-scanner">
+    <div class="panel">
+      <div class="panel-title">PSY MARKET SCANNER</div>
+      <div class="scanner-header">
+        <button class="filter-btn active" onclick="filterScanner('all',this)">TODOS</button>
+        <button class="filter-btn" onclick="filterScanner('buy',this)">LONG ▲</button>
+        <button class="filter-btn" onclick="filterScanner('sell',this)">SHORT ▼</button>
+        <button class="filter-btn" onclick="filterScanner('neutral',this)">NEUTRAL</button>
+        <button class="filter-btn" onclick="refreshScanner()" style="margin-left:auto;">↺ REFRESH</button>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="scanner-table">
+          <thead>
+            <tr>
+              <th onclick="sortScanner('name')">#  PAR</th>
+              <th onclick="sortScanner('price')">PRECIO</th>
+              <th onclick="sortScanner('change')">24H %</th>
+              <th onclick="sortScanner('volume')">VOLUMEN</th>
+              <th onclick="sortScanner('score')">PSY SCORE</th>
+              <th>RSI</th>
+              <th>SEÑAL</th>
+            </tr>
+          </thead>
+          <tbody id="scanner-tbody">
+            <tr><td colspan="7" style="text-align:center;color:var(--text3);padding:30px;">Cargando datos...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================
+       PORTFOLIO
+  ============================ -->
+  <section class="section" id="s-portfolio">
+    <div class="portfolio-layout">
+      <div class="stack">
+        <div class="panel">
+          <div class="panel-title">MIS POSICIONES</div>
+          <div id="positions-list"></div>
+          <div class="add-position" style="margin-top:14px;border-top:1px solid var(--border);padding-top:14px;">
+            <input class="input-field" id="pos-coin" placeholder="PAR (ej: BTC)" style="max-width:90px;">
+            <input class="input-field" id="pos-qty" placeholder="CANTIDAD" type="number">
+            <input class="input-field" id="pos-entry" placeholder="ENTRADA $" type="number">
+            <button class="btn-primary" onclick="addPosition()">+ AGREGAR</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">PnL RESUMEN</div>
+          <div class="grid-3">
+            <div class="metric-card">
+              <div class="metric-label">TOTAL INVERTIDO</div>
+              <div class="metric-value" id="total-invested" style="font-size:18px;color:var(--text)">$0</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">VALOR ACTUAL</div>
+              <div class="metric-value" id="total-current" style="font-size:18px;color:var(--accent)">$0</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">PnL TOTAL</div>
+              <div class="metric-value" id="total-pnl" style="font-size:18px;">$0</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">DISTRIBUCIÓN</div>
+        <div class="donut-wrap" style="height:220px;">
+          <svg id="donut-svg" width="200" height="200" viewBox="0 0 200 200">
+            <circle cx="100" cy="100" r="70" fill="none" stroke="#0d1b2a" stroke-width="30"/>
+            <text id="donut-total-text" x="100" y="95" text-anchor="middle" font-family="'Orbitron',sans-serif" font-size="16" font-weight="700" fill="#00d4ff">$0</text>
+            <text x="100" y="112" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9" fill="#6b8fa8" letter-spacing="1">PORTFOLIO</text>
+          </svg>
+        </div>
+        <div id="portfolio-legend" style="margin-top:8px;"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================
+       OI TRACKER
+  ============================ -->
+  <section class="section" id="s-liq">
+    <div style="display:flex;flex-direction:column;gap:14px;">
+
+      <!-- TOP ROW: OI summary cards -->
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;">
+        <div class="metric-card">
+          <div class="metric-label">OI TOTAL BTC</div>
+          <div class="metric-value" id="oi-total" style="font-size:18px;color:var(--accent)">--</div>
+          <div id="oi-total-chg" class="metric-change" style="margin-top:3px;">--</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">LONG/SHORT RATIO</div>
+          <div class="metric-value" id="ls-ratio" style="font-size:18px;">--</div>
+          <div id="ls-bias" style="font-size:10px;margin-top:3px;letter-spacing:1px;">--</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">FUNDING GLOBAL</div>
+          <div class="metric-value" id="oi-funding" style="font-size:18px;">--</div>
+          <div id="oi-funding-note" style="font-size:10px;margin-top:3px;color:var(--text2);">--</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">LIQUIDACIONES 24H</div>
+          <div class="metric-value" id="oi-liqs" style="font-size:18px;color:var(--red)">--</div>
+          <div id="oi-liqs-side" style="font-size:10px;margin-top:3px;">--</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">OI DOMINANTE</div>
+          <div class="metric-value" id="oi-dom-ex" style="font-size:14px;color:var(--gold)">--</div>
+          <div id="oi-dom-pct" style="font-size:10px;margin-top:3px;color:var(--text2);">--</div>
+        </div>
+      </div>
+
+      <!-- MAIN: OI per exchange + L/S ratio bars -->
+      <div style="display:grid;grid-template-columns:1fr 380px;gap:14px;">
+
+        <!-- OI BY EXCHANGE CHART -->
+        <div class="panel">
+          <div class="panel-title" style="justify-content:space-between;">
+            OI POR EXCHANGE — BTC PERPS
+            <div style="display:flex;gap:8px;align-items:center;">
+              <button class="filter-btn" id="oi-btn-usd" onclick="setOiMode('usd',this)" style="padding:4px 10px;font-size:10px;" class="active">USD</button>
+              <button class="filter-btn" id="oi-btn-btc" onclick="setOiMode('btc',this)" style="padding:4px 10px;font-size:10px;">BTC</button>
+            </div>
+          </div>
+          <div id="oi-exchange-bars" style="display:flex;flex-direction:column;gap:6px;margin-top:4px;"></div>
+        </div>
+
+        <!-- LONG/SHORT RATIO + FUNDING HEATMAP -->
+        <div style="display:flex;flex-direction:column;gap:14px;">
+
+          <div class="panel">
+            <div class="panel-title">LONG / SHORT RATIO</div>
+            <div id="ls-bars" style="display:flex;flex-direction:column;gap:8px;margin-top:4px;"></div>
+          </div>
+
+          <div class="panel" style="flex:1;">
+            <div class="panel-title">FUNDING RATES — EXCHANGES</div>
+            <div id="funding-list" style="display:flex;flex-direction:column;gap:5px;"></div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- BOTTOM: OI Trend Sparklines -->
+      <div class="panel">
+        <div class="panel-title">TENDENCIA OI — ÚLTIMAS 24H (SIMULADO)</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
+          <div>
+            <div style="font-size:10px;color:var(--text2);letter-spacing:1px;margin-bottom:4px;">BINANCE</div>
+            <canvas id="spark-binance" width="200" height="50" style="width:100%;height:50px;"></canvas>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--text2);letter-spacing:1px;margin-bottom:4px;">BYBIT</div>
+            <canvas id="spark-bybit" width="200" height="50" style="width:100%;height:50px;"></canvas>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--text2);letter-spacing:1px;margin-bottom:4px;">OKX</div>
+            <canvas id="spark-okx" width="200" height="50" style="width:100%;height:50px;"></canvas>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--text2);letter-spacing:1px;margin-bottom:4px;">DERIBIT</div>
+            <canvas id="spark-deribit" width="200" height="50" style="width:100%;height:50px;"></canvas>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============================
+       PSY AI
+  ============================ -->
+  <section class="section" id="s-ai">
+    <div class="ai-layout">
+
+      <div class="chat-wrap">
+        <div class="chat-messages" id="chat-messages">
+          <div class="msg msg-ai">
+            <div class="msg-ai-header">
+              <svg width="12" height="12" viewBox="0 0 20 20" fill="none">
+                <polygon points="10,2 18,7 18,13 10,18 2,13 2,7" stroke="#00d4ff" stroke-width="1.5" fill="rgba(0,212,255,0.2)"/>
+              </svg>
+              PSY AI — ONLINE
+            </div>
+            Hola trader. Soy PSY AI, tu analista de trading cuantitativo potenciado por PSYCHOMETRIKS.<br><br>
+            Puedo analizar setups usando <span style="color:var(--accent4)">Elliott Wave + Wyckoff</span>, darte un <span style="color:var(--accent2)">score de confluencia</span>, evaluar tus SL/TP, y mucho más.<br><br>
+            ¿Qué quieres analizar hoy?
+          </div>
+        </div>
+        <div class="chat-input-wrap">
+          <textarea class="chat-input" id="chat-input" placeholder="Describe tu setup... ej: BTC en 4H, ruptura de rango, busco long con SL en 102k..." onkeydown="handleKey(event)"></textarea>
+          <button class="send-btn" id="send-btn" onclick="sendMessage()">ENVIAR ↗</button>
+        </div>
+      </div>
+
+      <div class="ai-sidebar">
+        <div class="panel">
+          <div class="panel-title">ANÁLISIS RÁPIDO</div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <button class="quick-btn" onclick="quickPrompt('Analiza BTC en el contexto actual de mercado usando Elliott Wave. ¿Estamos en wave 3 o ya iniciamos corrección? Dame niveles clave.')">
+              <span class="q-tag">ELLIOTT WAVE</span>
+              Análisis BTC Elliott Wave actual
+            </button>
+            <button class="quick-btn" onclick="quickPrompt('Según Wyckoff, ¿en qué fase está BTC ahora? ¿Acumulación, distribución, markup o markdown? Dame niveles de Composite Man.')">
+              <span class="q-tag">WYCKOFF</span>
+              Fase Wyckoff BTC actual
+            </button>
+            <button class="quick-btn" onclick="quickPrompt('Evalúa el setup: long BTC en zona de soporte, RSI oversold en 4H, divergencia alcista en MACD. ¿Qué score de confluencia PSYCHOMETRIKS le das del 0-100?')">
+              <span class="q-tag">CONFLUENCIA</span>
+              Score de confluencia setup
+            </button>
+            <button class="quick-btn" onclick="quickPrompt('¿Cuáles son las zonas de liquidación más importantes para BTC en las próximas 24-48h? ¿Qué niveles son magnéticos para el precio?')">
+              <span class="q-tag">LIQUIDACIONES</span>
+              Zonas de liquidación BTC
+            </button>
+            <button class="quick-btn" onclick="quickPrompt('Estoy en pérdida en una posición. Precio entré en X y está en Y. ¿Cómo aplico gestión de riesgo PSYCHOMETRIKS? ¿Cierra, mantiene o promedia?')">
+              <span class="q-tag">RISK MGT</span>
+              Gestión de riesgo posición
+            </button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">PSY SCORE ENGINE</div>
+          <div style="font-size:11px;color:var(--text2);line-height:1.8;">
+            <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding:4px 0;">
+              <span>Elliott Wave</span><span style="color:var(--accent)">×1.5</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding:4px 0;">
+              <span>Wyckoff Phase</span><span style="color:var(--accent)">×1.3</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding:4px 0;">
+              <span>RSI + MACD</span><span style="color:var(--accent)">×1.0</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding:4px 0;">
+              <span>Volume Profile</span><span style="color:var(--accent)">×1.2</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:4px 0;">
+              <span>Macro / OI</span><span style="color:var(--accent)">×1.4</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+</main>
+
+<script>
+// ========================
+// CLOCK
+// ========================
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent =
+    now.toUTCString().slice(17, 25) + ' UTC';
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ========================
+// NAV
+// ========================
+function showSection(id, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('s-' + id).classList.add('active');
+  btn.classList.add('active');
+  if (id === 'scanner') buildScanner();
+  if (id === 'liq') buildLiqMap();
+  if (id === 'portfolio') updatePortfolio();
+}
+
+// ========================
+// MARKET DATA — COINBASE/BINANCE PUBLIC
+// ========================
+let prices = { BTC: 0, ETH: 0, XAU: 3300 };
+let changes = { BTC: 0, ETH: 0, XAU: 0 };
+
+async function fetchPrices() {
+  try {
+    const r = await fetch('https://api.binance.com/api/v3/ticker/24hr?symbols=["BTCUSDT","ETHUSDT","SOLUSDT","BNBUSDT","AVAXUSDT","DOTUSDT","LINKUSDT","NEARUSDT","APTUSDT","ARBUSDT"]');
+    const data = await r.json();
+
+    data.forEach(d => {
+      const sym = d.symbol.replace('USDT','');
+      const price = parseFloat(d.lastPrice);
+      const chg = parseFloat(d.priceChangePercent);
+      if (sym === 'BTC') { prices.BTC = price; changes.BTC = chg; }
+      if (sym === 'ETH') { prices.ETH = price; changes.ETH = chg; }
+    });
+
+    updateOverviewPrices(data);
+    updateScannerData(data);
+    updatePortfolioPrices(data);
+    if (document.getElementById('s-liq').classList.contains('active')) buildOITracker(data);
+  } catch(e) {
+    console.log('Price fetch error', e);
+  }
+}
+
+function fmt(n, decimals=2) {
+  if (n >= 1e9) return '$' + (n/1e9).toFixed(2) + 'B';
+  if (n >= 1e6) return '$' + (n/1e6).toFixed(2) + 'M';
+  if (n >= 1e3) return '$' + n.toLocaleString('en-US', {maximumFractionDigits: decimals});
+  return '$' + n.toFixed(decimals);
+}
+
+function fmtPrice(n) {
+  if (n >= 1000) return '$' + n.toLocaleString('en-US', {maximumFractionDigits:0});
+  if (n >= 1) return '$' + n.toFixed(2);
+  return '$' + n.toFixed(5);
+}
+
+function updateOverviewPrices(data) {
+  const btc = data.find(d=>d.symbol==='BTCUSDT');
+  const eth = data.find(d=>d.symbol==='ETHUSDT');
+
+  if (btc) {
+    document.getElementById('btc-price').textContent = fmtPrice(parseFloat(btc.lastPrice));
+    const c = parseFloat(btc.priceChangePercent);
+    const el = document.getElementById('btc-change');
+    el.textContent = (c >= 0 ? '▲ +' : '▼ ') + c.toFixed(2) + '%';
+    el.className = 'metric-change ' + (c >= 0 ? 'up' : 'down');
+  }
+  if (eth) {
+    document.getElementById('eth-price').textContent = fmtPrice(parseFloat(eth.lastPrice));
+    const c = parseFloat(eth.priceChangePercent);
+    const el = document.getElementById('eth-change');
+    el.textContent = (c >= 0 ? '▲ +' : '▼ ') + c.toFixed(2) + '%';
+    el.className = 'metric-change ' + (c >= 0 ? 'up' : 'down');
+  }
+
+  // XAU simulated
+  const xauBase = 3318 + (Math.random()-0.5)*8;
+  document.getElementById('xau-price').textContent = '$' + xauBase.toFixed(2);
+  document.getElementById('xau-change').textContent = '▲ +0.31%';
+  document.getElementById('xau-change').className = 'metric-change up';
+
+  // Total MCAP simulated
+  if (btc) {
+    const mcap = parseFloat(btc.lastPrice) * 19.7e6;
+    document.getElementById('total-mcap').textContent = '$' + (mcap/1e12).toFixed(2) + 'T';
+    const mcapC = parseFloat(btc.priceChangePercent);
+    const mcapEl = document.getElementById('mcap-change');
+    mcapEl.textContent = (mcapC >= 0 ? '▲ +' : '▼ ') + mcapC.toFixed(2) + '%';
+    mcapEl.className = 'metric-change ' + (mcapC >= 0 ? 'up' : 'down');
+  }
+
+  updateMacroBTC(data);
+  updateMacroIndicators(data);
+  updateSignalFeed(data);
+}
+
+// ========================
+// MACRO BTC DASHBOARD
+// ========================
+function updateMacroBTC(data) {
+  const btc = data.find(d=>d.symbol==='BTCUSDT');
+  if (!btc) return;
+  const p = parseFloat(btc.lastPrice);
+  const chg = parseFloat(btc.priceChangePercent);
+
+  // --- ELLIOTT WAVE ---
+  // Determine wave context based on price action simulation
+  let wave, struct, target, invalid;
+  if (chg > 3) {
+    wave = '③'; struct = 'Impulso\nAlcista'; target = '$' + Math.round(p * 1.062).toLocaleString(); invalid = '$' + Math.round(p * 0.961).toLocaleString();
+  } else if (chg > 1) {
+    wave = '①'; struct = 'Inicio\nImpulso'; target = '$' + Math.round(p * 1.038).toLocaleString(); invalid = '$' + Math.round(p * 0.978).toLocaleString();
+  } else if (chg > -1) {
+    wave = '④'; struct = 'Corrección\nTriángulo'; target = '$' + Math.round(p * 1.025).toLocaleString(); invalid = '$' + Math.round(p * 0.962).toLocaleString();
+  } else if (chg > -3) {
+    wave = 'B'; struct = 'Rebote\nABC'; target = '$' + Math.round(p * 1.015).toLocaleString(); invalid = '$' + Math.round(p * 0.945).toLocaleString();
+  } else {
+    wave = 'C'; struct = 'Caída\nABC'; target = '$' + Math.round(p * 0.94).toLocaleString(); invalid = '$' + Math.round(p * 1.025).toLocaleString();
+  }
+
+  document.getElementById('ew-wave').textContent = wave;
+  document.getElementById('ew-struct').textContent = struct.replace('\n',' / ');
+  document.getElementById('ew-target').textContent = target;
+  document.getElementById('ew-invalid').textContent = invalid;
+  drawElliottCanvas(p, chg);
+
+  // --- WYCKOFF ---
+  let phase, event, cm, next;
+  const vol = parseFloat(btc.quoteVolume);
+  if (chg > 4) {
+    phase = 'MARKUP'; event = 'SOS confirmado'; cm = 'Distribuyendo posiciones'; next = 'UTAD probable';
+  } else if (chg > 1.5) {
+    phase = 'MARKUP'; event = 'LPS activo'; cm = 'Acelerando compras'; next = 'Extensión wave';
+  } else if (chg > -1) {
+    phase = 'RE-ACC.'; event = 'Spring / Test'; cm = 'Absorbiendo selling'; next = 'SOS o Breakdown';
+  } else if (chg > -3) {
+    phase = 'DIST.'; event = 'UTAD en proceso'; cm = 'Distribuyendo lentamente'; next = 'LPSY confirmación';
+  } else {
+    phase = 'MARKDOWN'; event = 'LPSY activo'; cm = 'Liquidando posiciones'; next = 'Creek support test';
+  }
+  document.getElementById('wy-phase').textContent = phase;
+  document.getElementById('wy-event').textContent = event;
+  document.getElementById('wy-cm').textContent = cm;
+  document.getElementById('wy-next').textContent = next;
+  drawWyckoffCanvas(phase);
+
+  // --- KEY LEVELS ---
+  const s1 = Math.round(p * 0.978);
+  const s2 = Math.round(p * 0.952);
+  const s3 = Math.round(p * 0.921);
+  const r1 = Math.round(p * 1.022);
+  const r2 = Math.round(p * 1.048);
+  const r3 = Math.round(p * 1.078);
+  const poc = Math.round(p * (chg > 0 ? 0.991 : 1.009));
+
+  document.getElementById('key-levels').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:3px;">
+      ${[
+        {label:'R3',val:r3,color:'#ff3b5c',type:'res'},
+        {label:'R2',val:r2,color:'#ff6b35',type:'res'},
+        {label:'R1',val:r1,color:'#fbbf24',type:'res'},
+        {label:'POC',val:poc,color:'#c084fc',type:'poc'},
+        {label:'PRECIO',val:Math.round(p),color:'#00d4ff',type:'cur'},
+        {label:'S1',val:s1,color:'#00ff88',type:'sup'},
+        {label:'S2',val:s2,color:'#00cc66',type:'sup'},
+        {label:'S3',val:s3,color:'#009944',type:'sup'},
+      ].map(l => `
+        <div style="display:flex;align-items:center;gap:6px;padding:3px 6px;border-radius:3px;background:${l.type==='cur'?'rgba(0,212,255,0.08)':'transparent'};${l.type==='cur'?'border:1px solid rgba(0,212,255,0.2);':''}">
+          <span style="font-size:9px;min-width:36px;color:${l.color};font-family:'Orbitron',sans-serif;letter-spacing:1px;">${l.label}</span>
+          <div style="flex:1;height:1px;background:${l.color};opacity:${l.type==='cur'?0.8:0.3};"></div>
+          <span style="font-family:'Orbitron',sans-serif;font-size:11px;color:${l.color};font-weight:${l.type==='cur'?'700':'400'};">$${l.val.toLocaleString()}</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+
+  // Bias bar
+  const bias = Math.max(10, Math.min(90, 50 + chg * 5));
+  document.getElementById('bias-fill').style.width = bias + '%';
+  document.getElementById('bias-fill').style.background = bias > 60 ? 'linear-gradient(90deg,#00ff88,#00d4ff)' : bias < 40 ? 'linear-gradient(90deg,#ff3b5c,#ff6b35)' : 'linear-gradient(90deg,#fbbf24,#ff6b35)';
+  document.getElementById('bias-label').textContent = bias > 60 ? 'ALCISTA' : bias < 40 ? 'BAJISTA' : 'NEUTRAL';
+  document.getElementById('bias-label').style.color = bias > 60 ? 'var(--accent2)' : bias < 40 ? 'var(--red)' : 'var(--gold)';
+}
+
+function drawElliottCanvas(price, chg) {
+  const canvas = document.getElementById('elliott-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  const isUp = chg > -1;
+  const pts = isUp
+    ? [[0,120],[40,60],[60,90],[100,20],[130,55],[160,10],[200,40],[240,30],[280,45]]
+    : [[0,30],[40,80],[70,50],[110,130],[140,90],[180,145],[220,110],[260,140],[300,155]];
+
+  // Wave lines
+  ctx.beginPath();
+  ctx.strokeStyle = isUp ? '#00ff88' : '#ff3b5c';
+  ctx.lineWidth = 1.5;
+  ctx.shadowColor = isUp ? '#00ff88' : '#ff3b5c';
+  ctx.shadowBlur = 6;
+  pts.forEach(([x,y],i) => i===0 ? ctx.moveTo(x*W/300,y*H/160) : ctx.lineTo(x*W/300,y*H/160));
+  ctx.stroke();
+
+  // Wave labels
+  const labels = isUp ? ['0','①','②','③','④','⑤','A','B','C'] : ['0','A','B','C','①','②','③','④','⑤'];
+  ctx.shadowBlur = 0;
+  pts.forEach(([x,y],i) => {
+    ctx.fillStyle = i===3||i===5 ? '#00d4ff' : i===6||i===8 ? '#ff6b35' : '#6b8fa8';
+    ctx.font = `bold 10px 'Share Tech Mono'`;
+    ctx.fillText(labels[i], x*W/300-4, y*H/160 - 5);
+  });
+
+  // Current price line
+  const curY = isUp ? 30 : 140;
+  ctx.setLineDash([3,3]);
+  ctx.strokeStyle = '#fbbf24';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, curY); ctx.lineTo(W, curY); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#fbbf24';
+  ctx.font = '9px Share Tech Mono';
+  ctx.fillText('PRECIO', 4, curY - 3);
+}
+
+function drawWyckoffCanvas(phase) {
+  const canvas = document.getElementById('wyckoff-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  const phases = { 'MARKUP':4, 'RE-ACC.':3, 'DIST.':5, 'MARKDOWN':6, '①':2 };
+  const stage = phases[phase] || 3;
+
+  // Draw a simplified Wyckoff schematic
+  const pts = [
+    [0,120],[30,115],[50,130],[70,90],[90,125],[120,80],[150,70],[180,55],[220,30],[260,20],[290,25]
+  ];
+
+  ctx.beginPath();
+  ctx.strokeStyle = '#00d4ff';
+  ctx.lineWidth = 1.5;
+  ctx.shadowColor = '#00d4ff';
+  ctx.shadowBlur = 4;
+  pts.forEach(([x,y],i) => i===0?ctx.moveTo(x*W/300,y*H/140):ctx.lineTo(x*W/300,y*H/140));
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // Fill under
+  ctx.beginPath();
+  pts.forEach(([x,y],i) => i===0?ctx.moveTo(x*W/300,y*H/140):ctx.lineTo(x*W/300,y*H/140));
+  ctx.lineTo(W,H); ctx.lineTo(0,H); ctx.closePath();
+  ctx.fillStyle = 'rgba(0,212,255,0.05)';
+  ctx.fill();
+
+  // Phase zones
+  const zones = [
+    {x:0,w:90,label:'ACC',color:'rgba(0,255,136,0.15)'},
+    {x:90,w:90,label:'MARKUP',color:'rgba(0,212,255,0.10)'},
+    {x:180,w:120,label:'DIST',color:'rgba(255,107,53,0.12)'},
+  ];
+  zones.forEach(z => {
+    ctx.fillStyle = z.color;
+    ctx.fillRect(z.x*W/300,0,z.w*W/300,H);
+    ctx.fillStyle = '#3a5a7a';
+    ctx.font = '8px Share Tech Mono';
+    ctx.fillText(z.label, z.x*W/300+3, H-4);
+  });
+
+  // Current marker
+  const stageX = [0,40,100,150,200,240,270][Math.min(stage,6)];
+  const stageY = pts[Math.min(stage,pts.length-1)][1];
+  ctx.beginPath();
+  ctx.arc(stageX*W/300, stageY*H/140, 5, 0, Math.PI*2);
+  ctx.fillStyle = '#fbbf24';
+  ctx.fill();
+  ctx.shadowColor = '#fbbf24';
+  ctx.shadowBlur = 10;
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = '#fbbf24';
+  ctx.font = 'bold 9px Share Tech Mono';
+  ctx.fillText('◄ AQUÍ', stageX*W/300+7, stageY*H/140+4);
+}
+
+function updateMacroIndicators(data) {
+  const btc = data.find(d=>d.symbol==='BTCUSDT');
+  if (!btc) return;
+  const chg = parseFloat(btc.priceChangePercent);
+  const vol = parseFloat(btc.quoteVolume);
+
+  // NUPL simulated (0.6 = optimism/greed zone in bull market)
+  const nupl = (0.52 + chg * 0.02).toFixed(2);
+  const nuplEl = document.getElementById('m-nupl');
+  nuplEl.textContent = nupl;
+  nuplEl.style.color = nupl > 0.6 ? 'var(--red)' : nupl > 0.4 ? 'var(--accent2)' : 'var(--gold)';
+  document.getElementById('nupl-zone').textContent = nupl > 0.75 ? 'EUFORIA' : nupl > 0.5 ? 'CODICIA' : nupl > 0.25 ? 'ESPERANZA' : 'CAPITULACIÓN';
+  document.getElementById('nupl-zone').style.color = nupl > 0.6 ? 'var(--red)' : 'var(--accent2)';
+
+  // MVRV
+  const mvrv = (2.1 + chg * 0.08).toFixed(2);
+  const mvrvEl = document.getElementById('m-mvrv');
+  mvrvEl.textContent = mvrv + 'x';
+  mvrvEl.style.color = mvrv > 3.5 ? 'var(--red)' : mvrv > 2 ? 'var(--accent2)' : 'var(--gold)';
+  document.getElementById('mvrv-zone').textContent = mvrv > 3.5 ? 'SOBRECOMPRADO' : mvrv > 2 ? 'BULL MARKET' : 'JUSTO';
+  document.getElementById('mvrv-zone').style.color = mvrv > 3.5 ? 'var(--red)' : 'var(--accent2)';
+
+  // Funding
+  const funding = (chg * 0.012).toFixed(4);
+  const fundEl = document.getElementById('m-funding');
+  fundEl.textContent = (funding > 0 ? '+' : '') + funding + '%';
+  fundEl.style.color = funding > 0.05 ? 'var(--red)' : funding < -0.02 ? 'var(--accent2)' : 'var(--gold)';
+  document.getElementById('funding-zone').textContent = funding > 0.05 ? 'Longs pagando caro' : funding < 0 ? 'Shorts pagando' : 'Equilibrado';
+  document.getElementById('funding-zone').style.color = 'var(--text2)';
+
+  // BTC Dom
+  document.getElementById('btc-dom').textContent = '54.2%';
+  document.getElementById('dom-trend').textContent = '▲ +0.4% 7d';
+
+  // Alt season
+  const altScore = Math.max(0, Math.min(100, Math.round(40 + chg * 3)));
+  document.getElementById('alt-season').textContent = altScore;
+  document.getElementById('alt-trend').textContent = altScore > 75 ? '🔥 ALT SEASON' : altScore > 50 ? 'Altcoins activas' : 'BTC dominando';
+}
+
+// ========================
+// SIGNAL FEED (card grid)
+// ========================
+function updateSignalFeed(data) {
+  const feed = document.getElementById('signal-feed');
+  const ts = document.getElementById('feed-timestamp');
+  if (ts) ts.textContent = 'actualizado hace 0s';
+
+  const signals = data.slice(0,6).map(d => {
+    const sym = d.symbol.replace('USDT','');
+    const chg = parseFloat(d.priceChangePercent);
+    const vol = parseFloat(d.quoteVolume);
+    const rsi = Math.max(20,Math.min(85,50+chg*2.5+(Math.random()-0.5)*12));
+    const score = Math.min(100,Math.max(0,Math.round(50+chg*4+(vol>30e9?8:0)+(rsi>70?-8:rsi<30?8:0))));
+    let sig, sigColor, sigBg;
+    if (score > 65) { sig='LONG ▲'; sigColor='var(--accent2)'; sigBg='rgba(0,255,136,0.1)'; }
+    else if (score < 35) { sig='SHORT ▼'; sigColor='var(--red)'; sigBg='rgba(255,59,92,0.1)'; }
+    else { sig='WAIT ◌'; sigColor='var(--text2)'; sigBg='rgba(107,143,168,0.08)'; }
+
+    const mins = Math.floor(Math.random()*20);
+    return `<div style="background:${sigBg};border:1px solid ${score>65?'rgba(0,255,136,0.2)':score<35?'rgba(255,59,92,0.2)':'rgba(15,52,96,0.6)'};border-radius:6px;padding:10px 12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span style="color:var(--accent);font-weight:700;font-size:13px;">${sym}/USDT</span>
+        <span style="font-size:10px;color:${sigColor};font-family:'Orbitron',sans-serif;font-weight:700;letter-spacing:1px;">${sig}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:6px;">
+        <span>24h: <span class="${chg>=0?'up':'down'}">${chg>=0?'+':''}${chg.toFixed(2)}%</span></span>
+        <span>RSI: <span style="color:${rsi>70?'var(--red)':rsi<30?'var(--accent2)':'var(--text)'}">${Math.round(rsi)}</span></span>
+        <span style="color:var(--text3);">${mins}m ago</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <div style="flex:1;height:4px;background:var(--bg3);border-radius:2px;overflow:hidden;">
+          <div style="width:${score}%;height:100%;background:${sigColor};border-radius:2px;"></div>
+        </div>
+        <span style="font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;color:${sigColor};">${score}</span>
+      </div>
+    </div>`;
+  });
+
+  feed.innerHTML = signals.join('');
+}
+
+// ========================
+// OI TRACKER
+// ========================
+let oiMode = 'usd';
+
+function setOiMode(mode, btn) {
+  oiMode = mode;
+  document.querySelectorAll('#oi-btn-usd,#oi-btn-btc').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const lastData = window._lastBinanceData;
+  if (lastData) buildOITracker(lastData);
+}
+
+function buildOITracker(data) {
+  window._lastBinanceData = data;
+  const btc = data.find(d=>d.symbol==='BTCUSDT');
+  if (!btc) return;
+  const btcP = parseFloat(btc.lastPrice);
+  const chg = parseFloat(btc.priceChangePercent);
+
+  // Simulated OI data per exchange (based on real proportions)
+  const exchanges = [
+    { name:'BINANCE',  oiUSD: 12.4e9, ls: 52.3, funding: 0.0112 },
+    { name:'BYBIT',    oiUSD: 6.8e9,  ls: 49.1, funding: 0.0089 },
+    { name:'OKX',      oiUSD: 5.2e9,  ls: 51.8, funding: 0.0095 },
+    { name:'DERIBIT',  oiUSD: 3.1e9,  ls: 55.2, funding: 0.0 },
+    { name:'CME',      oiUSD: 14.2e9, ls: 58.4, funding: 0.0 },
+  ].map(e => ({
+    ...e,
+    oiUSD: e.oiUSD * (1 + chg * 0.02 + (Math.random()-0.5)*0.05),
+    ls: Math.max(35,Math.min(65, e.ls + chg * 0.5)),
+    funding: e.name==='DERIBIT'||e.name==='CME' ? 0 : e.funding * (1 + chg * 0.1)
+  }));
+
+  const totalOI = exchanges.reduce((s,e)=>s+e.oiUSD,0);
+  const maxOI = Math.max(...exchanges.map(e=>e.oiUSD));
+  const avgLS = exchanges.reduce((s,e)=>s+e.ls,0)/exchanges.length;
+  const avgFunding = exchanges.filter(e=>e.funding!==0).reduce((s,e)=>s+e.funding,0)/3;
+  const domEx = exchanges.sort((a,b)=>b.oiUSD-a.oiUSD)[0];
+  exchanges.sort((a,b)=>b.oiUSD-a.oiUSD);
+
+  // Summary cards
+  document.getElementById('oi-total').textContent = '$' + (totalOI/1e9).toFixed(1) + 'B';
+  const oiChg = (chg * 0.6).toFixed(2);
+  const oiChgEl = document.getElementById('oi-total-chg');
+  oiChgEl.textContent = (oiChg>0?'▲ +':'▼ ') + oiChg + '% 24h';
+  oiChgEl.className = 'metric-change ' + (oiChg>0?'up':'down');
+
+  const lsRatio = (avgLS / (100 - avgLS)).toFixed(2);
+  document.getElementById('ls-ratio').textContent = lsRatio;
+  document.getElementById('ls-ratio').style.color = lsRatio > 1.1 ? 'var(--accent2)' : lsRatio < 0.9 ? 'var(--red)' : 'var(--gold)';
+  document.getElementById('ls-bias').textContent = avgLS > 52 ? '▲ LONGS DOMINAN' : avgLS < 48 ? '▼ SHORTS DOMINAN' : '◌ EQUILIBRADO';
+  document.getElementById('ls-bias').style.color = avgLS > 52 ? 'var(--accent2)' : avgLS < 48 ? 'var(--red)' : 'var(--gold)';
+
+  document.getElementById('oi-funding').textContent = (avgFunding*100).toFixed(4) + '%';
+  document.getElementById('oi-funding').style.color = avgFunding > 0.01 ? 'var(--red)' : avgFunding < 0 ? 'var(--accent2)' : 'var(--gold)';
+  document.getElementById('oi-funding-note').textContent = avgFunding > 0.01 ? 'Longs pagando' : avgFunding < 0 ? 'Shorts pagando' : 'Equilibrado';
+
+  const liqsUSD = totalOI * Math.abs(chg) * 0.003;
+  document.getElementById('oi-liqs').textContent = '$' + (liqsUSD/1e6).toFixed(0) + 'M';
+  document.getElementById('oi-liqs-side').textContent = chg > 0 ? '▼ Mayoría SHORTS' : '▲ Mayoría LONGS';
+  document.getElementById('oi-liqs-side').style.color = chg > 0 ? 'var(--red)' : 'var(--accent2)';
+
+  document.getElementById('oi-dom-ex').textContent = domEx.name;
+  document.getElementById('oi-dom-pct').textContent = ((domEx.oiUSD/totalOI)*100).toFixed(1) + '% del total';
+
+  // OI bars by exchange
+  const barsEl = document.getElementById('oi-exchange-bars');
+  barsEl.innerHTML = exchanges.map((e,i) => {
+    const val = oiMode === 'usd' ? e.oiUSD : e.oiUSD / btcP;
+    const maxVal2 = oiMode === 'usd' ? maxOI : maxOI / btcP;
+    const pct = (val / maxVal2 * 100).toFixed(1);
+    const label = oiMode === 'usd' ? '$' + (val/1e9).toFixed(2) + 'B' : (val/1e3).toFixed(0) + 'K BTC';
+    const color = ['#00d4ff','#00ff88','#c084fc','#fbbf24','#ff6b35'][i];
+    const sharePct = ((e.oiUSD/totalOI)*100).toFixed(1);
+    return `<div style="display:flex;align-items:center;gap:10px;font-size:12px;">
+      <span style="min-width:72px;color:${color};font-weight:700;letter-spacing:1px;">${e.name}</span>
+      <div style="flex:1;height:18px;background:var(--bg3);border-radius:2px;overflow:hidden;position:relative;">
+        <div style="width:${pct}%;height:100%;background:${color};opacity:0.7;border-radius:2px;transition:width 0.8s ease;"></div>
+        <span style="position:absolute;right:6px;top:50%;transform:translateY(-50%);font-size:10px;color:var(--text);">${label}</span>
+      </div>
+      <span style="min-width:40px;text-align:right;color:var(--text2);font-size:11px;">${sharePct}%</span>
+    </div>`;
+  }).join('');
+
+  // Long/Short ratio bars
+  const lsBarsEl = document.getElementById('ls-bars');
+  lsBarsEl.innerHTML = exchanges.map((e,i) => {
+    const color = ['#00d4ff','#00ff88','#c084fc','#fbbf24','#ff6b35'][i];
+    const longPct = e.ls.toFixed(1);
+    const shortPct = (100-e.ls).toFixed(1);
+    return `<div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:3px;">
+        <span style="color:${color};letter-spacing:1px;">${e.name}</span>
+        <span><span style="color:var(--accent2);">${longPct}%L</span> / <span style="color:var(--red);">${shortPct}%S</span></span>
+      </div>
+      <div style="height:8px;border-radius:2px;overflow:hidden;display:flex;">
+        <div style="width:${longPct}%;background:var(--accent2);opacity:0.7;"></div>
+        <div style="width:${shortPct}%;background:var(--red);opacity:0.7;"></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Funding rates list
+  const fundEl = document.getElementById('funding-list');
+  const fundExs = exchanges.filter(e=>e.name!=='DERIBIT'&&e.name!=='CME');
+  fundEl.innerHTML = fundExs.map((e,i) => {
+    const f = (e.funding*100).toFixed(4);
+    const color = e.funding > 0.01 ? 'var(--red)' : e.funding < 0 ? 'var(--accent2)' : 'var(--gold)';
+    const bar = Math.min(100, Math.abs(e.funding) * 5000);
+    const colors2 = ['#00d4ff','#00ff88','#c084fc'];
+    return `<div style="display:flex;align-items:center;gap:8px;font-size:11px;">
+      <span style="min-width:64px;color:${colors2[i]};letter-spacing:1px;">${e.name}</span>
+      <div style="flex:1;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;">
+        <div style="width:${bar}%;height:100%;background:${color};border-radius:3px;"></div>
+      </div>
+      <span style="min-width:54px;text-align:right;color:${color};font-family:'Orbitron',sans-serif;font-size:10px;">${f>0?'+':''}${f}%</span>
+    </div>`;
+  }).join('');
+
+  // Sparklines
+  ['binance','bybit','okx','deribit'].forEach((ex,i) => {
+    const base = [12.4,6.8,5.2,3.1][i] * 1e9;
+    const points = Array.from({length:24},(_,h) =>
+      base * (1 + Math.sin(h/4)*0.03 + (Math.random()-0.5)*0.02 + (chg>0?h/24*0.04:-h/24*0.03)));
+    drawSparkline('spark-'+ex, points, chg>0?'#00ff88':'#ff3b5c');
+  });
+}
+
+function drawSparkline(id, data, color) {
+  const c = document.getElementById(id);
+  if (!c) return;
+  const ctx = c.getContext('2d');
+  const W=c.width, H=c.height;
+  ctx.clearRect(0,0,W,H);
+  const min=Math.min(...data), max=Math.max(...data), range=max-min||1;
+  ctx.beginPath();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.5;
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 4;
+  data.forEach((v,i) => {
+    const x = i/(data.length-1)*W;
+    const y = H - ((v-min)/range)*(H-6)-3;
+    i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+  // Fill
+  ctx.shadowBlur = 0;
+  ctx.lineTo(W,H); ctx.lineTo(0,H); ctx.closePath();
+  ctx.fillStyle = color.replace(')',',0.1)').replace('var(','rgba(0,255,136,');
+  ctx.fillStyle = color === '#00ff88' ? 'rgba(0,255,136,0.08)' : 'rgba(255,59,92,0.08)';
+  ctx.fill();
+}
+
+// ========================
+// SCANNER
+// ========================
+let scannerData = [];
+let scannerFilter = 'all';
+
+function updateScannerData(data) {
+  scannerData = data.map((d, i) => {
+    const chg = parseFloat(d.priceChangePercent);
+    const vol = parseFloat(d.quoteVolume);
+    const price = parseFloat(d.lastPrice);
+    const rsi = Math.max(20, Math.min(80, 50 + chg * 2 + (Math.random()-0.5)*15));
+    const score = Math.min(100, Math.max(0, Math.round(50 + chg*3 + (vol>30e9?10:0) + (rsi>70?-10:rsi<30?10:0))));
+    let signal;
+    if (score >= 65) signal = 'LONG';
+    else if (score <= 35) signal = 'SHORT';
+    else signal = 'NEUTRAL';
+    return {
+      rank: i+1,
+      pair: d.symbol.replace('USDT','/USDT'),
+      sym: d.symbol.replace('USDT',''),
+      price, chg, vol, rsi: Math.round(rsi), score, signal
+    };
+  });
+  if (document.getElementById('s-scanner').classList.contains('active')) buildScanner();
+}
+
+function buildScanner() {
+  const tbody = document.getElementById('scanner-tbody');
+  let filtered = scannerData;
+  if (scannerFilter === 'buy') filtered = scannerData.filter(d=>d.signal==='LONG');
+  else if (scannerFilter === 'sell') filtered = scannerData.filter(d=>d.signal==='SHORT');
+  else if (scannerFilter === 'neutral') filtered = scannerData.filter(d=>d.signal==='NEUTRAL');
+
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:30px;">Sin datos aún. Espera el fetch...</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filtered.map((d,i) => {
+    const chgClass = d.chg >= 0 ? 'up' : 'down';
+    const chgStr = (d.chg >= 0 ? '▲ +' : '▼ ') + d.chg.toFixed(2) + '%';
+    const sigColor = d.signal==='LONG'?'var(--accent2)':d.signal==='SHORT'?'var(--red)':'var(--text2)';
+    const sigBg = d.signal==='LONG'?'rgba(0,255,136,0.12)':d.signal==='SHORT'?'rgba(255,59,92,0.12)':'rgba(107,143,168,0.1)';
+    const scoreColor = d.score>65?'var(--accent2)':d.score<35?'var(--red)':'var(--gold)';
+    const rsiColor = d.rsi>70?'var(--red)':d.rsi<30?'var(--accent2)':'var(--text)';
+
+    return `<tr>
+      <td>
+        <div class="coin-name">
+          <div class="coin-icon">${d.sym.slice(0,3)}</div>
+          <span style="color:var(--accent);font-weight:700;">${d.pair}</span>
+        </div>
+      </td>
+      <td style="font-family:'Orbitron',sans-serif;font-size:13px;">${fmtPrice(d.price)}</td>
+      <td class="${chgClass}" style="font-weight:700;">${chgStr}</td>
+      <td style="color:var(--text2);">${fmt(d.vol)}</td>
+      <td>
+        <div class="score-bar-wrap">
+          <div class="score-bar"><div class="score-fill" style="width:${d.score}%;background:${scoreColor};"></div></div>
+          <span style="color:${scoreColor};font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;">${d.score}</span>
+        </div>
+      </td>
+      <td style="color:${rsiColor};font-weight:700;">${d.rsi}</td>
+      <td>
+        <span class="signal-pill" style="background:${sigBg};color:${sigColor};border:1px solid ${sigColor}33;">${d.signal}</span>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function filterScanner(f, btn) {
+  scannerFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  buildScanner();
+}
+
+function refreshScanner() { fetchPrices(); }
+
+function sortScanner(field) {
+  const map = { name:'pair', price:'price', change:'chg', volume:'vol', score:'score' };
+  const f = map[field] || field;
+  scannerData.sort((a,b) => b[f] > a[f] ? 1 : -1);
+  buildScanner();
+}
+
+// ========================
+// PORTFOLIO
+// ========================
+let portfolio = JSON.parse(localStorage.getItem('psy_portfolio') || '[]');
+const COLORS = ['#00d4ff','#00ff88','#c084fc','#ff6b35','#fbbf24','#ff3b5c','#38bdf8','#a78bfa'];
+
+function addPosition() {
+  const coin = document.getElementById('pos-coin').value.trim().toUpperCase();
+  const qty = parseFloat(document.getElementById('pos-qty').value);
+  const entry = parseFloat(document.getElementById('pos-entry').value);
+  if (!coin || !qty || !entry) return;
+
+  portfolio.push({ coin, qty, entry, color: COLORS[portfolio.length % COLORS.length] });
+  localStorage.setItem('psy_portfolio', JSON.stringify(portfolio));
+
+  document.getElementById('pos-coin').value = '';
+  document.getElementById('pos-qty').value = '';
+  document.getElementById('pos-entry').value = '';
+
+  updatePortfolio();
+}
+
+function getCurrentPrice(coin) {
+  const d = scannerData.find(s => s.sym === coin);
+  if (d) return d.price;
+  if (coin === 'BTC') return prices.BTC || 105000;
+  if (coin === 'ETH') return prices.ETH || 2600;
+  return 1;
+}
+
+function updatePortfolioPrices(data) {
+  updatePortfolio();
+}
+
+function updatePortfolio() {
+  const list = document.getElementById('positions-list');
+  if (!portfolio.length) {
+    list.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:10px 0;">No hay posiciones. Agrega una arriba.</div>';
+    updatePortfolioStats([]);
+    return;
+  }
+
+  let total = 0, totalInv = 0;
+
+  const rows = portfolio.map((p, i) => {
+    const cur = getCurrentPrice(p.coin);
+    const curVal = p.qty * cur;
+    const invVal = p.qty * p.entry;
+    const pnl = curVal - invVal;
+    const pnlPct = ((curVal - invVal) / invVal * 100);
+    total += curVal;
+    totalInv += invVal;
+
+    return {
+      ...p, cur, curVal, invVal, pnl, pnlPct,
+      html: `<div class="position-row">
+        <div class="pos-color" style="background:${p.color};box-shadow:0 0 8px ${p.color}55;"></div>
+        <div>
+          <div class="pos-name">${p.coin}</div>
+        </div>
+        <div class="pos-details">
+          ${p.qty} unidades<br>
+          Entrada: ${fmtPrice(p.entry)} → Actual: ${fmtPrice(cur)}
+        </div>
+        <div class="pos-pnl">
+          <div class="amount ${pnl>=0?'up':'down'}">${pnl>=0?'+':''}${fmt(pnl)}</div>
+          <div class="pct ${pnl>=0?'up':'down'}">${pnlPct>=0?'+':''}${pnlPct.toFixed(2)}%</div>
+        </div>
+        <button onclick="removePosition(${i})" style="background:transparent;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:4px 8px;">✕</button>
+      </div>`
+    };
+  });
+
+  list.innerHTML = rows.map(r=>r.html).join('');
+  updatePortfolioStats(rows, total, totalInv);
+  buildDonut(rows, total);
+}
+
+function removePosition(i) {
+  portfolio.splice(i, 1);
+  localStorage.setItem('psy_portfolio', JSON.stringify(portfolio));
+  updatePortfolio();
+}
+
+function updatePortfolioStats(rows, total=0, totalInv=0) {
+  const pnl = total - totalInv;
+  document.getElementById('total-invested').textContent = fmt(totalInv);
+  document.getElementById('total-current').textContent = fmt(total);
+  const pnlEl = document.getElementById('total-pnl');
+  pnlEl.textContent = (pnl>=0?'+':'') + fmt(pnl);
+  pnlEl.className = 'metric-value ' + (pnl>=0?'up':'down');
+  pnlEl.style.fontSize = '18px';
+}
+
+function buildDonut(rows, total) {
+  const svg = document.getElementById('donut-svg');
+  const cx=100, cy=100, r=70, stroke=28;
+  const circumference = 2*Math.PI*r;
+  let offset = 0;
+
+  // Remove old arcs
+  svg.querySelectorAll('.donut-arc').forEach(e=>e.remove());
+
+  rows.forEach(p => {
+    const pct = total > 0 ? p.curVal / total : 0;
+    const dash = pct * circumference;
+    const circle = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    circle.setAttribute('cx',cx);
+    circle.setAttribute('cy',cy);
+    circle.setAttribute('r',r);
+    circle.setAttribute('fill','none');
+    circle.setAttribute('stroke',p.color);
+    circle.setAttribute('stroke-width',stroke);
+    circle.setAttribute('stroke-dasharray',`${dash} ${circumference-dash}`);
+    circle.setAttribute('stroke-dashoffset', -offset * circumference);
+    circle.setAttribute('transform',`rotate(-90 ${cx} ${cy})`);
+    circle.classList.add('donut-arc');
+    circle.style.filter = `drop-shadow(0 0 6px ${p.color}66)`;
+    svg.insertBefore(circle, svg.querySelector('#donut-total-text'));
+    offset += pct;
+  });
+
+  document.getElementById('donut-total-text').textContent = fmt(total);
+
+  const legend = document.getElementById('portfolio-legend');
+  legend.innerHTML = rows.map(p=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:11px;">
+      <div style="width:10px;height:10px;border-radius:2px;background:${p.color};flex-shrink:0;"></div>
+      <span style="color:var(--text2);flex:1;">${p.coin}</span>
+      <span style="color:var(--text);">${total>0?(p.curVal/total*100).toFixed(1)+'%':'--'}</span>
+      <span style="color:${p.pnl>=0?'var(--accent2)':'var(--red)'};">${p.pnl>=0?'+':''}${fmt(p.pnl)}</span>
+    </div>
+  `).join('');
+}
+
+// ========================
+// LIQ MAP (replaced by OI Tracker — kept as alias)
+// ========================
+function buildLiqMap() { if(window._lastBinanceData) buildOITracker(window._lastBinanceData); }
+
+// ========================
+// AI CHAT
+// ========================
+const API_URL = 'https://api.anthropic.com/v1/messages';
+let chatHistory = [];
+const SYSTEM_PROMPT = `Eres PSY AI, el analista de trading cuantitativo de PSYCHOMETRIKS. Eres experto en:
+- Elliott Wave Theory (ondas impulsivas y correctivas, Fibonacci extensions/retracements)
+- Wyckoff Method (fases de acumulación/distribución, Composite Man, spring, upthrust)
+- Análisis técnico avanzado (RSI, MACD, volumen, OI, funding rates)
+- Gestión de riesgo y position sizing
+- Mercados crypto (BTC, ETH, altcoins) y XAU/USD
+
+PSYCHOMETRIKS usa una escala de confluencia 0-100:
+- 0-35: Setup débil / NO operar
+- 36-59: Setup moderado / posición pequeña
+- 60-79: Setup sólido / posición normal
+- 80-100: Setup épico / posición máxima
+
+Formato: Responde en español, de forma directa y técnica. Usa emojis técnicos (📊 📈 📉 ⚡ 🎯). 
+Siempre incluye: análisis, niveles clave, score PSYCHOMETRIKS y recomendación de acción.
+Máximo 300 palabras por respuesta.`;
+
+async function sendMessage() {
+  const input = document.getElementById('chat-input');
+  const msg = input.value.trim();
+  if (!msg) return;
+
+  input.value = '';
+  const btn = document.getElementById('send-btn');
+  btn.disabled = true;
+
+  appendMsg('user', msg);
+  chatHistory.push({ role: 'user', content: msg });
+
+  // Typing indicator
+  const typingId = 'typing-' + Date.now();
+  const typingEl = document.createElement('div');
+  typingEl.id = typingId;
+  typingEl.className = 'msg msg-ai';
+  typingEl.innerHTML = `<div class="msg-ai-header"><svg width="12" height="12" viewBox="0 0 20 20" fill="none"><polygon points="10,2 18,7 18,13 10,18 2,13 2,7" stroke="#00d4ff" stroke-width="1.5" fill="rgba(0,212,255,0.2)"/></svg> PSY AI</div><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>`;
+  document.getElementById('chat-messages').appendChild(typingEl);
+  scrollChat();
+
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: SYSTEM_PROMPT,
+        messages: chatHistory
+      })
+    });
+
+    const data = await res.json();
+    const reply = data.content?.[0]?.text || 'Error al procesar la respuesta.';
+
+    typingEl.remove();
+    appendMsg('ai', reply);
+    chatHistory.push({ role: 'assistant', content: reply });
+
+  } catch(e) {
+    typingEl.remove();
+    appendMsg('ai', '⚠️ Error de conexión. Verifica tu API key o intenta de nuevo.');
+  }
+
+  btn.disabled = false;
+}
+
+function appendMsg(role, text) {
+  const wrap = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'msg ' + (role === 'user' ? 'msg-user' : 'msg-ai');
+
+  if (role === 'ai') {
+    div.innerHTML = `<div class="msg-ai-header"><svg width="12" height="12" viewBox="0 0 20 20" fill="none"><polygon points="10,2 18,7 18,13 10,18 2,13 2,7" stroke="#00d4ff" stroke-width="1.5" fill="rgba(0,212,255,0.2)"/></svg> PSY AI</div>${text.replace(/\n/g,'<br>')}`;
+  } else {
+    div.textContent = text;
+  }
+
+  wrap.appendChild(div);
+  scrollChat();
+}
+
+function scrollChat() {
+  const el = document.getElementById('chat-messages');
+  el.scrollTop = el.scrollHeight;
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function quickPrompt(text) {
+  document.getElementById('chat-input').value = text;
+  sendMessage();
+}
+
+// ========================
+// INIT
+// ========================
+fetchPrices();
+setInterval(fetchPrices, 30000);
+updatePortfolio();
+</script>
+</body>
+</html>

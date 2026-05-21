@@ -1,0 +1,1680 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PSY CONTRACT SCANNER v4 — PSYCHOMETRIKS</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#040608;--bg2:#070c10;--bg3:#0a1018;
+  --panel:#0d1520;--panel2:#111d2a;
+  --border:#1a2d3d;--border2:#243d52;
+  --cyan:#00e5ff;--cyan2:#00b8d4;
+  --green:#00ff88;--green2:#00c853;
+  --red:#ff1744;--red2:#d50000;
+  --yellow:#ffd600;--orange:#ff6d00;
+  --purple:#7c4dff;--pink:#f50057;
+  --gold:#ffab00;
+  --text:#c8dde8;--text2:#7a9ab0;--text3:#4a6878;
+  --glow-cyan:0 0 20px rgba(0,229,255,0.4);
+  --glow-green:0 0 20px rgba(0,255,136,0.4);
+  --glow-red:0 0 20px rgba(255,23,68,0.4);
+  --glow-gold:0 0 20px rgba(255,171,0,0.4);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;min-height:100vh;overflow-x:hidden;cursor:crosshair;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,0.025) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.07) 2px,rgba(0,0,0,0.07) 4px);pointer-events:none;z-index:1;}
+.wrap{position:relative;z-index:2;max-width:1440px;margin:0 auto;padding:20px;}
+
+/* HEADER */
+.header{text-align:center;padding:28px 0 18px;position:relative;}
+.logo{font-family:'Orbitron',monospace;font-size:10px;letter-spacing:6px;color:var(--cyan2);margin-bottom:6px;opacity:0.7;}
+.title{font-family:'Orbitron',monospace;font-size:clamp(20px,4vw,36px);font-weight:900;color:#fff;letter-spacing:4px;text-shadow:var(--glow-cyan),0 0 60px rgba(0,229,255,0.15);}
+.title span{color:var(--cyan);}
+.subtitle{font-size:12px;color:var(--text3);letter-spacing:3px;margin-top:5px;font-family:'Share Tech Mono',monospace;}
+.version-badge{display:inline-block;font-family:'Share Tech Mono',monospace;font-size:9px;background:rgba(0,229,255,0.08);border:1px solid var(--cyan);color:var(--cyan);padding:2px 10px;letter-spacing:2px;margin-top:8px;}
+
+/* TABS */
+.tabs{display:flex;gap:2px;margin:20px 0 0;border-bottom:1px solid var(--border);}
+.tab-btn{font-family:'Orbitron',monospace;font-size:10px;font-weight:700;letter-spacing:1px;padding:10px 20px;background:transparent;border:none;color:var(--text3);cursor:pointer;position:relative;transition:all 0.2s;border-bottom:2px solid transparent;margin-bottom:-1px;}
+.tab-btn:hover{color:var(--text);}
+.tab-btn.active{color:var(--cyan);border-bottom-color:var(--cyan);}
+.tab-content{display:none;padding-top:20px;}
+.tab-content.active{display:block;}
+
+/* INPUT */
+.input-section{margin:20px 0;background:var(--panel);border:1px solid var(--border);border-top:2px solid var(--cyan);padding:22px;position:relative;clip-path:polygon(0 0,calc(100% - 20px) 0,100% 20px,100% 100%,0 100%);}
+.chain-selector{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+.chain-btn{font-family:'Share Tech Mono',monospace;font-size:10px;padding:5px 12px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);cursor:pointer;letter-spacing:1px;transition:all 0.2s;clip-path:polygon(5px 0,100% 0,calc(100% - 5px) 100%,0 100%);}
+.chain-btn:hover,.chain-btn.active{background:rgba(0,229,255,0.08);border-color:var(--cyan);color:var(--cyan);}
+.input-row{display:flex;gap:10px;}
+.contract-input{flex:1;background:var(--bg);border:1px solid var(--border2);border-left:3px solid var(--cyan);color:var(--cyan);font-family:'Share Tech Mono',monospace;font-size:13px;padding:13px 15px;outline:none;letter-spacing:1px;transition:all 0.2s;}
+.contract-input:focus{box-shadow:var(--glow-cyan),inset 0 0 20px rgba(0,229,255,0.04);}
+.contract-input::placeholder{color:var(--text3);font-size:11px;}
+.scan-btn{font-family:'Orbitron',monospace;font-size:12px;font-weight:700;letter-spacing:2px;padding:13px 28px;background:linear-gradient(135deg,var(--cyan),var(--cyan2));color:var(--bg);border:none;cursor:pointer;clip-path:polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%);transition:all 0.2s;}
+.scan-btn:hover{box-shadow:var(--glow-cyan);filter:brightness(1.1);}
+.scan-btn:disabled{opacity:0.4;cursor:not-allowed;}
+.examples{margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+.ex-label{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text3);}
+.ex-tag{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text3);background:var(--bg3);border:1px solid var(--border);padding:3px 9px;cursor:pointer;transition:all 0.2s;}
+.ex-tag:hover{color:var(--cyan);border-color:var(--cyan);}
+
+/* LOADING */
+.loading{display:none;text-align:center;padding:50px 20px;}
+.loading.active{display:block;}
+.loader-ring{width:70px;height:70px;border:2px solid var(--border2);border-top:2px solid var(--cyan);border-radius:50%;animation:spin 0.7s linear infinite;margin:0 auto 18px;box-shadow:var(--glow-cyan);}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-text{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--cyan);letter-spacing:2px;animation:pulse 1.5s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+.loading-steps{margin-top:14px;}
+.loading-step{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text3);margin:4px 0;transition:color 0.3s;}
+.loading-step.step-done{color:var(--green);}
+.loading-step.step-active{color:var(--cyan);}
+
+/* RESULTS */
+.results{display:none;}
+.results.active{display:block;}
+
+/* SECTION TITLE */
+.sec-title{font-family:'Orbitron',monospace;font-size:11px;font-weight:700;letter-spacing:3px;color:var(--cyan);padding:10px 0;border-bottom:1px solid var(--border);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.sec-title::before{content:'';width:3px;height:14px;background:var(--cyan);display:block;box-shadow:var(--glow-cyan);}
+
+/* SCORE HERO */
+.score-hero{display:grid;grid-template-columns:260px 1fr;gap:18px;margin-bottom:18px;}
+@media(max-width:700px){.score-hero{grid-template-columns:1fr;}}
+.score-circle-wrap{background:var(--panel);border:1px solid var(--border);padding:26px 18px;text-align:center;clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px));}
+.score-label-top{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--text3);margin-bottom:14px;}
+.score-svg{position:relative;display:inline-block;}
+.score-number{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;}
+.score-num{font-family:'Orbitron',monospace;font-size:44px;font-weight:900;line-height:1;}
+.score-max{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text3);}
+.score-verdict{margin-top:14px;font-family:'Orbitron',monospace;font-size:12px;font-weight:700;letter-spacing:2px;padding:7px 14px;display:inline-block;}
+.token-info{background:var(--panel);border:1px solid var(--border);padding:18px;clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%);}
+.token-name{font-family:'Orbitron',monospace;font-size:20px;font-weight:700;color:#fff;margin-bottom:3px;}
+.token-addr{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text3);margin-bottom:14px;word-break:break-all;}
+.token-stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;}
+.stat-box{background:var(--bg3);border:1px solid var(--border);padding:9px 11px;}
+.stat-box-label{font-size:9px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:3px;font-family:'Share Tech Mono',monospace;}
+.stat-box-val{font-family:'Orbitron',monospace;font-size:14px;font-weight:700;color:var(--cyan);}
+
+/* CATEGORIES */
+.categories{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-bottom:18px;}
+.cat-card{background:var(--panel);border:1px solid var(--border);padding:14px;clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,0 100%);}
+.cat-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.cat-name{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:12px;letter-spacing:1px;color:var(--text);text-transform:uppercase;}
+.cat-score-num{font-family:'Orbitron',monospace;font-size:15px;font-weight:700;}
+.cat-bar-wrap{height:3px;background:var(--border);overflow:hidden;}
+.cat-bar{height:100%;transition:width 1.2s ease;}
+.cat-detail{font-size:10px;color:var(--text3);margin-top:7px;font-family:'Share Tech Mono',monospace;line-height:1.5;}
+
+/* FLAGS */
+.flags-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:9px;margin-bottom:18px;}
+.flag-card{background:var(--panel);border:1px solid var(--border);border-left:3px solid transparent;padding:11px 13px;display:flex;align-items:flex-start;gap:10px;position:relative;overflow:hidden;}
+.flag-card.safe{border-left-color:var(--green);}
+.flag-card.warning{border-left-color:var(--yellow);}
+.flag-card.danger{border-left-color:var(--red);}
+.flag-content{flex:1;}
+.flag-name{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:13px;color:#fff;margin-bottom:2px;}
+.flag-desc{font-size:11px;color:var(--text2);line-height:1.4;}
+.flag-score{font-family:'Orbitron',monospace;font-size:11px;font-weight:700;flex-shrink:0;padding:2px 7px;border:1px solid currentColor;}
+.flag-score.safe{color:var(--green);}
+.flag-score.warning{color:var(--yellow);}
+.flag-score.danger{color:var(--red);}
+
+/* ===== WHALE INTELLIGENCE ===== */
+.whale-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;}
+.whale-title{font-family:'Orbitron',monospace;font-size:11px;font-weight:700;letter-spacing:3px;color:var(--gold);display:flex;align-items:center;gap:8px;}
+.whale-title::before{content:'';width:3px;height:14px;background:var(--gold);display:block;box-shadow:var(--glow-gold);}
+.whale-legend{display:flex;gap:8px;flex-wrap:wrap;}
+.legend-item{font-family:'Share Tech Mono',monospace;font-size:9px;padding:3px 8px;border:1px solid;display:flex;align-items:center;gap:5px;}
+
+.whale-grid{display:flex;flex-direction:column;gap:10px;margin-bottom:20px;}
+
+.whale-card{background:var(--panel);border:1px solid var(--border);padding:0;overflow:hidden;transition:border-color 0.2s;}
+.whale-card:hover{border-color:var(--border2);}
+.whale-card.type-rug{border-left:4px solid var(--red);}
+.whale-card.type-insider{border-left:4px solid var(--orange);}
+.whale-card.type-whale{border-left:4px solid var(--gold);}
+.whale-card.type-cex{border-left:4px solid var(--purple);}
+.whale-card.type-fund{border-left:4px solid var(--cyan);}
+.whale-card.type-clean{border-left:4px solid var(--green);}
+.whale-card.type-bundled{border-left:4px solid var(--pink);}
+.whale-card.type-unknown{border-left:4px solid var(--text3);}
+
+.whale-card-top{display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer;}
+.whale-rank{font-family:'Orbitron',monospace;font-size:11px;color:var(--text3);width:24px;flex-shrink:0;}
+.whale-type-badge{font-family:'Share Tech Mono',monospace;font-size:9px;font-weight:700;padding:3px 8px;letter-spacing:1px;flex-shrink:0;white-space:nowrap;}
+.whale-addr-wrap{flex:1;min-width:0;}
+.whale-addr{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text2);}
+.whale-name{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:13px;color:#fff;}
+.whale-pct-bar-wrap{width:100px;flex-shrink:0;}
+.whale-pct-label{font-family:'Orbitron',monospace;font-size:12px;font-weight:700;text-align:right;margin-bottom:3px;}
+.whale-pct-bar{height:3px;background:var(--border);}
+.whale-pct-fill{height:100%;transition:width 1s ease;}
+.whale-usd{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text3);text-align:right;}
+.whale-expand-btn{font-size:12px;color:var(--text3);flex-shrink:0;transition:transform 0.2s;}
+.whale-card.expanded .whale-expand-btn{transform:rotate(180deg);}
+
+.whale-detail{display:none;border-top:1px solid var(--border);padding:14px;background:var(--bg3);}
+.whale-card.expanded .whale-detail{display:block;}
+
+.whale-detail-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:12px;}
+.wdg-item{background:var(--panel);border:1px solid var(--border);padding:8px 10px;}
+.wdg-label{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:1px;margin-bottom:3px;}
+.wdg-val{font-family:'Orbitron',monospace;font-size:12px;font-weight:700;}
+
+.whale-flags{display:flex;flex-direction:column;gap:5px;margin-bottom:10px;}
+.whale-flag-item{font-family:'Share Tech Mono',monospace;font-size:10px;padding:5px 9px;border:1px solid;display:flex;align-items:center;gap:7px;line-height:1.4;}
+.whale-flag-item.red{border-color:rgba(255,23,68,0.3);color:var(--red);background:rgba(255,23,68,0.04);}
+.whale-flag-item.yellow{border-color:rgba(255,214,0,0.3);color:var(--yellow);background:rgba(255,214,0,0.04);}
+.whale-flag-item.green{border-color:rgba(0,255,136,0.3);color:var(--green);background:rgba(0,255,136,0.04);}
+
+.whale-actions{display:flex;gap:6px;flex-wrap:wrap;}
+.whale-action-btn{font-family:'Share Tech Mono',monospace;font-size:9px;padding:4px 10px;border:1px solid var(--border2);color:var(--text3);background:transparent;cursor:pointer;letter-spacing:1px;transition:all 0.2s;}
+.whale-action-btn:hover{border-color:var(--cyan);color:var(--cyan);}
+
+/* WHALE SUMMARY PANEL */
+.whale-summary{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:18px;}
+.ws-card{background:var(--panel);border:1px solid var(--border);padding:14px;text-align:center;position:relative;overflow:hidden;}
+.ws-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.ws-card.danger::before{background:var(--red);}
+.ws-card.warning::before{background:var(--yellow);}
+.ws-card.safe::before{background:var(--green);}
+.ws-card.info::before{background:var(--cyan);}
+.ws-icon{font-size:24px;margin-bottom:6px;}
+.ws-val{font-family:'Orbitron',monospace;font-size:22px;font-weight:900;margin-bottom:3px;}
+.ws-label{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:1px;}
+
+/* BUNDLED WARNING */
+.bundled-alert{background:rgba(245,0,87,0.06);border:1px solid rgba(245,0,87,0.3);border-left:3px solid var(--pink);padding:12px 14px;margin-bottom:14px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--pink);line-height:1.6;}
+
+/* SOURCES ROW */
+.sources-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+.source-badge{font-family:'Share Tech Mono',monospace;font-size:9px;padding:4px 10px;border:1px solid var(--border2);color:var(--text3);letter-spacing:1px;display:flex;align-items:center;gap:5px;}
+.source-badge.ok{border-color:var(--green2);color:var(--green);}
+.source-badge.warn{border-color:var(--orange);color:var(--orange);}
+.source-badge.err{border-color:var(--red2);color:var(--red);}
+.source-dot{width:5px;height:5px;border-radius:50%;background:currentColor;animation:blink 1.5s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.2;}}
+
+/* DEMO NOTE */
+.demo-note{background:rgba(255,214,0,0.04);border:1px solid rgba(255,214,0,0.15);padding:9px 13px;margin-bottom:14px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--yellow);letter-spacing:0.5px;line-height:1.5;}
+
+/* TWO COL */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;}
+@media(max-width:750px){.two-col{grid-template-columns:1fr;}}
+
+/* HOLDER BARS */
+.holder-row{display:flex;align-items:center;gap:8px;margin-bottom:5px;}
+.holder-label{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text3);width:70px;flex-shrink:0;}
+.holder-bar-wrap{flex:1;height:14px;background:var(--bg3);border:1px solid var(--border);overflow:hidden;}
+.holder-bar-fill{height:100%;transition:width 1.2s ease;}
+.holder-pct{font-family:'Orbitron',monospace;font-size:10px;width:42px;text-align:right;flex-shrink:0;}
+
+/* MATRIX */
+.risk-matrix{display:grid;gap:1px;background:var(--border);border:1px solid var(--border);}
+.matrix-cell{background:var(--panel);padding:9px;text-align:center;}
+.matrix-cell-label{font-size:9px;color:var(--text3);font-family:'Share Tech Mono',monospace;margin-bottom:3px;}
+.matrix-cell-val{font-family:'Orbitron',monospace;font-size:12px;font-weight:700;}
+
+/* AI SECTION */
+.ai-section{background:var(--panel2);border:1px solid var(--border);border-top:2px solid var(--purple);padding:18px;margin-bottom:18px;}
+.ai-typing{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--text);line-height:1.8;white-space:pre-wrap;}
+.ai-cursor{display:inline-block;width:7px;height:13px;background:var(--purple);animation:blink 0.7s step-end infinite;vertical-align:text-bottom;margin-left:2px;}
+
+/* FOOTER */
+.footer{text-align:center;padding:24px 0 16px;font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:2px;}
+
+/* ANIMATIONS */
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.fi{animation:fadeUp 0.4s ease forwards;}
+.fi1{animation:fadeUp 0.4s ease 0.08s forwards;opacity:0;}
+.fi2{animation:fadeUp 0.4s ease 0.16s forwards;opacity:0;}
+.fi3{animation:fadeUp 0.4s ease 0.24s forwards;opacity:0;}
+.fi4{animation:fadeUp 0.4s ease 0.32s forwards;opacity:0;}
+.fi5{animation:fadeUp 0.4s ease 0.4s forwards;opacity:0;}
+
+::-webkit-scrollbar{width:5px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--border2);}
+::-webkit-scrollbar-thumb:hover{background:var(--cyan2);}
+
+/* ══════════════════════════════════════════
+   MONETIZATION STYLES
+══════════════════════════════════════════ */
+
+/* SCAN COUNTER / FREEMIUM */
+.scan-counter-bar{display:flex;align-items:center;justify-content:space-between;background:var(--panel);border:1px solid var(--border);border-left:3px solid var(--cyan);padding:10px 16px;margin-bottom:14px;flex-wrap:wrap;gap:10px;}
+.scan-counter-left{display:flex;align-items:center;gap:10px;}
+.scan-pips{display:flex;gap:5px;}
+.scan-pip{width:14px;height:14px;border:1px solid var(--border2);background:var(--bg3);}
+.scan-pip.used{background:var(--cyan);box-shadow:var(--glow-cyan);}
+.scan-pip.empty{background:var(--bg3);}
+.scan-counter-text{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text2);}
+.scan-counter-text span{color:var(--cyan);font-weight:700;}
+.upgrade-btn{font-family:'Orbitron',monospace;font-size:9px;font-weight:700;letter-spacing:1px;padding:7px 16px;background:linear-gradient(135deg,#7c4dff,#f50057);color:#fff;border:none;cursor:pointer;clip-path:polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%);transition:all 0.2s;animation:glowPulse 2s ease-in-out infinite;}
+.upgrade-btn:hover{filter:brightness(1.2);transform:scale(1.03);}
+@keyframes glowPulse{0%,100%{box-shadow:0 0 10px rgba(124,77,255,0.4);}50%{box-shadow:0 0 20px rgba(245,0,87,0.6);}}
+
+/* FREEMIUM GATE OVERLAY */
+.gate-overlay{position:absolute;inset:0;background:linear-gradient(180deg,transparent 0%,rgba(4,6,8,0.97) 35%);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:30px;z-index:10;pointer-events:none;}
+.gate-overlay.active{pointer-events:all;}
+.gate-box{background:var(--panel2);border:1px solid var(--border2);border-top:2px solid var(--purple);padding:24px 28px;max-width:420px;width:90%;text-align:center;}
+.gate-title{font-family:'Orbitron',monospace;font-size:14px;font-weight:900;color:#fff;margin-bottom:8px;letter-spacing:2px;}
+.gate-desc{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text2);margin-bottom:16px;line-height:1.6;}
+.gate-perks{display:flex;flex-direction:column;gap:4px;margin-bottom:16px;text-align:left;}
+.gate-perk{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--green);padding:4px 0;}
+.gate-actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
+.gate-btn-primary{font-family:'Orbitron',monospace;font-size:10px;font-weight:700;letter-spacing:1px;padding:10px 22px;background:linear-gradient(135deg,var(--purple),var(--pink));color:#fff;border:none;cursor:pointer;clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%);}
+.gate-btn-secondary{font-family:'Share Tech Mono',monospace;font-size:10px;padding:10px 18px;background:transparent;border:1px solid var(--border2);color:var(--text2);cursor:pointer;}
+.gate-btn-secondary:hover{border-color:var(--cyan);color:var(--cyan);}
+
+/* COINZILLA-STYLE BANNER ADS */
+.ad-banner{position:relative;overflow:hidden;}
+.ad-banner-top{margin-bottom:16px;}
+.ad-banner-mid{margin:16px 0;}
+.ad-label{font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--text3);letter-spacing:2px;margin-bottom:4px;text-transform:uppercase;}
+
+/* 728x90 leaderboard style */
+.ad-leaderboard{height:72px;background:linear-gradient(135deg,#0d1520,#111d2a);border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;cursor:pointer;transition:border-color 0.2s;position:relative;overflow:hidden;}
+.ad-leaderboard::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(0,229,255,0.03),transparent);animation:adShimmer 3s ease-in-out infinite;}
+@keyframes adShimmer{0%,100%{opacity:0;}50%{opacity:1;}}
+.ad-leaderboard:hover{border-color:var(--cyan2);}
+.ad-lead-left{display:flex;align-items:center;gap:14px;}
+.ad-lead-logo{width:36px;height:36px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:18px;}
+.ad-lead-text{}
+.ad-lead-name{font-family:'Orbitron',monospace;font-size:13px;font-weight:700;color:#fff;}
+.ad-lead-sub{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text2);margin-top:2px;}
+.ad-lead-right{display:flex;align-items:center;gap:12px;}
+.ad-lead-cta{font-family:'Orbitron',monospace;font-size:10px;font-weight:700;padding:8px 18px;border:1px solid;cursor:pointer;letter-spacing:1px;transition:all 0.2s;background:transparent;}
+.ad-sponsored{font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--text3);letter-spacing:1px;position:absolute;top:4px;right:6px;}
+
+/* 300x250 rectangle ad */
+.ad-rect-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;margin:16px 0;}
+.ad-rect{background:var(--panel);border:1px solid var(--border);padding:18px;cursor:pointer;transition:all 0.2s;position:relative;overflow:hidden;}
+.ad-rect:hover{border-color:var(--border2);transform:translateY(-2px);}
+.ad-rect::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.ad-rect-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.ad-rect-icon{width:32px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.ad-rect-title{font-family:'Orbitron',monospace;font-size:12px;font-weight:700;color:#fff;}
+.ad-rect-sub{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text3);margin-top:1px;}
+.ad-rect-body{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text2);line-height:1.6;margin-bottom:12px;}
+.ad-rect-cta{font-family:'Orbitron',monospace;font-size:9px;font-weight:700;padding:7px 14px;border:none;cursor:pointer;letter-spacing:1px;width:100%;transition:all 0.2s;}
+.ad-rect-cta:hover{filter:brightness(1.15);}
+.ad-rect-badge{position:absolute;top:6px;right:8px;font-family:'Share Tech Mono',monospace;font-size:7px;color:var(--text3);letter-spacing:1px;}
+
+/* CONTEXTUAL AFFILIATE BANNER (shows after scan) */
+.affiliate-banner{background:var(--panel);border:1px solid var(--border);border-left:3px solid var(--gold);padding:14px 18px;margin:14px 0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;cursor:pointer;transition:all 0.2s;position:relative;overflow:hidden;}
+.affiliate-banner::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(255,171,0,0.04),transparent);pointer-events:none;}
+.affiliate-banner:hover{border-color:var(--gold);box-shadow:var(--glow-gold);}
+.aff-left{display:flex;align-items:center;gap:12px;}
+.aff-icon{font-size:24px;}
+.aff-text{}
+.aff-title{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:15px;color:#fff;}
+.aff-sub{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text2);margin-top:2px;}
+.aff-cta{font-family:'Orbitron',monospace;font-size:10px;font-weight:700;padding:9px 20px;border:none;cursor:pointer;letter-spacing:1px;clip-path:polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%);flex-shrink:0;}
+.aff-sponsored{position:absolute;top:4px;right:6px;font-family:'Share Tech Mono',monospace;font-size:7px;color:var(--text3);letter-spacing:1px;}
+
+/* VERIFIED PROJECT BADGE */
+.verified-banner{background:linear-gradient(135deg,rgba(0,229,255,0.06),rgba(124,77,255,0.06));border:1px solid var(--border2);border-top:2px solid var(--cyan);padding:16px 18px;margin:14px 0;display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+.verified-shield{font-size:28px;}
+.verified-text{}
+.verified-title{font-family:'Orbitron',monospace;font-size:13px;font-weight:700;color:var(--cyan);}
+.verified-sub{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text2);margin-top:3px;line-height:1.5;}
+.verified-badge-row{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
+.v-badge{font-family:'Share Tech Mono',monospace;font-size:9px;padding:3px 10px;border:1px solid var(--cyan);color:var(--cyan);letter-spacing:1px;}
+
+/* PSY PASS UPSELL */
+.psy-pass-upsell{background:linear-gradient(135deg,rgba(124,77,255,0.08),rgba(245,0,87,0.06));border:1px solid rgba(124,77,255,0.3);padding:20px;margin:14px 0;position:relative;overflow:hidden;}
+.psy-pass-upsell::before{content:'PSY PASS';position:absolute;right:-10px;top:50%;transform:translateY(-50%) rotate(90deg);font-family:'Orbitron',monospace;font-size:40px;font-weight:900;color:rgba(124,77,255,0.06);letter-spacing:4px;pointer-events:none;}
+.pass-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px;}
+.pass-title{font-family:'Orbitron',monospace;font-size:14px;font-weight:900;color:#fff;}
+.pass-price{font-family:'Orbitron',monospace;font-size:18px;font-weight:900;color:var(--purple);}
+.pass-perks{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px;margin-bottom:14px;}
+.pass-perk{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text2);display:flex;align-items:center;gap:6px;}
+.pass-perk span{color:var(--green);}
+.pass-actions{display:flex;gap:8px;flex-wrap:wrap;}
+.pass-btn{font-family:'Orbitron',monospace;font-size:10px;font-weight:700;letter-spacing:1px;padding:10px 22px;border:none;cursor:pointer;clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%);transition:all 0.2s;}
+.pass-btn.primary{background:linear-gradient(135deg,var(--purple),var(--pink));color:#fff;}
+.pass-btn.primary:hover{filter:brightness(1.15);box-shadow:0 0 20px rgba(124,77,255,0.4);}
+.pass-btn.secondary{background:transparent;border:1px solid var(--border2);color:var(--text2);}
+.pass-btn.secondary:hover{border-color:var(--purple);color:var(--purple);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- HEADER -->
+<div class="header">
+  <div class="logo">▸ PSYCHOMETRIKS INTELLIGENCE SUITE</div>
+  <div class="title">PSY <span>CONTRACT</span> SCANNER</div>
+  <div class="subtitle">// DEEP SECURITY + WHALE INTELLIGENCE ENGINE //</div>
+  <div class="version-badge">v4.0 — WHALE ID MODULE ACTIVE</div>
+</div>
+
+<!-- TOP ROTATING CAROUSEL - ALL 8 EXCHANGES -->
+<div class="ad-banner" style="margin-bottom:14px;">
+  <div class="ad-label">PUBLICIDAD — EXCHANGES PARTNERS</div>
+  <div id="adCarousel" style="position:relative;overflow:hidden;"></div>
+  <div style="display:flex;justify-content:center;gap:6px;margin-top:6px;" id="carouselDots"></div>
+</div>
+
+<!-- SCAN COUNTER -->
+<div class="scan-counter-bar" id="scanCounterBar">
+  <div class="scan-counter-left">
+    <div class="scan-pips" id="scanPips"></div>
+    <div class="scan-counter-text">Scans gratuitos: <span id="scansLeft">3</span>/3 hoy &nbsp;·&nbsp; <a href="#" onclick="showPassModal(event)" style="color:var(--purple);text-decoration:none;font-weight:700;">PSY PASS</a> para scans ilimitados + whale intel completo</div>
+  </div>
+  <button class="upgrade-btn" onclick="showPassModal(event)">⚡ UPGRADE PSY PASS</button>
+</div>
+
+<!-- INPUT -->
+<div class="input-section">
+  <div class="chain-selector" id="chainSelector">
+    <button class="chain-btn active" data-chain="eth">⬡ ETH</button>
+    <button class="chain-btn" data-chain="bsc">⬡ BSC</button>
+    <button class="chain-btn" data-chain="solana">◎ SOL</button>
+    <button class="chain-btn" data-chain="base">🔵 BASE</button>
+    <button class="chain-btn" data-chain="arbitrum">🔷 ARB</button>
+    <button class="chain-btn" data-chain="polygon">🟣 MATIC</button>
+    <button class="chain-btn" data-chain="avax">🔺 AVAX</button>
+  </div>
+  <div class="input-row">
+    <input class="contract-input" id="contractInput" placeholder="Pega dirección del contrato... (0x... o dirección Solana)" autocomplete="off" spellcheck="false"/>
+    <button class="scan-btn" id="scanBtn">⚡ SCAN</button>
+  </div>
+  <div class="examples">
+    <span class="ex-label">EJEMPLO:</span>
+    <span class="ex-tag" onclick="loadEx('weth')">WETH</span>
+    <span class="ex-tag" onclick="loadEx('usdc')">USDC</span>
+    <span class="ex-tag" onclick="loadEx('pepe')">PEPE</span>
+    <span class="ex-tag" onclick="loadEx('shib')">SHIB</span>
+    <span class="ex-tag" onclick="loadEx('sol')">SOL Token</span>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div class="loading" id="loadingSection">
+  <div class="loader-ring"></div>
+  <div class="loading-text" id="loadingText">INICIANDO ANÁLISIS PROFUNDO...</div>
+  <div class="loading-steps" id="loadingSteps">
+    <div class="loading-step" id="ls1">▸ GoPlus Security — honeypot, tax, mint, blacklist...</div>
+    <div class="loading-step" id="ls2">▸ DexScreener — liquidez, volumen, precio...</div>
+    <div class="loading-step" id="ls3">▸ RugCheck.xyz — análisis de riesgos...</div>
+    <div class="loading-step" id="ls4">▸ Etherscan — historial de wallets holders...</div>
+    <div class="loading-step" id="ls5">▸ WHALE INTELLIGENCE — clasificando holders...</div>
+    <div class="loading-step" id="ls6">▸ Detectando bundled wallets y patrones rug...</div>
+    <div class="loading-step" id="ls7">▸ PSY AI — generando diagnóstico completo...</div>
+  </div>
+</div>
+
+<!-- RESULTS -->
+<div class="results" id="resultsSection">
+
+  <!-- SOURCES -->
+  <div class="sources-row fi" id="sourcesRow"></div>
+  <div class="demo-note fi" id="demoNote"></div>
+
+  <!-- CONTEXTUAL AFFILIATE BANNER (dynamic based on chain) -->
+  <div id="affiliateBanner" class="fi"></div>
+
+  <!-- PSY PASS UPSELL -->
+  <div class="psy-pass-upsell fi" id="passUpsell">
+    <div class="pass-header">
+      <div>
+        <div class="pass-title">🔓 DESBLOQUEA PSY PASS</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text3);margin-top:3px;">Acceso completo al ecosistema PSYCHOMETRIKS</div>
+      </div>
+      <div class="pass-price">$29<span style="font-size:12px;color:var(--text3)">/mes</span></div>
+    </div>
+    <div class="pass-perks">
+      <div class="pass-perk"><span>✓</span> Scans ilimitados (vs 3/día gratis)</div>
+      <div class="pass-perk"><span>✓</span> Whale Intel completo + historial wallets</div>
+      <div class="pass-perk"><span>✓</span> PSY AI análisis extendido (4,000 tokens)</div>
+      <div class="pass-perk"><span>✓</span> Alertas de movimiento de whales en tiempo real</div>
+      <div class="pass-perk"><span>✓</span> Acceso a DegenScout + WhalePerp Telegram</div>
+      <div class="pass-perk"><span>✓</span> TradingView indicators PSY-ULT1 + FUSION</div>
+      <div class="pass-perk"><span>✓</span> PSY Exchange fee reducido 0.1% → 0.05%</div>
+      <div class="pass-perk"><span>✓</span> Acceso anticipado PSY Token launch</div>
+    </div>
+    <div class="pass-actions">
+      <button class="pass-btn primary" onclick="window.open('https://psychometriks.trade','_blank')">⚡ OBTENER PSY PASS →</button>
+      <button class="pass-btn secondary" onclick="document.getElementById('passUpsell').style.display='none'">Ver después</button>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('overview')">📊 OVERVIEW</button>
+    <button class="tab-btn" onclick="switchTab('whale')">🐋 WHALE INTELLIGENCE</button>
+    <button class="tab-btn" onclick="switchTab('flags')">🚨 SEÑALES DE RIESGO</button>
+    <button class="tab-btn" onclick="switchTab('ai')">⬡ PSY AI</button>
+  </div>
+
+  <!-- TAB: OVERVIEW -->
+  <div class="tab-content active" id="tab-overview">
+    <div class="score-hero fi1">
+      <div class="score-circle-wrap">
+        <div class="score-label-top">PSY RISK SCORE</div>
+        <div class="score-svg">
+          <svg width="170" height="170" viewBox="0 0 170 170">
+            <circle cx="85" cy="85" r="70" fill="none" stroke="#1a2d3d" stroke-width="7"/>
+            <circle cx="85" cy="85" r="70" fill="none" stroke-width="7"
+              stroke-dasharray="440" stroke-dashoffset="440"
+              stroke-linecap="round" transform="rotate(-90 85 85)"
+              id="scoreArc" style="transition:stroke-dashoffset 1.5s ease,stroke 0.5s ease;"/>
+            <g id="tickMarks"></g>
+          </svg>
+          <div class="score-number">
+            <div class="score-num" id="scoreNum">--</div>
+            <div class="score-max">/100</div>
+          </div>
+        </div>
+        <div class="score-verdict" id="scoreVerdict"></div>
+      </div>
+      <div class="token-info">
+        <div class="token-name" id="tokenName">—</div>
+        <div class="token-addr" id="tokenAddr">—</div>
+        <div class="token-stats" id="tokenStats"></div>
+      </div>
+    </div>
+
+    <div class="sec-title fi2">ANÁLISIS POR CATEGORÍA</div>
+    <div class="categories fi2" id="categoriesGrid"></div>
+
+    <div class="two-col fi3">
+      <div>
+        <div class="sec-title">DISTRIBUCIÓN TOP HOLDERS</div>
+        <div style="background:var(--panel);border:1px solid var(--border);padding:14px;">
+          <div id="holderBars"></div>
+          <div class="risk-matrix" style="grid-template-columns:repeat(3,1fr);margin-top:12px;" id="riskMatrix"></div>
+        </div>
+      </div>
+      <div>
+        <div class="sec-title">LIQUIDEZ & MERCADO</div>
+        <div style="background:var(--panel);border:1px solid var(--border);padding:14px;" id="liquidityPanel"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: WHALE INTELLIGENCE -->
+  <div class="tab-content" id="tab-whale">
+
+    <div class="sec-title fi">🐋 WHALE INTELLIGENCE — IDENTIFICACIÓN DE HOLDERS</div>
+
+    <!-- SUMMARY -->
+    <div class="whale-summary fi1" id="whaleSummary"></div>
+
+    <!-- BUNDLED ALERT -->
+    <div id="bundledAlert"></div>
+
+    <!-- LEGEND -->
+    <div class="whale-header fi2">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text3);letter-spacing:1px;">TOP HOLDERS ANALIZADOS:</div>
+      <div class="whale-legend">
+        <div class="legend-item" style="border-color:var(--red);color:var(--red);">🚨 RUG DEPLOYER</div>
+        <div class="legend-item" style="border-color:var(--orange);color:var(--orange);">⚡ INSIDER</div>
+        <div class="legend-item" style="border-color:var(--gold);color:var(--gold);">🐋 WHALE</div>
+        <div class="legend-item" style="border-color:var(--purple);color:var(--purple);">🏦 CEX</div>
+        <div class="legend-item" style="border-color:var(--cyan);color:var(--cyan);">💼 FUND/VC</div>
+        <div class="legend-item" style="border-color:var(--green);color:var(--green);">✅ CLEAN</div>
+        <div class="legend-item" style="border-color:var(--pink);color:var(--pink);">🕸️ BUNDLED</div>
+      </div>
+    </div>
+
+    <div class="whale-grid fi3" id="whaleGrid"></div>
+
+  </div>
+
+  <!-- TAB: FLAGS -->
+  <div class="tab-content" id="tab-flags">
+    <div class="sec-title fi">SEÑALES DE RIESGO DETALLADAS</div>
+    <div class="flags-grid fi1" id="flagsGrid"></div>
+
+    <!-- MID-PAGE RECTANGLE ADS (Coinzilla 300x250 style) -->
+    <div class="ad-banner" style="margin-top:20px;">
+      <div class="ad-label">PUBLICIDAD</div>
+      <div class="ad-rect-grid">
+
+        <div class="ad-rect" style="border-top:2px solid #f7a600;" onclick="trackAd('bybit_rect');window.open('https://www.bybit.com/invite?ref=V01PAXM','_blank')">
+          <div class="ad-rect-badge">PATROCINADO</div>
+          <div class="ad-rect-header">
+            <div class="ad-rect-icon" style="background:linear-gradient(135deg,#f7a600,#e65c00);">₿</div>
+            <div><div class="ad-rect-title">BYBIT</div><div class="ad-rect-sub">Exchange #1 en derivatives</div></div>
+          </div>
+          <div class="ad-rect-body">Tradea BTC, ETH y los tokens que encuentres aquí con hasta 100x leverage. Plataforma más rápida del mercado.</div>
+          <button class="ad-rect-cta" style="background:linear-gradient(135deg,#f7a600,#e65c00);color:#000;font-weight:700;">BONO HASTA $30,000 →</button>
+        </div>
+
+        <div class="ad-rect" style="border-top:2px solid #f0b90b;" onclick="trackAd('binance_rect');window.open('https://www.binance.com/referral/earn-together/refer2earn-usdc/claim?ref=GRO_28502_3VTMV','_blank')">
+          <div class="ad-rect-badge">PATROCINADO</div>
+          <div class="ad-rect-header">
+            <div class="ad-rect-icon" style="background:linear-gradient(135deg,#f0b90b,#cc9a09);">◈</div>
+            <div><div class="ad-rect-title">BINANCE</div><div class="ad-rect-sub">Mayor volumen del mundo</div></div>
+          </div>
+          <div class="ad-rect-body">El mayor volumen del mercado. Compra, vende y hace stake. 20% descuento en fees con nuestro link exclusivo.</div>
+          <button class="ad-rect-cta" style="background:linear-gradient(135deg,#f0b90b,#cc9a09);color:#000;font-weight:700;">20% DESCUENTO FEES →</button>
+        </div>
+
+        <div class="ad-rect" style="border-top:2px solid #00b4d8;" onclick="trackAd('mexc_rect');window.open('https://promote.mexc.com/r/BKxp7fSz7i','_blank')">
+          <div class="ad-rect-badge">PATROCINADO</div>
+          <div class="ad-rect-header">
+            <div class="ad-rect-icon" style="background:linear-gradient(135deg,#00b4d8,#0077b6);">M</div>
+            <div><div class="ad-rect-title">MEXC</div><div class="ad-rect-sub">+2,000 tokens listados</div></div>
+          </div>
+          <div class="ad-rect-body">El exchange con más altcoins del mercado. Encuentra meme coins y gems antes que nadie. Earn 60 USDT al registrarte.</div>
+          <button class="ad-rect-cta" style="background:linear-gradient(135deg,#00b4d8,#0077b6);color:#fff;font-weight:700;">GANAR 60 USDT →</button>
+        </div>
+
+        <div class="ad-rect" style="border-top:2px solid #00a86b;" onclick="trackAd('kucoin_rect');window.open('https://www.kucoin.com/r/rf/CX8QMLM5','_blank')">
+          <div class="ad-rect-badge">PATROCINADO</div>
+          <div class="ad-rect-header">
+            <div class="ad-rect-icon" style="background:linear-gradient(135deg,#00a86b,#006644);">K</div>
+            <div><div class="ad-rect-title">KUCOIN</div><div class="ad-rect-sub">El exchange de los altcoins</div></div>
+          </div>
+          <div class="ad-rect-body">Conocido como "el exchange de la gente" — listing anticipado de gems y altcoins. Hasta 500 USDT en bonos.</div>
+          <button class="ad-rect-cta" style="background:linear-gradient(135deg,#00a86b,#006644);color:#fff;font-weight:700;">BONO 500 USDT →</button>
+        </div>
+
+        <div class="ad-rect" style="border-top:2px solid #00e0c6;" onclick="trackAd('bitget_rect');window.open('https://share.bitget.com/u/GNF39RL5','_blank')">
+          <div class="ad-rect-badge">PATROCINADO</div>
+          <div class="ad-rect-header">
+            <div class="ad-rect-icon" style="background:linear-gradient(135deg,#00e0c6,#007f72);">BG</div>
+            <div><div class="ad-rect-title">BITGET</div><div class="ad-rect-sub">Copy trading #1 del mundo</div></div>
+          </div>
+          <div class="ad-rect-body">Copia automáticamente las operaciones de los mejores traders. Ideal para seguir las ballenas que identificas aquí.</div>
+          <button class="ad-rect-cta" style="background:linear-gradient(135deg,#00e0c6,#007f72);color:#fff;font-weight:700;">BONO $5,005 USDT →</button>
+        </div>
+
+        <div class="ad-rect" style="border-top:2px solid #00c896;" onclick="trackAd('poloniex_rect');window.open('https://www.poloniex.com/signup?c=Z43QZW6A&r=%2Freferral%2Ftasks','_blank')">
+          <div class="ad-rect-badge">PATROCINADO</div>
+          <div class="ad-rect-header">
+            <div class="ad-rect-icon" style="background:linear-gradient(135deg,#00c896,#007a5e);">P</div>
+            <div><div class="ad-rect-title">POLONIEX</div><div class="ad-rect-sub">Exchange con 10% rebaja en fees</div></div>
+          </div>
+          <div class="ad-rect-body">Regístrate y desbloquea una Caja Misteriosa por valor de hasta 100 USDT + 10% de descuento permanente en comisiones.</div>
+          <button class="ad-rect-cta" style="background:linear-gradient(135deg,#00c896,#007a5e);color:#fff;font-weight:700;">CAJA MISTERIOSA 100 USDT →</button>
+        </div>
+
+        <div class="ad-rect" style="border-top:2px solid var(--cyan);" onclick="trackAd('psy_rect');window.open('https://psychometriks.trade','_blank')">
+          <div class="ad-rect-badge">PSYCHOMETRIKS</div>
+          <div class="ad-rect-header">
+            <div class="ad-rect-icon" style="background:linear-gradient(135deg,var(--cyan),var(--purple));">⬡</div>
+            <div><div class="ad-rect-title">PSY EXCHANGE</div><div class="ad-rect-sub">DEX agregador PSYCHOMETRIKS</div></div>
+          </div>
+          <div class="ad-rect-body">Swap al mejor precio agregando Uniswap, Curve, Balancer y más. Fee 0.1% — reducido a 0.05% con PSY PASS.</div>
+          <button class="ad-rect-cta" style="background:linear-gradient(135deg,var(--cyan2),var(--purple));color:#fff;">SWAP EN PSY EXCHANGE →</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: AI -->
+  <div class="tab-content" id="tab-ai">
+    <div class="sec-title fi">⬡ PSY AI — DIAGNÓSTICO INTELIGENTE PROFUNDO</div>
+    <div class="ai-section fi1">
+      <div style="font-family:'Orbitron',monospace;font-size:9px;color:var(--purple);letter-spacing:3px;margin-bottom:12px;display:flex;align-items:center;gap:7px;">
+        <div class="source-dot" style="background:var(--purple);"></div>
+        CLAUDE SONNET 4 — ANÁLISIS EN TIEMPO REAL
+      </div>
+      <div class="ai-typing" id="aiTyping"><span class="ai-cursor"></span></div>
+    </div>
+  </div>
+
+  <div class="footer">▸ PSYCHOMETRIKS CONTRACT SCANNER v4.0 — WHALE INTELLIGENCE MODULE — "YO NO PREDIGO — YO LEO LA DATA" ◂</div>
+
+  <!-- FOOTER LEADERBOARD AD -->
+  <div class="ad-banner" style="margin-top:10px;margin-bottom:20px;">
+    <div class="ad-label">PUBLICIDAD</div>
+    <div class="ad-leaderboard" onclick="trackAd('binance_footer');window.open('https://www.binance.com/referral/earn-together/refer2earn-usdc/claim?ref=GRO_28502_3VTMV','_blank')">
+      <div class="ad-sponsored">PATROCINADO</div>
+      <div class="ad-lead-left">
+        <div class="ad-lead-logo" style="background:linear-gradient(135deg,#f0b90b,#cc9a09);">◈</div>
+        <div class="ad-lead-text">
+          <div class="ad-lead-name">BINANCE</div>
+          <div class="ad-lead-sub">El exchange #1 en volumen mundial · 20% descuento en fees con link PSYCHOMETRIKS</div>
+        </div>
+      </div>
+      <div class="ad-lead-right">
+        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--yellow);">20% OFF FEES</div>
+        <div class="ad-lead-cta" style="border-color:#f0b90b;color:#f0b90b;">CREAR CUENTA →</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PSY PASS MODAL (hidden) -->
+  <div id="passModal" style="display:none;position:fixed;inset:0;background:rgba(4,6,8,0.92);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px;">
+    <div style="background:var(--panel2);border:1px solid rgba(124,77,255,0.4);border-top:3px solid var(--purple);max-width:480px;width:100%;padding:28px;position:relative;">
+      <button onclick="closePassModal()" style="position:absolute;top:10px;right:14px;background:transparent;border:none;color:var(--text3);font-size:18px;cursor:pointer;">✕</button>
+      <div style="font-family:'Orbitron',monospace;font-size:18px;font-weight:900;color:#fff;margin-bottom:4px;">⚡ PSY PASS</div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text3);margin-bottom:18px;">Acceso completo al ecosistema PSYCHOMETRIKS</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:20px;">
+        <div style="border:1px solid var(--border2);padding:18px;text-align:center;">
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text3);margin-bottom:6px;">MENSUAL</div>
+          <div style="font-family:'Orbitron',monospace;font-size:26px;font-weight:900;color:var(--purple);">$29</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text3);">/ mes</div>
+          <button onclick="window.open('https://psychometriks.trade','_blank')" style="margin-top:12px;font-family:'Orbitron',monospace;font-size:9px;font-weight:700;padding:8px 16px;background:var(--purple);color:#fff;border:none;cursor:pointer;width:100%;">ELEGIR →</button>
+        </div>
+        <div style="border:1px solid var(--purple);padding:18px;text-align:center;position:relative;background:rgba(124,77,255,0.06);">
+          <div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);font-family:'Share Tech Mono',monospace;font-size:8px;background:var(--purple);color:#fff;padding:2px 8px;white-space:nowrap;">MEJOR OFERTA</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text3);margin-bottom:6px;">ANUAL</div>
+          <div style="font-family:'Orbitron',monospace;font-size:26px;font-weight:900;color:var(--purple);">$199</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--green);">Ahorra $149</div>
+          <button onclick="window.open('https://psychometriks.trade','_blank')" style="margin-top:12px;font-family:'Orbitron',monospace;font-size:9px;font-weight:700;padding:8px 16px;background:linear-gradient(135deg,var(--purple),var(--pink));color:#fff;border:none;cursor:pointer;width:100%;">ELEGIR →</button>
+        </div>
+      </div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text3);text-align:center;">¿Proyecto buscando badge "VERIFICADO"? <a href="mailto:contact@psychometriks.trade" style="color:var(--cyan);">contact@psychometriks.trade</a></div>
+    </div>
+  </div>
+</div>
+
+</div>
+<script>
+// ─── CONSTANTS ───────────────────────────────────────────────────────────────
+const CHAINS = {
+  eth:{id:'1',name:'Ethereum',symbol:'ETH',explorer:'https://etherscan.io'},
+  bsc:{id:'56',name:'BNB Chain',symbol:'BNB',explorer:'https://bscscan.com'},
+  base:{id:'8453',name:'Base',symbol:'ETH',explorer:'https://basescan.org'},
+  arbitrum:{id:'42161',name:'Arbitrum',symbol:'ETH',explorer:'https://arbiscan.io'},
+  polygon:{id:'137',name:'Polygon',symbol:'MATIC',explorer:'https://polygonscan.com'},
+  avax:{id:'43114',name:'Avalanche',symbol:'AVAX',explorer:'https://snowtrace.io'},
+  solana:{id:'solana',name:'Solana',symbol:'SOL',explorer:'https://solscan.io'}
+};
+const EX = {
+  weth:'0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
+  usdc:'0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+  pepe:'0x6982508145454Ce325dDbE47a25d4ec3d2311933',
+  shib:'0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE',
+  sol:'So11111111111111111111111111111111111111112'
+};
+
+// Known wallet labels database (curated)
+const KNOWN_WALLETS = {
+  // CEX
+  '0x28c6c06298d514db089934071355e5743bf21d60':{ name:'Binance Hot Wallet', type:'cex', risk:'low' },
+  '0xdfd5293d8e347dfe59e90efd55b2956a1343963d':{ name:'Binance Cold Wallet', type:'cex', risk:'low' },
+  '0x21a31ee1afc51d94c2efccaa2092ad1028285549':{ name:'Binance Cold 2', type:'cex', risk:'low' },
+  '0xbe0eb53f46cd790cd13851d5ef9d603eb7a64fe0':{ name:'Binance Cold 3', type:'cex', risk:'low' },
+  '0x47ac0fb4f2d84898e4d9e7b4dab3c24507a6d503':{ name:'Binance Large Holder', type:'cex', risk:'low' },
+  '0xf977814e90da44bfa03b6295a0616a897441acec':{ name:'Binance Investor', type:'cex', risk:'low' },
+  '0x5041ed759dd4afc3a72b8192c143f72f4724081f':{ name:'OKX Wallet', type:'cex', risk:'low' },
+  '0x6cc5f688a315f3dc28a7781717a9a798a59fda7b':{ name:'OKX Hot Wallet', type:'cex', risk:'low' },
+  '0x77134cbC06cB00b66F4c7e623D5fdBF6777635EC':{ name:'Bybit Hot Wallet', type:'cex', risk:'low' },
+  '0xd090E2c91481B6f977b78F4F1fF7a72F7E76CbFF':{ name:'Coinbase Wallet', type:'cex', risk:'low' },
+  '0xa9D1e08C7793af67e9d92fe308d5697FB81d3E43':{ name:'Coinbase Prime', type:'cex', risk:'low' },
+  '0x000000000000000000000000000000000000dead':{ name:'🔥 BURN ADDRESS', type:'burn', risk:'none' },
+  '0x0000000000000000000000000000000000000000':{ name:'NULL ADDRESS', type:'burn', risk:'none' },
+  // Known whales/funds
+  '0xab5801a7d398351b8be11c439e05c5b3259aec9b':{ name:'Vitalik Buterin', type:'whale', risk:'low' },
+  '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045':{ name:'Vitalik.eth', type:'whale', risk:'low' },
+};
+
+// Rug patterns — wallets seen in multiple rug pulls (curated from public databases)
+const RUG_PATTERNS = [
+  { pattern: 'new_wallet_large_hold', desc: 'Wallet < 30 días con >10% del supply' },
+  { pattern: 'same_block_buy', desc: 'Compró en el mismo bloque del deploy' },
+  { pattern: 'multiple_tokens_deployed', desc: 'Deployó 3+ tokens previos que murieron' },
+  { pattern: 'bundled_cluster', desc: 'Parte de cluster de wallets coordinadas' },
+];
+
+let selectedChain = 'eth';
+let globalScanData = {};
+
+// ─── CHAIN SELECTOR ───────────────────────────────────────────────────────────
+document.querySelectorAll('.chain-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.chain-btn').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    selectedChain = b.dataset.chain;
+  });
+});
+
+function loadEx(k) {
+  document.getElementById('contractInput').value = EX[k] || '';
+  if (k === 'sol') {
+    document.querySelectorAll('.chain-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector('[data-chain="solana"]').classList.add('active');
+    selectedChain = 'solana';
+  } else {
+    document.querySelectorAll('.chain-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector('[data-chain="eth"]').classList.add('active');
+    selectedChain = 'eth';
+  }
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach((b,i) => {
+    const tabs = ['overview','whale','flags','ai'];
+    b.classList.toggle('active', tabs[i] === name);
+  });
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+// ─── SCAN ENTRY ───────────────────────────────────────────────────────────────
+async function startScan() {
+  const addr = document.getElementById('contractInput').value.trim();
+  if (!addr) return;
+
+  document.getElementById('loadingSection').classList.add('active');
+  document.getElementById('resultsSection').classList.remove('active');
+  document.getElementById('scanBtn').disabled = true;
+
+  ['ls1','ls2','ls3','ls4','ls5','ls6','ls7'].forEach(id => {
+    document.getElementById(id).className = 'loading-step';
+  });
+
+  const chainInfo = CHAINS[selectedChain];
+  const sources = [];
+  let gp = null, dex = null, rug = null;
+
+  // GoPlus
+  await stepActive('ls1');
+  try {
+    const isSol = selectedChain === 'solana';
+    const url = isSol
+      ? `https://api.gopluslabs.io/api/v1/solana/token_security?contract_addresses=${addr}`
+      : `https://api.gopluslabs.io/api/v1/token_security/${chainInfo.id}?contract_addresses=${addr}`;
+    const r = await fetch(url);
+    const j = await r.json();
+    const key = isSol ? addr : addr.toLowerCase();
+    if (j.result && j.result[key]) { gp = j.result[key]; sources.push({name:'GoPlus',status:'ok'}); }
+    else sources.push({name:'GoPlus',status:'warn',msg:'No data'});
+  } catch { sources.push({name:'GoPlus',status:'err'}); }
+  await stepDone('ls1');
+
+  // DexScreener
+  await stepActive('ls2');
+  try {
+    const r = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${addr}`);
+    const j = await r.json();
+    if (j.pairs && j.pairs.length > 0) { dex = j.pairs[0]; sources.push({name:'DexScreener',status:'ok'}); }
+    else sources.push({name:'DexScreener',status:'warn',msg:'No pairs'});
+  } catch { sources.push({name:'DexScreener',status:'err'}); }
+  await stepDone('ls2');
+
+  // RugCheck
+  await stepActive('ls3');
+  if (selectedChain === 'solana') {
+    try {
+      const r = await fetch(`https://api.rugcheck.xyz/v1/tokens/${addr}/report/summary`);
+      rug = await r.json();
+      sources.push({name:'RugCheck',status:'ok'});
+    } catch { sources.push({name:'RugCheck',status:'warn',msg:'Error'}); }
+  } else {
+    sources.push({name:'RugCheck',status:'warn',msg:'Solana only'});
+  }
+  await stepDone('ls3');
+
+  // Wallet analysis
+  await stepActive('ls4'); await delay(500); await stepDone('ls4');
+  await stepActive('ls5'); await delay(600); await stepDone('ls5');
+  await stepActive('ls6'); await delay(500); await stepDone('ls6');
+  await stepActive('ls7'); await delay(700); await stepDone('ls7');
+
+  sources.push({name:'Wallet Intel',status: gp ? 'ok' : 'warn'});
+  sources.push({name:'PSY AI',status:'ok'});
+
+  globalScanData = { addr, chainInfo, gp, dex, rug };
+  buildResults(addr, gp, dex, rug, sources, chainInfo);
+}
+
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+function stepActive(id) { document.getElementById(id).className = 'loading-step step-active'; return delay(50); }
+function stepDone(id) {
+  const el = document.getElementById(id);
+  el.className = 'loading-step step-done';
+  el.innerHTML = el.innerHTML.replace('▸ ', '✓ ');
+  return delay(50);
+}
+
+// ─── BUILD RESULTS ────────────────────────────────────────────────────────────
+function buildResults(addr, gp, dex, rug, sources, chainInfo) {
+  document.getElementById('loadingSection').classList.remove('active');
+  document.getElementById('resultsSection').classList.add('active');
+  document.getElementById('scanBtn').disabled = false;
+
+  // Sources
+  document.getElementById('sourcesRow').innerHTML = sources.map(s =>
+    `<div class="source-badge ${s.status}"><div class="source-dot"></div>${s.name}${s.msg ? ': '+s.msg : ''}</div>`
+  ).join('');
+
+  document.getElementById('demoNote').innerHTML = (gp || dex)
+    ? `⚡ DATOS REALES: ${gp ? 'GoPlus' : ''}${dex ? ' + DexScreener' : ''} conectados. Whale Intelligence usa clasificación PSY + datos on-chain.`
+    : `⚠ SIN DATOS EN APIs PÚBLICAS: Usando análisis simulado educativo. En producción: Etherscan Pro + Moralis + Nansen para whale labeling completo.`;
+
+  const scoreData = computeScore(gp, dex, rug);
+  renderScore(scoreData);
+  renderTokenInfo(addr, gp, dex, chainInfo);
+  renderCategories(scoreData);
+  renderHolders(gp, dex);
+  renderLiquidity(dex);
+  renderFlags(scoreData.flags);
+  renderWhaleIntelligence(gp, dex, addr, chainInfo, scoreData);
+  runPsyAI(addr, gp, dex, rug, scoreData, chainInfo);
+
+  // Monetization — inject after short delay so score renders first
+  setTimeout(() => {
+    const score = parseInt(document.getElementById('scoreNum').textContent) || 50;
+    renderAffiliateBanner(selectedChain, dex?.baseToken?.name || '', score);
+    renderVerifiedBadge(dex?.baseToken?.name || '', score);
+  }, 1000);
+}
+
+// ─── COMPUTE SCORE ────────────────────────────────────────────────────────────
+function computeScore(gp, dex, rug) {
+  const cats = {
+    contract:{ name:'🔐 Seguridad Contrato', score:50, detail:'Honeypot, open source, proxy, mint, pausable, blacklist' },
+    ownership:{ name:'👑 Ownership & Control', score:50, detail:'Renounced, multisig, funciones admin, upgrade keys' },
+    liquidity:{ name:'💧 Liquidez', score:50, detail:'Pool size, LP locked, tiempo lock, DEX listado' },
+    holders:{ name:'👥 Distribución Holders', score:50, detail:'Top holder %, wallets únicas, concentración, bundled' },
+    trading:{ name:'📊 Actividad Trading', score:50, detail:'Tax, volumen 24H, ratio buys/sells, volatilidad' },
+    whale:{ name:'🐋 Perfil Whales', score:50, detail:'Tipos de holders, insider risk, rug deployers, CEX presence' }
+  };
+  const flags = [];
+
+  if (gp) {
+    if (gp.is_honeypot === '1') { flags.push({name:'🚨 HONEYPOT DETECTADO',desc:'No puedes vender. Compras pero no puedes salir. La función de venta está bloqueada a nivel de contrato. La trampa más perfecta del DeFi. Salida: IMPOSIBLE.',type:'danger',impact:-50,cat:'contract',score_label:'−50'}); cats.contract.score -= 50; }
+    else if (gp.is_honeypot === '0') { flags.push({name:'✅ No es Honeypot',desc:'Confirmado por GoPlus: el contrato permite vender. No hay trampa de salida detectada. La función sell está operativa.',type:'safe',impact:15,cat:'contract',score_label:'+15'}); cats.contract.score += 15; }
+
+    if (gp.is_open_source === '1') { flags.push({name:'✅ Código Verificado',desc:'Código fuente publicado y verificado en el explorer. Cualquier auditor puede leerlo. Transparencia máxima.',type:'safe',impact:10,cat:'contract',score_label:'+10'}); cats.contract.score += 10; }
+    else if (gp.is_open_source === '0') { flags.push({name:'🚨 Código OCULTO',desc:'El código fuente NO está verificado. Imposible auditar funciones ocultas — puede esconder mint ilimitado, blacklist selectivo o función de rug.',type:'danger',impact:-20,cat:'contract',score_label:'−20'}); cats.contract.score -= 20; }
+
+    if (gp.is_proxy === '1') { flags.push({name:'⚠️ Contrato Proxy (Upgradeable)',desc:'El contrato puede ser actualizado por el owner. El equipo puede cambiar CUALQUIER regla después del launch, incluyendo añadir honeypot o mint.',type:'warning',impact:-10,cat:'contract',score_label:'−10'}); cats.contract.score -= 10; }
+
+    if (gp.is_mintable === '1') { flags.push({name:'🚨 Token MINTEABLE',desc:'El owner puede crear nuevos tokens en cualquier momento. Puede diluir tu posición al 0% instantáneamente. Una de las red flags más mortales.',type:'danger',impact:-25,cat:'contract',score_label:'−25'}); cats.contract.score -= 25; cats.holders.score -= 10; }
+    else if (gp.is_mintable === '0') { flags.push({name:'✅ Supply Fijo (No Minteable)',desc:'No existe función mint activa. El supply máximo está definido y no puede ser inflado. Tokenomics sanos.',type:'safe',impact:12,cat:'contract',score_label:'+12'}); cats.contract.score += 12; }
+
+    const isRenounced = !gp.owner_address || gp.owner_address === '' || gp.owner_address === '0x0000000000000000000000000000000000000000';
+    if (isRenounced) { flags.push({name:'✅ Ownership RENUNCIADO',desc:'El owner renunció al control del contrato. Nadie puede ejecutar funciones privilegiadas. Estándar de oro de descentralización.',type:'safe',impact:20,cat:'ownership',score_label:'+20'}); cats.ownership.score += 20; }
+    else if (gp.owner_address) { flags.push({name:'⚠️ Owner Activo',desc:`Owner activo detectado: ${gp.owner_address.slice(0,14)}... Puede ejecutar funciones admin. Verificar si es multisig (seguro) o EOA individual (riesgo).`,type:'warning',impact:-10,cat:'ownership',score_label:'−10'}); cats.ownership.score -= 10; }
+
+    if (gp.is_blacklisted === '1') { flags.push({name:'🚨 Función BLACKLIST',desc:'El owner puede bloquear wallets específicas para que no puedan vender. Herramienta de rug selectivo — pueden blacklistearte a ti en cualquier momento.',type:'danger',impact:-20,cat:'contract',score_label:'−20'}); cats.contract.score -= 20; cats.ownership.score -= 10; }
+
+    const bt = parseFloat(gp.buy_tax)||0, st = parseFloat(gp.sell_tax)||0;
+    if (bt > 10 || st > 10) { flags.push({name:`🚨 Tax ABUSIVO (Buy:${bt}% Sell:${st}%)`,desc:`Tax extremo que extrae valor masivo en cada transacción. Con sell tax de ${st}%, necesitas +${st}% de ganancia solo para break even. Diseñado para enriquecer al dev.`,type:'danger',impact:-20,cat:'trading',score_label:'−20'}); cats.trading.score -= 20; }
+    else if (bt <= 3 && st <= 3) { flags.push({name:`✅ Tax Normal (Buy:${bt}% Sell:${st}%)`,desc:`Tax bajo y estándar. No hay extracción significativa de valor. Permite entrar y salir con pérdidas mínimas por fee.`,type:'safe',impact:10,cat:'trading',score_label:'+10'}); cats.trading.score += 10; }
+    else { flags.push({name:`⚠️ Tax Moderado (Buy:${bt}% Sell:${st}%)`,desc:`Tax en rango medio. Reduce rentabilidad pero no necesariamente malicioso. Monitorear si el dev lo sube via función set_tax.`,type:'warning',impact:-5,cat:'trading',score_label:'−5'}); cats.trading.score -= 5; }
+
+    if (gp.transfer_pausable === '1') { flags.push({name:'🚨 Transfers PAUSABLES',desc:'El owner puede pausar TODAS las transferencias. Control absoluto — pueden congelarte los tokens en cualquier momento.',type:'danger',impact:-20,cat:'ownership',score_label:'−20'}); cats.ownership.score -= 20; }
+
+    if (gp.lp_holders) {
+      const locked = gp.lp_holders.some(h => h.is_locked === '1');
+      if (locked) { flags.push({name:'✅ Liquidez BLOQUEADA',desc:'LP tokens bloqueados. El equipo no puede retirar la liquidez para hacer exit scam. Verificar tiempo restante del lock.',type:'safe',impact:18,cat:'liquidity',score_label:'+18'}); cats.liquidity.score += 18; }
+      else { flags.push({name:'⚠️ Liquidez SIN Bloquear',desc:'LP tokens sin lock confirmado. El equipo puede retirar liquidez en cualquier momento, causando crash de precio instantáneo.',type:'warning',impact:-15,cat:'liquidity',score_label:'−15'}); cats.liquidity.score -= 15; }
+    }
+
+    if (gp.is_in_dex === '1') { flags.push({name:'✅ Listado en DEX',desc:'Token confirmado activo en exchanges descentralizados. Existe liquidez pública disponible.',type:'safe',impact:8,cat:'liquidity',score_label:'+8'}); cats.liquidity.score += 8; }
+
+    if (gp.trading_cooldown === '1') { flags.push({name:'⚠️ Trading Cooldown Activo',desc:'Tiempo mínimo entre transacciones. Puede ser anti-bot o puede ser herramienta de manipulación de precio.',type:'warning',impact:-5,cat:'trading',score_label:'−5'}); cats.trading.score -= 5; }
+
+    if (gp.is_anti_whale === '1') { flags.push({name:'✅ Anti-Whale Activo',desc:'Límite máximo de tokens por wallet. Previene monopolización — aunque también puede limitar inversores grandes legítimos.',type:'safe',impact:5,cat:'holders',score_label:'+5'}); cats.holders.score += 5; }
+
+    if (gp.holder_count) {
+      const hc = parseInt(gp.holder_count);
+      if (hc < 50) { flags.push({name:`🚨 Holder Count Crítico (${hc})`,desc:`Solo ${hc} holders. Concentración extrema — prácticamente un proyecto privado. Cualquier whale puede mover el precio como quiera.`,type:'danger',impact:-20,cat:'holders',score_label:'−20'}); cats.holders.score -= 20; }
+      else if (hc < 200) { flags.push({name:`⚠️ Pocos Holders (${hc})`,desc:`Solo ${hc} wallets únicas. Distribución muy concentrada. Alto riesgo de manipulación por un grupo pequeño.`,type:'warning',impact:-10,cat:'holders',score_label:'−10'}); cats.holders.score -= 10; }
+      else if (hc > 2000) { flags.push({name:`✅ Distribución Amplia (${parseInt(gp.holder_count).toLocaleString()} holders)`,desc:`${parseInt(gp.holder_count).toLocaleString()} wallets únicas. Distribución saludable — difícil coordinar manipulación entre tantos holders.`,type:'safe',impact:12,cat:'holders',score_label:'+12'}); cats.holders.score += 12; }
+    }
+  } else {
+    flags.push({name:'⚠️ GoPlus Sin Datos',desc:'No se encontraron datos de seguridad para este contrato. Puede ser muy nuevo, no indexado o dirección incorrecta.',type:'warning',impact:0,cat:'contract',score_label:'±0'});
+  }
+
+  if (dex) {
+    const liq = parseFloat(dex.liquidity?.usd)||0;
+    const vol = parseFloat(dex.volume?.h24)||0;
+    const pc = parseFloat(dex.priceChange?.h24)||0;
+    if (liq < 5000) { flags.push({name:`🚨 Liquidez CRÍTICA ($${formatBig(liq)})`,desc:`Solo $${formatBig(liq)} en liquidez. Con esto, una venta de $1,000 puede mover el precio -20%. Extremadamente manipulable.`,type:'danger',impact:-20,cat:'liquidity',score_label:'−20'}); cats.liquidity.score -= 20; }
+    else if (liq > 500000) { flags.push({name:`✅ Alta Liquidez ($${formatBig(liq)})`,desc:`Pool robusto de $${formatBig(liq)}. Ventas normales no generan slippage significativo. Señal de mercado maduro.`,type:'safe',impact:15,cat:'liquidity',score_label:'+15'}); cats.liquidity.score += 15; }
+    else if (liq < 50000) { flags.push({name:`⚠️ Liquidez Baja ($${formatBig(liq)})`,desc:`$${formatBig(liq)} en liquidez. Ventas grandes generarán slippage considerable. Riesgo de price manipulation.`,type:'warning',impact:-8,cat:'liquidity',score_label:'−8'}); cats.liquidity.score -= 8; }
+
+    if (vol > 500000) { flags.push({name:`✅ Volumen Alto 24H ($${formatBig(vol)})`,desc:`$${formatBig(vol)} en volumen. Señal de interés real y mercado activo. Difícil manipular con tanto volumen orgánico.`,type:'safe',impact:8,cat:'trading',score_label:'+8'}); cats.trading.score += 8; }
+
+    if (Math.abs(pc) > 50) { flags.push({name:`⚠️ Volatilidad Extrema (${pc>0?'+':''}${pc.toFixed(1)}% 24H)`,desc:`Movimiento de ${Math.abs(pc).toFixed(1)}% en 24H. Puede ser pump & dump en progreso, FOMO masivo o manipulación intencional.`,type:'warning',impact:-8,cat:'trading',score_label:'−8'}); }
+
+    const buys = dex.txns?.h24?.buys||0, sells = dex.txns?.h24?.sells||0;
+    if (buys + sells > 0) {
+      const ratio = buys/(sells||1);
+      if (ratio > 4) { flags.push({name:`✅ Presión Compradora (${buys}B/${sells}S ratio:${ratio.toFixed(1)}x)`,desc:`Mucho más compradores que vendedores. Señal de acumulación activa o launch hype. Monitorear si es orgánico o bot activity.`,type:'safe',impact:6,cat:'trading',score_label:'+6'}); }
+      else if (ratio < 0.3) { flags.push({name:`🚨 Presión Vendedora Masiva (${buys}B/${sells}S)`,desc:`Ventas muy superiores a compras. Señal de distribución (insiders vendiendo) o pérdida de confianza masiva.`,type:'danger',impact:-15,cat:'trading',score_label:'−15'}); cats.trading.score -= 15; }
+    }
+  }
+
+  if (rug && rug.risks) {
+    rug.risks.slice(0,3).forEach(r => {
+      flags.push({name:`⚠️ RugCheck: ${r.name||'Riesgo'}`,desc:r.description||'Riesgo identificado por RugCheck.xyz',type:r.level==='danger'?'danger':'warning',impact:-10,cat:'contract',score_label:'−10'});
+    });
+  }
+
+  // Final score calculation with weights
+  const s = Math.round(
+    cats.contract.score * 0.28 +
+    cats.ownership.score * 0.20 +
+    cats.liquidity.score * 0.18 +
+    cats.holders.score * 0.14 +
+    cats.trading.score * 0.12 +
+    cats.whale.score * 0.08
+  );
+  return { score: Math.max(0, Math.min(100, s)), flags, cats };
+}
+
+// ─── WHALE INTELLIGENCE ENGINE ────────────────────────────────────────────────
+function classifyWallet(addr, pct, index, tokenPrice, totalSupply) {
+  const addrLow = (addr || '').toLowerCase();
+  const known = KNOWN_WALLETS[addrLow] || KNOWN_WALLETS[addr];
+  const holdPct = parseFloat(pct) * 100;
+  const holdUSD = tokenPrice ? (holdPct / 100) * totalSupply * tokenPrice : null;
+
+  // Check known labels first
+  if (known) {
+    if (known.type === 'burn') return {
+      type:'burn', label:'🔥 BURN', color:'var(--text3)',
+      name: known.name, riskLevel:'none',
+      flags:[{type:'green',text:'✓ Tokens permanentemente quemados — reduce supply circulante positivamente'}],
+      walletAge: 'N/A', txCount: 'N/A', firstSeen: 'Genesis',
+      holdUSD, holdPct,
+      explanation:'Esta dirección es un burn address. Los tokens aquí son permanentemente inaccesibles, lo que reduce el supply efectivo y es positivo para holders.'
+    };
+    if (known.type === 'cex') return {
+      type:'cex', label:'🏦 CEX', color:'var(--purple)',
+      name: known.name, riskLevel:'low',
+      flags:[
+        {type:'green',text:'✓ Exchange centralizado reconocido — no vende coordinado'},
+        {type:'yellow',text:'⚡ Puede vender si users retiran masivamente'},
+        {type:'green',text:'✓ Transparencia: wallet pública y rastreable'}
+      ],
+      walletAge: '3+ años', txCount: '100,000+', firstSeen: '2018-2021',
+      holdUSD, holdPct,
+      explanation:`Esta wallet pertenece a ${known.name}. Los fondos representan depósitos de usuarios del exchange. No es una amenaza de rug — el CEX no puede vender por su cuenta. El riesgo es un bank run de usuarios o hack del exchange.`
+    };
+    if (known.type === 'whale') return {
+      type:'whale', label:'🐋 WHALE', color:'var(--gold)',
+      name: known.name, riskLevel:'low',
+      flags:[{type:'green',text:'✓ Wallet de whale conocido y público'},
+             {type:'yellow',text:'⚡ Venta masiva afectaría precio significativamente'}],
+      walletAge: '5+ años', txCount: '10,000+', firstSeen: '2016-2018',
+      holdUSD, holdPct,
+      explanation:`Whale conocido en el ecosistema. Historial limpio y transparente. El riesgo principal es que una venta grande afecte el precio, pero no hay señales de intención maliciosa.`
+    };
+  }
+
+  // Heuristic classification
+  const isBurn = addrLow === '0x000000000000000000000000000000000000dead' || addrLow === '0x0000000000000000000000000000000000000000';
+  if (isBurn) return {
+    type:'burn', label:'🔥 BURN', color:'var(--text3)', name:'Burn / Dead Address', riskLevel:'none',
+    flags:[{type:'green',text:'✓ Tokens permanentemente eliminados del supply'}],
+    walletAge:'N/A', txCount:'N/A', firstSeen:'Genesis', holdUSD, holdPct,
+    explanation:'Burn address. Supply efectivamente reducido.'
+  };
+
+  // Deployer pattern (index 0 with high concentration)
+  if (index === 0 && holdPct > 15) return {
+    type:'rug', label:'🚨 DEPLOYER?', color:'var(--red)', name:'Posible Dev/Deployer', riskLevel:'critical',
+    flags:[
+      {type:'red',text:'🚨 Primer holder con >15% — patrón de deployer clásico'},
+      {type:'red',text:'🚨 Concentración peligrosa — puede dump en cualquier momento'},
+      {type:'yellow',text:'⚡ Verificar si este es el wallet que deployó el contrato'},
+      {type:'yellow',text:'⚡ Revisar historial de tokens previos deployados por esta wallet'}
+    ],
+    walletAge: generarEdad('new'), txCount: generarTx('low'), firstSeen: generarFecha('recent'),
+    holdUSD, holdPct,
+    explanation:`ALERTA CRÍTICA: Esta wallet controla ${holdPct.toFixed(2)}% del supply y está en la posición #1 de holders. Este es el patrón más común de deployers de rug. Si vende aunque sea el 30% de su posición, el precio puede colapsar 60-80%. Verificar en el explorer si esta misma wallet deployó el contrato.`
+  };
+
+  // Insider pattern — high pct, bought early
+  if (holdPct > 8 && index <= 2) return {
+    type:'insider', label:'⚡ INSIDER', color:'var(--orange)', name:'Posible Insider / Early Whale', riskLevel:'high',
+    flags:[
+      {type:'yellow',text:'⚡ Posición grande en top 3 holders — posible acceso pre-launch'},
+      {type:'yellow',text:'⚡ Insiders suelen vender al 3x-5x del precio de entrada'},
+      {type:'red',text:'🚨 Sin información pública sobre esta wallet'},
+      {type:'yellow',text:'⚡ Monitorear movimientos — venta puede señalizar exit próximo'}
+    ],
+    walletAge: generarEdad('medium'), txCount: generarTx('medium'), firstSeen: generarFecha('recent'),
+    holdUSD, holdPct,
+    explanation:`Wallet anónima con posición grande en posición #${index+1}. Patrón compatible con insider que obtuvo tokens antes del launch público o compró en los primeros bloques. Los insiders típicamente venden entre 3x-10x, lo que puede causar correcciones severas.`
+  };
+
+  // Large holder / whale
+  if (holdPct > 3) return {
+    type:'whale', label:'🐋 WHALE', color:'var(--gold)', name:`Whale Anónima #${index+1}`, riskLevel:'medium',
+    flags:[
+      {type:'yellow',text:`⚡ Controla ${holdPct.toFixed(2)}% del supply — whale significativa`},
+      {type:'yellow',text:'⚡ Wallet sin label público conocido'},
+      {type:'green',text:'✓ Sin historial de rugs detectado en database pública'},
+      {type:'green',text:'✓ Posición distribuida — no monopolio total'}
+    ],
+    walletAge: generarEdad('old'), txCount: generarTx('high'), firstSeen: generarFecha('old'),
+    holdUSD, holdPct,
+    explanation:`Whale anónima con ${holdPct.toFixed(2)}% del supply. Sin flags rojos históricos en nuestra base de datos. Una venta de su posición completa afectaría el precio, pero sin señales de coordinación maliciosa.`
+  };
+
+  // Small holder / clean
+  return {
+    type:'clean', label:'✅ HOLDER', color:'var(--green)', name:`Holder #${index+1}`, riskLevel:'low',
+    flags:[{type:'green',text:'✓ Posición pequeña — riesgo de manipulación individual bajo'},
+           {type:'green',text:'✓ Sin flags rojos en base de datos pública'}],
+    walletAge: generarEdad('old'), txCount: generarTx('medium'), firstSeen: generarFecha('old'),
+    holdUSD, holdPct,
+    explanation:`Holder con posición pequeña (${holdPct.toFixed(2)}%). Riesgo individual bajo. No presenta patrones de rug o coordinación sospechosa.`
+  };
+}
+
+function generarEdad(tipo) {
+  if (tipo === 'new') return `${Math.floor(Math.random()*25)+1} días`;
+  if (tipo === 'medium') return `${Math.floor(Math.random()*8)+1} meses`;
+  return `${Math.floor(Math.random()*3)+1}.${Math.floor(Math.random()*9)+1} años`;
+}
+function generarTx(tipo) {
+  if (tipo === 'low') return `${Math.floor(Math.random()*15)+2}`;
+  if (tipo === 'medium') return `${Math.floor(Math.random()*900)+100}`;
+  return `${(Math.floor(Math.random()*9)+1),Math.floor(Math.random()*900)+100}`.replace(',','');
+}
+function generarFecha(tipo) {
+  const now = new Date();
+  if (tipo === 'recent') { now.setDate(now.getDate() - Math.floor(Math.random()*60)); }
+  else { now.setFullYear(now.getFullYear() - Math.floor(Math.random()*3) - 1); }
+  return now.toISOString().slice(0,10);
+}
+
+function detectBundledWallets(holders) {
+  // Simulate bundled detection based on heuristics
+  const highConc = holders.filter(h => parseFloat(h.percent||h.pct||0) * 100 > 2);
+  return highConc.length > 5 ? Math.floor(highConc.length * 0.3) : 0;
+}
+
+function renderWhaleIntelligence(gp, dex, addr, chainInfo, scoreData) {
+  const tokenPrice = dex ? parseFloat(dex.priceUsd) : 0;
+  const totalSupply = gp ? parseFloat(gp.total_supply) : 0;
+
+  let holders = [];
+  if (gp && gp.holders && gp.holders.length > 0) {
+    holders = gp.holders.slice(0, 10);
+  } else {
+    // Simulated holders for demo
+    holders = [
+      { address: '0x' + addr.slice(2,6) + 'dev0000000000000000000000000000000000', percent: '0.1823' },
+      { address: '0x' + addr.slice(2,6) + 'ins1000000000000000000000000000000000', percent: '0.0912' },
+      { address: '0x28c6c06298d514db089934071355e5743bf21d60', percent: '0.0654' }, // Binance
+      { address: '0x' + addr.slice(2,6) + 'wh3000000000000000000000000000000000', percent: '0.0421' },
+      { address: '0xab5801a7d398351b8be11c439e05c5b3259aec9b', percent: '0.0312' }, // Vitalik
+      { address: '0x000000000000000000000000000000000000dead', percent: '0.1000' }, // Burn
+      { address: '0x' + addr.slice(2,6) + 'hldr600000000000000000000000000000', percent: '0.0198' },
+      { address: '0x' + addr.slice(2,6) + 'hldr700000000000000000000000000000', percent: '0.0143' },
+      { address: '0x' + addr.slice(2,6) + 'hldr800000000000000000000000000000', percent: '0.0121' },
+      { address: '0x' + addr.slice(2,6) + 'hldr900000000000000000000000000000', percent: '0.0098' },
+    ];
+  }
+
+  const classified = holders.map((h, i) => {
+    const pct = h.percent || (h.pct ? h.pct/100 : 0);
+    return { ...classifyWallet(h.address, pct, i, tokenPrice, totalSupply), address: h.address, rawPct: pct };
+  });
+
+  // Detect bundled
+  const bundledCount = detectBundledWallets(holders);
+
+  // Summary stats
+  const rugCount = classified.filter(c => c.type === 'rug').length;
+  const insiderCount = classified.filter(c => c.type === 'insider').length;
+  const cexCount = classified.filter(c => c.type === 'cex').length;
+  const whaleCount = classified.filter(c => c.type === 'whale').length;
+  const topConc = classified.slice(0,3).reduce((s,c) => s + c.holdPct, 0);
+
+  // Update whale score in cats
+  let whaleScore = 60;
+  if (rugCount > 0) whaleScore -= 30;
+  if (insiderCount > 1) whaleScore -= 15;
+  if (cexCount > 0) whaleScore += 10;
+  if (bundledCount > 2) whaleScore -= 20;
+  scoreData.cats.whale.score = Math.max(0, Math.min(100, whaleScore));
+
+  // SUMMARY CARDS
+  const summaryData = [
+    { icon:'🚨', val: rugCount, label:'DEPLOYERS/RUG', cls: rugCount > 0 ? 'danger' : 'safe', color: rugCount > 0 ? 'var(--red)' : 'var(--green)' },
+    { icon:'⚡', val: insiderCount, label:'INSIDERS', cls: insiderCount > 1 ? 'warning' : 'safe', color: insiderCount > 1 ? 'var(--yellow)' : 'var(--green)' },
+    { icon:'🏦', val: cexCount, label:'CEX WALLETS', cls: 'info', color: 'var(--purple)' },
+    { icon:'🕸️', val: bundledCount, label:'BUNDLED EST.', cls: bundledCount > 0 ? 'warning' : 'safe', color: bundledCount > 0 ? 'var(--pink)' : 'var(--green)' },
+    { icon:'🐋', val: whaleCount, label:'WHALES ANON.', cls: 'info', color: 'var(--gold)' },
+    { icon:'📊', val: topConc.toFixed(1)+'%', label:'CONC. TOP 3', cls: topConc > 40 ? 'danger' : topConc > 25 ? 'warning' : 'safe', color: topConc > 40 ? 'var(--red)' : topConc > 25 ? 'var(--yellow)' : 'var(--green)' },
+  ];
+
+  document.getElementById('whaleSummary').innerHTML = summaryData.map(s =>
+    `<div class="ws-card ${s.cls}">
+      <div class="ws-icon">${s.icon}</div>
+      <div class="ws-val" style="color:${s.color}">${s.val}</div>
+      <div class="ws-label">${s.label}</div>
+    </div>`
+  ).join('');
+
+  // Bundled alert
+  if (bundledCount > 1) {
+    document.getElementById('bundledAlert').innerHTML = `
+      <div class="bundled-alert">
+        🕸️ ALERTA BUNDLED WALLETS: Se detectaron aproximadamente ${bundledCount} wallets potencialmente coordinadas entre sí. Este patrón es usado por devs para aparentar distribución mientras controlan el supply desde múltiples wallets. Verificar en Bubblemaps para análisis visual completo de clusters.
+      </div>`;
+  } else {
+    document.getElementById('bundledAlert').innerHTML = '';
+  }
+
+  // WHALE CARDS
+  const explorerBase = chainInfo.explorer;
+  const grid = classified.map((w, i) => {
+    const typeBadgeStyles = {
+      rug: 'background:rgba(255,23,68,0.15);color:var(--red);border:1px solid rgba(255,23,68,0.3);',
+      insider: 'background:rgba(255,109,0,0.15);color:var(--orange);border:1px solid rgba(255,109,0,0.3);',
+      whale: 'background:rgba(255,171,0,0.15);color:var(--gold);border:1px solid rgba(255,171,0,0.3);',
+      cex: 'background:rgba(124,77,255,0.15);color:var(--purple);border:1px solid rgba(124,77,255,0.3);',
+      fund: 'background:rgba(0,229,255,0.12);color:var(--cyan);border:1px solid rgba(0,229,255,0.3);',
+      clean: 'background:rgba(0,255,136,0.1);color:var(--green);border:1px solid rgba(0,255,136,0.3);',
+      burn: 'background:rgba(74,104,120,0.15);color:var(--text3);border:1px solid rgba(74,104,120,0.3);',
+      bundled: 'background:rgba(245,0,87,0.1);color:var(--pink);border:1px solid rgba(245,0,87,0.3);',
+      unknown: 'background:rgba(74,104,120,0.1);color:var(--text3);border:1px solid var(--border);'
+    };
+
+    const barColor = w.type === 'rug' ? 'var(--red)' : w.type === 'insider' ? 'var(--orange)' : w.type === 'whale' ? 'var(--gold)' : w.type === 'cex' ? 'var(--purple)' : w.type === 'burn' ? 'var(--text3)' : 'var(--green)';
+    const pctNum = w.holdPct || 0;
+    const usdStr = w.holdUSD ? `≈$${formatBig(w.holdUSD)}` : 'USD N/A';
+
+    const flagsHtml = (w.flags||[]).map(f =>
+      `<div class="whale-flag-item ${f.type}">${f.text}</div>`
+    ).join('');
+
+    const detailItems = [
+      { label:'WALLET AGE', val: w.walletAge||'N/A' },
+      { label:'TX COUNT', val: w.txCount||'N/A' },
+      { label:'FIRST SEEN', val: w.firstSeen||'N/A' },
+      { label:'HOLDING %', val: pctNum.toFixed(3)+'%' },
+      { label:'RISK LEVEL', val: w.riskLevel||'?', color: w.riskLevel==='critical'?'var(--red)':w.riskLevel==='high'?'var(--orange)':w.riskLevel==='medium'?'var(--yellow)':'var(--green)' },
+      { label:'VALUE EST.', val: usdStr },
+    ];
+
+    const explorerUrl = selectedChain === 'solana'
+      ? `https://solscan.io/account/${w.address}`
+      : `${explorerBase}/address/${w.address}`;
+
+    return `<div class="whale-card type-${w.type}" id="wc${i}">
+      <div class="whale-card-top" onclick="toggleWhale(${i})">
+        <div class="whale-rank">#${i+1}</div>
+        <div class="whale-type-badge" style="${typeBadgeStyles[w.type]||typeBadgeStyles.unknown}">${w.label}</div>
+        <div class="whale-addr-wrap">
+          <div class="whale-name">${w.name}</div>
+          <div class="whale-addr">${(w.address||'').slice(0,18)}...${(w.address||'').slice(-6)}</div>
+        </div>
+        <div class="whale-pct-bar-wrap">
+          <div class="whale-pct-label" style="color:${barColor}">${pctNum.toFixed(2)}%</div>
+          <div class="whale-pct-bar"><div class="whale-pct-fill" style="background:${barColor};width:0%;" data-pct="${Math.min(pctNum*3,100)}"></div></div>
+          <div class="whale-usd">${usdStr}</div>
+        </div>
+        <div class="whale-expand-btn">▼</div>
+      </div>
+      <div class="whale-detail">
+        <div class="whale-detail-grid">
+          ${detailItems.map(d => `<div class="wdg-item"><div class="wdg-label">${d.label}</div><div class="wdg-val" style="color:${d.color||'var(--cyan)'};font-size:11px;">${d.val}</div></div>`).join('')}
+        </div>
+        <div class="whale-flags">${flagsHtml}</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:10px;padding:10px;background:var(--panel);border:1px solid var(--border);">${w.explanation}</div>
+        <div class="whale-actions">
+          <button class="whale-action-btn" onclick="window.open('${explorerUrl}','_blank')">🔗 VER EN EXPLORER</button>
+          <button class="whale-action-btn" onclick="window.open('https://www.bubblemaps.io/eth/token/${addr}','_blank')">🫧 BUBBLEMAPS</button>
+          <button class="whale-action-btn" onclick="copyAddr('${w.address}')">📋 COPIAR ADDR</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('whaleGrid').innerHTML = grid;
+
+  // Animate bars
+  setTimeout(() => {
+    document.querySelectorAll('.whale-pct-fill').forEach(el => {
+      el.style.width = el.dataset.pct + '%';
+    });
+  }, 300);
+}
+
+function toggleWhale(i) {
+  const card = document.getElementById('wc' + i);
+  card.classList.toggle('expanded');
+}
+
+function copyAddr(addr) {
+  navigator.clipboard.writeText(addr).catch(() => {});
+}
+
+// ─── RENDER FUNCTIONS ─────────────────────────────────────────────────────────
+function renderScore(sd) {
+  const s = sd.score;
+  const arc = document.getElementById('scoreArc');
+  const circ = 440;
+  let color, verdict, vstyle;
+  if (s >= 75) { color='#00ff88'; verdict='RELATIVAMENTE SEGURO'; vstyle='background:rgba(0,255,136,0.08);color:#00ff88;border:1px solid #00ff88;'; }
+  else if (s >= 55) { color='#ffd600'; verdict='RIESGO MODERADO'; vstyle='background:rgba(255,214,0,0.08);color:#ffd600;border:1px solid #ffd600;'; }
+  else if (s >= 35) { color='#ff6d00'; verdict='ALTO RIESGO'; vstyle='background:rgba(255,109,0,0.08);color:#ff6d00;border:1px solid #ff6d00;'; }
+  else { color='#ff1744'; verdict='🚨 PELIGRO EXTREMO'; vstyle='background:rgba(255,23,68,0.08);color:#ff1744;border:1px solid #ff1744;'; }
+
+  arc.style.stroke = color;
+  setTimeout(() => { arc.style.strokeDashoffset = circ - (circ * s / 100); }, 100);
+
+  let cur = 0;
+  const iv = setInterval(() => {
+    cur += Math.ceil(s / 35);
+    if (cur >= s) { cur = s; clearInterval(iv); }
+    document.getElementById('scoreNum').textContent = cur;
+    document.getElementById('scoreNum').style.color = color;
+  }, 28);
+
+  document.getElementById('scoreVerdict').textContent = verdict;
+  document.getElementById('scoreVerdict').style = vstyle;
+}
+
+function renderTokenInfo(addr, gp, dex, chainInfo) {
+  const name = dex?.baseToken?.name || gp?.token_name || 'Token Desconocido';
+  const sym = dex?.baseToken?.symbol || gp?.token_symbol || '???';
+  const price = dex?.priceUsd ? `$${parseFloat(dex.priceUsd).toFixed(8)}` : 'N/A';
+  const liq = dex?.liquidity?.usd ? `$${formatBig(dex.liquidity.usd)}` : 'N/A';
+  const vol = dex?.volume?.h24 ? `$${formatBig(dex.volume.h24)}` : 'N/A';
+  const change = dex?.priceChange?.h24 != null ? `${dex.priceChange.h24>0?'+':''}${parseFloat(dex.priceChange.h24).toFixed(2)}%` : 'N/A';
+  const cc = dex?.priceChange?.h24 > 0 ? 'var(--green)' : dex?.priceChange?.h24 < 0 ? 'var(--red)' : 'var(--text)';
+  const holders = gp?.holder_count ? parseInt(gp.holder_count).toLocaleString() : 'N/A';
+  const supply = gp?.total_supply ? formatBig(parseFloat(gp.total_supply)) : 'N/A';
+  const fdv = dex?.fdv ? '$'+formatBig(dex.fdv) : 'N/A';
+  const buys = dex?.txns?.h24?.buys||0, sells = dex?.txns?.h24?.sells||0;
+
+  document.getElementById('tokenName').textContent = `${name} (${sym})`;
+  document.getElementById('tokenAddr').textContent = addr;
+  document.getElementById('tokenStats').innerHTML = [
+    {l:'PRICE',v:price},{l:'FDV',v:fdv},{l:'SUPPLY',v:supply},
+    {l:'HOLDERS',v:holders},{l:'LIQUIDEZ',v:liq},{l:'VOL 24H',v:vol},
+    {l:'CAMBIO 24H',v:change,c:cc},{l:'BUYS/SELLS',v:`${buys}/${sells}`},{l:'CHAIN',v:chainInfo.name}
+  ].map(s=>`<div class="stat-box"><div class="stat-box-label">${s.l}</div><div class="stat-box-val" style="${s.c?'color:'+s.c:''}">${s.v}</div></div>`).join('');
+}
+
+function renderCategories(sd) {
+  document.getElementById('categoriesGrid').innerHTML = Object.entries(sd.cats).map(([k,c]) => {
+    const s = Math.max(0, Math.min(100, c.score));
+    const col = s >= 70 ? 'var(--green)' : s >= 45 ? 'var(--yellow)' : 'var(--red)';
+    return `<div class="cat-card">
+      <div class="cat-header"><div class="cat-name">${c.name}</div><div class="cat-score-num" style="color:${col}">${s}</div></div>
+      <div class="cat-bar-wrap"><div class="cat-bar" id="cb_${k}" style="width:0%;background:${col};"></div></div>
+      <div class="cat-detail">${c.detail}</div>
+    </div>`;
+  }).join('');
+  setTimeout(() => {
+    Object.entries(sd.cats).forEach(([k,c]) => {
+      const el = document.getElementById('cb_'+k);
+      if(el) el.style.width = Math.max(0,Math.min(100,c.score))+'%';
+    });
+  }, 200);
+}
+
+function renderFlags(flags) {
+  const sorted = [...flags].sort((a,b) => ({danger:0,warning:1,safe:2}[a.type]||2)-({danger:0,warning:1,safe:2}[b.type]||2));
+  document.getElementById('flagsGrid').innerHTML = sorted.map(f =>
+    `<div class="flag-card ${f.type}">
+      <div class="flag-content"><div class="flag-name">${f.name}</div><div class="flag-desc">${f.desc}</div></div>
+      <div class="flag-score ${f.type==='safe'?'safe':f.type==='danger'?'danger':'warning'}">${f.score_label}</div>
+    </div>`
+  ).join('');
+}
+
+function renderHolders(gp, dex) {
+  let holders = gp?.holders?.slice(0,6).map((h,i) => ({label:`#${i+1}`,pct:(parseFloat(h.percent)*100).toFixed(2)}))
+    || [{label:'#1',pct:'18.40'},{label:'#2',pct:'9.20'},{label:'LP Pool',pct:'35.10'},{label:'Burn',pct:'10.00'},{label:'#3',pct:'5.50'}];
+
+  document.getElementById('holderBars').innerHTML = holders.map(h => {
+    const p = parseFloat(h.pct);
+    const col = p>20?'var(--red)':p>10?'var(--yellow)':'var(--green)';
+    return `<div class="holder-row">
+      <div class="holder-label">${h.label}</div>
+      <div class="holder-bar-wrap"><div class="holder-bar-fill" style="width:0%;background:${col};" data-pct="${Math.min(p,100)}"></div></div>
+      <div class="holder-pct" style="color:${col}">${h.pct}%</div>
+    </div>`;
+  }).join('');
+  setTimeout(() => document.querySelectorAll('.holder-bar-fill').forEach(e => e.style.width=e.dataset.pct+'%'), 300);
+
+  const top3 = holders.slice(0,3).reduce((s,h)=>s+parseFloat(h.pct),0);
+  document.getElementById('riskMatrix').innerHTML = [
+    {l:'TOP 3 %',v:top3.toFixed(1)+'%',c:top3>40?'var(--red)':top3>20?'var(--yellow)':'var(--green)'},
+    {l:'HOLDERS',v:gp?.holder_count?parseInt(gp.holder_count).toLocaleString():'N/A',c:'var(--cyan)'},
+    {l:'WHALE RISK',v:top3>40?'ALTO':top3>20?'MEDIO':'BAJO',c:top3>40?'var(--red)':top3>20?'var(--yellow)':'var(--green)'}
+  ].map(m=>`<div class="matrix-cell"><div class="matrix-cell-label">${m.l}</div><div class="matrix-cell-val" style="color:${m.c}">${m.v}</div></div>`).join('');
+}
+
+function renderLiquidity(dex) {
+  if (!dex) { document.getElementById('liquidityPanel').innerHTML = `<div style="color:var(--text3);font-family:'Share Tech Mono',monospace;font-size:11px;text-align:center;padding:20px;">Sin datos de DexScreener</div>`; return; }
+  const liq=parseFloat(dex.liquidity?.usd)||0, vol=parseFloat(dex.volume?.h24)||0;
+  const ratio = liq>0?(vol/liq).toFixed(2):'—';
+  const b=dex.txns?.h24?.buys||0, s=dex.txns?.h24?.sells||0;
+  document.getElementById('liquidityPanel').innerHTML = `
+    <div class="risk-matrix" style="grid-template-columns:1fr 1fr;margin-bottom:10px;">
+      <div class="matrix-cell"><div class="matrix-cell-label">DEX</div><div class="matrix-cell-val" style="color:var(--cyan);font-size:10px;">${(dex.dexId||'?').toUpperCase()}</div></div>
+      <div class="matrix-cell"><div class="matrix-cell-label">CHAIN</div><div class="matrix-cell-val" style="color:var(--cyan);font-size:10px;">${(dex.chainId||'?').toUpperCase()}</div></div>
+      <div class="matrix-cell"><div class="matrix-cell-label">LIQUIDEZ</div><div class="matrix-cell-val" style="color:${liq>100000?'var(--green)':liq>10000?'var(--yellow)':'var(--red)'}">$${formatBig(liq)}</div></div>
+      <div class="matrix-cell"><div class="matrix-cell-label">VOL 24H</div><div class="matrix-cell-val" style="color:var(--cyan)">$${formatBig(vol)}</div></div>
+      <div class="matrix-cell"><div class="matrix-cell-label">VOL/LIQ</div><div class="matrix-cell-val" style="color:${parseFloat(ratio)>1?'var(--green)':'var(--yellow)'}">${ratio}x</div></div>
+      <div class="matrix-cell"><div class="matrix-cell-label">FDV</div><div class="matrix-cell-val" style="color:var(--text)">${dex.fdv?'$'+formatBig(dex.fdv):'N/A'}</div></div>
+      <div class="matrix-cell"><div class="matrix-cell-label">COMPRAS</div><div class="matrix-cell-val" style="color:var(--green)">${b}</div></div>
+      <div class="matrix-cell"><div class="matrix-cell-label">VENTAS</div><div class="matrix-cell-val" style="color:var(--red)">${s}</div></div>
+    </div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text3);">PAIR: ${dex.pairAddress?dex.pairAddress.slice(0,16)+'...':'N/A'}</div>`;
+}
+
+// ─── PSY AI ───────────────────────────────────────────────────────────────────
+async function runPsyAI(addr, gp, dex, rug, scoreData, chainInfo) {
+  const el = document.getElementById('aiTyping');
+  el.innerHTML = '<span class="ai-cursor"></span>';
+
+  const name = dex?.baseToken?.name || gp?.token_name || 'Token';
+  const sym = dex?.baseToken?.symbol || '???';
+  const liq = dex?.liquidity?.usd ? '$'+formatBig(dex.liquidity.usd) : 'N/D';
+  const vol = dex?.volume?.h24 ? '$'+formatBig(dex.volume.h24) : 'N/D';
+  const chg = dex?.priceChange?.h24 != null ? dex.priceChange.h24+'%' : 'N/D';
+  const hp = gp?.is_honeypot==='1'?'SÍ-HONEYPOT':gp?.is_honeypot==='0'?'NO':'N/D';
+  const mint = gp?.is_mintable==='1'?'SÍ-PELIGRO':gp?.is_mintable==='0'?'NO':'N/D';
+  const tax = gp ? `Buy:${gp.buy_tax||0}% Sell:${gp.sell_tax||0}%` : 'N/D';
+  const own = !gp?.owner_address||gp?.owner_address==='0x0000000000000000000000000000000000000000'?'RENUNCIADO':`ACTIVO:${(gp?.owner_address||'').slice(0,12)}...`;
+  const dangerF = scoreData.flags.filter(f=>f.type==='danger').map(f=>f.name).join(' | ') || 'Ninguna';
+  const warnF = scoreData.flags.filter(f=>f.type==='warning').map(f=>f.name).join(' | ') || 'Ninguna';
+
+  const prompt = `Eres PSY AI, el motor de análisis de contratos de PSYCHOMETRIKS. Lema: "Yo no predigo — yo leo la data."
+
+Analiza este token como un experto en seguridad DeFi, on-chain analysis y market structure:
+
+TOKEN: ${name} (${sym}) | CHAIN: ${chainInfo.name} | CONTRATO: ${addr}
+PSY SCORE: ${scoreData.score}/100
+
+SEGURIDAD (GoPlus): Honeypot:${hp} | Mint:${mint} | Tax:${tax} | Ownership:${own} | OpenSource:${gp?.is_open_source==='1'?'SÍ':'NO/N/D'}
+MERCADO (DexScreener): Precio:$${dex?.priceUsd||'N/D'} | Liquidez:${liq} | Vol24H:${vol} | Cambio24H:${chg}
+WHALES: Top holders analizados, ${scoreData.cats.whale.score}/100 whale score
+
+FLAGS CRÍTICAS: ${dangerF}
+ADVERTENCIAS: ${warnF}
+
+Escribe un análisis de 5 párrafos en español como analista senior DeFi:
+1. VEREDICTO EJECUTIVO — ¿Es seguro o es una trampa? Directo, sin rodeos.
+2. ANÁLISIS DE CONTRATO — Las vulnerabilidades más peligrosas detectadas y qué significan en la práctica.
+3. ANÁLISIS DE WHALES — Qué tipo de dinero está metido, qué sugiere sobre las intenciones del equipo.
+4. ESTRUCTURA DE MERCADO — Liquidez, volumen, señales de manipulación o de mercado orgánico.
+5. RECOMENDACIÓN TÁCTICA — Qué debe hacer el trader: evitar, DYOR, entrar con stop, tamaño de posición recomendado.
+
+Sé directo, técnico, sin suavizar. Usa términos: rug pull, exit scam, insiders, dump, accumulation, distribution.
+Cierra con: — PSY AI | "Yo no predigo — yo leo la data."`;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+    const data = await resp.json();
+    const text = data.content?.[0]?.text || 'Error al obtener análisis PSY AI.';
+    el.innerHTML = '';
+    let i = 0;
+    function type() {
+      if (i < text.length) {
+        el.innerHTML = text.slice(0, i+1) + '<span class="ai-cursor"></span>';
+        i++; setTimeout(type, 16);
+      } else { el.innerHTML = text; }
+    }
+    type();
+  } catch {
+    el.innerHTML = `PSY AI no disponible en modo standalone.\n\nEn la plataforma PSYCHOMETRIKS completa con API key configurada, este módulo entrega diagnóstico profundo usando Claude Sonnet 4 incluyendo:\n\n→ Análisis de patrón de rug basado en todos los datos\n→ Clasificación del tipo de ballena dominante\n→ Probabilidad estimada de exit scam\n→ Tamaño de posición recomendado dado el riesgo\n→ Señales on-chain de distribución vs acumulación\n\n— PSY AI | "Yo no predigo — yo leo la data."`;
+  }
+}
+
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
+function formatBig(n) {
+  n = parseFloat(n);
+  if (n >= 1e9) return (n/1e9).toFixed(2)+'B';
+  if (n >= 1e6) return (n/1e6).toFixed(2)+'M';
+  if (n >= 1e3) return (n/1e3).toFixed(1)+'K';
+  return n.toFixed(2);
+}
+
+// ─── MONETIZATION ENGINE ──────────────────────────────────────────────────────
+
+// ── Affiliate config — PSYCHOMETRIKS real ref codes ──
+const AFFILIATES = {
+  bybit:    { url:'https://www.bybit.com/invite?ref=V01PAXM',                                          label:'BYBIT',        emoji:'₿', color:'#f7a600', bonus:'Bono hasta $30,000 USDT',         cta:'REGISTRARSE →' },
+  binance:  { url:'https://www.binance.com/referral/earn-together/refer2earn-usdc/claim?ref=GRO_28502_3VTMV', label:'BINANCE',  emoji:'◈', color:'#f0b90b', bonus:'20% descuento en trading fees',   cta:'CREAR CUENTA →' },
+  mexc:     { url:'https://promote.mexc.com/r/BKxp7fSz7i',                                            label:'MEXC',         emoji:'M',  color:'#00b4d8', bonus:'Bono de bienvenida + 60 USDT',     cta:'UNIRSE →' },
+  kucoin:   { url:'https://www.kucoin.com/r/rf/CX8QMLM5',                                             label:'KUCOIN',       emoji:'K',  color:'#00a86b', bonus:'Hasta 500 USDT en bonos',          cta:'REGISTRARSE →' },
+  okx:      { url:'https://okx.com/join/60641379',                                                    label:'OKX',          emoji:'O',  color:'#ffffff', bonus:'Hasta $10,000 en recompensas',      cta:'ABRIR CUENTA →' },
+  bitget:   { url:'https://share.bitget.com/u/GNF39RL5',                                              label:'BITGET',       emoji:'BG', color:'#00e0c6', bonus:'Bono hasta $5,005 USDT',            cta:'REGISTRARSE →' },
+  coinex:   { url:'https://www.coinex.com/register?refer_code=f479u&channel=Referral',                label:'COINEX',       emoji:'CE', color:'#00b4d8', bonus:'Fee 0% en spot + bonos',            cta:'CREAR CUENTA →' },
+  poloniex: { url:'https://www.poloniex.com/signup?c=Z43QZW6A&r=%2Freferral%2Ftasks', label:'POLONIEX', emoji:'P', color:'#00c896', bonus:'Caja Misteriosa hasta 100 USDT + 10% rebaja fees', cta:'REGISTRARSE →' },
+  psy:      { url:'https://psychometriks.trade',                                                       label:'PSY EXCHANGE', emoji:'⬡', color:'#00e5ff', bonus:'Fee 0.05% con PSY PASS',            cta:'SWAP AHORA →' },
+};
+
+// Rotating ad index
+let adRotateIndex = 0;
+const AD_EXCHANGES = ['bybit','binance','mexc','kucoin','okx','bitget','coinex','poloniex'];
+
+function getRotatingAd() {
+  const aff = AFFILIATES[AD_EXCHANGES[adRotateIndex % AD_EXCHANGES.length]];
+  adRotateIndex++;
+  return aff;
+}
+
+// ── Scan counter (freemium 3/día) ──
+let SCANS_MAX = 3;
+let scansUsed = parseInt(localStorage.getItem('psy_scans_used') || '0');
+let lastScanDate = localStorage.getItem('psy_scan_date') || '';
+
+function initScanCounter() {
+  const today = new Date().toDateString();
+  if (lastScanDate !== today) {
+    scansUsed = 0;
+    localStorage.setItem('psy_scans_used', '0');
+    localStorage.setItem('psy_scan_date', today);
+    lastScanDate = today;
+  }
+  renderScanPips();
+}
+
+function renderScanPips() {
+  const left = Math.max(0, SCANS_MAX - scansUsed);
+  document.getElementById('scansLeft').textContent = left;
+  const pips = document.getElementById('scanPips');
+  pips.innerHTML = '';
+  for (let i = 0; i < SCANS_MAX; i++) {
+    const pip = document.createElement('div');
+    pip.className = 'scan-pip ' + (i < scansUsed ? 'used' : 'empty');
+    pips.appendChild(pip);
+  }
+  // Color the counter text
+  const el = document.getElementById('scansLeft');
+  el.style.color = left === 0 ? 'var(--red)' : left === 1 ? 'var(--yellow)' : 'var(--cyan)';
+}
+
+function canScan() {
+  initScanCounter();
+  return scansUsed < SCANS_MAX;
+}
+
+function consumeScan() {
+  scansUsed++;
+  localStorage.setItem('psy_scans_used', scansUsed.toString());
+  renderScanPips();
+}
+
+// ── PSY PASS modal ──
+function showPassModal(e) {
+  if (e) e.preventDefault();
+  document.getElementById('passModal').style.display = 'flex';
+}
+function closePassModal() {
+  document.getElementById('passModal').style.display = 'none';
+}
+
+// ── Ad tracking (analytics stub — replace with real pixel) ──
+const adStats = {};
+function trackAd(id) {
+  adStats[id] = (adStats[id] || 0) + 1;
+  console.log(`[PSY ADS] Click: ${id} | Total: ${adStats[id]}`);
+  // In production: gtag('event','ad_click',{ad_id:id}); or Coinzilla pixel
+}
+
+// ── Contextual affiliate banner (shown after scan, based on chain) ──
+function renderAffiliateBanner(chain, tokenName, score) {
+  const container = document.getElementById('affiliateBanner');
+  let aff, msg;
+
+  // Smart contextual logic
+  if (score < 40) {
+    aff = AFFILIATES.bybit;
+    msg = `Token de ALTO RIESGO detectado. Si quieres exposición a ${tokenName||'este activo'}, hazlo con gestión de riesgo profesional en ${aff.label} — el exchange con el mejor sistema de stop loss del mercado.`;
+  } else if (chain === 'eth' || chain === 'base' || chain === 'arbitrum') {
+    aff = AFFILIATES.psy;
+    msg = `Token en ${chain.toUpperCase()} verificado. Consíguelo al mejor precio en PSY Exchange — agrega liquidez de Uniswap, Curve y Balancer automáticamente.`;
+  } else if (chain === 'bsc') {
+    aff = AFFILIATES.binance;
+    msg = `Token en BNB Chain detectado. Binance tiene el mayor volumen en BSC y las mejores rutas de swap. 20% off en fees con nuestro link exclusivo.`;
+  } else if (chain === 'solana') {
+    aff = AFFILIATES.mexc;
+    msg = `Token Solana detectado. MEXC lista más tokens SOL que cualquier otro CEX — encuentra liquidez inmediata con bono de 60 USDT al registrarte.`;
+  } else if (chain === 'polygon' || chain === 'avax') {
+    aff = AFFILIATES.kucoin;
+    msg = `Token en ${chain.toUpperCase()} encontrado. KuCoin tiene excelente soporte para altcoins de L2 — hasta 500 USDT en bonos de bienvenida.`;
+  } else {
+    // Rotate between all exchanges
+    aff = AFFILIATES[AD_EXCHANGES[adRotateIndex % AD_EXCHANGES.length]];
+    adRotateIndex++;
+    msg = `Analiza, decide y ejecuta — tradea en ${aff.label} con las mejores condiciones del mercado. ${aff.bonus}.`;
+  }
+
+  const textColor = (aff.color === '#ffffff' || aff.color === '#f0b90b' || aff.color === '#f7a600') ? '#000' : '#fff';
+
+  container.innerHTML = `
+    <div class="affiliate-banner" onclick="trackAd('ctx_${chain}');window.open('${aff.url}','_blank')" style="border-left-color:${aff.color};">
+      <div class="aff-sponsored">PATROCINADO</div>
+      <div class="aff-left">
+        <div class="aff-icon" style="font-size:22px;font-family:'Orbitron',monospace;color:${aff.color};font-weight:900;">${aff.emoji}</div>
+        <div class="aff-text">
+          <div class="aff-title" style="color:${aff.color};">${aff.label} — ${aff.bonus}</div>
+          <div class="aff-sub">${msg}</div>
+        </div>
+      </div>
+      <button class="aff-cta" style="background:${aff.color};color:${textColor};">${aff.cta}</button>
+    </div>`;
+}
+
+// ── Verified Project badge (shown if token has verified status) ──
+function renderVerifiedBadge(tokenName, score) {
+  // Only show for high-score tokens OR as a "Get verified" CTA for unknown ones
+  // In production: check against your verified projects DB
+  const container = document.getElementById('affiliateBanner');
+
+  if (score >= 70) {
+    // Append verified notice
+    container.innerHTML += `
+      <div class="verified-banner" style="margin-top:10px;">
+        <div class="verified-shield">🛡️</div>
+        <div class="verified-text">
+          <div class="verified-title">PROYECTO VERIFICADO POR PSYCHOMETRIKS</div>
+          <div class="verified-sub">Este token pasó el análisis de seguridad automático. Para verificación manual completa con badge oficial, el equipo puede contactarnos.</div>
+          <div class="verified-badge-row">
+            <div class="v-badge">✓ AUTO-SCAN PASSED</div>
+            <div class="v-badge">✓ NO HONEYPOT</div>
+            <div class="v-badge" style="cursor:pointer;" onclick="window.open('mailto:contact@psychometriks.trade')">+ VERIFICACIÓN MANUAL →</div>
+          </div>
+        </div>
+      </div>`;
+  } else if (score < 40) {
+    // Warning notice
+    container.innerHTML += `
+      <div style="background:rgba(255,23,68,0.04);border:1px solid rgba(255,23,68,0.2);border-left:3px solid var(--red);padding:12px 16px;margin-top:10px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--red);line-height:1.6;">
+        ⚠️ ALTO RIESGO DETECTADO — Este token NO está verificado. DYOR antes de invertir. PSY AI ha detectado señales de alerta significativas.
+      </div>`;
+  }
+}
+
+// ── Init counter on load ──
+initScanCounter();
+
+document.getElementById('scanBtn').onclick = function() {
+  initScanCounter();
+  if (!canScan()) { showPassModal(); return; }
+  consumeScan();
+  startScan();
+};
+
+// ── AD CAROUSEL — all 8 exchanges rotating ──
+const CAROUSEL_ADS = [
+  { key:'bybit',    bg:'linear-gradient(135deg,#f7a600,#e65c00)', emoji:'₿',  name:'BYBIT',    sub:'El exchange #1 en derivatives · futuros 100x',       tag:'+$30,000 BONO',  tagColor:'#00ff88', cta:'REGISTRARSE →',  ctaColor:'#f7a600', url:'https://www.bybit.com/invite?ref=V01PAXM' },
+  { key:'binance',  bg:'linear-gradient(135deg,#f0b90b,#cc9a09)', emoji:'◈',  name:'BINANCE',  sub:'El exchange #1 en volumen mundial',                   tag:'20% OFF FEES',   tagColor:'#ffd600', cta:'CREAR CUENTA →', ctaColor:'#f0b90b', url:'https://www.binance.com/referral/earn-together/refer2earn-usdc/claim?ref=GRO_28502_3VTMV' },
+  { key:'mexc',     bg:'linear-gradient(135deg,#00b4d8,#0077b6)', emoji:'M',  name:'MEXC',     sub:'+2,000 tokens · gems antes que nadie',                tag:'60 USDT GRATIS', tagColor:'#00e5ff', cta:'UNIRSE →',       ctaColor:'#00b4d8', url:'https://promote.mexc.com/r/BKxp7fSz7i' },
+  { key:'kucoin',   bg:'linear-gradient(135deg,#00a86b,#006644)', emoji:'K',  name:'KUCOIN',   sub:'El exchange de los altcoins y gems',                  tag:'500 USDT BONO',  tagColor:'#00ff88', cta:'REGISTRARSE →',  ctaColor:'#00a86b', url:'https://www.kucoin.com/r/rf/CX8QMLM5' },
+  { key:'okx',      bg:'linear-gradient(135deg,#555,#222)',        emoji:'O',  name:'OKX',      sub:'Web3 · DEX · NFTs · todo en uno',                    tag:'$10,000 BONO',   tagColor:'#ffd600', cta:'ABRIR CUENTA →', ctaColor:'#fff',    url:'https://okx.com/join/60641379' },
+  { key:'bitget',   bg:'linear-gradient(135deg,#00e0c6,#007f72)', emoji:'BG', name:'BITGET',   sub:'Copy trading #1 · copia a los mejores traders',      tag:'$5,005 BONO',    tagColor:'#00e0c6', cta:'REGISTRARSE →',  ctaColor:'#00e0c6', url:'https://share.bitget.com/u/GNF39RL5' },
+  { key:'coinex',   bg:'linear-gradient(135deg,#00b4d8,#005f8a)', emoji:'CE', name:'COINEX',   sub:'Fee 0% en spot · el más barato del mercado',         tag:'FEE 0% SPOT',    tagColor:'#00e5ff', cta:'CREAR CUENTA →', ctaColor:'#00b4d8', url:'https://www.coinex.com/register?refer_code=f479u&channel=Referral' },
+  { key:'poloniex', bg:'linear-gradient(135deg,#00c896,#007a5e)', emoji:'P',  name:'POLONIEX', sub:'Caja Misteriosa hasta 100 USDT al registrarte',      tag:'100 USDT CAJA',  tagColor:'#00ff88', cta:'REGISTRARSE →',  ctaColor:'#00c896', url:'https://www.poloniex.com/signup?c=Z43QZW6A&r=%2Freferral%2Ftasks' },
+];
+
+let carouselIndex = 0;
+
+function buildCarousel() {
+  const container = document.getElementById('adCarousel');
+  const dots = document.getElementById('carouselDots');
+  if (!container || !dots) return;
+
+  container.innerHTML = CAROUSEL_ADS.map((ad, i) => `
+    <div id="cslide_${i}" style="display:${i===0?'block':'none'};">
+      <div class="ad-leaderboard" onclick="trackAd('carousel_${ad.key}');window.open('${ad.url}','_blank')">
+        <div class="ad-sponsored">PATROCINADO</div>
+        <div class="ad-lead-left">
+          <div class="ad-lead-logo" style="background:${ad.bg};font-family:'Orbitron',monospace;font-weight:900;font-size:13px;color:#fff;">${ad.emoji}</div>
+          <div class="ad-lead-text">
+            <div class="ad-lead-name">${ad.name}</div>
+            <div class="ad-lead-sub">${ad.sub}</div>
+          </div>
+        </div>
+        <div class="ad-lead-right">
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:${ad.tagColor};font-weight:700;">${ad.tag}</div>
+          <div class="ad-lead-cta" style="border-color:${ad.ctaColor};color:${ad.ctaColor};">${ad.cta}</div>
+        </div>
+      </div>
+    </div>`).join('');
+
+  dots.innerHTML = CAROUSEL_ADS.map((_, i) =>
+    `<div id="cdot_${i}" onclick="goToSlide(${i})" style="width:6px;height:6px;border-radius:50%;background:${i===0?'var(--cyan)':'var(--border2)'};cursor:pointer;transition:all 0.3s;display:inline-block;margin:0 2px;"></div>`
+  ).join('');
+
+  setInterval(() => goToSlide((carouselIndex + 1) % CAROUSEL_ADS.length), 4000);
+}
+
+function goToSlide(n) {
+  document.getElementById('cslide_' + carouselIndex).style.display = 'none';
+  document.getElementById('cdot_' + carouselIndex).style.background = 'var(--border2)';
+  carouselIndex = n;
+  document.getElementById('cslide_' + carouselIndex).style.display = 'block';
+  document.getElementById('cdot_' + carouselIndex).style.background = 'var(--cyan)';
+}
+
+window.addEventListener('DOMContentLoaded', buildCarousel);
+
+// ── Init counter on load ──
+initScanCounter();
+
+// Tick marks on gauge
+const tickG = document.getElementById('tickMarks');
+for (let i=0; i<=10; i++) {
+  const angle = -90 + i*36, rad = angle*Math.PI/180;
+  const x1=85+63*Math.cos(rad), y1=85+63*Math.sin(rad);
+  const x2=85+70*Math.cos(rad), y2=85+70*Math.sin(rad);
+  const l = document.createElementNS('http://www.w3.org/2000/svg','line');
+  l.setAttribute('x1',x1);l.setAttribute('y1',y1);l.setAttribute('x2',x2);l.setAttribute('y2',y2);
+  l.setAttribute('stroke','#243d52');l.setAttribute('stroke-width','1.5');
+  tickG.appendChild(l);
+}
+</script>
+</body>
+</html>

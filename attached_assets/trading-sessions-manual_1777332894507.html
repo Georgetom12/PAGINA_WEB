@@ -1,0 +1,1303 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PSYCHOMETRIKS — Manual de Sesiones de Trading</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #050a0f;
+    --panel: #0b1520;
+    --border: #1a2e42;
+    --asia: #00d4ff;
+    --london: #ff6b35;
+    --ny: #00ff88;
+    --overlap: #ffd700;
+    --crypto: #a855f7;
+    --text: #c8dce8;
+    --muted: #4a6a7a;
+    --white: #f0f8ff;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    overflow-x: hidden;
+  }
+
+  /* ===== GRID DE FONDO ===== */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ===== HEADER ===== */
+  header {
+    position: relative;
+    z-index: 10;
+    padding: 60px 40px 40px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .brand {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 13px;
+    letter-spacing: 6px;
+    color: var(--muted);
+  }
+
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(42px, 7vw, 80px);
+    line-height: 0.9;
+    color: var(--white);
+    letter-spacing: 2px;
+  }
+
+  h1 span {
+    color: var(--asia);
+  }
+
+  .subtitle {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 8px;
+  }
+
+  /* ===== RELOJ GLOBAL DE SESIONES ===== */
+  .clock-section {
+    position: relative;
+    z-index: 10;
+    padding: 40px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 11px;
+    letter-spacing: 5px;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+
+  .sessions-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .session-bar-row {
+    display: grid;
+    grid-template-columns: 130px 1fr 120px;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .session-name {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .bar-track {
+    position: relative;
+    height: 28px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 2px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    border-radius: 2px;
+    opacity: 0.85;
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    white-space: nowrap;
+    animation: barSlide 1s ease-out both;
+  }
+
+  @keyframes barSlide {
+    from { opacity: 0; transform: scaleX(0); transform-origin: left; }
+    to { opacity: 0.85; transform: scaleX(1); }
+  }
+
+  /* 24h = 100%. Horas UTC → % */
+  /* Asia: 00-09 UTC = 0% a 37.5% → width 37.5% */
+  .bar-asia    { left: 0%;     width: 37.5%; background: linear-gradient(90deg, #00d4ff, #0077aa); color: #000; }
+  /* London: 07-16 UTC = 29.16% → width 37.5% */
+  .bar-london  { left: 29.16%; width: 37.5%; background: linear-gradient(90deg, #ff6b35, #cc4400); color: #fff; }
+  /* NY: 12-21 UTC = 50% → width 37.5% */
+  .bar-ny      { left: 50%;    width: 37.5%; background: linear-gradient(90deg, #00ff88, #009944); color: #000; }
+  /* Crypto: 0% → width 100% */
+  .bar-crypto  { left: 0%;     width: 100%;  background: linear-gradient(90deg, rgba(168,85,247,0.6), rgba(168,85,247,0.2)); color: #dbb8ff; }
+
+  /* Overlap markers */
+  .bar-track::after {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0;
+  }
+
+  .bar-track.overlap-london::after {
+    left: 29.16%; width: 8.33%; /* 07-09 UTC */
+    background: rgba(255,215,0,0.15);
+    border-left: 1px solid var(--overlap);
+    border-right: 1px solid var(--overlap);
+  }
+
+  .bar-track.overlap-ny::after {
+    left: 50%; width: 16.66%; /* 12-16 UTC */
+    background: rgba(255,215,0,0.15);
+    border-left: 1px solid var(--overlap);
+    border-right: 1px solid var(--overlap);
+  }
+
+  .session-times {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    text-align: right;
+  }
+
+  /* Hora UTC axis */
+  .utc-axis {
+    display: grid;
+    grid-template-columns: 130px 1fr 120px;
+    gap: 16px;
+    margin-top: 8px;
+  }
+  .utc-track {
+    display: flex;
+    justify-content: space-between;
+  }
+  .utc-tick {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    color: var(--muted);
+    opacity: 0.5;
+  }
+
+  /* ===== HORARIOS POR ZONA ===== */
+  .times-table {
+    position: relative;
+    z-index: 10;
+    padding: 0 40px;
+    margin-top: 30px;
+    margin-bottom: 10px;
+  }
+
+  .times-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .times-cell {
+    background: var(--panel);
+    padding: 10px 14px;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+  }
+
+  .times-cell.header {
+    background: rgba(255,255,255,0.04);
+    color: var(--muted);
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .times-cell .tz-name {
+    color: var(--muted);
+    font-size: 8px;
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  /* ===== SESIONES DETAIL ===== */
+  .sessions-detail {
+    position: relative;
+    z-index: 10;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+
+  .session-card {
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    background: var(--panel);
+    transition: border-color 0.3s;
+  }
+
+  .session-card:hover {
+    border-color: var(--card-color);
+  }
+
+  .card-header {
+    padding: 24px 28px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(135deg, rgba(255,255,255,0.02), transparent);
+  }
+
+  .card-title-block { display: flex; flex-direction: column; gap: 6px; }
+
+  .card-flag {
+    font-size: 28px;
+    margin-bottom: 4px;
+  }
+
+  .card-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    letter-spacing: 2px;
+  }
+
+  .card-subtitle {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+  }
+
+  .card-badge {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 13px;
+    letter-spacing: 3px;
+    padding: 6px 14px;
+    border-radius: 2px;
+    border: 1px solid;
+  }
+
+  .card-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+  }
+
+  .card-col {
+    padding: 24px 28px;
+  }
+
+  .card-col:first-child {
+    border-right: 1px solid var(--border);
+  }
+
+  .col-label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+
+  .feature-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+  }
+
+  .feature-list li {
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--text);
+    padding-left: 18px;
+    position: relative;
+  }
+
+  .feature-list li::before {
+    content: '▸';
+    position: absolute;
+    left: 0;
+    font-size: 10px;
+    top: 2px;
+  }
+
+  /* Colores por sesión */
+  .asia-card    { --card-color: var(--asia); }
+  .london-card  { --card-color: var(--london); }
+  .ny-card      { --card-color: var(--ny); }
+  .crypto-card  { --card-color: var(--crypto); }
+
+  .asia-card   .card-title,
+  .asia-card   .feature-list li::before { color: var(--asia); }
+  .london-card .card-title,
+  .london-card .feature-list li::before { color: var(--london); }
+  .ny-card     .card-title,
+  .ny-card     .feature-list li::before { color: var(--ny); }
+  .crypto-card .card-title,
+  .crypto-card .feature-list li::before { color: var(--crypto); }
+
+  .asia-card   .card-badge { border-color: var(--asia);    color: var(--asia); }
+  .london-card .card-badge { border-color: var(--london);  color: var(--london); }
+  .ny-card     .card-badge { border-color: var(--ny);      color: var(--ny); }
+  .crypto-card .card-badge { border-color: var(--crypto);  color: var(--crypto); }
+
+  /* ===== OVERLAPS ===== */
+  .overlaps-section {
+    position: relative;
+    z-index: 10;
+    padding: 0 40px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .overlap-card {
+    border: 1px solid var(--overlap);
+    background: rgba(255,215,0,0.03);
+    border-radius: 4px;
+    padding: 24px 28px;
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 24px;
+  }
+
+  .overlap-time-block { display: flex; flex-direction: column; gap: 6px; }
+
+  .overlap-badge {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--overlap);
+    padding: 4px 10px;
+    border: 1px solid var(--overlap);
+    display: inline-block;
+    width: fit-content;
+    margin-bottom: 6px;
+  }
+
+  .overlap-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 24px;
+    color: var(--overlap);
+    line-height: 1;
+  }
+
+  .overlap-hours {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  .overlap-content { display: flex; flex-direction: column; gap: 8px; }
+
+  .overlap-content p {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text);
+  }
+
+  .overlap-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+  }
+
+  .tag {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    padding: 3px 8px;
+    background: rgba(255,215,0,0.08);
+    border: 1px solid rgba(255,215,0,0.2);
+    color: var(--overlap);
+    border-radius: 2px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* ===== TABLA INSTRUMENTOS ===== */
+  .instruments-section {
+    position: relative;
+    z-index: 10;
+    padding: 0 40px 40px;
+  }
+
+  .instruments-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  .instrument-card {
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    background: var(--panel);
+  }
+
+  .instrument-header {
+    padding: 14px 18px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 14px;
+    letter-spacing: 3px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .instrument-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .instrument-rows { padding: 14px 18px; display: flex; flex-direction: column; gap: 10px; }
+
+  .inst-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+    align-items: start;
+  }
+
+  .inst-name {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--white);
+    font-weight: 700;
+  }
+
+  .inst-desc {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 2px;
+    line-height: 1.4;
+  }
+
+  .inst-sessions {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .sess-pill {
+    font-family: 'Space Mono', monospace;
+    font-size: 8px;
+    padding: 2px 6px;
+    border-radius: 2px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+
+  .pill-asia   { background: rgba(0,212,255,0.15);  color: var(--asia); border: 1px solid rgba(0,212,255,0.3); }
+  .pill-london { background: rgba(255,107,53,0.15); color: var(--london); border: 1px solid rgba(255,107,53,0.3); }
+  .pill-ny     { background: rgba(0,255,136,0.15);  color: var(--ny); border: 1px solid rgba(0,255,136,0.3); }
+  .pill-all    { background: rgba(168,85,247,0.15); color: var(--crypto); border: 1px solid rgba(168,85,247,0.3); }
+
+  /* ===== ESTRATEGIAS ===== */
+  .strategy-section {
+    position: relative;
+    z-index: 10;
+    padding: 0 40px 40px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+
+  .strategy-card {
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--panel);
+    overflow: hidden;
+  }
+
+  .strat-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .strat-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    line-height: 1;
+    color: var(--muted);
+    opacity: 0.4;
+  }
+
+  .strat-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 2px;
+    color: var(--white);
+  }
+
+  .strat-body {
+    padding: 16px 20px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--text);
+  }
+
+  .strat-when {
+    margin-top: 12px;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  /* ===== NOTA FINAL ===== */
+  .final-note {
+    position: relative;
+    z-index: 10;
+    margin: 0 40px 60px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 28px 32px;
+    background: linear-gradient(135deg, rgba(168,85,247,0.05), rgba(0,212,255,0.03));
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+  }
+
+  .note-icon {
+    font-size: 24px;
+    flex-shrink: 0;
+  }
+
+  .note-content h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 2px;
+    color: var(--white);
+    margin-bottom: 8px;
+  }
+
+  .note-content p {
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--text);
+  }
+
+  /* ===== DIVIDERS ===== */
+  .section-divider {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 0 40px;
+    margin-bottom: 24px;
+  }
+
+  .section-divider::before {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .section-divider-label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 11px;
+    letter-spacing: 6px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .section-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 900px) {
+    header, .clock-section, .sessions-detail, .overlaps-section,
+    .instruments-section, .strategy-section, .times-table,
+    .section-divider, .final-note { padding-left: 20px; padding-right: 20px; }
+
+    .card-body { grid-template-columns: 1fr; }
+    .card-col:first-child { border-right: none; border-bottom: 1px solid var(--border); }
+    .overlap-card { grid-template-columns: 1fr; }
+    .instruments-grid { grid-template-columns: 1fr; }
+    .strategy-section { grid-template-columns: 1fr; }
+    .times-grid { grid-template-columns: repeat(2, 1fr); }
+    .session-bar-row { grid-template-columns: 100px 1fr; }
+    .session-times { display: none; }
+  }
+
+  /* ===== LIVE CLOCK ===== */
+  .live-clock-bar {
+    position: relative;
+    z-index: 10;
+    background: rgba(0,0,0,0.4);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 40px;
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .clock-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .clock-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .clock-time {
+    font-family: 'Space Mono', monospace;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .clock-status {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    padding: 3px 8px;
+    border-radius: 2px;
+  }
+
+  .status-open  { background: rgba(0,255,136,0.15); color: var(--ny); border: 1px solid rgba(0,255,136,0.3); }
+  .status-closed { background: rgba(74,106,122,0.15); color: var(--muted); border: 1px solid var(--border); }
+
+  .live-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--ny);
+    animation: blink 1.4s infinite;
+    margin-right: 4px;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.2; }
+  }
+
+  footer {
+    position: relative;
+    z-index: 10;
+    padding: 20px 40px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  footer span {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 2px;
+  }
+</style>
+</head>
+<body>
+
+<!-- LIVE CLOCK BAR -->
+<div class="live-clock-bar" id="clockBar">
+  <div class="clock-item">
+    <span class="live-dot"></span>
+    <span class="clock-label">UTC</span>
+    <span class="clock-time" id="clk-utc">--:--:--</span>
+  </div>
+  <div class="clock-item">
+    <span class="clock-label" style="color:var(--asia)">TOKYO</span>
+    <span class="clock-time" style="color:var(--asia)" id="clk-tokyo">--:--</span>
+    <span class="clock-status" id="st-asia">--</span>
+  </div>
+  <div class="clock-item">
+    <span class="clock-label" style="color:var(--london)">LONDON</span>
+    <span class="clock-time" style="color:var(--london)" id="clk-london">--:--</span>
+    <span class="clock-status" id="st-london">--</span>
+  </div>
+  <div class="clock-item">
+    <span class="clock-label" style="color:var(--ny)">NEW YORK</span>
+    <span class="clock-time" style="color:var(--ny)" id="clk-ny">--:--</span>
+    <span class="clock-status" id="st-ny">--</span>
+  </div>
+  <div class="clock-item">
+    <span class="clock-label" style="color:var(--muted)">GUAYAQUIL</span>
+    <span class="clock-time" id="clk-gye">--:--</span>
+    <span class="clock-status" id="st-gye" style="display:none"></span>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="brand">PSYCHOMETRIKS — MANUAL DE REFERENCIA</div>
+  <h1>SESIONES DE<br><span>TRADING</span><br>GLOBAL</h1>
+  <div class="subtitle">// LAS 4 SESIONES · OVERLAPS · INSTRUMENTOS · ESTRATEGIAS POR HORARIO</div>
+</header>
+
+<!-- TIMELINE VISUAL -->
+<div class="clock-section">
+  <div class="section-label">// MAPA DE SESIONES EN UTC (24H)</div>
+  <div class="sessions-timeline">
+
+    <div class="session-bar-row">
+      <span class="session-name" style="color:var(--asia)">⬡ ASIA / TOKIO</span>
+      <div class="bar-track overlap-london">
+        <div class="bar-fill bar-asia">00:00 → 09:00 UTC</div>
+      </div>
+      <div class="session-times">00:00 – 09:00 UTC</div>
+    </div>
+
+    <div class="session-bar-row">
+      <span class="session-name" style="color:var(--london)">⬡ EUROPA / LONDON</span>
+      <div class="bar-track overlap-ny">
+        <div class="bar-fill bar-london">07:00 → 16:00 UTC</div>
+      </div>
+      <div class="session-times">07:00 – 16:00 UTC</div>
+    </div>
+
+    <div class="session-bar-row">
+      <span class="session-name" style="color:var(--ny)">⬡ NEW YORK</span>
+      <div class="bar-track">
+        <div class="bar-fill bar-ny">12:00 → 21:00 UTC</div>
+      </div>
+      <div class="session-times">12:00 – 21:00 UTC</div>
+    </div>
+
+    <div class="session-bar-row">
+      <span class="session-name" style="color:var(--crypto)">⬡ CRYPTO (24/7)</span>
+      <div class="bar-track">
+        <div class="bar-fill bar-crypto">MERCADO CONTINUO — NO CIERRA</div>
+      </div>
+      <div class="session-times">00:00 – 24:00 UTC</div>
+    </div>
+
+  </div>
+
+  <div class="utc-axis" style="margin-top:10px;">
+    <div></div>
+    <div class="utc-track">
+      <span class="utc-tick">00</span>
+      <span class="utc-tick">03</span>
+      <span class="utc-tick">06</span>
+      <span class="utc-tick" style="color:var(--overlap);opacity:1">07</span>
+      <span class="utc-tick">09</span>
+      <span class="utc-tick" style="color:var(--overlap);opacity:1">12</span>
+      <span class="utc-tick">15</span>
+      <span class="utc-tick" style="color:var(--overlap);opacity:1">16</span>
+      <span class="utc-tick">18</span>
+      <span class="utc-tick">21</span>
+      <span class="utc-tick">24</span>
+    </div>
+    <div></div>
+  </div>
+
+  <div style="margin-top:12px; font-family:'Space Mono',monospace; font-size:9px; color:var(--muted);">
+    <span style="color:var(--overlap)">▓</span> = OVERLAP (alta liquidez) &nbsp;|&nbsp; 07-09 UTC = Asia+London &nbsp;|&nbsp; 12-16 UTC = London+NY
+  </div>
+</div>
+
+<!-- TABLA HORARIOS POR ZONA -->
+<div class="times-table">
+  <div class="section-label">// TUS HORARIOS LOCALES (GUAYAQUIL = UTC-5)</div>
+  <div class="times-grid">
+    <div class="times-cell header">SESIÓN</div>
+    <div class="times-cell header">UTC</div>
+    <div class="times-cell header">GUAYAQUIL (UTC-5)</div>
+    <div class="times-cell header">CARACAS / BOG (UTC-4/5)</div>
+
+    <div class="times-cell" style="color:var(--asia); font-weight:700;">ASIA</div>
+    <div class="times-cell">00:00 – 09:00</div>
+    <div class="times-cell" style="color:var(--white)">19:00 – 04:00 ⚠️ noche</div>
+    <div class="times-cell">20:00 – 05:00</div>
+
+    <div class="times-cell" style="color:var(--london); font-weight:700;">LONDON</div>
+    <div class="times-cell">07:00 – 16:00</div>
+    <div class="times-cell" style="color:var(--white)">02:00 – 11:00</div>
+    <div class="times-cell">03:00 – 12:00</div>
+
+    <div class="times-cell" style="color:var(--ny); font-weight:700;">NEW YORK</div>
+    <div class="times-cell">12:00 – 21:00</div>
+    <div class="times-cell" style="color:var(--ny); font-weight:700;">07:00 – 16:00 ✅ prime</div>
+    <div class="times-cell">08:00 – 17:00</div>
+
+    <div class="times-cell" style="color:var(--overlap); font-weight:700;">OVERLAP L+NY</div>
+    <div class="times-cell">12:00 – 16:00</div>
+    <div class="times-cell" style="color:var(--overlap); font-weight:700;">07:00 – 11:00 🔥 BEST</div>
+    <div class="times-cell">08:00 – 12:00</div>
+  </div>
+</div>
+
+<!-- DIVIDER -->
+<div class="section-divider" style="margin-top:40px;"><div class="section-divider-label">LAS 4 SESIONES EN DETALLE</div></div>
+
+<!-- SESIONES DETAIL -->
+<div class="sessions-detail">
+
+  <!-- ASIA -->
+  <div class="session-card asia-card">
+    <div class="card-header">
+      <div class="card-title-block">
+        <div class="card-flag">🌏</div>
+        <div class="card-title">Sesión Asia — Tokio</div>
+        <div class="card-subtitle">// 00:00 – 09:00 UTC &nbsp;|&nbsp; Participan: Tokio, Singapur, Hong Kong, Sidney</div>
+      </div>
+      <div class="card-badge">BAJA VOLATILIDAD</div>
+    </div>
+    <div class="card-body">
+      <div class="card-col">
+        <div class="col-label">// QUÉ PASA EN ESTA SESIÓN</div>
+        <ul class="feature-list">
+          <li>Volumen bajo — los spreads son más amplios, movimientos más lentos</li>
+          <li>El mercado suele consolidar y respetar rangos definidos</li>
+          <li>Se forman los <strong>mínimos y máximos de Asia</strong> que London usará como referencia</li>
+          <li>JPY (Yen japonés) y AUD/NZD son los más activos en Forex</li>
+          <li>Grandes instituciones de la región ejecutan sus órdenes aquí</li>
+          <li>Crypto sigue activo pero con menos liquidez institucional de Occidente</li>
+        </ul>
+      </div>
+      <div class="card-col">
+        <div class="col-label">// CÓMO SACARLE PROVECHO</div>
+        <ul class="feature-list">
+          <li><strong>Range trading:</strong> comprar soporte y vender resistencia del rango asiático</li>
+          <li>Esperar la ruptura del rango asiático al abrir London — breakout confirmado</li>
+          <li>Marcar los High/Low de Asia como zonas clave para el resto del día</li>
+          <li>BTC y meme coins como BOME pueden moverse con noticias de China/Japón</li>
+          <li>Ideal para análisis, no para acción: revisar setup de trades futuros</li>
+          <li>Liquidez debajo de mínimos asiáticos = target favorito de London después</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- LONDON -->
+  <div class="session-card london-card">
+    <div class="card-header">
+      <div class="card-title-block">
+        <div class="card-flag">🇬🇧</div>
+        <div class="card-title">Sesión Europa — London</div>
+        <div class="card-subtitle">// 07:00 – 16:00 UTC &nbsp;|&nbsp; Participan: Londres, Frankfurt, París, Zúrich</div>
+      </div>
+      <div class="card-badge">ALTA VOLATILIDAD</div>
+    </div>
+    <div class="card-body">
+      <div class="card-col">
+        <div class="col-label">// QUÉ PASA EN ESTA SESIÓN</div>
+        <ul class="feature-list">
+          <li>Es la sesión con <strong>más volumen de Forex</strong> a nivel global</li>
+          <li>London abre "cazando" la liquidez del rango asiático (Stop Hunt)</li>
+          <li>Movimientos bruscos y rápidos en los primeros 30–60 minutos</li>
+          <li>Se publican datos macro europeos: BCE, IPC, empleo, PIB</li>
+          <li>Los grandes bancos europeos ejecutan órdenes masivas de clientes</li>
+          <li>EUR, GBP, CHF son los protagonistas; también impacta a XAU/USD</li>
+        </ul>
+      </div>
+      <div class="card-col">
+        <div class="col-label">// CÓMO SACARLE PROVECHO</div>
+        <ul class="feature-list">
+          <li><strong>Breakout del rango asiático:</strong> esperar ruptura confirmada con volumen</li>
+          <li>Usar ICT Killzones de London (07:00–09:00 UTC) para entradas precisas</li>
+          <li>Vigilar Order Blocks y FVG formados en Asia para reacciones</li>
+          <li>XAU (Oro) muestra movimientos explosivos en apertura europea</li>
+          <li>En crypto: si BTC rompe un nivel clave al abrir London → tendencia del día</li>
+          <li>No entrar en el puro caos inicial; esperar 15–30 min para confirmar dirección</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- NEW YORK -->
+  <div class="session-card ny-card">
+    <div class="card-header">
+      <div class="card-title-block">
+        <div class="card-flag">🗽</div>
+        <div class="card-title">Sesión New York</div>
+        <div class="card-subtitle">// 12:00 – 21:00 UTC &nbsp;|&nbsp; 07:00–16:00 Guayaquil ← TU HORARIO IDEAL</div>
+      </div>
+      <div class="card-badge">MAX LIQUIDEZ</div>
+    </div>
+    <div class="card-body">
+      <div class="card-col">
+        <div class="col-label">// QUÉ PASA EN ESTA SESIÓN</div>
+        <ul class="feature-list">
+          <li>Mayor liquidez total cuando coincide con London (12–16 UTC)</li>
+          <li>Se publican los datos más importantes: NFP, CPI, Fed, PIB USA</li>
+          <li>USD es protagonista — impacta TODO: Forex, Crypto, Oro, Acciones</li>
+          <li>NYSE y NASDAQ abren → correlaciones directas con BTC, NASDAQ</li>
+          <li>Crypto reacciona fuerte a datos macro de EE.UU.</li>
+          <li>Las 2pm–3pm NYC (19–20 UTC) suelen traer la tendencia final del día</li>
+        </ul>
+      </div>
+      <div class="card-col">
+        <div class="col-label">// CÓMO SACARLE PROVECHO</div>
+        <ul class="feature-list">
+          <li><strong>Esta es TU sesión principal</strong> — 7am a 4pm Guayaquil = prime time</li>
+          <li>En el overlap 07–11am GYE: máxima liquidez y movimientos más limpios</li>
+          <li>Esperar apertura de NY para confirmar o rechazar tendencia de London</li>
+          <li>Datos del FOMC / NFP → no operar durante el dato, entrar en la reacción</li>
+          <li>BTC correlaciona fuerte con NASDAQ en apertura — usar para confluencia</li>
+          <li>Después de las 11am GYE el volumen baja → reducir exposición</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- CRYPTO 24/7 -->
+  <div class="session-card crypto-card">
+    <div class="card-header">
+      <div class="card-title-block">
+        <div class="card-flag">₿</div>
+        <div class="card-title">Crypto — Mercado 24/7</div>
+        <div class="card-subtitle">// No cierra — pero sí tiene zonas de alta y baja actividad</div>
+      </div>
+      <div class="card-badge">SIEMPRE ABIERTO</div>
+    </div>
+    <div class="card-body">
+      <div class="card-col">
+        <div class="col-label">// LA REALIDAD DEL MERCADO CRYPTO</div>
+        <ul class="feature-list">
+          <li>No existe una sola sesión: el volumen sigue al sol</li>
+          <li>Los movimientos más grandes ocurren en overlaps de sesiones tradicionales</li>
+          <li>BTC y ETH reaccionan a datos macro igual que activos TradFi</li>
+          <li>Las <strong>00:00 UTC y 08:00 UTC</strong> son reinicios de funding rate en exchanges</li>
+          <li>Domingo noche UTC (apertura semanal de Forex) puede dar gaps cripto</li>
+          <li>Altcoins y meme coins (BOME) amplifican movimientos de BTC con lag</li>
+        </ul>
+      </div>
+      <div class="card-col">
+        <div class="col-label">// ESTRATEGIA ESPECÍFICA CRYPTO</div>
+        <ul class="feature-list">
+          <li>Las horas de menor volumen (02–06 UTC) = acumulación silenciosa de whales</li>
+          <li>Stop hunts frecuentes en horas de baja liquidez (Asia media noche)</li>
+          <li>Preferir operar crypto durante London y NY por más volumen y datos claros</li>
+          <li>En BOME: tu estrategia de comprar pullbacks funciona mejor en sesión NY</li>
+          <li>CVD y OI deben interpretarse con el horario: spikes en overlap = real</li>
+          <li>El funding rate de 08:00 UTC puede generar squeeze corto artificial</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- OVERLAPS -->
+<div class="section-divider"><div class="section-divider-label">OVERLAPS — LAS HORAS DE ORO</div></div>
+
+<div class="overlaps-section">
+
+  <div class="overlap-card">
+    <div class="overlap-time-block">
+      <div class="overlap-badge">OVERLAP 1</div>
+      <div class="overlap-title">ASIA + LONDON</div>
+      <div class="overlap-hours">07:00 – 09:00 UTC<br>02:00 – 04:00 Guayaquil</div>
+    </div>
+    <div class="overlap-content">
+      <p>Las últimas 2 horas de Asia y las primeras 2 de London se superponen. London abre cazando la liquidez generada durante la noche asiática. Los Stop Hunts son frecuentes y rápidos — toca el mínimo de Asia para tomar liquidez y luego se mueve fuerte en la dirección real.</p>
+      <p>Aunque es una zona de alta actividad, para traders de LATAM este horario cae de madrugada. Si operas aquí, prioriza setups con R:R muy alto y no scalps.</p>
+      <div class="overlap-tags">
+        <span class="tag">Stop Hunt</span>
+        <span class="tag">Breakout Asia Range</span>
+        <span class="tag">GBP/JPY activo</span>
+        <span class="tag">XAU explosivo</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlap-card">
+    <div class="overlap-time-block">
+      <div class="overlap-badge">OVERLAP 2 🔥</div>
+      <div class="overlap-title">LONDON + NY</div>
+      <div class="overlap-hours">12:00 – 16:00 UTC<br><strong style="color:var(--overlap)">07:00 – 11:00 Guayaquil</strong></div>
+    </div>
+    <div class="overlap-content">
+      <p>El overlap más importante del mundo. Ambas sesiones están completamente abiertas, el volumen alcanza su pico diario y los movimientos son los más limpios, rápidos y directos del día. La mayoría de las grandes tendencias intradiarias se forman o confirman aquí.</p>
+      <p><strong style="color:var(--overlap)">Para ti en Guayaquil esto es de 7am a 11am — tu ventana de trading de mayor probabilidad.</strong> Los datos macro de EE.UU. se publican a las 8:30am hora de NY (13:30 UTC / 08:30am GYE), lo que puede generar movimientos de 50–200 pips en minutos.</p>
+      <div class="overlap-tags">
+        <span class="tag">Máxima liquidez</span>
+        <span class="tag">Tendencias limpias</span>
+        <span class="tag">Datos macro USA</span>
+        <span class="tag">BTC+NASDAQ correlación</span>
+        <span class="tag">XAU alta actividad</span>
+        <span class="tag">Best R:R del día</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- INSTRUMENTOS -->
+<div class="section-divider"><div class="section-divider-label">QUÉ OPERA EN CADA SESIÓN</div></div>
+
+<div class="instruments-section">
+  <div class="instruments-grid">
+
+    <div class="instrument-card">
+      <div class="instrument-header">
+        <span class="instrument-dot" style="background:var(--asia)"></span>
+        <span style="color:var(--asia)">MEJOR EN ASIA</span>
+      </div>
+      <div class="instrument-rows">
+        <div class="inst-row">
+          <div>
+            <div class="inst-name">USD/JPY</div>
+            <div class="inst-desc">Par más activo de Asia. Mueve cientos de pips en esta sesión.</div>
+          </div>
+          <div class="inst-sessions"><span class="sess-pill pill-asia">ASIA</span></div>
+        </div>
+        <div class="inst-row">
+          <div>
+            <div class="inst-name">AUD/USD · NZD/USD</div>
+            <div class="inst-desc">Dólar australiano y neozelandés con datos de sus países en esta sesión.</div>
+          </div>
+          <div class="inst-sessions"><span class="sess-pill pill-asia">ASIA</span></div>
+        </div>
+        <div class="inst-row">
+          <div>
+            <div class="inst-name">BTC (acumulación)</div>
+            <div class="inst-desc">Whales acumulan en silencio. CVD revela flujo real.</div>
+          </div>
+          <div class="inst-sessions"><span class="sess-pill pill-asia">ASIA</span><span class="sess-pill pill-all">24/7</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="instrument-card">
+      <div class="instrument-header">
+        <span class="instrument-dot" style="background:var(--london)"></span>
+        <span style="color:var(--london)">MEJOR EN LONDON</span>
+      </div>
+      <div class="instrument-rows">
+        <div class="inst-row">
+          <div>
+            <div class="inst-name">GBP/USD · EUR/USD</div>
+            <div class="inst-desc">Los pares europeos explotan en apertura londinense.</div>
+          </div>
+          <div class="inst-sessions"><span class="sess-pill pill-london">LONDON</span></div>
+        </div>
+        <div class="inst-row">
+          <div>
+            <div class="inst-name">XAU/USD (Oro)</div>
+            <div class="inst-desc">El oro tiene su mayor movimiento en apertura europea. Mueve 30–80 pips en minutos.</div>
+          </div>
+          <div class="inst-sessions"><span class="sess-pill pill-london">LONDON</span><span class="sess-pill pill-ny">NY</span></div>
+        </div>
+        <div class="inst-row">
+          <div>
+            <div class="inst-name">EUR/GBP · GBP/JPY</div>
+            <div class="inst-desc">Pares cruzados europeos — alta volatilidad en este horario.</div>
+          </div>
+          <div class="inst-sessions"><span class="sess-pill pill-london">LONDON</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="instrument-card">
+      <div class="instrument-header">
+        <span class="instrument-dot" style="background:var(--ny)"></span>
+        <span style="color:var(--ny)">MEJOR EN NEW YORK</span>
+      </div>
+      <div class="instrument-rows">
+        <div class="inst-row">
+          <div>
+            <div class="inst-name">BTC/USD · ETH/USD</div>
+            <div class="inst-desc">Reaccionan a datos macro USA. Correlación con NASDAQ en apertura.</div>
+          </div>
+          <div class="inst-sessions"><span class="sess-pill pill-ny">NY</span><span class="sess-pill pill-all">24/7</span></div>
+        </div>
+        <div class="inst-row">
+          <div>
+            <div class="inst-name">BOME · Altcoins</div>
+            <div class="inst-desc">Meme coins amplifican movimiento de BTC con delay. Pumps frecuentes en overlap NY.</div>
+          </div>
+          <div class="inst-sessions"><span class="sess-pill pill-ny">NY</span></div>
+        </div>
+        <div class="inst-row">
+          <div>
+            <div class="inst-name">USD/CAD · USD/MXN</div>
+            <div class="inst-desc">Pares con dólar americano se activan con datos USA (NFP, CPI, Fed).</div>
+          </div>
+          <div class="inst-sessions"><span class="sess-pill pill-ny">NY</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ESTRATEGIAS -->
+<div class="section-divider"><div class="section-divider-label">ESTRATEGIAS POR SESIÓN</div></div>
+
+<div class="strategy-section">
+
+  <div class="strategy-card">
+    <div class="strat-header">
+      <div class="strat-num">01</div>
+      <div class="strat-title">ASIA RANGE BREAKOUT</div>
+    </div>
+    <div class="strat-body">
+      Marcar el High y Low formados durante la sesión asiática. Al abrir London (07:00 UTC / 02:00 GYE), esperar que el precio rompa uno de esos niveles con un cierre de vela confirmatorio. Entrar en la dirección del breakout con SL al otro lado del rango.
+      <div class="strat-when">
+        <span class="sess-pill pill-london">LONDON OPEN</span>
+        <span class="tag">EUR/USD</span>
+        <span class="tag">GBP/USD</span>
+        <span class="tag">XAU</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="strategy-card">
+    <div class="strat-header">
+      <div class="strat-num">02</div>
+      <div class="strat-title">NY KILLZONE ENTRY</div>
+    </div>
+    <div class="strat-body">
+      En el overlap London–NY (07:00–11:00 GYE), buscar la primera reacción limpia a un Order Block o FVG identificado en HTF (4h, 1h). Entrar con confluencia de CVD mostrando absorción + estructura de mercado clara (BOS/CHoCH). Esta es tu ventana de máxima probabilidad.
+      <div class="strat-when">
+        <span class="sess-pill pill-ny">OVERLAP</span>
+        <span class="tag">BTC</span>
+        <span class="tag">XAU</span>
+        <span class="tag">Forex</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="strategy-card">
+    <div class="strat-header">
+      <div class="strat-num">03</div>
+      <div class="strat-title">CRYPTO PULLBACK SESSIONS</div>
+    </div>
+    <div class="strat-body">
+      Para BOME y altcoins: los pullbacks más confiables ocurren durante la sesión NY cuando BTC toca soporte y CVD muestra divergencia positiva. La estrategia de comprar el pullback y vender en el pump funciona mejor cuando el volumen de NY confirma con un spike de OI + CVD.
+      <div class="strat-when">
+        <span class="sess-pill pill-ny">NY SESSION</span>
+        <span class="tag">BOME</span>
+        <span class="tag">CVD CONFLUENCE</span>
+        <span class="tag">OI</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="strategy-card">
+    <div class="strat-header">
+      <div class="strat-num">04</div>
+      <div class="strat-title">EVITAR HORAS MUERTAS</div>
+    </div>
+    <div class="strat-body">
+      Las horas 17:00–19:00 GYE (fin de NY) y 19:00–02:00 GYE (Asia nocturna) tienen bajo volumen, spreads amplios y movimientos erráticos. Durante estas horas: reducir tamaño de posición a 0, hacer análisis, revisar setup del día siguiente, actualizar niveles clave.
+      <div class="strat-when">
+        <span class="tag">NO OPERAR</span>
+        <span class="tag">Análisis</span>
+        <span class="tag">Journaling</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- NOTA FINAL -->
+<div class="final-note">
+  <div class="note-icon">⚡</div>
+  <div class="note-content">
+    <h3>RESUMEN PARA GUAYAQUIL — TU VENTANA ÓPTIMA</h3>
+    <p>
+      Tu zona horaria (UTC-5) te pone en una posición privilegiada: el overlap London+NY cae entre las <strong>7am y 11am de tu mañana</strong> — la sesión de mayor liquidez global. La sesión NY completa es de <strong>7am a 4pm</strong>, perfectamente tradeadable. 
+      Para cripto (BTC, BOME): operar de <strong>7am a 12pm</strong> aprovechando las confluencias de tu indicador CVD+OI. Para XAU/USD: el movimiento más fuerte suele ocurrir entre <strong>7:30am y 9:30am GYE</strong>. 
+      Sesión Asia: de madrugada, no ideal salvo que tengas alertas y trades configurados. La regla general: <strong>si no es overlap, no es prime time</strong>.
+    </p>
+  </div>
+</div>
+
+<footer>
+  <span>PSYCHOMETRIKS © 2025 — MANUAL DE SESIONES v1.0</span>
+  <span id="footer-time">UTC --:--</span>
+</footer>
+
+<script>
+  function pad(n) { return String(n).padStart(2, '0'); }
+
+  function getTimeInZone(date, offsetHours) {
+    const utc = date.getTime() + date.getTimezoneOffset() * 60000;
+    const local = new Date(utc + offsetHours * 3600000);
+    return `${pad(local.getHours())}:${pad(local.getMinutes())}`;
+  }
+
+  function isSessionOpen(utcHour, start, end) {
+    if (end > start) return utcHour >= start && utcHour < end;
+    return utcHour >= start || utcHour < end;
+  }
+
+  function setStatus(el, open) {
+    if (!el) return;
+    el.textContent = open ? 'OPEN' : 'CLOSED';
+    el.className = 'clock-status ' + (open ? 'status-open' : 'status-closed');
+  }
+
+  function tick() {
+    const now = new Date();
+    const utcH = now.getUTCHours();
+    const utcM = now.getUTCMinutes();
+    const utcS = now.getUTCSeconds();
+
+    document.getElementById('clk-utc').textContent =
+      `${pad(utcH)}:${pad(utcM)}:${pad(utcS)}`;
+
+    document.getElementById('clk-tokyo').textContent   = getTimeInZone(now, 9);
+    document.getElementById('clk-london').textContent  = getTimeInZone(now, 1);
+    document.getElementById('clk-ny').textContent      = getTimeInZone(now, -4);
+    document.getElementById('clk-gye').textContent     = getTimeInZone(now, -5);
+
+    setStatus(document.getElementById('st-asia'),   isSessionOpen(utcH, 0, 9));
+    setStatus(document.getElementById('st-london'), isSessionOpen(utcH, 7, 16));
+    setStatus(document.getElementById('st-ny'),     isSessionOpen(utcH, 12, 21));
+
+    document.getElementById('footer-time').textContent =
+      `UTC ${pad(utcH)}:${pad(utcM)}`;
+  }
+
+  tick();
+  setInterval(tick, 1000);
+</script>
+</body>
+</html>

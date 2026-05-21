@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 style="margin-bottom:16px">Historial de señales</h2>
+<div class="card">
+  <table>
+    <tr><th>#</th><th>Símbolo</th><th>Tipo</th><th>Temporalidad</th><th>Fuente</th><th>Fecha</th></tr>
+    {% for s in signals %}
+    <tr>
+      <td>{{ s.id }}</td>
+      <td>{{ s.symbol or '—' }}</td>
+      <td>{{ s.signal_type }}</td>
+      <td>{{ s.timeframe or '—' }}</td>
+      <td><span class="badge badge-{{ s.source }}">{{ s.source }}</span></td>
+      <td>{{ s.sent_at.strftime('%d/%m/%Y %H:%M') }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

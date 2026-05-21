@@ -1,0 +1,1350 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PSYCHOMETRIKS — Manual Profesional de Velas</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bull: #00C896; --bull-dim: #00C89622; --bull-mid: #00C89644;
+  --bear: #FF4560; --bear-dim: #FF456022; --bear-mid: #FF456044;
+  --gold: #FFB020; --gold-dim: #FFB02022;
+  --bg: #080B10; --bg2: #0D1117; --bg3: #141920;
+  --card: #111820; --card2: #161E28;
+  --border: #1E2A38; --border2: #243040;
+  --text: #E8EDF2; --text2: #8A9BB0; --text3: #4A5A6A;
+  --accent: #1A6EFF; --accent-dim: #1A6EFF15;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Instrument Sans',sans-serif;overflow-x:hidden;line-height:1.6}
+
+/* ── HERO */
+.hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;position:relative;overflow:hidden;text-align:center;padding:4rem 2rem}
+.hero-grid{position:absolute;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:40px 40px;opacity:0.3}
+.hero-glow{position:absolute;width:600px;height:600px;background:radial-gradient(circle,#1A6EFF08 0%,transparent 70%);top:50%;left:50%;transform:translate(-50%,-50%)}
+.hero-badge{font-family:'JetBrains Mono',monospace;font-size:.7rem;letter-spacing:.2em;color:var(--gold);border:1px solid var(--gold);padding:.3rem .8rem;border-radius:2px;margin-bottom:2rem;display:inline-block;text-transform:uppercase}
+.hero h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(4rem,12vw,9rem);line-height:.9;letter-spacing:-.02em;color:var(--text);margin-bottom:1rem}
+.hero h1 span{color:var(--gold)}
+.hero-sub{font-family:'DM Serif Display',serif;font-size:clamp(1rem,2.5vw,1.4rem);color:var(--text2);font-style:italic;max-width:600px;margin-bottom:3rem}
+.hero-stats{display:flex;gap:3rem;justify-content:center;flex-wrap:wrap}
+.stat{text-align:center}
+.stat-n{font-family:'Bebas Neue',sans-serif;font-size:2.5rem;color:var(--gold);line-height:1}
+.stat-l{font-size:.75rem;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-top:.2rem}
+.scroll-hint{position:absolute;bottom:2rem;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:.5rem;color:var(--text3);font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;animation:bounce 2s infinite}
+@keyframes bounce{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(6px)}}
+.scroll-hint::after{content:'';width:1px;height:40px;background:linear-gradient(var(--border2),transparent)}
+
+/* ── NAV */
+nav{position:sticky;top:0;z-index:100;background:rgba(8,11,16,.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:.8rem 2rem;display:flex;align-items:center;gap:2rem;overflow-x:auto}
+.nav-logo{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:var(--gold);white-space:nowrap;margin-right:auto}
+nav a{font-size:.8rem;color:var(--text2);text-decoration:none;letter-spacing:.05em;white-space:nowrap;transition:color .2s}
+nav a:hover{color:var(--gold)}
+
+/* ── SECTIONS */
+section{padding:5rem 2rem;max-width:1200px;margin:0 auto}
+.section-label{font-family:'JetBrains Mono',monospace;font-size:.7rem;letter-spacing:.2em;color:var(--accent);text-transform:uppercase;margin-bottom:.8rem;display:flex;align-items:center;gap:.8rem}
+.section-label::before{content:'';width:30px;height:1px;background:var(--accent)}
+h2{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.5rem,6vw,4rem);line-height:1;margin-bottom:.5rem}
+h3{font-family:'DM Serif Display',serif;font-size:1.5rem;margin-bottom:1rem;color:var(--text)}
+.lead{color:var(--text2);font-size:1.05rem;max-width:700px;margin-bottom:3rem;line-height:1.8}
+.divider{height:1px;background:linear-gradient(90deg,transparent,var(--border2),transparent);margin:4rem 0}
+
+/* ── CANDLE SVG */
+.candle-svg{display:block}
+
+/* ── PATTERN CARDS */
+.pattern-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.5rem;margin-bottom:4rem}
+.pcard{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:1.5rem;transition:transform .2s,border-color .2s;position:relative;overflow:hidden}
+.pcard::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity .3s}
+.pcard:hover{transform:translateY(-3px)}
+.pcard.bull{border-left:3px solid var(--bull)}
+.pcard.bull::before{background:linear-gradient(135deg,var(--bull-dim),transparent)}
+.pcard.bear{border-left:3px solid var(--bear)}
+.pcard.bear::before{background:linear-gradient(135deg,var(--bear-dim),transparent)}
+.pcard.neut{border-left:3px solid var(--gold)}
+.pcard.neut::before{background:linear-gradient(135deg,var(--gold-dim),transparent)}
+.pcard:hover::before{opacity:1}
+.pcard-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.pcard-name{font-family:'DM Serif Display',serif;font-size:1.1rem}
+.pcard-dir{font-family:'JetBrains Mono',monospace;font-size:.65rem;padding:.2rem .5rem;border-radius:2px;letter-spacing:.05em;font-weight:700}
+.bull .pcard-dir{background:var(--bull-mid);color:var(--bull)}
+.bear .pcard-dir{background:var(--bear-mid);color:var(--bear)}
+.neut .pcard-dir{background:var(--gold-dim);color:var(--gold)}
+.pcard-chart{margin-bottom:1rem;display:flex;justify-content:center;background:var(--bg2);border-radius:4px;padding:.8rem}
+.pcard-desc{font-size:.85rem;color:var(--text2);line-height:1.6;margin-bottom:.8rem}
+.pcard-conf{display:flex;align-items:center;gap:.5rem}
+.conf-label{font-size:.7rem;color:var(--text3);text-transform:uppercase;letter-spacing:.08em}
+.conf-dots{display:flex;gap:3px}
+.conf-dot{width:8px;height:8px;border-radius:50%}
+.conf-dot.on.bull-d{background:var(--bull)}
+.conf-dot.on.bear-d{background:var(--bear)}
+.conf-dot.on.neut-d{background:var(--gold)}
+.conf-dot.off{background:var(--border2)}
+
+/* ── COMBO TABLE */
+.combo-section{margin-bottom:4rem}
+.combo-header{display:grid;grid-template-columns:1fr 140px 1fr 80px;gap:1px;background:var(--border);border-radius:6px 6px 0 0;overflow:hidden;margin-bottom:1px}
+.combo-row{display:grid;grid-template-columns:1fr 140px 1fr 80px;gap:1px;background:var(--border);margin-bottom:1px}
+.combo-row:last-child{border-radius:0 0 6px 6px;overflow:hidden}
+.ch{background:var(--bg3);padding:.6rem 1rem;font-family:'JetBrains Mono',monospace;font-size:.7rem;letter-spacing:.08em;color:var(--text3);text-transform:uppercase}
+.cd{background:var(--card);padding:.8rem 1rem;font-size:.85rem;color:var(--text2);line-height:1.5}
+.cd.name{font-family:'DM Serif Display',serif;font-size:.95rem;color:var(--text)}
+.cd.dir-bull{color:var(--bull);font-weight:600}
+.cd.dir-bear{color:var(--bear);font-weight:600}
+.cd.dir-neut{color:var(--gold);font-weight:600}
+.cd.stars{font-size:.8rem;letter-spacing:.05em;text-align:center}
+
+/* ── RANGE PATTERNS */
+.range-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:2rem;margin-bottom:4rem}
+.rcard{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:1.5rem}
+.rcard-title{font-family:'DM Serif Display',serif;font-size:1.1rem;margin-bottom:1rem;display:flex;align-items:center;gap:.8rem}
+.rcard-chart{background:var(--bg2);border-radius:4px;padding:1rem;margin-bottom:1rem;display:flex;justify-content:center}
+.rcard-info{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
+.rcard-item{padding:.5rem;border-radius:4px;font-size:.78rem;line-height:1.4}
+.rcard-item.up{background:var(--bull-dim);color:var(--bull)}
+.rcard-item.down{background:var(--bear-dim);color:var(--bear)}
+.rcard-item-label{font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.08em;opacity:.7;display:block;margin-bottom:.2rem;text-transform:uppercase}
+
+/* ── LIQUIDEZ */
+.liq-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.5rem;margin-bottom:4rem}
+.lcard{background:var(--card);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.lcard-head{padding:1rem 1.2rem;font-family:'DM Serif Display',serif;font-size:1rem;display:flex;align-items:center;gap:.8rem}
+.lcard-head.warn{background:linear-gradient(135deg,#2A1500,var(--card));border-bottom:1px solid var(--gold)}
+.lcard-head.bull{background:linear-gradient(135deg,#001A0E,var(--card));border-bottom:1px solid var(--bull)}
+.lcard-head.bear{background:linear-gradient(135deg,#1A0007,var(--card));border-bottom:1px solid var(--bear)}
+.lcard-body{padding:1.2rem}
+.lcard-chart{background:var(--bg2);border-radius:4px;margin-bottom:1rem;padding:.8rem;display:flex;justify-content:center}
+.lcard-trap{font-size:.82rem;color:var(--text2);margin-bottom:.6rem;line-height:1.5}
+.lcard-real{font-size:.82rem;font-weight:600;padding:.4rem .8rem;border-radius:4px}
+.lcard-real.bull{background:var(--bull-dim);color:var(--bull)}
+.lcard-real.bear{background:var(--bear-dim);color:var(--bear)}
+
+/* ── CONFLUENCIA TABLE */
+.conf-table{width:100%;border-collapse:separate;border-spacing:0 2px;margin-bottom:4rem}
+.conf-table th{background:var(--bg3);padding:.7rem 1rem;font-family:'JetBrains Mono',monospace;font-size:.7rem;letter-spacing:.08em;color:var(--text3);text-transform:uppercase;text-align:left}
+.conf-table td{background:var(--card);padding:.8rem 1rem;font-size:.85rem;border:none}
+.conf-table tr:first-child th:first-child{border-radius:6px 0 0 0}
+.conf-table tr:first-child th:last-child{border-radius:0 6px 0 0}
+.conf-plus{color:var(--bull);font-weight:700;font-family:'JetBrains Mono',monospace;font-size:.8rem}
+.conf-prob{font-family:'JetBrains Mono',monospace;font-size:.85rem;font-weight:700}
+.conf-prob.high{color:var(--bull)}
+.conf-prob.mid{color:var(--gold)}
+
+/* ── CHEAT SHEET */
+.cheat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:1rem;margin-bottom:4rem}
+.cheat-card{background:var(--card);border:1px solid var(--border);border-radius:6px;display:grid;grid-template-columns:1fr auto;overflow:hidden}
+.cheat-left{padding:1rem 1.2rem}
+.cheat-trigger{font-size:.82rem;color:var(--text2);margin-bottom:.3rem;line-height:1.4}
+.cheat-trigger strong{color:var(--text);font-weight:600}
+.cheat-ctx{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--text3);letter-spacing:.04em}
+.cheat-right{padding:1rem 1rem;display:flex;align-items:center;justify-content:center;min-width:100px;font-weight:700;font-size:.8rem;text-align:center;line-height:1.3}
+.cheat-right.bull{background:var(--bull-dim);color:var(--bull)}
+.cheat-right.bear{background:var(--bear-dim);color:var(--bear)}
+.cheat-right.warn{background:var(--gold-dim);color:var(--gold)}
+
+/* ── GESTIÓN */
+.mgmt-grid{display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-bottom:4rem}
+.mgmt-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:1.5rem}
+.mgmt-card h4{font-family:'DM Serif Display',serif;font-size:1.1rem;margin-bottom:1rem;color:var(--text)}
+.mgmt-list{list-style:none}
+.mgmt-list li{padding:.5rem 0;border-bottom:1px solid var(--border);font-size:.85rem;color:var(--text2);display:flex;gap:.8rem;align-items:flex-start;line-height:1.5}
+.mgmt-list li::before{content:'→';color:var(--accent);flex-shrink:0;font-family:'JetBrains Mono',monospace;font-size:.8rem;margin-top:2px}
+
+/* ── NOTE BOX */
+.note{background:var(--card2);border-left:3px solid var(--gold);padding:1rem 1.5rem;border-radius:0 6px 6px 0;margin:2rem 0;font-size:.9rem;color:var(--text2);line-height:1.7}
+.note strong{color:var(--gold)}
+
+/* ── FOOTER */
+footer{background:var(--bg2);border-top:1px solid var(--border);padding:3rem 2rem;text-align:center}
+footer .logo{font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--gold);margin-bottom:.5rem}
+footer p{font-size:.8rem;color:var(--text3);max-width:500px;margin:0 auto}
+
+/* ── UTILS */
+@media(max-width:768px){.combo-header,.combo-row{grid-template-columns:1fr 1fr}.ch:nth-child(3),.ch:nth-child(4),.cd:nth-child(3),.cd:nth-child(4){display:none}.mgmt-grid{grid-template-columns:1fr}.hero-stats{gap:1.5rem}}
+</style>
+</head>
+<body>
+
+<!-- ══ HERO ══ -->
+<div class="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-glow"></div>
+  <div style="position:relative;z-index:1">
+    <div class="hero-badge">Edición 2025 — PSYCHOMETRIKS Trading Systems</div>
+    <h1>MANUAL DE<br><span>VELAS</span></h1>
+    <p class="hero-sub">Combinaciones, secuencias, rangos, liquidez y dirección. La guía más completa del análisis de candlesticks japoneses.</p>
+    <div class="hero-stats">
+      <div class="stat"><div class="stat-n">60+</div><div class="stat-l">Patrones</div></div>
+      <div class="stat"><div class="stat-n">11</div><div class="stat-l">Secciones</div></div>
+      <div class="stat"><div class="stat-n">100+</div><div class="stat-l">Combinaciones</div></div>
+      <div class="stat"><div class="stat-n">SVG</div><div class="stat-l">Gráficos reales</div></div>
+    </div>
+  </div>
+  <div class="scroll-hint">Scroll</div>
+</div>
+
+<!-- ══ NAV ══ -->
+<nav>
+  <div class="nav-logo">PSY·VELAS</div>
+  <a href="#fundamentos">Fundamentos</a>
+  <a href="#individuales">Individuales</a>
+  <a href="#dos-velas">2 Velas</a>
+  <a href="#tres-velas">3 Velas</a>
+  <a href="#rangos">Rangos</a>
+  <a href="#secuencias">Secuencias</a>
+  <a href="#liquidez">Liquidez</a>
+  <a href="#confluencias">Confluencias</a>
+  <a href="#gestion">Gestión</a>
+  <a href="#cheatsheet">Cheat Sheet</a>
+</nav>
+
+<!-- ══ SECCIÓN 1: FUNDAMENTOS ══ -->
+<section id="fundamentos">
+  <div class="section-label">Sección 01</div>
+  <h2>Fundamentos</h2>
+  <p class="lead">Cada vela contiene cuatro datos: apertura, máximo, mínimo y cierre. Su geometría revela el balance de poder entre compradores y vendedores en ese período exacto.</p>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:center;margin-bottom:4rem">
+    <div>
+      <h3>Anatomía de una Vela</h3>
+      <p style="color:var(--text2);font-size:.9rem;line-height:1.8;margin-bottom:1.5rem">El <strong style="color:var(--text)">cuerpo</strong> mide la decisión. Las <strong style="color:var(--text)">mechas</strong> miden la batalla. Un cuerpo grande sin mechas = convicción total. Mechas largas con cuerpo pequeño = rechazo o indecisión.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+        <div style="background:var(--bull-dim);border:1px solid var(--bull);border-radius:6px;padding:1rem">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--bull);letter-spacing:.1em;margin-bottom:.3rem">ALCISTA</div>
+          <div style="font-size:.82rem;color:var(--text2)">Cierre &gt; Apertura<br>Cuerpo verde/blanco</div>
+        </div>
+        <div style="background:var(--bear-dim);border:1px solid var(--bear);border-radius:6px;padding:1rem">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--bear);letter-spacing:.1em;margin-bottom:.3rem">BAJISTA</div>
+          <div style="font-size:.82rem;color:var(--text2)">Cierre &lt; Apertura<br>Cuerpo rojo/negro</div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:center;gap:3rem;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:2rem">
+      <!-- Vela alcista anatomía -->
+      <div style="text-align:center">
+        <svg width="60" height="160" viewBox="0 0 60 160">
+          <line x1="30" y1="5" x2="30" y2="35" stroke="#00C896" stroke-width="2"/>
+          <rect x="15" y="35" width="30" height="80" fill="#00C896" rx="2"/>
+          <line x1="30" y1="115" x2="30" y2="155" stroke="#00C896" stroke-width="2"/>
+          <!-- Labels -->
+          <text x="45" y="20" fill="#8A9BB0" font-size="8" font-family="monospace">Máximo</text>
+          <text x="45" y="80" fill="#8A9BB0" font-size="8" font-family="monospace">Cuerpo</text>
+          <text x="45" y="140" fill="#8A9BB0" font-size="8" font-family="monospace">Mínimo</text>
+          <text x="2" y="40" fill="#00C896" font-size="7" font-family="monospace">Cierre</text>
+          <text x="2" y="120" fill="#00C896" font-size="7" font-family="monospace">Apertura</text>
+        </svg>
+        <div style="font-size:.75rem;color:var(--bull);margin-top:.5rem;font-family:'JetBrains Mono',monospace">ALCISTA</div>
+      </div>
+      <!-- Vela bajista anatomía -->
+      <div style="text-align:center">
+        <svg width="60" height="160" viewBox="0 0 60 160">
+          <line x1="30" y1="5" x2="30" y2="35" stroke="#FF4560" stroke-width="2"/>
+          <rect x="15" y="35" width="30" height="80" fill="#FF4560" rx="2"/>
+          <line x1="30" y1="115" x2="30" y2="155" stroke="#FF4560" stroke-width="2"/>
+          <text x="45" y="20" fill="#8A9BB0" font-size="8" font-family="monospace">Máximo</text>
+          <text x="45" y="80" fill="#8A9BB0" font-size="8" font-family="monospace">Cuerpo</text>
+          <text x="45" y="140" fill="#8A9BB0" font-size="8" font-family="monospace">Mínimo</text>
+          <text x="2" y="40" fill="#FF4560" font-size="7" font-family="monospace">Apertura</text>
+          <text x="2" y="120" fill="#FF4560" font-size="7" font-family="monospace">Cierre</text>
+        </svg>
+        <div style="font-size:.75rem;color:var(--bear);margin-top:.5rem;font-family:'JetBrains Mono',monospace">BAJISTA</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ══ SECCIÓN 2: PATRONES INDIVIDUALES ══ -->
+<section id="individuales">
+  <div class="section-label">Sección 02</div>
+  <h2>Patrones Individuales</h2>
+  <p class="lead">Los patrones de una sola vela revelan el sentimiento del mercado en ese período. Su interpretación depende siempre del contexto y el timeframe.</p>
+
+  <h3 style="color:var(--bull);margin-bottom:1.5rem">Alcistas</h3>
+  <div class="pattern-grid">
+
+    <!-- Marubozu Alcista -->
+    <div class="pcard bull">
+      <div class="pcard-header">
+        <div class="pcard-name">Marubozu Alcista</div>
+        <div class="pcard-dir">ALCISTA FUERTE</div>
+      </div>
+      <div class="pcard-chart">
+        <svg width="50" height="100" viewBox="0 0 50 100">
+          <rect x="15" y="5" width="20" height="90" fill="#00C896" rx="2"/>
+        </svg>
+      </div>
+      <p class="pcard-desc">Cuerpo verde sin mechas. Apertura = mínimo, cierre = máximo. Compradores dominaron el 100% del período. Señal de continuación o inicio de impulso.</p>
+      <div class="pcard-conf"><span class="conf-label">Fiabilidad</span><div class="conf-dots"><div class="conf-dot on bull-d"></div><div class="conf-dot on bull-d"></div><div class="conf-dot on bull-d"></div><div class="conf-dot on bull-d"></div><div class="conf-dot on bull-d"></div></div></div>
+    </div>
+
+    <!-- Martillo -->
+    <div class="pcard bull">
+      <div class="pcard-header"><div class="pcard-name">Martillo (Hammer)</div><div class="pcard-dir">ALCISTA</div></div>
+      <div class="pcard-chart">
+        <svg width="50" height="100" viewBox="0 0 50 100">
+          <rect x="18" y="20" width="14" height="20" fill="#00C896" rx="1"/>
+          <line x1="25" y1="40" x2="25" y2="95" stroke="#00C896" stroke-width="2"/>
+          <line x1="25" y1="20" x2="25" y2="15" stroke="#00C896" stroke-width="2"/>
+        </svg>
+      </div>
+      <p class="pcard-desc">Cuerpo pequeño arriba, mecha inferior larga (&gt;2x cuerpo). Aparece en soporte. Compradores rechazaron los mínimos con fuerza.</p>
+      <div class="pcard-conf"><span class="conf-label">Fiabilidad</span><div class="conf-dots"><div class="conf-dot on bull-d"></div><div class="conf-dot on bull-d"></div><div class="conf-dot on bull-d"></div><div class="conf-dot on bull-d"></div><div class="conf-dot off"></div></div></div>
+    </div>
+
+    <!-- Doji Libélula -->
+    <div class="pcard bull">
+      <div class="pcard-header"><div class="pcard-name">Doji Libélula</div><div class="pcard-dir">ALCISTA</div></div>
+      <div class="pcard-chart">
+        <svg width="50" height="100" viewBox="0 0 50 100">
+          <line x1="25" y1="10" x2="25" y2="12" stroke="#00C896" stroke-width="2"/>
+          <rect x="18" y="10" width="14" height="3" fill="#00C896" rx="1"/>
+          <line x1="25" y1="13" x2="25" y2="95" stroke="#00C896" stroke-width="2"/>
+        </svg>
+      </div>
+      <p class="pcard-desc">Apertura = cierre = máximo. Mecha inferior muy larga. Fuerte rechazo bajista desde soporte. Muy confiable en D y W.</p>
+      <div class="pcard-conf"><span class="conf-label">Fiabilidad</span><div class="conf-dots"><div class="conf-dot on bull-d"></div><div class="conf-dot on bull-d"></div><div class="conf-dot on bull-d"></div><div class="conf-dot on bull-d"></div><div class="conf-dot off"></div></div></div>
+    </div>
+
+    <!-- Martillo invertido -->
+    <div class="pcard bull">
+      <div class="pcard-header"><div class="pcard-name">Martillo Invertido</div><div class="pcard-dir">ALCISTA POTENCIAL</div></div>
+      <div class="pcard-chart">
+        <svg width="50" height="100" viewBox="0 0 50 100">
+          <line x1="25" y1="5" x2="25" y2="55" stroke="#00C896" stroke-width="2"/>
+          <rect x="18" y="55" width="14" height="18" fill="#00C896" rx="1"/>
+          <line x1="25" y1="73" x2="25" y2="80" stroke="#00C896" stroke-width="2"/>
+        </svg>
+      </div>
+      <p class="pcard-desc">Cuerpo pequeño abajo, mecha superior larga. En soporte. Los compradores intentaron subir. Requiere confirmación de la siguiente vela.</p>
+      <div class="pcard-conf"><span class="conf-label">Fiabilidad</span><div class="conf-dots"><div class="conf-dot on bull-d"></div><div class="conf-dot on bull-d"></div><div class="conf-dot on bull-d"></div><div class="conf-dot off"></div><div class="conf-dot off"></div></div></div>
+    </div>
+
+    <!-- Doji Estrella -->
+    <div class="pcard neut">
+      <div class="pcard-header"><div class="pcard-name">Doji Estrella</div><div class="pcard-dir">NEUTRO</div></div>
+      <div class="pcard-chart">
+        <svg width="50" height="100" viewBox="0 0 50 100">
+          <line x1="25" y1="10" x2="25" y2="47" stroke="#FFB020" stroke-width="2"/>
+          <rect x="15" y="47" width="20" height="4" fill="#FFB020" rx="1"/>
+          <line x1="25" y1="51" x2="25" y2="90" stroke="#FFB020" stroke-width="2"/>
+        </svg>
+      </div>
+      <p class="pcard-desc">Apertura = cierre. Mechas simétricas. Indecisión total. En tendencia bajista + soporte puede señalar reversión alcista.</p>
+      <div class="pcard-conf"><span class="conf-label">Fiabilidad</span><div class="conf-dots"><div class="conf-dot on neut-d"></div><div class="conf-dot on neut-d"></div><div class="conf-dot on neut-d"></div><div class="conf-dot off"></div><div class="conf-dot off"></div></div></div>
+    </div>
+
+  </div>
+
+  <h3 style="color:var(--bear);margin-bottom:1.5rem">Bajistas</h3>
+  <div class="pattern-grid">
+
+    <!-- Marubozu Bajista -->
+    <div class="pcard bear">
+      <div class="pcard-header"><div class="pcard-name">Marubozu Bajista</div><div class="pcard-dir">BAJISTA FUERTE</div></div>
+      <div class="pcard-chart">
+        <svg width="50" height="100" viewBox="0 0 50 100">
+          <rect x="15" y="5" width="20" height="90" fill="#FF4560" rx="2"/>
+        </svg>
+      </div>
+      <p class="pcard-desc">Cuerpo rojo sin mechas. Apertura = máximo, cierre = mínimo. Vendedores dominaron el 100% del período. Señal de continuación o inicio de caída.</p>
+      <div class="pcard-conf"><span class="conf-label">Fiabilidad</span><div class="conf-dots"><div class="conf-dot on bear-d"></div><div class="conf-dot on bear-d"></div><div class="conf-dot on bear-d"></div><div class="conf-dot on bear-d"></div><div class="conf-dot on bear-d"></div></div></div>
+    </div>
+
+    <!-- Estrella Fugaz -->
+    <div class="pcard bear">
+      <div class="pcard-header"><div class="pcard-name">Estrella Fugaz</div><div class="pcard-dir">BAJISTA</div></div>
+      <div class="pcard-chart">
+        <svg width="50" height="100" viewBox="0 0 50 100">
+          <line x1="25" y1="5" x2="25" y2="60" stroke="#FF4560" stroke-width="2"/>
+          <rect x="18" y="60" width="14" height="18" fill="#FF4560" rx="1"/>
+          <line x1="25" y1="78" x2="25" y2="85" stroke="#FF4560" stroke-width="2"/>
+        </svg>
+      </div>
+      <p class="pcard-desc">Cuerpo pequeño abajo, mecha superior larga (&gt;2x cuerpo). En resistencia. Vendedores rechazaron los máximos con fuerza. Alta fiabilidad.</p>
+      <div class="pcard-conf"><span class="conf-label">Fiabilidad</span><div class="conf-dots"><div class="conf-dot on bear-d"></div><div class="conf-dot on bear-d"></div><div class="conf-dot on bear-d"></div><div class="conf-dot on bear-d"></div><div class="conf-dot off"></div></div></div>
+    </div>
+
+    <!-- Doji Lápida -->
+    <div class="pcard bear">
+      <div class="pcard-header"><div class="pcard-name">Doji Lápida</div><div class="pcard-dir">BAJISTA</div></div>
+      <div class="pcard-chart">
+        <svg width="50" height="100" viewBox="0 0 50 100">
+          <line x1="25" y1="5" x2="25" y2="88" stroke="#FF4560" stroke-width="2"/>
+          <rect x="15" y="88" width="20" height="4" fill="#FF4560" rx="1"/>
+        </svg>
+      </div>
+      <p class="pcard-desc">Apertura = cierre = mínimo. Mecha superior muy larga. El máximo fue rechazado con contundencia. Muy confiable en D y W en resistencia.</p>
+      <div class="pcard-conf"><span class="conf-label">Fiabilidad</span><div class="conf-dots"><div class="conf-dot on bear-d"></div><div class="conf-dot on bear-d"></div><div class="conf-dot on bear-d"></div><div class="conf-dot on bear-d"></div><div class="conf-dot off"></div></div></div>
+    </div>
+
+    <!-- Hombre Colgado -->
+    <div class="pcard bear">
+      <div class="pcard-header"><div class="pcard-name">Hombre Colgado</div><div class="pcard-dir">BAJISTA</div></div>
+      <div class="pcard-chart">
+        <svg width="50" height="100" viewBox="0 0 50 100">
+          <rect x="18" y="15" width="14" height="20" fill="#FF4560" rx="1"/>
+          <line x1="25" y1="35" x2="25" y2="90" stroke="#FF4560" stroke-width="2"/>
+          <line x1="25" y1="15" x2="25" y2="10" stroke="#FF4560" stroke-width="2"/>
+        </svg>
+      </div>
+      <p class="pcard-desc">Igual que el martillo pero aparece en MÁXIMOS tras tendencia alcista. Distribución institucional. Requiere confirmación bajista.</p>
+      <div class="pcard-conf"><span class="conf-label">Fiabilidad</span><div class="conf-dots"><div class="conf-dot on bear-d"></div><div class="conf-dot on bear-d"></div><div class="conf-dot on bear-d"></div><div class="conf-dot off"></div><div class="conf-dot off"></div></div></div>
+    </div>
+
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ══ SECCIÓN 3: DOS VELAS ══ -->
+<section id="dos-velas">
+  <div class="section-label">Sección 03</div>
+  <h2>Combinaciones de Dos Velas</h2>
+  <p class="lead">Los patrones de dos velas muestran un cambio concreto en el balance de poder entre dos períodos. La segunda vela confirma o niega lo que la primera comenzó.</p>
+
+  <h3 style="color:var(--bull);margin-bottom:1.5rem">Alcistas</h3>
+  <div class="pattern-grid">
+
+    <div class="pcard bull">
+      <div class="pcard-header"><div class="pcard-name">Envolvente Alcista</div><div class="pcard-dir">ALCISTA FUERTE</div></div>
+      <div class="pcard-chart">
+        <svg width="90" height="100" viewBox="0 0 90 100">
+          <line x1="25" y1="20" x2="25" y2="30" stroke="#FF4560" stroke-width="2"/>
+          <rect x="15" y="30" width="20" height="45" fill="#FF4560" rx="2"/>
+          <line x1="25" y1="75" x2="25" y2="85" stroke="#FF4560" stroke-width="2"/>
+          <line x1="65" y1="8" x2="65" y2="15" stroke="#00C896" stroke-width="2"/>
+          <rect x="50" y="15" width="28" height="72" fill="#00C896" rx="2"/>
+          <line x1="65" y1="87" x2="65" y2="95" stroke="#00C896" stroke-width="2"/>
+        </svg>
+      </div>
+      <p class="pcard-desc">La vela verde engloba completamente al cuerpo de la roja. Al final de tendencia bajista o en soporte. Reversión de alta probabilidad.</p>
+      <div class="pcard-conf"><span class="conf-label">Fiabilidad</span><div class="conf-dots"><div class="conf-dot on bull-d"></div><div class="conf-dot on bull-d"></div><div class="conf-dot on bull-d"></div><div class="conf-dot on bull-d"></div><div class="conf-dot on bull-d"></div></div></div>
+    </div>
+
+    <div class="pcard bull">
+      <div class="pcard-header"><div class="pcard-name">Piercing Line</div><div class="pcard-dir">ALCISTA</div></div>
+      <div class="pcard-chart">
+        <svg width="90" height="100" viewBox="0 0 90 100">
+          <rect x="12" y="15" width="22" height="70" fill="#FF4560" rx="2"/>
+          <rect x="50" y="35" width="22" height="55" fill="#00C896" rx="2"/>
+          <line x1="61" y1="20" x2="61" y2="35" stroke="#00C896" stroke-width="2"/>
+          <line x1="23" y1="85" x2="23" y2="90" stroke="#FF4560" stroke-width="2"/>
+          <!-- Línea mitad -->
+          <line x1="48" y1="50" x2="74" y2="50" stroke="#FFB020" stroke-width="1" stroke-dasharray="3,2" opacity="0.6"/>
+        </svg>
+      </div>
+      <p class="pcard-desc">La verde cierra por encima del 50% del cuerpo rojo. Compradores recuperaron más de la mitad de la caída. Reversión inminente.</p>
+      <div class="pcard-conf"><span class="conf-label">Fiabilidad</span><div class="conf-dots"><div class="conf-dot on bull-d"></div><div class="conf-dot on bull-d"></div><div class="conf-dot on bull-d"></div><div class="conf-dot on bull-d"></div><div class="conf-dot off"></div></div></div>
+    </div>
+
+    <div class="pcard bull">
+      <div class="pcard-header"><div class="pcard-name">Tweezer Bottom</div><div class="pcard-dir">ALCISTA</div></div>
+      <div class="pcard-chart">
+        <svg width="90" height="100" viewBox="0 0 90 100">
+          <line x1="25" y1="15" x2="25" y2="25" stroke="#FF4560" stroke-width="2"/>
+          <rect x="15" y="25" width="20" height="50" fill="#FF4560" rx="2"/>
+          <line x1="25" y1="75" x2="25" y2="85" stroke="#FF4560" stroke-width="2"/>
+          <line x1="65" y1="20" x2="65" y2="30" stroke="#00C896" stroke-width="2"/>
+          <rect x="55" y="30" width="20" height="45" fill="#00C896" rx="2"/>
+          <line x1="65" y1="75" x2="65" y2="85" stroke="#00C896" stroke-width="2"/>
+          <!-- Línea mínimo igual -->
+          <line x1="12" y1="85" x2="78" y2="85" stroke="#FFB020" stroke-width="1" stroke-dasharray="3,2" opacity="0.7"/>
+        </svg>
+      </div>
+      <p class="pcard-desc">Dos velas con mínimo idéntico o muy similar. Doble rechazo desde el mismo nivel. Soporte fuerte confirmado. Alta confiabilidad.</p>
+      <div class="pcard-conf"><span class="conf-label">Fiabilidad</span><div class="conf-dots"><div class="conf-dot on bull-d"></div><div class="conf-dot on bull-d"></div><div class="conf-dot on bull-d"></div><div class="conf-dot on bull-d"></div><div class="conf-dot off"></div></div></div>
+    </div>
+
+    <div class="pcard bull">
+      <div class="pcard-header"><div class="pcard-name">Harami Alcista</div><div class="pcard-dir">ALCISTA POT.</div></div>
+      <div class="pcard-chart">
+        <svg width="90" height="100" viewBox="0 0 90 100">
+          <rect x="12" y="10" width="22" height="78" fill="#FF4560" rx="2"/>
+          <rect x="53" y="35" width="22" height="32" fill="#00C896" rx="2"/>
+        </svg>
+      </div>
+      <p class="pcard-desc">Vela verde pequeña completamente dentro del rango de la roja grande. Vendedores perdieron impulso. Esperar confirmación.</p>
+      <div class="pcard-conf"><span class="conf-label">Fiabilidad</span><div class="conf-dots"><div class="conf-dot on bull-d"></div><div class="conf-dot on bull-d"></div><div class="conf-dot on bull-d"></div><div class="conf-dot off"></div><div class="conf-dot off"></div></div></div>
+    </div>
+
+    <div class="pcard bull">
+      <div class="pcard-header"><div class="pcard-name">Kick Alcista</div><div class="pcard-dir">ALCISTA EXPLOSIVO</div></div>
+      <div class="pcard-chart">
+        <svg width="90" height="100" viewBox="0 0 90 100">
+          <rect x="10" y="35" width="22" height="55" fill="#FF4560" rx="2"/>
+          <text x="35" y="65" fill="#FFB020" font-size="14" font-family="monospace">⟩</text>
+          <rect x="55" y="10" width="22" height="55" fill="#00C896" rx="2"/>
+        </svg>
+      </div>
+      <p class="pcard-desc">Marubozu rojo seguido de marubozu verde con gap al alza. Cambio institucional de posición. Momentum extremo. Señal muy rara y muy poderosa.</p>
+      <div class="pcard-conf"><span class="conf-label">Fiabilidad</span><div class="conf-dots"><div class="conf-dot on bull-d"></div><div class="conf-dot on bull-d"></div><div class="conf-dot on bull-d"></div><div class="conf-dot on bull-d"></div><div class="conf-dot on bull-d"></div></div></div>
+    </div>
+
+    <div class="pcard bull">
+      <div class="pcard-header"><div class="pcard-name">Morning Doji Star</div><div class="pcard-dir">ALCISTA FUERTE</div></div>
+      <div class="pcard-chart">
+        <svg width="90" height="100" viewBox="0 0 90 100">
+          <rect x="8" y="10" width="20" height="58" fill="#FF4560" rx="2"/>
+          <line x1="18" y1="68" x2="18" y2="75" stroke="#FF4560" stroke-width="2"/>
+          <line x1="45" y1="55" x2="45" y2="72" stroke="#FFB020" stroke-width="2"/>
+          <rect x="38" y="72" width="14" height="4" fill="#FFB020" rx="1"/>
+          <line x1="45" y1="76" x2="45" y2="90" stroke="#FFB020" stroke-width="2"/>
+          <line x1="65" y1="8" x2="65" y2="15" stroke="#00C896" stroke-width="2"/>
+          <rect x="55" y="15" width="22" height="55" fill="#00C896" rx="2"/>
+          <line x1="66" y1="70" x2="66" y2="78" stroke="#00C896" stroke-width="2"/>
+        </svg>
+      </div>
+      <p class="pcard-desc">Roja fuerte → doji con gap → verde fuerte. La indecisión marca el giro. Alta fiabilidad en D/W. Patrón clásico de reversión japonés.</p>
+      <div class="pcard-conf"><span class="conf-label">Fiabilidad</span><div class="conf-dots"><div class="conf-dot on bull-d"></div><div class="conf-dot on bull-d"></div><div class="conf-dot on bull-d"></div><div class="conf-dot on bull-d"></div><div class="conf-dot on bull-d"></div></div></div>
+    </div>
+
+  </div>
+
+  <h3 style="color:var(--bear);margin-bottom:1.5rem">Bajistas</h3>
+  <div class="pattern-grid">
+
+    <div class="pcard bear">
+      <div class="pcard-header"><div class="pcard-name">Envolvente Bajista</div><div class="pcard-dir">BAJISTA FUERTE</div></div>
+      <div class="pcard-chart">
+        <svg width="90" height="100" viewBox="0 0 90 100">
+          <line x1="25" y1="20" x2="25" y2="30" stroke="#00C896" stroke-width="2"/>
+          <rect x="15" y="30" width="20" height="45" fill="#00C896" rx="2"/>
+          <line x1="25" y1="75" x2="25" y2="85" stroke="#00C896" stroke-width="2"/>
+          <line x1="65" y1="8" x2="65" y2="15" stroke="#FF4560" stroke-width="2"/>
+          <rect x="50" y="15" width="28" height="72" fill="#FF4560" rx="2"/>
+          <line x1="65" y1="87" x2="65" y2="95" stroke="#FF4560" stroke-width="2"/>
+        </svg>
+      </div>
+      <p class="pcard-desc">La vela roja engloba completamente al cuerpo verde. En resistencia o tras subida. Los vendedores tomaron el control con contundencia.</p>
+      <div class="pcard-conf"><span class="conf-label">Fiabilidad</span><div class="conf-dots"><div class="conf-dot on bear-d"></div><div class="conf-dot on bear-d"></div><div class="conf-dot on bear-d"></div><div class="conf-dot on bear-d"></div><div class="conf-dot on bear-d"></div></div></div>
+    </div>
+
+    <div class="pcard bear">
+      <div class="pcard-header"><div class="pcard-name">Nube Oscura</div><div class="pcard-dir">BAJISTA</div></div>
+      <div class="pcard-chart">
+        <svg width="90" height="100" viewBox="0 0 90 100">
+          <rect x="12" y="25" width="22" height="65" fill="#00C896" rx="2"/>
+          <rect x="50" y="15" width="22" height="50" fill="#FF4560" rx="2"/>
+          <line x1="61" y1="65" x2="61" y2="78" stroke="#FF4560" stroke-width="2"/>
+          <line x1="48" y1="57" x2="74" y2="57" stroke="#FFB020" stroke-width="1" stroke-dasharray="3,2" opacity="0.6"/>
+        </svg>
+      </div>
+      <p class="pcard-desc">La roja cierra por debajo del 50% del cuerpo verde. Distribución institucional. Los vendedores tomaron control del impulso anterior.</p>
+      <div class="pcard-conf"><span class="conf-label">Fiabilidad</span><div class="conf-dots"><div class="conf-dot on bear-d"></div><div class="conf-dot on bear-d"></div><div class="conf-dot on bear-d"></div><div class="conf-dot on bear-d"></div><div class="conf-dot off"></div></div></div>
+    </div>
+
+    <div class="pcard bear">
+      <div class="pcard-header"><div class="pcard-name">Tweezer Top</div><div class="pcard-dir">BAJISTA</div></div>
+      <div class="pcard-chart">
+        <svg width="90" height="100" viewBox="0 0 90 100">
+          <line x1="25" y1="15" x2="25" y2="20" stroke="#00C896" stroke-width="2"/>
+          <rect x="15" y="20" width="20" height="50" fill="#00C896" rx="2"/>
+          <line x1="25" y1="70" x2="25" y2="80" stroke="#00C896" stroke-width="2"/>
+          <line x1="65" y1="15" x2="65" y2="20" stroke="#FF4560" stroke-width="2"/>
+          <rect x="55" y="20" width="20" height="45" fill="#FF4560" rx="2"/>
+          <line x1="65" y1="65" x2="65" y2="78" stroke="#FF4560" stroke-width="2"/>
+          <line x1="12" y1="15" x2="78" y2="15" stroke="#FFB020" stroke-width="1" stroke-dasharray="3,2" opacity="0.7"/>
+        </svg>
+      </div>
+      <p class="pcard-desc">Dos velas con máximo idéntico. Doble rechazo desde resistencia. Los compradores fallaron dos veces en el mismo nivel. Resistencia confirmada.</p>
+      <div class="pcard-conf"><span class="conf-label">Fiabilidad</span><div class="conf-dots"><div class="conf-dot on bear-d"></div><div class="conf-dot on bear-d"></div><div class="conf-dot on bear-d"></div><div class="conf-dot on bear-d"></div><div class="conf-dot off"></div></div></div>
+    </div>
+
+    <div class="pcard bear">
+      <div class="pcard-header"><div class="pcard-name">Evening Doji Star</div><div class="pcard-dir">BAJISTA FUERTE</div></div>
+      <div class="pcard-chart">
+        <svg width="90" height="100" viewBox="0 0 90 100">
+          <line x1="18" y1="15" x2="18" y2="22" stroke="#00C896" stroke-width="2"/>
+          <rect x="8" y="22" width="20" height="55" fill="#00C896" rx="2"/>
+          <line x1="18" y1="77" x2="18" y2="85" stroke="#00C896" stroke-width="2"/>
+          <line x1="45" y1="10" x2="45" y2="28" stroke="#FFB020" stroke-width="2"/>
+          <rect x="38" y="28" width="14" height="4" fill="#FFB020" rx="1"/>
+          <line x1="45" y1="32" x2="45" y2="48" stroke="#FFB020" stroke-width="2"/>
+          <rect x="55" y="40" width="22" height="55" fill="#FF4560" rx="2"/>
+          <line x1="66" y1="35" x2="66" y2="40" stroke="#FF4560" stroke-width="2"/>
+        </svg>
+      </div>
+      <p class="pcard-desc">Verde fuerte → doji con gap → roja fuerte. El doji en máximos marca la indecisión que precede al colapso. Alta fiabilidad en D/W.</p>
+      <div class="pcard-conf"><span class="conf-label">Fiabilidad</span><div class="conf-dots"><div class="conf-dot on bear-d"></div><div class="conf-dot on bear-d"></div><div class="conf-dot on bear-d"></div><div class="conf-dot on bear-d"></div><div class="conf-dot on bear-d"></div></div></div>
+    </div>
+
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ══ SECCIÓN 4: TRES VELAS ══ -->
+<section id="tres-velas">
+  <div class="section-label">Sección 04</div>
+  <h2>Combinaciones de Tres Velas</h2>
+  <p class="lead">Los patrones de tres velas cuentan una historia completa: qué ocurrió (vela 1), la batalla (vela 2) y quién ganó definitivamente (vela 3). Especialmente fiables en 4H, D y W.</p>
+
+  <div class="combo-section">
+    <div class="combo-header">
+      <div class="ch">Patrón</div>
+      <div class="ch">Secuencia</div>
+      <div class="ch">Señal</div>
+      <div class="ch">Fuerza</div>
+    </div>
+
+    <!-- ALCISTAS 3 VELAS -->
+    <div style="background:var(--bull-dim);padding:.4rem 1rem;font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--bull);letter-spacing:.1em;text-transform:uppercase">ALCISTAS</div>
+
+    <div class="combo-row">
+      <div class="cd name">Morning Star</div>
+      <div class="cd" style="text-align:center;font-size:1.2rem">🔴 ⬜ 🟢</div>
+      <div class="cd dir-bull">ALCISTA FUERTE — clásico de reversión. Roja fuerte → indecisión → verde fuerte confirma el giro</div>
+      <div class="cd stars">5/5</div>
+    </div>
+    <div class="combo-row">
+      <div class="cd name">Tres Soldados Blancos</div>
+      <div class="cd" style="text-align:center;font-size:1.2rem">🟢 🟢 🟢</div>
+      <div class="cd dir-bull">ALCISTA CONTINUACIÓN — tres verdes consecutivas de cuerpos largos cerrando en máximos. Impulso sostenido.</div>
+      <div class="cd stars">5/5</div>
+    </div>
+    <div class="combo-row">
+      <div class="cd name">Three Outside Up</div>
+      <div class="cd" style="text-align:center;font-size:1.2rem">🔴 🟢 🟢</div>
+      <div class="cd dir-bull">ALCISTA FUERTE — envolvente alcista confirmada por segunda verde. Alta probabilidad de continuación.</div>
+      <div class="cd stars">5/5</div>
+    </div>
+    <div class="combo-row">
+      <div class="cd name">Three Inside Up</div>
+      <div class="cd" style="text-align:center;font-size:1.2rem">🔴 🟢 🟢</div>
+      <div class="cd dir-bull">ALCISTA — harami alcista confirmado. La tercera verde supera el máximo de la primera roja.</div>
+      <div class="cd stars">4/5</div>
+    </div>
+    <div class="combo-row">
+      <div class="cd name">Rising Three Methods</div>
+      <div class="cd" style="text-align:center;font-size:1.1rem">🟢🔴🔴🔴🟢</div>
+      <div class="cd dir-bull">ALCISTA CONTINUACIÓN — verde grande, 3 rojas pequeñas de consolidación, verde que supera el máximo.</div>
+      <div class="cd stars">5/5</div>
+    </div>
+    <div class="combo-row">
+      <div class="cd name">Unique Three Rivers</div>
+      <div class="cd" style="text-align:center;font-size:1.2rem">🔴 🔴 🟢</div>
+      <div class="cd dir-bull">ALCISTA — soporte probado tres veces. Acumulación institucional en zona clave.</div>
+      <div class="cd stars">3/5</div>
+    </div>
+
+    <!-- BAJISTAS 3 VELAS -->
+    <div style="background:var(--bear-dim);padding:.4rem 1rem;font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--bear);letter-spacing:.1em;text-transform:uppercase">BAJISTAS</div>
+
+    <div class="combo-row">
+      <div class="cd name">Evening Star</div>
+      <div class="cd" style="text-align:center;font-size:1.2rem">🟢 ⬜ 🔴</div>
+      <div class="cd dir-bear">BAJISTA FUERTE — clásico de techo. Verde fuerte → indecisión → roja fuerte confirma la distribución.</div>
+      <div class="cd stars">5/5</div>
+    </div>
+    <div class="combo-row">
+      <div class="cd name">Tres Cuervos Negros</div>
+      <div class="cd" style="text-align:center;font-size:1.2rem">🔴 🔴 🔴</div>
+      <div class="cd dir-bear">BAJISTA CONTINUACIÓN — tres rojas largas consecutivas cerrando en mínimos. No intentar comprar contra esta señal.</div>
+      <div class="cd stars">5/5</div>
+    </div>
+    <div class="combo-row">
+      <div class="cd name">Three Outside Down</div>
+      <div class="cd" style="text-align:center;font-size:1.2rem">🟢 🔴 🔴</div>
+      <div class="cd dir-bear">BAJISTA FUERTE — envolvente bajista confirmada. Inicio de impulso bajista con alta probabilidad.</div>
+      <div class="cd stars">5/5</div>
+    </div>
+    <div class="combo-row">
+      <div class="cd name">Three Inside Down</div>
+      <div class="cd" style="text-align:center;font-size:1.2rem">🟢 🔴 🔴</div>
+      <div class="cd dir-bear">BAJISTA — harami bajista confirmado. La tercera roja rompe el mínimo de la primera verde.</div>
+      <div class="cd stars">4/5</div>
+    </div>
+    <div class="combo-row">
+      <div class="cd name">Falling Three Methods</div>
+      <div class="cd" style="text-align:center;font-size:1.1rem">🔴🟢🟢🟢🔴</div>
+      <div class="cd dir-bear">BAJISTA CONTINUACIÓN — roja grande, 3 verdes de rebote técnico, roja que rompe el mínimo anterior.</div>
+      <div class="cd stars">5/5</div>
+    </div>
+    <div class="combo-row">
+      <div class="cd name">Advance Block</div>
+      <div class="cd" style="text-align:center;font-size:1.2rem">🟢 🟢 🟢</div>
+      <div class="cd dir-bear">BAJISTA POTENCIAL — tres verdes con cuerpos decrecientes y mechas superiores crecientes. Compradores pierden fuerza.</div>
+      <div class="cd stars">3/5</div>
+    </div>
+    <div class="combo-row">
+      <div class="cd name">Two Crows</div>
+      <div class="cd" style="text-align:center;font-size:1.2rem">🟢 ◻ 🔴</div>
+      <div class="cd dir-bear">BAJISTA FUERTE — verde grande → gap + roja pequeña → roja grande que cubre todo. Distribución en máximos.</div>
+      <div class="cd stars">4/5</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ══ SECCIÓN 5: RANGOS ══ -->
+<section id="rangos">
+  <div class="section-label">Sección 05</div>
+  <h2>Rangos y Rupturas</h2>
+  <p class="lead">Los mercados pasan la mayor parte del tiempo en rango. Identificar correctamente el patrón de consolidación y su ruptura probable es la habilidad más valiosa del trader.</p>
+
+  <div class="note"><strong>Principio de liquidez:</strong> el precio siempre busca donde están los stops. Los rangos acumulan stops sobre los máximos y bajo los mínimos. La ruptura primero toca esa liquidez y luego decide la dirección real.</div>
+
+  <div class="range-grid">
+
+    <!-- Rango Simple -->
+    <div class="rcard">
+      <div class="rcard-title">
+        <svg width="16" height="16" viewBox="0 0 16 16"><rect x="0" y="4" width="16" height="8" rx="2" fill="#1A6EFF" opacity=".3"/><line x1="0" y1="4" x2="16" y2="4" stroke="#1A6EFF" stroke-width="1.5"/><line x1="0" y1="12" x2="16" y2="12" stroke="#1A6EFF" stroke-width="1.5"/></svg>
+        Rango Simple (Box)
+      </div>
+      <div class="rcard-chart">
+        <svg width="180" height="80" viewBox="0 0 180 80">
+          <line x1="0" y1="15" x2="180" y2="15" stroke="#1A6EFF" stroke-width="1" stroke-dasharray="4,3" opacity="0.6"/>
+          <line x1="0" y1="65" x2="180" y2="65" stroke="#1A6EFF" stroke-width="1" stroke-dasharray="4,3" opacity="0.6"/>
+          <rect x="10" y="25" width="12" height="35" fill="#FF4560" rx="1"/>
+          <rect x="32" y="20" width="12" height="30" fill="#00C896" rx="1"/>
+          <rect x="54" y="28" width="12" height="32" fill="#FF4560" rx="1"/>
+          <rect x="76" y="22" width="12" height="28" fill="#00C896" rx="1"/>
+          <rect x="98" y="25" width="12" height="35" fill="#FF4560" rx="1"/>
+          <rect x="120" y="18" width="12" height="30" fill="#00C896" rx="1"/>
+          <!-- Ruptura alcista -->
+          <rect x="148" y="5" width="14" height="35" fill="#00C896" rx="1" opacity=".9"/>
+          <text x="148" y="47" fill="#00C896" font-size="7" font-family="monospace">RUPTURA</text>
+        </svg>
+      </div>
+      <div class="rcard-info">
+        <div class="rcard-item up"><span class="rcard-item-label">Ruptura alcista</span>Verde cierra SOBRE resistencia + vol. alto</div>
+        <div class="rcard-item down"><span class="rcard-item-label">Ruptura bajista</span>Roja cierra BAJO soporte + vol. alto</div>
+      </div>
+    </div>
+
+    <!-- Bull Flag -->
+    <div class="rcard">
+      <div class="rcard-title">
+        <svg width="16" height="16" viewBox="0 0 16 16"><path d="M2 14 L8 2 L14 14" stroke="#00C896" stroke-width="1.5" fill="none"/></svg>
+        Bull Flag (Canal Bajista)
+      </div>
+      <div class="rcard-chart">
+        <svg width="180" height="80" viewBox="0 0 180 80">
+          <!-- Impulso -->
+          <rect x="5" y="50" width="12" height="22" fill="#00C896" rx="1"/>
+          <rect x="22" y="38" width="12" height="22" fill="#00C896" rx="1"/>
+          <rect x="39" y="22" width="12" height="22" fill="#00C896" rx="1"/>
+          <!-- Canal bajista -->
+          <line x1="52" y1="18" x2="130" y2="30" stroke="#FFB020" stroke-width="1" stroke-dasharray="3,2"/>
+          <line x1="52" y1="28" x2="130" y2="40" stroke="#FFB020" stroke-width="1" stroke-dasharray="3,2"/>
+          <rect x="56" y="20" width="10" height="14" fill="#FF4560" rx="1"/>
+          <rect x="72" y="23" width="10" height="14" fill="#FF4560" rx="1"/>
+          <rect x="88" y="26" width="10" height="14" fill="#FF4560" rx="1"/>
+          <rect x="104" y="28" width="10" height="13" fill="#FF4560" rx="1"/>
+          <!-- Ruptura -->
+          <rect x="130" y="8" width="14" height="30" fill="#00C896" rx="1"/>
+          <text x="130" y="44" fill="#00C896" font-size="7" font-family="monospace">LONG</text>
+        </svg>
+      </div>
+      <div class="rcard-info">
+        <div class="rcard-item up"><span class="rcard-item-label">Señal long</span>Verde fuerte rompe canal y supera zona de impulso</div>
+        <div class="rcard-item down"><span class="rcard-item-label">Fallo</span>Cierre bajo soporte del canal = trampa alcista</div>
+      </div>
+    </div>
+
+    <!-- Bear Flag -->
+    <div class="rcard">
+      <div class="rcard-title">
+        <svg width="16" height="16" viewBox="0 0 16 16"><path d="M2 2 L8 14 L14 2" stroke="#FF4560" stroke-width="1.5" fill="none"/></svg>
+        Bear Flag (Canal Alcista)
+      </div>
+      <div class="rcard-chart">
+        <svg width="180" height="80" viewBox="0 0 180 80">
+          <rect x="5" y="8" width="12" height="22" fill="#FF4560" rx="1"/>
+          <rect x="22" y="20" width="12" height="22" fill="#FF4560" rx="1"/>
+          <rect x="39" y="35" width="12" height="22" fill="#FF4560" rx="1"/>
+          <line x1="52" y1="48" x2="130" y2="34" stroke="#FFB020" stroke-width="1" stroke-dasharray="3,2"/>
+          <line x1="52" y1="58" x2="130" y2="44" stroke="#FFB020" stroke-width="1" stroke-dasharray="3,2"/>
+          <rect x="56" y="46" width="10" height="14" fill="#00C896" rx="1"/>
+          <rect x="72" y="42" width="10" height="14" fill="#00C896" rx="1"/>
+          <rect x="88" y="38" width="10" height="14" fill="#00C896" rx="1"/>
+          <rect x="104" y="35" width="10" height="13" fill="#00C896" rx="1"/>
+          <rect x="130" y="45" width="14" height="30" fill="#FF4560" rx="1"/>
+          <text x="128" y="44" fill="#FF4560" font-size="7" font-family="monospace">SHORT</text>
+        </svg>
+      </div>
+      <div class="rcard-info">
+        <div class="rcard-item down"><span class="rcard-item-label">Señal short</span>Roja fuerte rompe canal y supera zona de impulso</div>
+        <div class="rcard-item up"><span class="rcard-item-label">Fallo</span>Cierre sobre resistencia del canal = trampa bajista</div>
+      </div>
+    </div>
+
+    <!-- Triángulo Ascendente -->
+    <div class="rcard">
+      <div class="rcard-title">
+        <svg width="16" height="16" viewBox="0 0 16 16"><line x1="2" y1="14" x2="14" y2="14" stroke="#00C896" stroke-width="1.5"/><line x1="2" y1="14" x2="14" y2="4" stroke="#FFB020" stroke-width="1.5"/></svg>
+        Triángulo Ascendente
+      </div>
+      <div class="rcard-chart">
+        <svg width="180" height="80" viewBox="0 0 180 80">
+          <line x1="5" y1="20" x2="155" y2="20" stroke="#FF4560" stroke-width="1.5" opacity=".7"/>
+          <line x1="5" y1="65" x2="120" y2="28" stroke="#00C896" stroke-width="1.5" opacity=".7"/>
+          <rect x="8" y="35" width="10" height="28" fill="#00C896" rx="1"/>
+          <rect x="26" y="28" width="10" height="28" fill="#00C896" rx="1"/>
+          <line x1="18" y1="20" x2="18" y2="35" stroke="#FF4560" stroke-width="1"/>
+          <rect x="48" y="32" width="10" height="22" fill="#FF4560" rx="1"/>
+          <rect x="68" y="26" width="10" height="22" fill="#00C896" rx="1"/>
+          <line x1="73" y1="20" x2="73" y2="26" stroke="#FF4560" stroke-width="1"/>
+          <rect x="90" y="30" width="10" height="16" fill="#FF4560" rx="1"/>
+          <rect x="112" y="24" width="10" height="16" fill="#00C896" rx="1"/>
+          <rect x="140" y="5" width="14" height="25" fill="#00C896" rx="1"/>
+          <text x="138" y="37" fill="#00C896" font-size="7" font-family="monospace">LONG</text>
+        </svg>
+      </div>
+      <div class="rcard-info">
+        <div class="rcard-item up"><span class="rcard-item-label">Señal long</span>Ruptura de resistencia horizontal con volumen</div>
+        <div class="rcard-item down"><span class="rcard-item-label">Nota</span>Resistencia tocada 3+ veces = más probable ruptura</div>
+      </div>
+    </div>
+
+    <!-- Doble Suelo -->
+    <div class="rcard">
+      <div class="rcard-title">
+        <svg width="16" height="16" viewBox="0 0 16 16"><path d="M1 10 Q4 14 8 6 Q12 14 15 10" stroke="#00C896" stroke-width="1.5" fill="none"/></svg>
+        Doble Suelo (W Pattern)
+      </div>
+      <div class="rcard-chart">
+        <svg width="180" height="80" viewBox="0 0 180 80">
+          <line x1="0" y1="30" x2="180" y2="30" stroke="#FFB020" stroke-width="1" stroke-dasharray="4,3" opacity=".6"/>
+          <rect x="10" y="12" width="10" height="38" fill="#FF4560" rx="1"/>
+          <rect x="25" y="18" width="10" height="38" fill="#FF4560" rx="1"/>
+          <rect x="40" y="58" width="10" height="14" fill="#00C896" rx="1"/>
+          <rect x="56" y="50" width="10" height="18" fill="#00C896" rx="1"/>
+          <rect x="72" y="42" width="10" height="20" fill="#FF4560" rx="1"/>
+          <rect x="88" y="52" width="10" height="18" fill="#FF4560" rx="1"/>
+          <rect x="104" y="58" width="10" height="14" fill="#00C896" rx="1"/>
+          <rect x="120" y="42" width="10" height="20" fill="#00C896" rx="1"/>
+          <rect x="136" y="20" width="14" height="28" fill="#00C896" rx="1"/>
+          <text x="130" y="56" fill="#00C896" font-size="7" font-family="monospace">RUPTURA</text>
+        </svg>
+      </div>
+      <div class="rcard-info">
+        <div class="rcard-item up"><span class="rcard-item-label">Señal long</span>Ruptura del neckline con vela verde = ALCISTA FUERTE</div>
+        <div class="rcard-item down"><span class="rcard-item-label">Target</span>Distancia suelo-neckline proyectada hacia arriba</div>
+      </div>
+    </div>
+
+    <!-- Doble Techo -->
+    <div class="rcard">
+      <div class="rcard-title">
+        <svg width="16" height="16" viewBox="0 0 16 16"><path d="M1 6 Q4 2 8 10 Q12 2 15 6" stroke="#FF4560" stroke-width="1.5" fill="none"/></svg>
+        Doble Techo (M Pattern)
+      </div>
+      <div class="rcard-chart">
+        <svg width="180" height="80" viewBox="0 0 180 80">
+          <line x1="0" y1="55" x2="180" y2="55" stroke="#FFB020" stroke-width="1" stroke-dasharray="4,3" opacity=".6"/>
+          <rect x="10" y="52" width="10" height="18" fill="#00C896" rx="1"/>
+          <rect x="25" y="44" width="10" height="18" fill="#00C896" rx="1"/>
+          <rect x="40" y="14" width="10" height="16" fill="#FF4560" rx="1"/>
+          <rect x="56" y="24" width="10" height="18" fill="#FF4560" rx="1"/>
+          <rect x="72" y="42" width="10" height="18" fill="#00C896" rx="1"/>
+          <rect x="88" y="50" width="10" height="14" fill="#00C896" rx="1"/>
+          <rect x="104" y="16" width="10" height="16" fill="#FF4560" rx="1"/>
+          <rect x="120" y="26" width="10" height="20" fill="#FF4560" rx="1"/>
+          <rect x="136" y="52" width="14" height="22" fill="#FF4560" rx="1"/>
+          <text x="128" y="50" fill="#FF4560" font-size="7" font-family="monospace">RUPTURA</text>
+        </svg>
+      </div>
+      <div class="rcard-info">
+        <div class="rcard-item down"><span class="rcard-item-label">Señal short</span>Ruptura del neckline con vela roja = BAJISTA FUERTE</div>
+        <div class="rcard-item up"><span class="rcard-item-label">Target</span>Distancia techo-neckline proyectada hacia abajo</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ══ SECCIÓN 6: SECUENCIAS ══ -->
+<section id="secuencias">
+  <div class="section-label">Sección 06</div>
+  <h2>Secuencias Direccionales</h2>
+  <p class="lead">La envolvente combinada con secuencias de impulso y retroceso genera las señales de mayor probabilidad del análisis técnico.</p>
+
+  <div class="combo-section">
+    <div style="background:var(--bull-dim);padding:.5rem 1rem;font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--bull);letter-spacing:.1em;text-transform:uppercase;border-radius:6px 6px 0 0">SECUENCIAS ALCISTAS CON ENVOLVENTE</div>
+    <div class="combo-header">
+      <div class="ch">Secuencia</div>
+      <div class="ch">Velas</div>
+      <div class="ch">Acción</div>
+      <div class="ch">Fuerza</div>
+    </div>
+    <div class="combo-row">
+      <div class="cd name">Impulso + Retroceso + Envolvente</div>
+      <div class="cd" style="font-size:.85rem">🟢🟢 ▼ 🔴🔴 ENV🟢</div>
+      <div class="cd dir-bull">LONG — entrada en retroceso. Stop bajo mínimo de la envolvente. Target: máximo del impulso</div>
+      <div class="cd stars">5/5</div>
+    </div>
+    <div class="combo-row">
+      <div class="cd name">Breakout + Retest + Envolvente</div>
+      <div class="cd" style="font-size:.85rem">🟢↑ resistencia 🔴 ENV🟢</div>
+      <div class="cd dir-bull">LONG PREMIUM — el retest de la resistencia rota (ahora soporte) con envolvente es la entrada ideal</div>
+      <div class="cd stars">5/5</div>
+    </div>
+    <div class="combo-row">
+      <div class="cd name">Fibo 0.618 + Martillo + Envolvente</div>
+      <div class="cd" style="font-size:.85rem">⬇0.618 🔨 ENV🟢</div>
+      <div class="cd dir-bull">LONG MÁXIMA PROB — triple confluencia: zona fibo + patrón + confirmación. Stop bajo 0.786</div>
+      <div class="cd stars">5/5</div>
+    </div>
+    <div class="combo-row">
+      <div class="cd name">Pullback a EMA + Envolvente</div>
+      <div class="cd" style="font-size:.85rem">🟢🟢 ▼EMA 🔴🔴 ENV🟢</div>
+      <div class="cd dir-bull">LONG EN EMA — confluencia de soporte dinámico + patrón. Alta probabilidad de reanudación</div>
+      <div class="cd stars">5/5</div>
+    </div>
+    <div class="combo-row">
+      <div class="cd name">V-Shape Recovery</div>
+      <div class="cd" style="font-size:.85rem">🔴🔴🔴 ENV🟢🟢🟢</div>
+      <div class="cd dir-bull">LONG AGRESIVO — envolvente múltiple tras caída de 3 velas. Reversión institucional.</div>
+      <div class="cd stars">4/5</div>
+    </div>
+
+    <div style="background:var(--bear-dim);padding:.5rem 1rem;font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--bear);letter-spacing:.1em;text-transform:uppercase">SECUENCIAS BAJISTAS CON ENVOLVENTE</div>
+
+    <div class="combo-row">
+      <div class="cd name">Impulso + Rebote + Envolvente</div>
+      <div class="cd" style="font-size:.85rem">🔴🔴 ▲ 🟢🟢 ENV🔴</div>
+      <div class="cd dir-bear">SHORT — entrada en el rebote. Stop sobre máximo de la envolvente. Target: mínimo del impulso</div>
+      <div class="cd stars">5/5</div>
+    </div>
+    <div class="combo-row">
+      <div class="cd name">Breakdown + Retest + Envolvente</div>
+      <div class="cd" style="font-size:.85rem">🔴↓ soporte 🟢 ENV🔴</div>
+      <div class="cd dir-bear">SHORT PREMIUM — el retest del soporte roto (ahora resistencia) con envolvente bajista</div>
+      <div class="cd stars">5/5</div>
+    </div>
+    <div class="combo-row">
+      <div class="cd name">Fibo 0.382 + Shooting Star + Envolvente</div>
+      <div class="cd" style="font-size:.85rem">↑0.382 ⭐ ENV🔴</div>
+      <div class="cd dir-bear">SHORT MÁXIMA PROB — triple confluencia en retroceso bajista. Stop sobre 0.236</div>
+      <div class="cd stars">5/5</div>
+    </div>
+    <div class="combo-row">
+      <div class="cd name">Rebote a EMA + Envolvente</div>
+      <div class="cd" style="font-size:.85rem">🔴🔴 ▲EMA 🟢🟢 ENV🔴</div>
+      <div class="cd dir-bear">SHORT EN EMA — resistencia dinámica + patrón. Continuación de tendencia bajista</div>
+      <div class="cd stars">5/5</div>
+    </div>
+    <div class="combo-row">
+      <div class="cd name">Techo Doble + Envolvente</div>
+      <div class="cd" style="font-size:.85rem">🟢↑ 🔴 🟢↑ ENV🔴</div>
+      <div class="cd dir-bear">SHORT — doble rechazo de resistencia + envolvente en 2do techo. Neckline como target</div>
+      <div class="cd stars">5/5</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ══ SECCIÓN 7: LIQUIDEZ Y TRAMPAS ══ -->
+<section id="liquidez">
+  <div class="section-label">Sección 07</div>
+  <h2>Liquidez y Trampas</h2>
+  <p class="lead">El concepto más avanzado del trading. El mercado se mueve para cazar stops antes de moverse en su dirección real. Identificar trampas convierte las pérdidas de la mayoría en ganancias.</p>
+
+  <div class="note"><strong>Smart money rule:</strong> siempre pregúntate "¿dónde están los stops?" antes de decidir la dirección. Si el precio acaba de romper un nivel clave y revierte en menos de 3 velas, probablemente fue una trampa.</div>
+
+  <div class="liq-grid">
+
+    <div class="lcard">
+      <div class="lcard-head warn">⚡ Bull Trap (Trampa Alcista)</div>
+      <div class="lcard-body">
+        <div class="lcard-chart">
+          <svg width="160" height="80" viewBox="0 0 160 80">
+            <line x1="0" y1="35" x2="160" y2="35" stroke="#1A6EFF" stroke-width="1" stroke-dasharray="4,3" opacity=".5"/>
+            <rect x="5" y="40" width="12" height="25" fill="#00C896" rx="1"/>
+            <rect x="22" y="35" width="12" height="25" fill="#00C896" rx="1"/>
+            <!-- Ruptura falsa -->
+            <rect x="39" y="15" width="14" height="28" fill="#00C896" rx="1"/>
+            <text x="36" y="12" fill="#FFB020" font-size="7" font-family="monospace">FALSA</text>
+            <!-- Reversión -->
+            <rect x="60" y="20" width="14" height="40" fill="#FF4560" rx="1"/>
+            <rect x="79" y="25" width="14" height="45" fill="#FF4560" rx="1"/>
+            <rect x="98" y="32" width="14" height="42" fill="#FF4560" rx="1"/>
+            <text x="58" y="75" fill="#FF4560" font-size="7" font-family="monospace">DIRECCIÓN REAL</text>
+          </svg>
+        </div>
+        <div class="lcard-trap">Vela verde rompe resistencia, atrae compradores. El precio revierte de inmediato.</div>
+        <div class="lcard-real bear">BAJISTA — los que compraron la ruptura son los stops del mercado</div>
+      </div>
+    </div>
+
+    <div class="lcard">
+      <div class="lcard-head warn">⚡ Bear Trap (Trampa Bajista)</div>
+      <div class="lcard-body">
+        <div class="lcard-chart">
+          <svg width="160" height="80" viewBox="0 0 160 80">
+            <line x1="0" y1="40" x2="160" y2="40" stroke="#1A6EFF" stroke-width="1" stroke-dasharray="4,3" opacity=".5"/>
+            <rect x="5" y="15" width="12" height="25" fill="#FF4560" rx="1"/>
+            <rect x="22" y="18" width="12" height="25" fill="#FF4560" rx="1"/>
+            <rect x="39" y="35" width="14" height="32" fill="#FF4560" rx="1"/>
+            <text x="36" y="73" fill="#FFB020" font-size="7" font-family="monospace">FALSA</text>
+            <rect x="60" y="18" width="14" height="35" fill="#00C896" rx="1"/>
+            <rect x="79" y="12" width="14" height="32" fill="#00C896" rx="1"/>
+            <rect x="98" y="8" width="14" height="30" fill="#00C896" rx="1"/>
+            <text x="58" y="8" fill="#00C896" font-size="7" font-family="monospace">DIRECCIÓN REAL</text>
+          </svg>
+        </div>
+        <div class="lcard-trap">Vela roja rompe soporte, atrae vendedores. El precio revierte de inmediato hacia arriba.</div>
+        <div class="lcard-real bull">ALCISTA — los que vendieron el breakdown son los stops del mercado</div>
+      </div>
+    </div>
+
+    <div class="lcard">
+      <div class="lcard-head bull">🟢 Spring (Wyckoff)</div>
+      <div class="lcard-body">
+        <div class="lcard-chart">
+          <svg width="160" height="80" viewBox="0 0 160 80">
+            <line x1="0" y1="55" x2="160" y2="55" stroke="#1A6EFF" stroke-width="1" stroke-dasharray="4,3" opacity=".5"/>
+            <rect x="5" y="20" width="12" height="34" fill="#FF4560" rx="1"/>
+            <rect x="22" y="25" width="12" height="30" fill="#FF4560" rx="1"/>
+            <rect x="39" y="30" width="12" height="25" fill="#FF4560" rx="1"/>
+            <!-- Spring -->
+            <line x1="60" y1="20" x2="60" y2="73" stroke="#FF4560" stroke-width="2"/>
+            <rect x="53" y="46" width="14" height="8" fill="#FF4560" rx="1"/>
+            <text x="50" y="78" fill="#FFB020" font-size="6" font-family="monospace">SPRING</text>
+            <!-- Reversión alcista fuerte -->
+            <rect x="80" y="10" width="18" height="50" fill="#00C896" rx="1"/>
+            <rect x="104" y="8" width="18" height="45" fill="#00C896" rx="1"/>
+            <text x="80" y="7" fill="#00C896" font-size="7" font-family="monospace">REVERSAL</text>
+          </svg>
+        </div>
+        <div class="lcard-trap">En soporte: vela baja bajo soporte (spring), activa todos los stops, revierte fuerte al alza.</div>
+        <div class="lcard-real bull">ALCISTA FUERTE — spring es trampa bajista institucional. Entry en cierre de la vela verde</div>
+      </div>
+    </div>
+
+    <div class="lcard">
+      <div class="lcard-head bear">🔴 Upthrust (Wyckoff)</div>
+      <div class="lcard-body">
+        <div class="lcard-chart">
+          <svg width="160" height="80" viewBox="0 0 160 80">
+            <line x1="0" y1="25" x2="160" y2="25" stroke="#1A6EFF" stroke-width="1" stroke-dasharray="4,3" opacity=".5"/>
+            <rect x="5" y="30" width="12" height="34" fill="#00C896" rx="1"/>
+            <rect x="22" y="28" width="12" height="32" fill="#00C896" rx="1"/>
+            <rect x="39" y="30" width="12" height="28" fill="#00C896" rx="1"/>
+            <line x1="60" y1="7" x2="60" y2="34" stroke="#00C896" stroke-width="2"/>
+            <rect x="53" y="34" width="14" height="8" fill="#00C896" rx="1"/>
+            <text x="48" y="6" fill="#FFB020" font-size="6" font-family="monospace">UPTHRUST</text>
+            <rect x="80" y="32" width="18" height="42" fill="#FF4560" rx="1"/>
+            <rect x="104" y="35" width="18" height="40" fill="#FF4560" rx="1"/>
+            <text x="80" y="78" fill="#FF4560" font-size="7" font-family="monospace">REVERSAL</text>
+          </svg>
+        </div>
+        <div class="lcard-trap">En resistencia: vela sube sobre resistencia (upthrust), activa stops de shorts, revierte fuerte.</div>
+        <div class="lcard-real bear">BAJISTA FUERTE — upthrust es trampa alcista institucional. Entry en cierre de la vela roja</div>
+      </div>
+    </div>
+
+    <div class="lcard">
+      <div class="lcard-head bull">📍 Stop Hunt Alcista</div>
+      <div class="lcard-body">
+        <div class="lcard-chart">
+          <svg width="160" height="80" viewBox="0 0 160 80">
+            <line x1="0" y1="50" x2="160" y2="50" stroke="#1A6EFF" stroke-width="1" stroke-dasharray="4,3" opacity=".5"/>
+            <rect x="5" y="20" width="12" height="30" fill="#00C896" rx="1"/>
+            <rect x="22" y="22" width="12" height="28" fill="#00C896" rx="1"/>
+            <rect x="39" y="24" width="12" height="26" fill="#FF4560" rx="1"/>
+            <!-- Spike -->
+            <line x1="65" y1="25" x2="65" y2="72" stroke="#FF4560" stroke-width="2"/>
+            <rect x="58" y="30" width="14" height="20" fill="#FF4560" rx="1"/>
+            <text x="52" y="78" fill="#FFB020" font-size="6" font-family="monospace">STOP HUNT</text>
+            <rect x="85" y="15" width="14" height="38" fill="#00C896" rx="1"/>
+            <rect x="105" y="12" width="14" height="36" fill="#00C896" rx="1"/>
+          </svg>
+        </div>
+        <div class="lcard-trap">Mecha larga baja momentáneamente bajo soporte, activa stops de longs, regresa arriba.</div>
+        <div class="lcard-real bull">ALCISTA — la mecha fue para recoger liquidez. Precio sube tras el barrido</div>
+      </div>
+    </div>
+
+    <div class="lcard">
+      <div class="lcard-head bear">📍 Stop Hunt Bajista</div>
+      <div class="lcard-body">
+        <div class="lcard-chart">
+          <svg width="160" height="80" viewBox="0 0 160 80">
+            <line x1="0" y1="30" x2="160" y2="30" stroke="#1A6EFF" stroke-width="1" stroke-dasharray="4,3" opacity=".5"/>
+            <rect x="5" y="30" width="12" height="30" fill="#FF4560" rx="1"/>
+            <rect x="22" y="28" width="12" height="32" fill="#FF4560" rx="1"/>
+            <rect x="39" y="28" width="12" height="28" fill="#00C896" rx="1"/>
+            <line x1="65" y1="8" x2="65" y2="38" stroke="#00C896" stroke-width="2"/>
+            <rect x="58" y="28" width="14" height="20" fill="#00C896" rx="1"/>
+            <text x="50" y="7" fill="#FFB020" font-size="6" font-family="monospace">STOP HUNT</text>
+            <rect x="85" y="32" width="14" height="38" fill="#FF4560" rx="1"/>
+            <rect x="105" y="35" width="14" height="36" fill="#FF4560" rx="1"/>
+          </svg>
+        </div>
+        <div class="lcard-trap">Mecha larga sube sobre resistencia, activa stops de shorts, regresa abajo.</div>
+        <div class="lcard-real bear">BAJISTA — el spike recogió liquidez de shorts. Precio cae tras el barrido</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ══ SECCIÓN 8: CONFLUENCIAS ══ -->
+<section id="confluencias">
+  <div class="section-label">Sección 08</div>
+  <h2>Tabla Maestra de Confluencias</h2>
+  <p class="lead">La probabilidad se multiplica con confluencias. Una envolvente sola = 50%. La misma envolvente en fibo 0.618 + soporte + MTF alineado = 85%+.</p>
+
+  <table class="conf-table">
+    <thead>
+      <tr>
+        <th>Patrón</th>
+        <th>+ Soporte/R.</th>
+        <th>+ Fibo 0.618</th>
+        <th>+ Vol. alto</th>
+        <th>+ MTF alin.</th>
+        <th>Prob. estimada</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="font-weight:600;color:var(--text)">Envolvente</td>
+        <td><span class="conf-plus">+15%</span></td>
+        <td><span class="conf-plus">+20%</span></td>
+        <td><span class="conf-plus">+10%</span></td>
+        <td><span class="conf-plus">+15%</span></td>
+        <td><span class="conf-prob high">55–95%</span></td>
+      </tr>
+      <tr>
+        <td style="font-weight:600;color:var(--text)">Morning / Evening Star</td>
+        <td><span class="conf-plus">+20%</span></td>
+        <td><span class="conf-plus">+15%</span></td>
+        <td><span class="conf-plus">+15%</span></td>
+        <td><span class="conf-plus">+10%</span></td>
+        <td><span class="conf-prob high">60–90%</span></td>
+      </tr>
+      <tr>
+        <td style="font-weight:600;color:var(--text)">Martillo / Estrella fugaz</td>
+        <td><span class="conf-plus">+20%</span></td>
+        <td><span class="conf-plus">+25%</span></td>
+        <td><span class="conf-plus">+5%</span></td>
+        <td><span class="conf-plus">+10%</span></td>
+        <td><span class="conf-prob mid">45–85%</span></td>
+      </tr>
+      <tr>
+        <td style="font-weight:600;color:var(--text)">Doji en extremo</td>
+        <td><span class="conf-plus">+25%</span></td>
+        <td><span class="conf-plus">+20%</span></td>
+        <td><span class="conf-plus">+10%</span></td>
+        <td><span class="conf-plus">+15%</span></td>
+        <td><span class="conf-prob mid">35–80%</span></td>
+      </tr>
+      <tr>
+        <td style="font-weight:600;color:var(--text)">Spring / Upthrust</td>
+        <td><span class="conf-plus">+30%</span></td>
+        <td><span class="conf-plus">+15%</span></td>
+        <td><span class="conf-plus">+20%</span></td>
+        <td><span class="conf-plus">+10%</span></td>
+        <td><span class="conf-prob high">65–95%</span></td>
+      </tr>
+      <tr>
+        <td style="font-weight:600;color:var(--text)">Tres Soldados / Cuervos</td>
+        <td><span class="conf-plus">+10%</span></td>
+        <td><span class="conf-plus">+10%</span></td>
+        <td><span class="conf-plus">+25%</span></td>
+        <td><span class="conf-plus">+20%</span></td>
+        <td><span class="conf-prob high">65–90%</span></td>
+      </tr>
+      <tr>
+        <td style="font-weight:600;color:var(--text)">Ruptura de rango</td>
+        <td><span class="conf-plus">+15%</span></td>
+        <td><span class="conf-plus">+10%</span></td>
+        <td><span class="conf-plus">+30%</span></td>
+        <td><span class="conf-plus">+20%</span></td>
+        <td><span class="conf-prob high">50–90%</span></td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<div class="divider"></div>
+
+<!-- ══ SECCIÓN 9: GESTIÓN ══ -->
+<section id="gestion">
+  <div class="section-label">Sección 09</div>
+  <h2>Gestión y Stop Loss</h2>
+  <p class="lead">Cada patrón tiene un stop loss lógico y condiciones de invalidación. Respetar estas reglas es lo que diferencia al trader rentable del especulador.</p>
+
+  <div class="mgmt-grid">
+    <div class="mgmt-card">
+      <h4 style="color:var(--bull)">Stop Loss por Patrón — LONG</h4>
+      <ul class="mgmt-list">
+        <li><span><strong style="color:var(--text)">Envolvente alcista:</strong> Bajo el mínimo de la vela 1 (la pequeña), no la envolvente</span></li>
+        <li><span><strong style="color:var(--text)">Martillo:</strong> Bajo el mínimo de la mecha inferior</span></li>
+        <li><span><strong style="color:var(--text)">Morning Star:</strong> Bajo el mínimo de la vela 2 (doji)</span></li>
+        <li><span><strong style="color:var(--text)">Tres soldados:</strong> Bajo el mínimo de la primera vela</span></li>
+        <li><span><strong style="color:var(--text)">Spring:</strong> Bajo el mínimo del spring — si se toca, el spring falló</span></li>
+        <li><span><strong style="color:var(--text)">Ruptura de rango:</strong> Bajo el centro del rango, no bajo la vela de ruptura</span></li>
+        <li><span><strong style="color:var(--text)">Fibo 0.618:</strong> Bajo el nivel 0.786</span></li>
+      </ul>
+    </div>
+    <div class="mgmt-card">
+      <h4 style="color:var(--bear)">Stop Loss por Patrón — SHORT</h4>
+      <ul class="mgmt-list">
+        <li><span><strong style="color:var(--text)">Envolvente bajista:</strong> Sobre el máximo de la vela 1 (la pequeña)</span></li>
+        <li><span><strong style="color:var(--text)">Estrella fugaz:</strong> Sobre el máximo de la mecha superior</span></li>
+        <li><span><strong style="color:var(--text)">Evening Star:</strong> Sobre el máximo de la vela 2 (doji)</span></li>
+        <li><span><strong style="color:var(--text)">Tres cuervos:</strong> Sobre el máximo de la primera vela</span></li>
+        <li><span><strong style="color:var(--text)">Upthrust:</strong> Sobre el máximo del upthrust</span></li>
+        <li><span><strong style="color:var(--text)">Breakdown:</strong> Sobre el centro del rango roto</span></li>
+        <li><span><strong style="color:var(--text)">Fibo 0.382:</strong> Sobre el nivel 0.236</span></li>
+      </ul>
+    </div>
+    <div class="mgmt-card">
+      <h4 style="color:var(--gold)">Invalidación de Patrones</h4>
+      <ul class="mgmt-list">
+        <li><span><strong style="color:var(--text)">Envolvente:</strong> Si la siguiente vela cierra más del 50% de vuelta dentro del cuerpo envolvente</span></li>
+        <li><span><strong style="color:var(--text)">Morning Star:</strong> Si tras la verde, la siguiente cierra bajo el doji central</span></li>
+        <li><span><strong style="color:var(--text)">Ruptura:</strong> Si el precio cierra de vuelta dentro del rango en 2-3 velas (fakeout)</span></li>
+        <li><span><strong style="color:var(--text)">Spring:</strong> Si el precio hace nuevos mínimos bajo el spring</span></li>
+        <li><span><strong style="color:var(--text)">Tres soldados:</strong> Si una vela cierra cerca del mínimo de su rango</span></li>
+      </ul>
+    </div>
+    <div class="mgmt-card">
+      <h4 style="color:var(--accent)">Reglas de Oro</h4>
+      <ul class="mgmt-list">
+        <li><span>Nunca operes un patrón sin mínimo 2 confluencias adicionales</span></li>
+        <li><span>El contexto macro (1M, 1W) define qué patrones operar y cuáles ignorar</span></li>
+        <li><span>Volumen confirma. Sin volumen, el patrón es sospechoso</span></li>
+        <li><span>En tendencia fuerte, ignora patrones de reversión de 1-2 velas</span></li>
+        <li><span>La invalidación temprana es gestión activa, no debilidad</span></li>
+        <li><span>RR mínimo 1:2 para cualquier entrada. RR 1:1 no tiene edge estadístico</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ══ SECCIÓN 10: CHEAT SHEET ══ -->
+<section id="cheatsheet">
+  <div class="section-label">Sección 10</div>
+  <h2>Cheat Sheet — Referencia Rápida</h2>
+  <p class="lead">Decisiones rápidas con el contexto correcto. Ver → Identificar contexto → Actuar.</p>
+
+  <div class="cheat-grid">
+
+    <div class="cheat-card">
+      <div class="cheat-left">
+        <div class="cheat-trigger"><strong>Envolvente alcista</strong> en soporte o fibo 0.618</div>
+        <div class="cheat-ctx">MTF bull + volumen alto</div>
+      </div>
+      <div class="cheat-right bull">LONG<br>stop bajo<br>mín. v1</div>
+    </div>
+
+    <div class="cheat-card">
+      <div class="cheat-left">
+        <div class="cheat-trigger"><strong>Envolvente bajista</strong> en resistencia o fibo 0.382</div>
+        <div class="cheat-ctx">MTF bear + volumen alto</div>
+      </div>
+      <div class="cheat-right bear">SHORT<br>stop sobre<br>máx. v1</div>
+    </div>
+
+    <div class="cheat-card">
+      <div class="cheat-left">
+        <div class="cheat-trigger"><strong>Mecha larga bajo soporte + cierra arriba</strong></div>
+        <div class="cheat-ctx">Volumen alto en la mecha + fibo macro</div>
+      </div>
+      <div class="cheat-right bull">LONG<br>Spring<br>stop bajo</div>
+    </div>
+
+    <div class="cheat-card">
+      <div class="cheat-left">
+        <div class="cheat-trigger"><strong>Mecha larga sobre resistencia + cierra abajo</strong></div>
+        <div class="cheat-ctx">Volumen alto en la mecha + fibo macro</div>
+      </div>
+      <div class="cheat-right bear">SHORT<br>Upthrust<br>stop arriba</div>
+    </div>
+
+    <div class="cheat-card">
+      <div class="cheat-left">
+        <div class="cheat-trigger"><strong>Doji en máximos</strong> + siguiente vela roja</div>
+        <div class="cheat-ctx">Extensión fibo 1.272 + divergencia RSI</div>
+      </div>
+      <div class="cheat-right bear">SHORT<br>Agota-<br>miento</div>
+    </div>
+
+    <div class="cheat-card">
+      <div class="cheat-left">
+        <div class="cheat-trigger"><strong>Doji en mínimos</strong> + siguiente vela verde</div>
+        <div class="cheat-ctx">Destroy fibo -1.272 + divergencia RSI</div>
+      </div>
+      <div class="cheat-right bull">LONG<br>Agota-<br>miento</div>
+    </div>
+
+    <div class="cheat-card">
+      <div class="cheat-left">
+        <div class="cheat-trigger"><strong>3 velas rojas pequeñas</strong> en canal bajista estrecho</div>
+        <div class="cheat-ctx">Dentro de tendencia alcista (bull flag)</div>
+      </div>
+      <div class="cheat-right bull">LONG<br>Entry en<br>ruptura</div>
+    </div>
+
+    <div class="cheat-card">
+      <div class="cheat-left">
+        <div class="cheat-trigger"><strong>Ruptura</strong> + cierre de vuelta al rango en 1-3 velas</div>
+        <div class="cheat-ctx">Volumen bajo en la ruptura</div>
+      </div>
+      <div class="cheat-right warn">TRAMPA<br>Operar<br>contrario</div>
+    </div>
+
+    <div class="cheat-card">
+      <div class="cheat-left">
+        <div class="cheat-trigger"><strong>Morning Star en D/W</strong> en soporte mayor</div>
+        <div class="cheat-ctx">1M y 1W alcistas + fibo macro 0.618</div>
+      </div>
+      <div class="cheat-right bull">LONG<br>Mayor<br>5/5</div>
+    </div>
+
+    <div class="cheat-card">
+      <div class="cheat-left">
+        <div class="cheat-trigger"><strong>Evening Star en D/W</strong> en resistencia mayor</div>
+        <div class="cheat-ctx">1M y 1W bajistas + fibo macro 0.382</div>
+      </div>
+      <div class="cheat-right bear">SHORT<br>Mayor<br>5/5</div>
+    </div>
+
+    <div class="cheat-card">
+      <div class="cheat-left">
+        <div class="cheat-trigger"><strong>Tres cuervos negros</strong> con volumen creciente</div>
+        <div class="cheat-ctx">Macro bajista + ruptura de soporte relevante</div>
+      </div>
+      <div class="cheat-right bear">SHORT<br>No<br>comprar</div>
+    </div>
+
+    <div class="cheat-card">
+      <div class="cheat-left">
+        <div class="cheat-trigger"><strong>Tres soldados blancos</strong> con volumen creciente</div>
+        <div class="cheat-ctx">Macro alcista + ruptura de resistencia</div>
+      </div>
+      <div class="cheat-right bull">LONG<br>No<br>vender</div>
+    </div>
+
+  </div>
+
+  <div class="note"><strong>Principio final:</strong> los patrones de vela son el LENGUAJE del mercado. No son predicciones — son probabilidades. Combinados con zona fibo, volumen, estructura de mercado y confluencia MTF (como el PSY·ORACLE), se convierten en ventaja estadística real. Un patrón aislado = 50%. Un patrón con 4 confluencias = 85%+.</div>
+
+</section>
+
+<!-- ══ FOOTER ══ -->
+<footer>
+  <div class="logo">PSYCHOMETRIKS</div>
+  <p style="margin-bottom:.5rem">Manual Profesional de Análisis de Velas — Edición 2025</p>
+  <p>Este documento es de uso exclusivo del titular. No está destinado a asesoría financiera. El trading conlleva riesgo de pérdida de capital. Siempre usa stop loss.</p>
+</footer>
+
+</body>
+</html>

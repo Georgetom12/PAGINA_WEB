@@ -1,0 +1,95 @@
+of the range
+May 5, 2026, 5:41 PM
+Starting Container
+Node.js v22.22.2
+    Error.captureStackTrace(err)
+/app/artifacts/api-server:
+          ^
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/api-server@0.0.0 start: `node --enable-source-maps ./dist/index.mjs`
+Exit status 1
+Error: getaddrinfo ENOTFOUND postgres.railway.internal
+    at <anonymous> (/app/node_modules/.pnpm/pg-pool@3.13.0_pg@8.20.0/node_modules/pg-pool/index.js:45:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ensureSchema (/app/artifacts/api-server/src/lib/ensure-schema.ts:5:18) {
+  errno: -3008,
+  code: 'ENOTFOUND',
+  syscall: 'getaddrinfo',
+  hostname: 'postgres.railway.internal'
+}
+> @workspace/api-server@0.0.0 start /app/artifacts/api-server
+> node --enable-source-maps ./dist/index.mjs
+/app/node_modules/.pnpm/pg-pool@3.13.0_pg@8.20.0/node_modules/pg-pool/index.js:45
+> @workspace/api-server@0.0.0 start /app/artifacts/api-server
+> node --enable-source-maps ./dist/index.mjs
+/app/node_modules/.pnpm/pg-pool@3.13.0_pg@8.20.0/node_modules/pg-pool/index.js:45
+    Error.captureStackTrace(err)
+          ^
+Error: getaddrinfo ENOTFOUND postgres.railway.internal
+    at <anonymous> (/app/node_modules/.pnpm/pg-pool@3.13.0_pg@8.20.0/node_modules/pg-pool/index.js:45:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ensureSchema (/app/artifacts/api-server/src/lib/ensure-schema.ts:5:18) {
+  errno: -3008,
+  code: 'ENOTFOUND',
+  syscall: 'getaddrinfo',
+  hostname: 'postgres.railway.internal'
+}
+Node.js v22.22.2
+/app/artifacts/api-server:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/api-server@0.0.0 start: `node --enable-source-maps ./dist/index.mjs`
+Exit status 1
+> @workspace/api-server@0.0.0 start /app/artifacts/api-server
+> node --enable-source-maps ./dist/index.mjs
+/app/node_modules/.pnpm/pg-pool@3.13.0_pg@8.20.0/node_modules/pg-pool/index.js:45
+    Error.captureStackTrace(err)
+          ^
+Error: getaddrinfo ENOTFOUND postgres.railway.internal
+    at <anonymous> (/app/node_modules/.pnpm/pg-pool@3.13.0_pg@8.20.0/node_modules/pg-pool/index.js:45:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ensureSchema (/app/artifacts/api-server/src/lib/ensure-schema.ts:5:18) {
+  errno: -3008,
+  code: 'ENOTFOUND',
+  syscall: 'getaddrinfo',
+  hostname: 'postgres.railway.internal'
+}
+Node.js v22.22.2
+/app/artifacts/api-server:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/api-server@0.0.0 start: `node --enable-source-maps ./dist/index.mjs`
+Exit status 1
+Exit status 1
+    at <anonymous> (/app/node_modules/.pnpm/pg-pool@3.13.0_pg@8.20.0/node_modules/pg-pool/index.js:45:11)
+Node.js v22.22.2
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ensureSchema (/app/artifacts/api-server/src/lib/ensure-schema.ts:5:18) {
+/app/artifacts/api-server:
+  syscall: 'getaddrinfo',
+  errno: -3008,
+  hostname: 'postgres.railway.internal'
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/api-server@0.0.0 start: `node --enable-source-maps ./dist/index.mjs`
+  code: 'ENOTFOUND',
+> @workspace/api-server@0.0.0 start /app/artifacts/api-server
+}
+> node --enable-source-maps ./dist/index.mjs
+/app/node_modules/.pnpm/pg-pool@3.13.0_pg@8.20.0/node_modules/pg-pool/index.js:45
+    Error.captureStackTrace(err)
+          ^
+Error: getaddrinfo ENOTFOUND postgres.railway.internal
+    at async ensureSchema (/app/artifacts/api-server/src/lib/ensure-schema.ts:5:18) {
+  errno: -3008,
+> node --enable-source-maps ./dist/index.mjs
+  code: 'ENOTFOUND',
+/app/node_modules/.pnpm/pg-pool@3.13.0_pg@8.20.0/node_modules/pg-pool/index.js:45
+Error: getaddrinfo ENOTFOUND postgres.railway.internal
+    at <anonymous> (/app/node_modules/.pnpm/pg-pool@3.13.0_pg@8.20.0/node_modules/pg-pool/index.js:45:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    Error.captureStackTrace(err)
+> @workspace/api-server@0.0.0 start /app/artifacts/api-server
+          ^
+  syscall: 'getaddrinfo',
+  hostname: 'postgres.railway.internal'
+}
+Node.js v22.22.2
+/app/artifacts/api-server:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/api-server@0.0.0 start: `node --enable-source-maps ./dist/index.mjs`
+Exit status 1
+> @workspace/api-server@0.0.0 start /app/artifacts/api-server
+> node --enable-source-maps ./dist/index.mjs

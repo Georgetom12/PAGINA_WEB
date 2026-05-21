@@ -1,0 +1,1557 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trading Avanzado — Manual Pro</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Inconsolata:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #04060c;
+  --bg2: #070b14;
+  --bg3: #0b1120;
+  --card: #0d1526;
+  --card2: #111d35;
+  --border: #162040;
+  --border2: #1e2e55;
+  --bull: #00ffe0;
+  --bull2: #00c4ae;
+  --bear: #ff2d6b;
+  --bear2: #c4003d;
+  --gold: #ffd166;
+  --gold2: #e8b84b;
+  --cyan: #00b4ff;
+  --purple: #b06aff;
+  --orange: #ff8c42;
+  --text: #d0ddf5;
+  --muted: #4a5a7a;
+  --muted2: #2a3555;
+  --accent: #00ffe0;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 400;
+  line-height: 1.65;
+  overflow-x: hidden;
+}
+
+/* NOISE OVERLAY */
+body::before {
+  content:'';
+  position:fixed; inset:0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
+  pointer-events:none; z-index:0; opacity:0.4;
+}
+
+/* HEADER */
+header {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  overflow: hidden;
+  padding: 40px 20px;
+}
+
+.header-grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(0,180,255,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,180,255,0.04) 1px, transparent 1px);
+  background-size: 50px 50px;
+  animation: gridMove 20s linear infinite;
+}
+
+@keyframes gridMove {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(50px); }
+}
+
+.header-glow {
+  position: absolute;
+  top: 30%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 800px; height: 400px;
+  background: radial-gradient(ellipse, rgba(0,255,224,0.06) 0%, rgba(0,100,255,0.04) 40%, transparent 70%);
+  pointer-events: none;
+}
+
+.level-badge {
+  font-family: 'Inconsolata', monospace;
+  font-size: 11px;
+  letter-spacing: 4px;
+  color: var(--bear);
+  border: 1px solid rgba(255,45,107,0.4);
+  padding: 6px 18px;
+  margin-bottom: 28px;
+  display: inline-block;
+  background: rgba(255,45,107,0.06);
+  animation: pulse-red 2s ease-in-out infinite;
+}
+
+@keyframes pulse-red {
+  0%,100% { box-shadow: 0 0 0 0 rgba(255,45,107,0); }
+  50% { box-shadow: 0 0 20px 4px rgba(255,45,107,0.15); }
+}
+
+h1 {
+  font-family: 'Orbitron', monospace;
+  font-weight: 900;
+  font-size: clamp(36px, 7vw, 80px);
+  letter-spacing: 8px;
+  line-height: 1.1;
+  margin-bottom: 10px;
+  background: linear-gradient(135deg, #fff 0%, var(--cyan) 45%, var(--bull) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.h1-sub {
+  font-family: 'Orbitron', monospace;
+  font-size: clamp(14px, 2.5vw, 22px);
+  letter-spacing: 12px;
+  color: var(--gold);
+  margin-bottom: 30px;
+  font-weight: 400;
+}
+
+.header-stats {
+  display: flex; gap: 40px; justify-content: center;
+  flex-wrap: wrap; margin-top: 20px;
+}
+
+.hstat {
+  text-align: center;
+}
+
+.hstat-num {
+  font-family: 'Orbitron', monospace;
+  font-size: 28px;
+  color: var(--bull);
+  display: block;
+  line-height: 1;
+}
+
+.hstat-label {
+  font-family: 'Inconsolata', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.scroll-indicator {
+  position: absolute; bottom: 30px; left: 50%;
+  transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+}
+
+.scroll-line {
+  width: 1px; height: 60px;
+  background: linear-gradient(to bottom, var(--bull), transparent);
+  animation: scrollLine 1.5s ease-in-out infinite;
+}
+
+@keyframes scrollLine {
+  0% { opacity: 0; transform: scaleY(0); transform-origin: top; }
+  50% { opacity: 1; }
+  100% { opacity: 0; transform: scaleY(1); transform-origin: top; }
+}
+
+/* NAV */
+nav {
+  background: rgba(7,11,20,0.95);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(12px);
+  position: sticky; top: 0; z-index: 100;
+  padding: 0;
+  overflow-x: auto;
+}
+
+.nav-inner {
+  display: flex;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+nav a {
+  color: var(--muted);
+  text-decoration: none;
+  font-family: 'Inconsolata', monospace;
+  font-size: 11px;
+  letter-spacing: 2px;
+  padding: 15px 16px;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: all 0.2s;
+  text-transform: uppercase;
+}
+
+nav a:hover, nav a.active {
+  color: var(--bull);
+  border-bottom-color: var(--bull);
+}
+
+/* MAIN */
+main { max-width: 1200px; margin: 0 auto; padding: 80px 24px; position: relative; z-index: 1; }
+
+section { margin-bottom: 100px; }
+
+/* SECTION HEADERS */
+.sec-eyebrow {
+  font-family: 'Inconsolata', monospace;
+  font-size: 10px;
+  letter-spacing: 5px;
+  color: var(--bull);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  display: flex; align-items: center; gap: 12px;
+}
+
+.sec-eyebrow::before {
+  content: '';
+  width: 30px; height: 1px;
+  background: var(--bull);
+}
+
+h2 {
+  font-family: 'Orbitron', monospace;
+  font-size: clamp(26px, 4vw, 44px);
+  font-weight: 900;
+  letter-spacing: 4px;
+  color: #fff;
+  margin-bottom: 8px;
+  line-height: 1.1;
+}
+
+.sec-divider {
+  width: 80px; height: 1px;
+  background: linear-gradient(90deg, var(--bull), transparent);
+  margin-bottom: 40px;
+}
+
+h3 {
+  font-family: 'Orbitron', monospace;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: var(--gold);
+  margin: 36px 0 14px;
+  text-transform: uppercase;
+}
+
+h4 {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+
+p { color: #8a9fc0; font-size: 15px; margin-bottom: 14px; line-height: 1.75; }
+p strong { color: var(--text); font-weight: 600; }
+p em { color: var(--gold); font-style: normal; }
+
+/* CARDS */
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
+.grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+.grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 24px;
+  transition: border-color 0.3s, transform 0.2s, box-shadow 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: transparent;
+  transition: background 0.3s;
+}
+
+.card:hover { border-color: var(--border2); transform: translateY(-3px); box-shadow: 0 10px 40px rgba(0,0,0,0.4); }
+.card:hover::before { background: linear-gradient(90deg, var(--bull), transparent); }
+.card.bull-card::before { background: linear-gradient(90deg, var(--bull), transparent); }
+.card.bear-card::before { background: linear-gradient(90deg, var(--bear), transparent); }
+.card.gold-card::before { background: linear-gradient(90deg, var(--gold), transparent); }
+.card.purple-card::before { background: linear-gradient(90deg, var(--purple), transparent); }
+.card.orange-card::before { background: linear-gradient(90deg, var(--orange), transparent); }
+
+.card-eyebrow {
+  font-family: 'Inconsolata', monospace;
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.card h4.bull { color: var(--bull); }
+.card h4.bear { color: var(--bear); }
+.card h4.gold { color: var(--gold); }
+.card h4.purple { color: var(--purple); }
+.card h4.orange { color: var(--orange); }
+.card h4.cyan { color: var(--cyan); }
+.card p { font-size: 13px; margin-bottom: 0; }
+
+/* SVG WRAPPER */
+.svg-wrap {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  padding: 24px;
+  margin: 24px 0;
+  overflow-x: auto;
+}
+
+.svg-wrap svg { display: block; margin: 0 auto; }
+
+/* INFO/WARN BOXES */
+.box {
+  border-radius: 2px;
+  padding: 20px 26px;
+  margin: 24px 0;
+  border-left: 3px solid;
+}
+
+.box-bull { background: rgba(0,255,224,0.04); border-color: var(--bull); }
+.box-bear { background: rgba(255,45,107,0.04); border-color: var(--bear); }
+.box-gold { background: rgba(255,209,102,0.04); border-color: var(--gold); }
+.box-purple { background: rgba(176,106,255,0.04); border-color: var(--purple); }
+.box-orange { background: rgba(255,140,66,0.04); border-color: var(--orange); }
+
+.box-title {
+  font-family: 'Inconsolata', monospace;
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.box-bull .box-title { color: var(--bull); }
+.box-bear .box-title { color: var(--bear); }
+.box-gold .box-title { color: var(--gold); }
+.box-purple .box-title { color: var(--purple); }
+.box-orange .box-title { color: var(--orange); }
+.box p { font-size: 13px; margin-bottom: 0; color: #7a8da8; }
+
+/* BADGE */
+.badge {
+  display: inline-block;
+  font-family: 'Inconsolata', monospace;
+  font-size: 9px; letter-spacing: 2px;
+  padding: 3px 9px;
+  border-radius: 1px; margin: 2px;
+  text-transform: uppercase;
+}
+
+.b-bull { background: rgba(0,255,224,0.1); color: var(--bull); border: 1px solid rgba(0,255,224,0.3); }
+.b-bear { background: rgba(255,45,107,0.1); color: var(--bear); border: 1px solid rgba(255,45,107,0.3); }
+.b-gold { background: rgba(255,209,102,0.1); color: var(--gold); border: 1px solid rgba(255,209,102,0.3); }
+.b-purple { background: rgba(176,106,255,0.1); color: var(--purple); border: 1px solid rgba(176,106,255,0.3); }
+.b-orange { background: rgba(255,140,66,0.1); color: var(--orange); border: 1px solid rgba(255,140,66,0.3); }
+.b-cyan { background: rgba(0,180,255,0.1); color: var(--cyan); border: 1px solid rgba(0,180,255,0.3); }
+
+/* TABLE */
+table { width:100%; border-collapse:collapse; font-size:13px; margin:20px 0; }
+th {
+  background: var(--card2); color: var(--gold);
+  font-family: 'Inconsolata', monospace; font-size:10px;
+  letter-spacing: 2px; text-transform: uppercase;
+  padding: 12px 16px; text-align:left;
+  border-bottom: 1px solid var(--border2);
+}
+td { padding:11px 16px; border-bottom: 1px solid rgba(22,32,64,0.6); color:#8a9fc0; vertical-align:top; }
+tr:hover td { background: rgba(13,21,38,0.6); }
+td.tc { color: var(--bull); font-family:'Inconsolata',monospace; font-size:12px; }
+td.tr { color: var(--bear); font-family:'Inconsolata',monospace; font-size:12px; }
+td.tg { color: var(--gold); font-family:'Inconsolata',monospace; font-size:12px; }
+td.tp { color: var(--purple); font-family:'Inconsolata',monospace; font-size:12px; }
+
+/* PATTERN BLOCK */
+.pattern-block {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 24px;
+  align-items: start;
+  background: var(--card);
+  border: 1px solid var(--border);
+  padding: 24px;
+  margin-bottom: 18px;
+  transition: border-color 0.3s;
+}
+.pattern-block:hover { border-color: var(--border2); }
+.pattern-block h4 { font-size: 18px; letter-spacing: 1px; margin-bottom: 6px; }
+.pattern-block p { font-size: 13px; margin-bottom: 8px; }
+
+/* LEVEL INDICATOR */
+.level-bar {
+  display: flex; align-items: center; gap: 8px;
+  margin: 4px 0 10px;
+}
+.level-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+}
+.level-dot.on { background: var(--bull); box-shadow: 0 0 6px var(--bull); }
+.level-dot.off { background: var(--muted2); }
+
+/* FORMULA BOX */
+.formula {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-left: 3px solid var(--cyan);
+  padding: 16px 20px;
+  font-family: 'Inconsolata', monospace;
+  font-size: 14px;
+  color: var(--cyan);
+  margin: 16px 0;
+  letter-spacing: 1px;
+}
+
+/* FADE IN */
+.fade { opacity:0; transform:translateY(24px); transition: opacity 0.7s ease, transform 0.7s ease; }
+.fade.show { opacity:1; transform:translateY(0); }
+
+/* CHAPTER HEADER */
+.chapter-header {
+  background: linear-gradient(135deg, var(--card) 0%, var(--card2) 100%);
+  border: 1px solid var(--border2);
+  border-top: 2px solid var(--bull);
+  padding: 30px 36px;
+  margin-bottom: 40px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.chapter-num {
+  font-family: 'Orbitron', monospace;
+  font-size: 48px;
+  font-weight: 900;
+  color: var(--border2);
+  line-height: 1;
+  min-width: 70px;
+}
+
+/* DISCLAIMER */
+.disclaimer {
+  background: rgba(255,45,107,0.04);
+  border: 1px solid rgba(255,45,107,0.15);
+  padding: 18px 24px;
+  margin: 40px 0;
+  font-family: 'Inconsolata', monospace;
+  font-size: 11px;
+  color: #6a3a4a;
+  letter-spacing: 0.5px;
+  line-height: 1.8;
+}
+
+/* FOOTER */
+footer {
+  background: var(--bg2);
+  border-top: 1px solid var(--border);
+  padding: 50px 40px;
+  text-align: center;
+  position: relative; z-index: 1;
+}
+
+footer p {
+  font-family: 'Inconsolata', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 4px;
+  letter-spacing: 1px;
+}
+
+@media(max-width:640px) {
+  .pattern-block { grid-template-columns: 1fr; }
+  .chapter-header { flex-direction: column; gap: 10px; }
+  h1 { letter-spacing: 3px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════ HEADER -->
+<header>
+  <div class="header-grid"></div>
+  <div class="header-glow"></div>
+
+  <div class="level-badge">⬡ NIVEL: AVANZADO + MUY AVANZADO ⬡</div>
+  <h1>TRADING<br>AVANZADO</h1>
+  <div class="h1-sub">PRO EDITION</div>
+
+  <div class="header-stats">
+    <div class="hstat"><span class="hstat-num">12</span><span class="hstat-label">Módulos</span></div>
+    <div class="hstat"><span class="hstat-num">60+</span><span class="hstat-label">Conceptos</span></div>
+    <div class="hstat"><span class="hstat-num">PRO</span><span class="hstat-label">Nivel</span></div>
+    <div class="hstat"><span class="hstat-num">SMC</span><span class="hstat-label">Smart Money</span></div>
+  </div>
+
+  <div class="scroll-indicator">
+    <div class="scroll-line"></div>
+  </div>
+</header>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a href="#estructura">ESTRUCTURA</a>
+    <a href="#orderflow">ORDER FLOW</a>
+    <a href="#smc">SMART MONEY</a>
+    <a href="#vsa">VSA</a>
+    <a href="#wyckoff">WYCKOFF</a>
+    <a href="#fibonacci">FIBONACCI</a>
+    <a href="#elliott">ELLIOTT</a>
+    <a href="#liquidez">LIQUIDEZ</a>
+    <a href="#institucional">INSTITUCIONAL</a>
+    <a href="#riesgo">RIESGO PRO</a>
+    <a href="#psicologia">PSICOLOGÍA</a>
+    <a href="#sistemas">SISTEMAS</a>
+  </div>
+</nav>
+
+<main>
+
+<!-- ═══════════════════════════════════════════ 01 ESTRUCTURA DE MERCADO -->
+<section id="estructura" class="fade">
+  <div class="sec-eyebrow">Módulo 01</div>
+  <h2>ESTRUCTURA DE MERCADO</h2>
+  <div class="sec-divider"></div>
+
+  <p>La estructura de mercado es la <strong>base de todo análisis técnico avanzado</strong>. Antes de usar cualquier indicador, el trader profesional lee la estructura: hacia dónde está yendo el precio y qué está rompiendo o respetando.</p>
+
+  <h3>TIPOS DE ESTRUCTURA</h3>
+
+  <!-- GRÁFICO ESTRUCTURA -->
+  <div class="svg-wrap">
+    <svg width="700" height="280" viewBox="0 0 700 280">
+      <!-- TENDENCIA ALCISTA -->
+      <text x="10" y="20" fill="#4a5a7a" font-family="Inconsolata" font-size="10" letter-spacing="2">TENDENCIA ALCISTA — HH / HL</text>
+      <polyline points="10,240 60,200 110,220 170,160 220,185 290,110 340,135 400,70"
+        fill="none" stroke="#00ffe0" stroke-width="2" stroke-dasharray="none"/>
+      <!-- Puntos HH/HL -->
+      <circle cx="60" cy="200" r="4" fill="#00ffe0"/>
+      <text x="53" y="195" fill="#00ffe0" font-family="Inconsolata" font-size="9">HL</text>
+      <circle cx="170" cy="160" r="4" fill="#00ffe0"/>
+      <text x="163" y="155" fill="#00ffe0" font-family="Inconsolata" font-size="9">HH</text>
+      <circle cx="220" cy="185" r="4" fill="#00ffe0"/>
+      <text x="213" y="197" fill="#00ffe0" font-family="Inconsolata" font-size="9">HL</text>
+      <circle cx="290" cy="110" r="4" fill="#00ffe0"/>
+      <text x="283" y="105" fill="#00ffe0" font-family="Inconsolata" font-size="9">HH</text>
+      <circle cx="340" cy="135" r="4" fill="#00ffe0"/>
+      <text x="333" y="147" fill="#00ffe0" font-family="Inconsolata" font-size="9">HL</text>
+      <circle cx="400" cy="70" r="4" fill="#00ffe0"/>
+      <text x="393" y="65" fill="#00ffe0" font-family="Inconsolata" font-size="9">HH</text>
+
+      <!-- TENDENCIA BAJISTA -->
+      <text x="430" y="20" fill="#4a5a7a" font-family="Inconsolata" font-size="10" letter-spacing="2">TENDENCIA BAJISTA — LH / LL</text>
+      <polyline points="430,50 480,90 530,65 580,120 620,100 670,155 690,135"
+        fill="none" stroke="#ff2d6b" stroke-width="2"/>
+      <circle cx="430" cy="50" r="4" fill="#ff2d6b"/>
+      <circle cx="480" cy="90" r="4" fill="#ff2d6b"/>
+      <text x="473" y="103" fill="#ff2d6b" font-family="Inconsolata" font-size="9">LL</text>
+      <circle cx="530" cy="65" r="4" fill="#ff2d6b"/>
+      <text x="523" y="60" fill="#ff2d6b" font-family="Inconsolata" font-size="9">LH</text>
+      <circle cx="580" cy="120" r="4" fill="#ff2d6b"/>
+      <text x="573" y="133" fill="#ff2d6b" font-family="Inconsolata" font-size="9">LL</text>
+      <circle cx="620" cy="100" r="4" fill="#ff2d6b"/>
+      <text x="613" y="95" fill="#ff2d6b" font-family="Inconsolata" font-size="9">LH</text>
+      <circle cx="670" cy="155" r="4" fill="#ff2d6b"/>
+      <text x="663" y="168" fill="#ff2d6b" font-family="Inconsolata" font-size="9">LL</text>
+
+      <!-- Legend -->
+      <text x="10" y="270" fill="#4a5a7a" font-family="Inconsolata" font-size="10">HH=Higher High  HL=Higher Low  LH=Lower High  LL=Lower Low</text>
+    </svg>
+  </div>
+
+  <div class="grid-3">
+    <div class="card bull-card">
+      <div class="card-eyebrow">Alcista</div>
+      <h4 class="bull">HH + HL</h4>
+      <p><strong>Higher High + Higher Low.</strong> Cada máximo y mínimo es más alto que el anterior. Mientras se mantenga esta estructura, la tendencia es alcista. Busca compras en cada HL.</p>
+    </div>
+    <div class="card bear-card">
+      <div class="card-eyebrow">Bajista</div>
+      <h4 class="bear">LH + LL</h4>
+      <p><strong>Lower High + Lower Low.</strong> Cada máximo y mínimo es más bajo. Tendencia bajista confirmada. Busca ventas en cada LH.</p>
+    </div>
+    <div class="card gold-card">
+      <div class="card-eyebrow">Transición</div>
+      <h4 class="gold">CAMBIO DE ESTRUCTURA</h4>
+      <p><strong>Break of Structure (BOS).</strong> Cuando en una tendencia alcista el precio rompe un HL previo (hace un LL), la estructura cambia. Este es el primer aviso de reversión.</p>
+    </div>
+  </div>
+
+  <h3>CHANGE OF CHARACTER (ChoCH) vs BOS</h3>
+
+  <div class="svg-wrap">
+    <svg width="680" height="220" viewBox="0 0 680 220">
+      <!-- Tendencia bajista -->
+      <polyline points="20,30 80,70 130,50 190,110 240,90 300,150"
+        fill="none" stroke="#ff2d6b" stroke-width="2"/>
+      <!-- ChoCH -->
+      <polyline points="300,150 360,100 410,120 470,60"
+        fill="none" stroke="#ffd166" stroke-width="2.5" stroke-dasharray="6,3"/>
+      <!-- BOS alcista confirmado -->
+      <polyline points="470,60 530,90 590,30"
+        fill="none" stroke="#00ffe0" stroke-width="2.5"/>
+
+      <!-- Labels -->
+      <text x="150" y="15" fill="#ff2d6b" font-family="Inconsolata" font-size="10" text-anchor="middle">TENDENCIA BAJISTA</text>
+      <line x1="300" y1="150" x2="300" y2="170" stroke="#ffd166" stroke-width="1" stroke-dasharray="3,2"/>
+      <text x="300" y="185" fill="#ffd166" font-family="Inconsolata" font-size="10" text-anchor="middle">ChoCH</text>
+      <text x="300" y="198" fill="#4a5a7a" font-family="Inconsolata" font-size="9" text-anchor="middle">1er aviso</text>
+
+      <line x1="470" y1="60" x2="470" y2="80" stroke="#00ffe0" stroke-width="1" stroke-dasharray="3,2"/>
+      <text x="470" y="95" fill="#00ffe0" font-family="Inconsolata" font-size="10" text-anchor="middle">BOS</text>
+      <text x="470" y="108" fill="#4a5a7a" font-family="Inconsolata" font-size="9" text-anchor="middle">Confirmación</text>
+
+      <text x="530" y="15" fill="#00ffe0" font-family="Inconsolata" font-size="10" text-anchor="middle">NUEVA TENDENCIA</text>
+
+      <!-- Zona de entrada -->
+      <rect x="360" y="95" width="100" height="30" fill="rgba(0,255,224,0.06)" stroke="rgba(0,255,224,0.2)" stroke-width="1"/>
+      <text x="410" y="114" fill="#00ffe0" font-family="Inconsolata" font-size="9" text-anchor="middle">ZONA ENTRADA</text>
+    </svg>
+  </div>
+
+  <div class="box box-gold">
+    <div class="box-title">⚡ CLAVE AVANZADA</div>
+    <p>El <strong>ChoCH</strong> (Change of Character) es el primer indicio de que la tendencia puede estar cambiando. El <strong>BOS</strong> (Break of Structure) es la confirmación. Los traders institucionales esperan el BOS antes de entrar, los avanzados anticipan en el ChoCH con menor posición.</p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ 02 ORDER FLOW -->
+<section id="orderflow" class="fade">
+  <div class="sec-eyebrow">Módulo 02</div>
+  <h2>ORDER FLOW</h2>
+  <div class="sec-divider"></div>
+
+  <p>El <strong>Order Flow</strong> es el análisis del flujo de órdenes en tiempo real. Va más allá del precio y estudia <em>quién está comprando y vendiendo, cuánto y a qué precio</em>. Es la herramienta más avanzada del trader profesional de corto plazo.</p>
+
+  <h3>CONCEPTOS CLAVE</h3>
+
+  <div class="grid-2">
+    <div class="card purple-card">
+      <div class="card-eyebrow">Order Flow — Base</div>
+      <h4 class="purple">DOM / LADDER (Depth of Market)</h4>
+      <p>Muestra todas las órdenes límite pendientes en el libro de órdenes. Las <strong>grandes acumulaciones de órdenes límite</strong> actúan como soportes/resistencias magnéticas donde el precio tiende a ir y luego rebotar o romper.</p>
+    </div>
+    <div class="card purple-card">
+      <div class="card-eyebrow">Order Flow — Ejecución</div>
+      <h4 class="purple">TAPE READING</h4>
+      <p>Lectura de la cinta de transacciones. Analiza el <strong>tamaño de las transacciones</strong>: una sola transacción de 500 contratos es muy diferente a 500 transacciones de 1 contrato. Las grandes manos dejan huellas en el tape.</p>
+    </div>
+    <div class="card orange-card">
+      <div class="card-eyebrow">Order Flow — Herramienta</div>
+      <h4 class="orange">FOOTPRINT CHART</h4>
+      <p>Gráfico que muestra dentro de cada vela el volumen negociado en cada nivel de precio, separado por compras (bid) y ventas (ask). Permite ver exactamente <strong>dónde y cómo se ejecutaron las órdenes</strong>.</p>
+    </div>
+    <div class="card orange-card">
+      <div class="card-eyebrow">Order Flow — Desequilibrio</div>
+      <h4 class="orange">DELTA</h4>
+      <p>Diferencia entre volumen de compra (ask) y venta (bid) dentro de una vela. <strong>Delta positivo</strong> = más agresión compradora. <strong>Delta negativo</strong> = más agresión vendedora. Divergencias delta/precio son señales potentes.</p>
+    </div>
+  </div>
+
+  <!-- FOOTPRINT VISUAL -->
+  <div class="svg-wrap">
+    <svg width="660" height="260" viewBox="0 0 660 260">
+      <text x="330" y="20" fill="#4a5a7a" font-family="Inconsolata" font-size="10" text-anchor="middle" letter-spacing="2">FOOTPRINT CHART — VISTA ESQUEMÁTICA</text>
+
+      <!-- Vela 1 alcista -->
+      <rect x="30" y="60" width="90" height="140" fill="rgba(0,255,224,0.05)" stroke="#00ffe0" stroke-width="1" rx="1"/>
+      <text x="30" y="55" fill="#00ffe0" font-family="Inconsolata" font-size="9">PRECIO</text>
+      <text x="80" y="55" fill="#4a5a7a" font-family="Inconsolata" font-size="9" text-anchor="middle">BID×ASK</text>
+
+      <!-- Filas del footprint -->
+      <text x="35" y="82" fill="#8a9fc0" font-family="Inconsolata" font-size="9">1520</text>
+      <text x="80" y="82" fill="#ff2d6b" font-family="Inconsolata" font-size="10" text-anchor="middle">12×</text><text x="108" y="82" fill="#00ffe0" font-family="Inconsolata" font-size="10">45</text>
+
+      <text x="35" y="102" fill="#8a9fc0" font-family="Inconsolata" font-size="9">1519</text>
+      <text x="80" y="102" fill="#ff2d6b" font-family="Inconsolata" font-size="10" text-anchor="middle">8×</text><text x="108" y="102" fill="#00ffe0" font-family="Inconsolata" font-size="10">92</text>
+
+      <text x="35" y="122" fill="#8a9fc0" font-family="Inconsolata" font-size="9">1518</text>
+      <text x="80" y="122" fill="#ff2d6b" font-family="Inconsolata" font-size="10" font-weight="700" text-anchor="middle">3×</text><text x="108" y="122" fill="#00ffe0" font-family="Inconsolata" font-size="11" font-weight="700">187</text>
+      <rect x="98" y="112" width="25" height="14" fill="rgba(0,255,224,0.15)" rx="1"/>
+
+      <text x="35" y="142" fill="#8a9fc0" font-family="Inconsolata" font-size="9">1517</text>
+      <text x="80" y="142" fill="#ff2d6b" font-family="Inconsolata" font-size="10" text-anchor="middle">22×</text><text x="108" y="142" fill="#00ffe0" font-family="Inconsolata" font-size="10">67</text>
+
+      <text x="35" y="162" fill="#8a9fc0" font-family="Inconsolata" font-size="9">1516</text>
+      <text x="80" y="162" fill="#ff2d6b" font-family="Inconsolata" font-size="10" text-anchor="middle">15×</text><text x="108" y="162" fill="#00ffe0" font-family="Inconsolata" font-size="10">34</text>
+
+      <text x="35" y="182" fill="#8a9fc0" font-family="Inconsolata" font-size="9">1515</text>
+      <text x="80" y="182" fill="#ff2d6b" font-family="Inconsolata" font-size="10" text-anchor="middle">89×</text><text x="108" y="182" fill="#00ffe0" font-family="Inconsolata" font-size="10">11</text>
+      <rect x="65" y="172" width="28" height="14" fill="rgba(255,45,107,0.15)" rx="1"/>
+
+      <text x="75" y="212" fill="#ffd166" font-family="Inconsolata" font-size="9" text-anchor="middle">DELTA: +245</text>
+
+      <!-- Explicación -->
+      <text x="180" y="80" fill="#8a9fc0" font-family="Inconsolata" font-size="11">← Cada fila = un tick/nivel de precio</text>
+      <text x="180" y="105" fill="#ff2d6b" font-family="Inconsolata" font-size="11">← Número BID (vendedores agresivos)</text>
+      <text x="180" y="130" fill="#00ffe0" font-family="Inconsolata" font-size="11">← Número ASK (compradores agresivos)</text>
+      <text x="180" y="155" fill="#ffd166" font-family="Inconsolata" font-size="11">← Celdas resaltadas = desequilibrio fuerte</text>
+      <text x="180" y="180" fill="#b06aff" font-family="Inconsolata" font-size="11">← POC: nivel con más volumen negociado</text>
+      <text x="180" y="210" fill="#ffd166" font-family="Inconsolata" font-size="11">← Delta total de la vela</text>
+
+      <!-- Leyenda conceptos -->
+      <rect x="180" y="225" width="460" height="1" fill="rgba(30,46,85,0.8)"/>
+      <text x="180" y="245" fill="#4a5a7a" font-family="Inconsolata" font-size="10">BID = órdenes de venta agresiva (market sell)   ASK = órdenes de compra agresiva (market buy)</text>
+    </svg>
+  </div>
+
+  <h3>SEÑALES DE ORDER FLOW</h3>
+  <table>
+    <tr><th>Señal</th><th>Descripción</th><th>Interpretación</th></tr>
+    <tr><td><strong>Delta Divergencia</strong></td><td>Precio sube pero delta baja</td><td class="tr">Los compradores se debilitan. Posible reversión bajista.</td></tr>
+    <tr><td><strong>Absorption</strong></td><td>Gran volumen sin movimiento de precio</td><td class="tc">El lado opuesto absorbe las órdenes. Zona de acumulación/distribución.</td></tr>
+    <tr><td><strong>Exhaustion</strong></td><td>Vela de volumen extremo, cierre en el medio</td><td class="tg">Agotamiento. El movimiento puede terminar pronto.</td></tr>
+    <tr><td><strong>Iceberg Orders</strong></td><td>Reposición constante de órdenes límite</td><td class="tc">Institución ocultando su tamaño real. Soporte/resistencia invisible.</td></tr>
+    <tr><td><strong>Stacked Imbalance</strong></td><td>3+ desequilibrios consecutivos en footprint</td><td class="tc">Movimiento muy fuerte. Alta probabilidad de continuación.</td></tr>
+    <tr><td><strong>Unfinished Auction</strong></td><td>Single prints en Market Profile</td><td class="tg">El mercado "volverá" a completar el área. Objetivo de precio.</td></tr>
+  </table>
+</section>
+
+<!-- ═══════════════════════════════════════════ 03 SMART MONEY CONCEPTS -->
+<section id="smc" class="fade">
+  <div class="sec-eyebrow">Módulo 03 — MUY AVANZADO</div>
+  <h2>SMART MONEY CONCEPTS</h2>
+  <div class="sec-divider"></div>
+
+  <p>El <strong>Smart Money Concepts (SMC)</strong> es una metodología que busca <em>seguir las huellas del dinero institucional</em>: bancos, fondos de inversión y market makers. La premisa es que los institucionales manipulan el precio para ejecutar sus órdenes en las mejores condiciones posibles.</p>
+
+  <div class="box box-purple">
+    <div class="box-title">🏦 PREMISA FUNDAMENTAL</div>
+    <p>Los institucionales no pueden comprar/vender todo de una vez como los retailers. Necesitan <strong>crear liquidez artificial</strong>: empujar el precio a zonas donde los traders minoristas tengan sus stops o sus entradas, para ejecutar sus megaórdenes sin mover el mercado demasiado en su contra.</p>
+  </div>
+
+  <h3>ORDER BLOCKS (OB)</h3>
+
+  <div class="svg-wrap">
+    <svg width="660" height="250" viewBox="0 0 660 250">
+      <text x="330" y="18" fill="#4a5a7a" font-family="Inconsolata" font-size="10" text-anchor="middle" letter-spacing="2">BULLISH ORDER BLOCK — FORMACIÓN</text>
+
+      <!-- Precio bajando hacia OB -->
+      <polyline points="20,50 70,70 120,90 170,80 220,110 270,100 320,130"
+        fill="none" stroke="#ff2d6b" stroke-width="1.5" stroke-dasharray="4,2"/>
+
+      <!-- Order Block (última vela bajista antes de subida fuerte) -->
+      <rect x="320" y="100" width="30" height="30" fill="rgba(176,106,255,0.3)" stroke="#b06aff" stroke-width="1.5" rx="1"/>
+      <text x="335" y="145" fill="#b06aff" font-family="Inconsolata" font-size="9" text-anchor="middle">OB</text>
+
+      <!-- Movimiento alcista fuerte -->
+      <polyline points="350,115 400,80 450,50 500,20"
+        fill="none" stroke="#00ffe0" stroke-width="2.5"/>
+
+      <!-- Precio retrocede al OB -->
+      <polyline points="500,20 540,40 570,70 590,105"
+        fill="none" stroke="#ffd166" stroke-width="1.5" stroke-dasharray="4,2"/>
+
+      <!-- Segunda visita al OB -->
+      <rect x="580" y="98" width="30" height="30" fill="rgba(176,106,255,0.15)" stroke="#b06aff" stroke-width="1" stroke-dasharray="3,2" rx="1"/>
+
+      <!-- Flecha rebote -->
+      <polyline points="610,113 640,80 655,55"
+        fill="none" stroke="#00ffe0" stroke-width="2"/>
+
+      <!-- Labels -->
+      <text x="180" y="130" fill="#ff2d6b" font-family="Inconsolata" font-size="10">Distribución institucional bajando el precio</text>
+      <text x="390" y="95" fill="#00ffe0" font-family="Inconsolata" font-size="10">BOS alcista</text>
+      <text x="525" y="130" fill="#ffd166" font-family="Inconsolata" font-size="10">Retroceso</text>
+      <text x="620" y="50" fill="#00ffe0" font-family="Inconsolata" font-size="10">Entrada</text>
+
+      <!-- Zona OB marcada -->
+      <line x1="320" y1="100" x2="620" y2="100" stroke="rgba(176,106,255,0.3)" stroke-width="1" stroke-dasharray="3,3"/>
+      <line x1="320" y1="130" x2="620" y2="130" stroke="rgba(176,106,255,0.3)" stroke-width="1" stroke-dasharray="3,3"/>
+      <text x="460" y="120" fill="rgba(176,106,255,0.6)" font-family="Inconsolata" font-size="9" text-anchor="middle">ZONA ORDER BLOCK</text>
+
+      <text x="330" y="245" fill="#4a5a7a" font-family="Inconsolata" font-size="9" text-anchor="middle">El OB es la última vela bajista antes del movimiento alcista impulsivo. Cuando el precio regresa, es la zona de entrada.</text>
+    </svg>
+  </div>
+
+  <div class="grid-2">
+    <div class="card purple-card">
+      <div class="card-eyebrow">SMC — Concepto 01</div>
+      <h4 class="purple">BULLISH ORDER BLOCK</h4>
+      <p>La <strong>última vela bajista</strong> antes de un movimiento alcista fuerte (impulsivo). Cuando el precio retrocede a esa zona, los institucionales vuelven a comprar. El stop va debajo del mínimo del OB.</p>
+      <div><span class="badge b-bull">COMPRA</span><span class="badge b-purple">INSTITUCIONAL</span></div>
+    </div>
+    <div class="card purple-card">
+      <div class="card-eyebrow">SMC — Concepto 02</div>
+      <h4 class="purple">BEARISH ORDER BLOCK</h4>
+      <p>La <strong>última vela alcista</strong> antes de un movimiento bajista fuerte. Cuando el precio retrocede a esa zona, los institucionales vuelven a vender. Stop sobre el máximo del OB.</p>
+      <div><span class="badge b-bear">VENTA</span><span class="badge b-purple">INSTITUCIONAL</span></div>
+    </div>
+    <div class="card orange-card">
+      <div class="card-eyebrow">SMC — Concepto 03</div>
+      <h4 class="orange">FAIR VALUE GAP (FVG)</h4>
+      <p>Cuando hay 3 velas y la primera y tercera no se solapan, el espacio entre ellas es un <strong>Fair Value Gap</strong>: una zona de ineficiencia que el mercado tiende a volver a "rellenar". Son imanes de precio de alta probabilidad.</p>
+      <div><span class="badge b-orange">IMÁN</span><span class="badge b-gold">INEFICIENCIA</span></div>
+    </div>
+    <div class="card orange-card">
+      <div class="card-eyebrow">SMC — Concepto 04</div>
+      <h4 class="orange">BREAKER BLOCK</h4>
+      <p>Un Order Block que fue <strong>roto</strong> (el precio lo atravesó). Cambia de polaridad: un bullish OB roto se convierte en resistencia (bearish breaker). Los institucionales usan estos niveles para distribuir.</p>
+      <div><span class="badge b-orange">CAMBIO POLARIDAD</span></div>
+    </div>
+  </div>
+
+  <h3>LIQUIDITY SWEEPS & STOP HUNTS</h3>
+
+  <div class="svg-wrap">
+    <svg width="660" height="220" viewBox="0 0 660 220">
+      <text x="330" y="18" fill="#4a5a7a" font-family="Inconsolata" font-size="10" text-anchor="middle" letter-spacing="2">STOP HUNT INSTITUCIONAL — PATRÓN</text>
+
+      <!-- Rango lateral -->
+      <line x1="20" y1="80" x2="300" y2="80" stroke="rgba(255,209,102,0.4)" stroke-width="1" stroke-dasharray="5,3"/>
+      <line x1="20" y1="140" x2="300" y2="140" stroke="rgba(255,209,102,0.4)" stroke-width="1" stroke-dasharray="5,3"/>
+      <text x="25" y="76" fill="#ffd166" font-family="Inconsolata" font-size="9">Máximos — Stops de vendedores aquí</text>
+      <text x="25" y="155" fill="#ffd166" font-family="Inconsolata" font-size="9">Mínimos — Stops de compradores aquí</text>
+
+      <!-- Precio lateral -->
+      <polyline points="20,110 60,100 100,120 140,95 180,115 230,105 280,110"
+        fill="none" stroke="#4a5a7a" stroke-width="1.5"/>
+
+      <!-- Stop hunt arriba -->
+      <polyline points="280,110 310,75 320,65"
+        fill="none" stroke="#ff2d6b" stroke-width="2"/>
+      <circle cx="320" cy="65" r="5" fill="none" stroke="#ff2d6b" stroke-width="2"/>
+      <text x="325" y="62" fill="#ff2d6b" font-family="Inconsolata" font-size="9">STOP HUNT</text>
+      <text x="325" y="75" fill="#ff2d6b" font-family="Inconsolata" font-size="9">activa stops</text>
+
+      <!-- Reversión fuerte bajista -->
+      <polyline points="320,65 350,95 400,150 450,180 500,160"
+        fill="none" stroke="#00ffe0" stroke-width="2.5"/>
+
+      <!-- Entrada real -->
+      <rect x="330" y="75" width="20" height="20" fill="rgba(0,255,224,0.15)" stroke="#00ffe0" stroke-width="1" rx="1"/>
+      <text x="340" y="110" fill="#00ffe0" font-family="Inconsolata" font-size="9" text-anchor="middle">ENTRADA</text>
+
+      <!-- Explicación -->
+      <text x="490" y="145" fill="#8a9fc0" font-family="Inconsolata" font-size="9">Movimiento</text>
+      <text x="490" y="158" fill="#8a9fc0" font-family="Inconsolata" font-size="9">real bajista</text>
+
+      <text x="330" y="210" fill="#4a5a7a" font-family="Inconsolata" font-size="9" text-anchor="middle">El precio supera los máximos (activa stops de shorts), luego invierte fuertemente. Los institucionales compraron esa liquidez.</text>
+    </svg>
+  </div>
+
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-eyebrow">Liquidez — Tipo 1</div>
+      <h4 class="cyan">BSL — BUY SIDE LIQUIDITY</h4>
+      <p>Stops de vendedores y órdenes Buy Stop agrupadas <strong>sobre los máximos</strong>. Los institucionales barren estos máximos para conseguir liquidez barata de venta antes de bajar.</p>
+    </div>
+    <div class="card">
+      <div class="card-eyebrow">Liquidez — Tipo 2</div>
+      <h4 class="cyan">SSL — SELL SIDE LIQUIDITY</h4>
+      <p>Stops de compradores y órdenes Sell Stop agrupadas <strong>bajo los mínimos</strong>. Los institucionales empujan el precio abajo para activar estos stops y comprar barato antes de subir.</p>
+    </div>
+    <div class="card">
+      <div class="card-eyebrow">Liquidez — Tipo 3</div>
+      <h4 class="cyan">EQUAL HIGHS/LOWS</h4>
+      <p>Dobles máximos o mínimos exactamente iguales son <strong>imanes de liquidez</strong>. El mercado casi siempre los toca porque concentran enormes cantidades de stops de ambos lados.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ 04 VSA -->
+<section id="vsa" class="fade">
+  <div class="sec-eyebrow">Módulo 04 — Avanzado</div>
+  <h2>VOLUME SPREAD ANALYSIS</h2>
+  <div class="sec-divider"></div>
+
+  <p>El <strong>VSA (Volume Spread Analysis)</strong> fue desarrollado por Tom Williams, basándose en el trabajo de Richard Wyckoff. Analiza la <em>relación entre el spread de la vela (rango) y el volumen</em> para determinar si hay actividad de "manos fuertes" (profesionales) o "manos débiles" (retail).</p>
+
+  <div class="formula">
+    LÓGICA VSA: Spread (rango de la vela) × Volumen × Posición del cierre = Intención del mercado
+  </div>
+
+  <h3>LAS 4 LEYES DEL VSA</h3>
+
+  <div class="grid-2">
+    <div class="card gold-card">
+      <div class="card-eyebrow">Ley VSA 01</div>
+      <h4 class="gold">ESFUERZO vs RESULTADO</h4>
+      <p>Si hay gran volumen (esfuerzo) pero el precio apenas se mueve (sin resultado), hay una fuerza opuesta absorbiendo. <strong>Alto volumen + mínimo spread = absorción institucional.</strong> La dirección del próximo movimiento es contraria al movimiento actual.</p>
+    </div>
+    <div class="card gold-card">
+      <div class="card-eyebrow">Ley VSA 02</div>
+      <h4 class="gold">OFERTA vs DEMANDA</h4>
+      <p>El precio sube cuando la demanda supera la oferta y baja cuando la oferta supera la demanda. El volumen revela cuál de las dos fuerzas domina. <strong>El closing position dentro de la vela</strong> es la pista más importante.</p>
+    </div>
+    <div class="card gold-card">
+      <div class="card-eyebrow">Ley VSA 03</div>
+      <h4 class="gold">CAUSA y EFECTO</h4>
+      <p>Las fases de acumulación/distribución (causa) producen los movimientos tendenciales (efecto). A mayor acumulación, mayor es el movimiento resultante. El tiempo en rango predice el tamaño de la tendencia.</p>
+    </div>
+    <div class="card gold-card">
+      <div class="card-eyebrow">Ley VSA 04</div>
+      <h4 class="gold">NO-DEMAND / NO-SUPPLY</h4>
+      <p>Vela alcista con volumen bajo en tendencia bajista = <strong>No Demand</strong> (continuación bajista confirmada). Vela bajista con volumen bajo en tendencia alcista = <strong>No Supply</strong> (continuación alcista confirmada).</p>
+    </div>
+  </div>
+
+  <h3>SEÑALES VSA CRÍTICAS</h3>
+
+  <table>
+    <tr><th>Señal VSA</th><th>Spread</th><th>Volumen</th><th>Cierre</th><th>Señal</th></tr>
+    <tr><td><strong>Stopping Volume</strong></td><td>Amplio</td><td>Muy alto</td><td>Centro o arriba</td><td class="tc">Fin del movimiento bajista</td></tr>
+    <tr><td><strong>Selling Climax</strong></td><td>Muy amplio</td><td>Extremo</td><td>Bajo</td><td class="tc">Posible suelo, acumulación inminente</td></tr>
+    <tr><td><strong>No Demand</strong></td><td>Estrecho</td><td>Bajo</td><td>Centro/bajo</td><td class="tr">Continuación bajista</td></tr>
+    <tr><td><strong>No Supply</strong></td><td>Estrecho</td><td>Bajo</td><td>Centro/alto</td><td class="tc">Continuación alcista</td></tr>
+    <tr><td><strong>Upthrust</strong></td><td>Amplio</td><td>Alto</td><td>Bajo</td><td class="tr">Distribución, reversión bajista</td></tr>
+    <tr><td><strong>Test</strong></td><td>Estrecho</td><td>Muy bajo</td><td>Alto</td><td class="tc">Confirmación de soporte. Entrada alcista.</td></tr>
+    <tr><td><strong>Pseudo Upthrust</strong></td><td>Medio</td><td>Medio-alto</td><td>Bajo</td><td class="tr">Debilidad. Los profesionales distribuyen.</td></tr>
+  </table>
+</section>
+
+<!-- ═══════════════════════════════════════════ 05 WYCKOFF -->
+<section id="wyckoff" class="fade">
+  <div class="sec-eyebrow">Módulo 05 — Muy Avanzado</div>
+  <h2>MÉTODO WYCKOFF</h2>
+  <div class="sec-divider"></div>
+
+  <p>Richard Wyckoff (1873–1934) creó el método más completo para entender los ciclos del mercado. Su metodología identifica las <strong>fases de acumulación y distribución</strong> que preceden a los grandes movimientos del precio.</p>
+
+  <h3>ESQUEMA DE ACUMULACIÓN WYCKOFF</h3>
+
+  <div class="svg-wrap">
+    <svg width="680" height="300" viewBox="0 0 680 300">
+      <!-- Fondo por fases -->
+      <rect x="10" y="40" width="80" height="220" fill="rgba(255,45,107,0.04)" stroke="rgba(255,45,107,0.1)" stroke-width="1"/>
+      <rect x="90" y="40" width="180" height="220" fill="rgba(176,106,255,0.04)" stroke="rgba(176,106,255,0.1)" stroke-width="1"/>
+      <rect x="270" y="40" width="140" height="220" fill="rgba(255,140,66,0.04)" stroke="rgba(255,140,66,0.1)" stroke-width="1"/>
+      <rect x="410" y="40" width="120" height="220" fill="rgba(0,255,224,0.04)" stroke="rgba(0,255,224,0.1)" stroke-width="1"/>
+      <rect x="530" y="40" width="140" height="220" fill="rgba(0,255,224,0.07)" stroke="rgba(0,255,224,0.2)" stroke-width="1"/>
+
+      <!-- Labels fases -->
+      <text x="50" y="35" fill="#ff2d6b" font-family="Inconsolata" font-size="9" text-anchor="middle">FASE A</text>
+      <text x="180" y="35" fill="#b06aff" font-family="Inconsolata" font-size="9" text-anchor="middle">FASE B</text>
+      <text x="340" y="35" fill="#ff8c42" font-family="Inconsolata" font-size="9" text-anchor="middle">FASE C</text>
+      <text x="470" y="35" fill="#00ffe0" font-family="Inconsolata" font-size="9" text-anchor="middle">FASE D</text>
+      <text x="600" y="35" fill="#00ffe0" font-family="Inconsolata" font-size="9" text-anchor="middle">FASE E</text>
+
+      <!-- Precio - evento por evento -->
+      <!-- SC - Selling Climax -->
+      <polyline points="10,80 30,100 50,180 70,200 80,220"
+        fill="none" stroke="#ff2d6b" stroke-width="2"/>
+      <!-- AR - Automatic Rally -->
+      <polyline points="80,220 100,160 120,140"
+        fill="none" stroke="#00ffe0" stroke-width="2"/>
+      <!-- ST - Secondary Test -->
+      <polyline points="120,140 150,160 180,200 200,210"
+        fill="none" stroke="#ff2d6b" stroke-width="1.5"/>
+      <!-- Rango lateral / acumulación -->
+      <polyline points="200,210 230,180 260,200 270,195"
+        fill="none" stroke="#4a5a7a" stroke-width="1.5" stroke-dasharray="3,2"/>
+      <!-- Spring -->
+      <polyline points="270,195 290,225 310,240 330,235"
+        fill="none" stroke="#ff8c42" stroke-width="2.5"/>
+      <!-- Test del Spring -->
+      <polyline points="330,235 350,210 380,205 410,200"
+        fill="none" stroke="#ffd166" stroke-width="1.5"/>
+      <!-- SOS - Sign of Strength -->
+      <polyline points="410,200 440,160 470,130 490,110"
+        fill="none" stroke="#00ffe0" stroke-width="2.5"/>
+      <!-- LPS -->
+      <polyline points="490,110 510,130 530,125"
+        fill="none" stroke="#ffd166" stroke-width="1.5"/>
+      <!-- Markup -->
+      <polyline points="530,125 560,90 590,60 630,30 660,15"
+        fill="none" stroke="#00ffe0" stroke-width="3"/>
+
+      <!-- Líneas de soporte/resistencia del rango -->
+      <line x1="80" y1="140" x2="530" y2="140" stroke="rgba(0,255,224,0.3)" stroke-width="1" stroke-dasharray="4,3"/>
+      <line x1="80" y1="220" x2="530" y2="220" stroke="rgba(255,45,107,0.3)" stroke-width="1" stroke-dasharray="4,3"/>
+
+      <!-- Event labels -->
+      <text x="70" y="235" fill="#ff2d6b" font-family="Inconsolata" font-size="8" text-anchor="middle">SC</text>
+      <text x="110" y="152" fill="#00ffe0" font-family="Inconsolata" font-size="8" text-anchor="middle">AR</text>
+      <text x="185" y="195" fill="#ff2d6b" font-family="Inconsolata" font-size="8" text-anchor="middle">ST</text>
+      <text x="310" y="255" fill="#ff8c42" font-family="Inconsolata" font-size="8" text-anchor="middle">SPRING</text>
+      <text x="450" y="125" fill="#00ffe0" font-family="Inconsolata" font-size="8" text-anchor="middle">SOS</text>
+      <text x="510" y="148" fill="#ffd166" font-family="Inconsolata" font-size="8" text-anchor="middle">LPS</text>
+      <text x="600" y="70" fill="#00ffe0" font-family="Inconsolata" font-size="8" text-anchor="middle">MARKUP</text>
+
+      <text x="340" y="290" fill="#4a5a7a" font-family="Inconsolata" font-size="9" text-anchor="middle">SC=Selling Climax | AR=Auto Rally | ST=Secondary Test | SOS=Sign of Strength | LPS=Last Point of Supply</text>
+    </svg>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h4 class="bull">FASE A — Parada de Tendencia</h4>
+      <p><strong>SC (Selling Climax):</strong> Vela bajista de enorme volumen. Los profesionales absorben la venta masiva del pánico retail.<br>
+      <strong>AR (Automatic Rally):</strong> Rebote técnico. Define el techo del rango de acumulación.<br>
+      <strong>ST (Secondary Test):</strong> El precio retesta los mínimos del SC con menor volumen para confirmar que el interés vendedor se agotó.</p>
+    </div>
+    <div class="card">
+      <h4 class="orange">FASE C — El SPRING (Trampa)</h4>
+      <p>El evento más importante: el precio cae <strong>brevemente debajo del soporte</strong> activando los stops de los compradores. Esto da liquidez de venta a los institucionales para acumular sus posiciones finales. El Spring debe recuperar rápido el soporte. <strong>Este es el punto de entrada óptimo.</strong></p>
+    </div>
+    <div class="card">
+      <h4 class="bull">FASE D — Confirmación</h4>
+      <p><strong>SOS (Sign of Strength):</strong> Primera subida fuerte que rompe el techo del rango con volumen alto.<br>
+      <strong>LPS (Last Point of Support):</strong> El retroceso final antes del despegue. Último punto para entrar con buen riesgo/beneficio.</p>
+    </div>
+    <div class="card">
+      <h4 class="bull">FASE E — Markup</h4>
+      <p>La tendencia alcista se desarrolla abiertamente. Los institucionales ya tienen toda su posición construida y el precio sube mientras el mercado retail empieza a entrar. <strong>La acumulación se convierte en distribución</strong> en algún punto de esta fase.</p>
+    </div>
+  </div>
+
+  <div class="box box-bear">
+    <div class="box-title">⚠️ ESQUEMA DE DISTRIBUCIÓN</div>
+    <p>El opuesto exacto al esquema de acumulación. En lugar de SC hay un <strong>Buying Climax (BC)</strong>, en lugar de Spring hay un <strong>Upthrust After Distribution (UTAD)</strong>. El precio finalmente colapsa en la fase de Markdown. Los eventos son: BC → AR → ST → SOW → LPSY → Markdown.</p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ 06 FIBONACCI -->
+<section id="fibonacci" class="fade">
+  <div class="sec-eyebrow">Módulo 06 — Avanzado</div>
+  <h2>FIBONACCI AVANZADO</h2>
+  <div class="sec-divider"></div>
+
+  <h3>RETROCESOS Y EXTENSIONES</h3>
+
+  <div class="svg-wrap">
+    <svg width="660" height="280" viewBox="0 0 660 280">
+      <!-- Movimiento alcista -->
+      <line x1="80" y1="240" x2="300" y2="50" stroke="#4a5a7a" stroke-width="1.5" stroke-dasharray="5,3"/>
+
+      <!-- Niveles Fibonacci -->
+      <!-- 0% -->
+      <line x1="80" y1="240" x2="420" y2="240" stroke="rgba(255,45,107,0.3)" stroke-width="1"/>
+      <text x="425" y="244" fill="#ff2d6b" font-family="Inconsolata" font-size="10">0%</text>
+      <!-- 23.6% -->
+      <line x1="80" y1="195" x2="420" y2="195" stroke="rgba(255,209,102,0.2)" stroke-width="1"/>
+      <text x="425" y="199" fill="#ffd166" font-family="Inconsolata" font-size="10">23.6%</text>
+      <!-- 38.2% -->
+      <line x1="80" y1="167" x2="420" y2="167" stroke="rgba(255,140,66,0.4)" stroke-width="1"/>
+      <text x="425" y="171" fill="#ff8c42" font-family="Inconsolata" font-size="10">38.2% ★</text>
+      <!-- 50% -->
+      <line x1="80" y1="145" x2="420" y2="145" stroke="rgba(255,209,102,0.5)" stroke-width="1.5"/>
+      <text x="425" y="149" fill="#ffd166" font-family="Inconsolata" font-size="10">50.0% ★★</text>
+      <!-- 61.8% -->
+      <line x1="80" y1="123" x2="420" y2="123" stroke="rgba(0,255,224,0.6)" stroke-width="2"/>
+      <text x="425" y="127" fill="#00ffe0" font-family="Inconsolata" font-size="10">61.8% ★★★ GOLDEN</text>
+      <!-- 78.6% -->
+      <line x1="80" y1="95" x2="420" y2="95" stroke="rgba(176,106,255,0.5)" stroke-width="1.5"/>
+      <text x="425" y="99" fill="#b06aff" font-family="Inconsolata" font-size="10">78.6% ★★</text>
+      <!-- 100% -->
+      <line x1="80" y1="50" x2="420" y2="50" stroke="rgba(0,255,224,0.3)" stroke-width="1"/>
+      <text x="425" y="54" fill="#00ffe0" font-family="Inconsolata" font-size="10">100%</text>
+
+      <!-- Extensiones -->
+      <line x1="80" y1="5" x2="420" y2="5" stroke="rgba(0,255,224,0.2)" stroke-width="1" stroke-dasharray="3,2"/>
+      <text x="425" y="9" fill="#4a5a7a" font-family="Inconsolata" font-size="10">127.2% ext</text>
+
+      <!-- Retroceso simulado del precio -->
+      <polyline points="300,50 330,80 340,125 360,115 380,130 400,100 430,60 470,20"
+        fill="none" stroke="#ffd166" stroke-width="2" stroke-linejoin="round"/>
+
+      <!-- Rebote marcado -->
+      <circle cx="340" cy="125" r="5" fill="none" stroke="#00ffe0" stroke-width="2"/>
+      <text x="290" y="135" fill="#00ffe0" font-family="Inconsolata" font-size="9">Rebote en 61.8%</text>
+
+      <text x="150" y="270" fill="#4a5a7a" font-family="Inconsolata" font-size="9">Movimiento de impulso (0% a 100%)</text>
+      <text x="380" y="270" fill="#ffd166" font-family="Inconsolata" font-size="9">Retroceso y continuación</text>
+    </svg>
+  </div>
+
+  <div class="grid-3">
+    <div class="card gold-card">
+      <div class="card-eyebrow">Retroceso Clave</div>
+      <h4 class="gold">61.8% — GOLDEN RATIO</h4>
+      <p>El retroceso más importante. Cuando el precio retrocede exactamente al 61.8% del movimiento previo y rebota, es la señal de continuación más confiable del análisis técnico. Se llama el "Golden Pocket".</p>
+      <div><span class="badge b-gold">GOLDEN RATIO</span><span class="badge b-bull">★★★</span></div>
+    </div>
+    <div class="card">
+      <div class="card-eyebrow">Zona de Interés</div>
+      <h4 class="orange">50% — 61.8% GOLDEN POCKET</h4>
+      <p>La zona entre 50% y 61.8% es el "Golden Pocket": la zona donde los institucionales más frecuentemente compran en retrocesos. Combinar esta zona con un Order Block o FVG es una confluencia élite.</p>
+      <div><span class="badge b-orange">CONFLUENCIA ÉLITE</span></div>
+    </div>
+    <div class="card">
+      <div class="card-eyebrow">Extensiones</div>
+      <h4 class="purple">127.2% — 161.8% — 261.8%</h4>
+      <p>Los niveles de extensión son <strong>objetivos de precio</strong> para tomar ganancias. Tras un retroceso al 61.8%, los objetivos son 127.2%, 161.8% y 261.8% del movimiento original.</p>
+      <div><span class="badge b-purple">TAKE PROFIT</span></div>
+    </div>
+  </div>
+
+  <h3>FIBONACCI AVANZADO: CONFLUENCE ZONES</h3>
+  <div class="box box-bull">
+    <div class="box-title">⚡ TÉCNICA AVANZADA — FIBONACCI MÚLTIPLE</div>
+    <p>Traza Fibonacci desde diferentes swing points (mayor y menor). Las zonas donde múltiples retrocesos coinciden son <strong>áreas de confluencia de alta probabilidad</strong>. Si el 61.8% del movimiento mayor coincide con el 38.2% del movimiento menor Y hay un Order Block ahí = entrada de altísima probabilidad.</p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ 07 ELLIOTT -->
+<section id="elliott" class="fade">
+  <div class="sec-eyebrow">Módulo 07 — Muy Avanzado</div>
+  <h2>ONDAS DE ELLIOTT</h2>
+  <div class="sec-divider"></div>
+
+  <p>Ralph Nelson Elliott descubrió que el mercado se mueve en <strong>patrones de ondas fractaless predecibles</strong>, reflejando la psicología colectiva de los participantes. Es el método de análisis más complejo y el que tiene mayor poder predictivo cuando se aplica correctamente.</p>
+
+  <!-- GRÁFICO ONDAS -->
+  <div class="svg-wrap">
+    <svg width="680" height="280" viewBox="0 0 680 280">
+      <text x="340" y="18" fill="#4a5a7a" font-family="Inconsolata" font-size="10" text-anchor="middle" letter-spacing="2">CICLO COMPLETO DE ELLIOTT — 5+3 ONDAS</text>
+
+      <!-- 5 ondas impulsivas -->
+      <!-- Onda 1 -->
+      <polyline points="30,230 90,160" fill="none" stroke="#00ffe0" stroke-width="2.5"/>
+      <circle cx="90" cy="160" r="4" fill="#00ffe0"/>
+      <text x="90" y="152" fill="#00ffe0" font-family="Orbitron" font-size="11" text-anchor="middle" font-weight="700">1</text>
+      <!-- Onda 2 -->
+      <polyline points="90,160 135,195" fill="none" stroke="#ff2d6b" stroke-width="2"/>
+      <circle cx="135" cy="195" r="4" fill="#ff2d6b"/>
+      <text x="135" y="210" fill="#ff2d6b" font-family="Orbitron" font-size="11" text-anchor="middle" font-weight="700">2</text>
+      <!-- Onda 3 (más larga) -->
+      <polyline points="135,195 225,90" fill="none" stroke="#00ffe0" stroke-width="3"/>
+      <circle cx="225" cy="90" r="5" fill="#00ffe0"/>
+      <text x="225" y="82" fill="#00ffe0" font-family="Orbitron" font-size="13" text-anchor="middle" font-weight="700">3</text>
+      <!-- Onda 4 -->
+      <polyline points="225,90 280,130" fill="none" stroke="#ff2d6b" stroke-width="2"/>
+      <circle cx="280" cy="130" r="4" fill="#ff2d6b"/>
+      <text x="280" y="146" fill="#ff2d6b" font-family="Orbitron" font-size="11" text-anchor="middle" font-weight="700">4</text>
+      <!-- Onda 5 -->
+      <polyline points="280,130 350,65" fill="none" stroke="#00ffe0" stroke-width="2"/>
+      <circle cx="350" cy="65" r="4" fill="#00ffe0"/>
+      <text x="350" y="57" fill="#00ffe0" font-family="Orbitron" font-size="11" text-anchor="middle" font-weight="700">5</text>
+
+      <!-- ZONA IMPULSO -->
+      <text x="190" y="260" fill="#4a5a7a" font-family="Inconsolata" font-size="10" text-anchor="middle">IMPULSO (5 ondas)</text>
+
+      <!-- 3 ondas correctivas -->
+      <!-- Onda A -->
+      <polyline points="350,65 420,130" fill="none" stroke="#ff8c42" stroke-width="2"/>
+      <circle cx="420" cy="130" r="4" fill="#ff8c42"/>
+      <text x="420" y="146" fill="#ff8c42" font-family="Orbitron" font-size="11" text-anchor="middle" font-weight="700">A</text>
+      <!-- Onda B -->
+      <polyline points="420,130 470,100" fill="none" stroke="#ffd166" stroke-width="2"/>
+      <circle cx="470" cy="100" r="4" fill="#ffd166"/>
+      <text x="470" y="92" fill="#ffd166" font-family="Orbitron" font-size="11" text-anchor="middle" font-weight="700">B</text>
+      <!-- Onda C -->
+      <polyline points="470,100 560,185" fill="none" stroke="#ff8c42" stroke-width="2.5"/>
+      <circle cx="560" cy="185" r="5" fill="#ff8c42"/>
+      <text x="560" y="200" fill="#ff8c42" font-family="Orbitron" font-size="13" text-anchor="middle" font-weight="700">C</text>
+
+      <!-- Nuevo impulso comienza -->
+      <polyline points="560,185 620,140 660,110"
+        fill="none" stroke="#00ffe0" stroke-width="1.5" stroke-dasharray="6,3"/>
+      <text x="650" y="105" fill="#00ffe0" font-family="Inconsolata" font-size="9">nuevo</text>
+      <text x="650" y="117" fill="#00ffe0" font-family="Inconsolata" font-size="9">ciclo</text>
+
+      <!-- ZONA CORRECCIÓN -->
+      <text x="490" y="260" fill="#4a5a7a" font-family="Inconsolata" font-size="10" text-anchor="middle">CORRECCIÓN (A-B-C)</text>
+
+      <!-- Separador -->
+      <line x1="365" y1="40" x2="365" y2="240" stroke="rgba(255,209,102,0.2)" stroke-width="1" stroke-dasharray="4,3"/>
+
+      <!-- Reglas -->
+      <text x="340" y="275" fill="#4a5a7a" font-family="Inconsolata" font-size="9" text-anchor="middle">FRACTAL: Cada onda impulsiva contiene 5 sub-ondas. Cada onda correctiva contiene 3 sub-ondas.</text>
+    </svg>
+  </div>
+
+  <h3>REGLAS IRROMPIBLES DE ELLIOTT</h3>
+
+  <div class="grid-3">
+    <div class="card bear-card">
+      <div class="card-eyebrow">Regla 01</div>
+      <h4 class="bear">ONDA 2</h4>
+      <p>La Onda 2 <strong>NUNCA puede retroceder más del 100%</strong> de la Onda 1. Si lo hace, el conteo es incorrecto. Retrocede típicamente 50%-61.8% de la Onda 1.</p>
+    </div>
+    <div class="card bear-card">
+      <div class="card-eyebrow">Regla 02</div>
+      <h4 class="bear">ONDA 3</h4>
+      <p>La Onda 3 <strong>NUNCA es la más corta</strong> de las ondas impulsivas (1, 3, 5). Generalmente es la más larga y fuerte, y va al menos al 161.8% de la Onda 1.</p>
+    </div>
+    <div class="card bear-card">
+      <div class="card-eyebrow">Regla 03</div>
+      <h4 class="bear">ONDA 4</h4>
+      <p>La Onda 4 <strong>NUNCA penetra el territorio de precio</strong> de la Onda 1. No puede cerrar por debajo del máximo de la Onda 1. Si lo hace, no es una Onda 4.</p>
+    </div>
+  </div>
+
+  <table style="margin-top:20px">
+    <tr><th>Onda</th><th>Tipo</th><th>Psicología</th><th>Fibonacci típico</th><th>Característica</th></tr>
+    <tr><td><strong style="color:var(--bull)">Onda 1</strong></td><td class="tc">Impulso</td><td>Primeros compradores. Mayoría no cree el cambio.</td><td>—</td><td>Suele ser pequeña</td></tr>
+    <tr><td><strong style="color:var(--bear)">Onda 2</strong></td><td class="tr">Corrección</td><td>"Esto va a seguir bajando." Pánico retail.</td><td>50-61.8% de O1</td><td>Puede ser agresiva</td></tr>
+    <tr><td><strong style="color:var(--bull)">Onda 3</strong></td><td class="tc">Impulso</td><td>El mercado confirma. Compra masiva. Noticias positivas.</td><td>161.8-261.8% de O1</td><td>La más fuerte</td></tr>
+    <tr><td><strong style="color:var(--bear)">Onda 4</strong></td><td class="tr">Corrección</td><td>Toma de ganancias. Consolidación. Suele ser lateral.</td><td>38.2% de O3</td><td>Alternancia con O2</td></tr>
+    <tr><td><strong style="color:var(--bull)">Onda 5</strong></td><td class="tc">Impulso</td><td>Euforia final. FOMO masivo. Divergencias técnicas.</td><td>61.8-100% de O1</td><td>Señales de agotamiento</td></tr>
+    <tr><td><strong style="color:var(--orange)">Onda A</strong></td><td class="tr">Corrección</td><td>Primer shock. "Es solo una corrección."</td><td>—</td><td>Inicio de corrección</td></tr>
+    <tr><td><strong style="color:var(--gold)">Onda B</strong></td><td class="tc">Corrección</td><td>Alivio. "El mercado se recuperó." Trampa alcista.</td><td>50-78.6% de A</td><td>Trampa de retail</td></tr>
+    <tr><td><strong style="color:var(--orange)">Onda C</strong></td><td class="tr">Corrección</td><td>Capitulación. Pánico. "Nunca debí comprar."</td><td>100-161.8% de A</td><td>La más dolorosa</td></tr>
+  </table>
+</section>
+
+<!-- ═══════════════════════════════════════════ 08 LIQUIDEZ -->
+<section id="liquidez" class="fade">
+  <div class="sec-eyebrow">Módulo 08 — Muy Avanzado</div>
+  <h2>ANÁLISIS DE LIQUIDEZ</h2>
+  <div class="sec-divider"></div>
+
+  <p>La liquidez es el <strong>combustible del mercado</strong>. Los grandes participantes mueven el precio hacia zonas de liquidez para ejecutar sus órdenes. Aprender a mapear dónde está la liquidez es la ventaja más grande del trader avanzado.</p>
+
+  <h3>TIPOS DE LIQUIDEZ</h3>
+  <div class="grid-2">
+    <div class="card purple-card">
+      <div class="card-eyebrow">Liquidez Externa</div>
+      <h4 class="purple">STOPS ACUMULADOS (Pools)</h4>
+      <p><strong>Dónde están:</strong> Debajo de mínimos significativos, sobre máximos significativos, bajo líneas de tendencia, bajo medias móviles clave (50, 200 MA), en números redondos (psicológicos).<br>
+      <strong>Estrategia:</strong> Cuando el precio se acerca a estas zonas con momentum, anticipar un "sweep" (barrido) y posterior reversión.</p>
+    </div>
+    <div class="card purple-card">
+      <div class="card-eyebrow">Liquidez Interna</div>
+      <h4 class="purple">FAIR VALUE GAPS & IMBALANCES</h4>
+      <p><strong>FVG (Fair Value Gap):</strong> Zona donde el precio se movió tan rápido que no hubo transacciones. El mercado tiende a regresar a "equilibrar" esas zonas.<br>
+      <strong>Order Blocks:</strong> Zonas donde se ejecutaron grandes órdenes institucionales. Alta probabilidad de reacción al revisitar.</p>
+    </div>
+  </div>
+
+  <h3>MARKET PROFILE — POC y VALUE AREA</h3>
+
+  <div class="svg-wrap">
+    <svg width="660" height="260" viewBox="0 0 660 260">
+      <text x="330" y="18" fill="#4a5a7a" font-family="Inconsolata" font-size="10" text-anchor="middle" letter-spacing="2">MARKET PROFILE — DISTRIBUCIÓN DE VOLUMEN</text>
+
+      <!-- Perfil de volumen (TPO) -->
+      <!-- Cada fila es un precio, la barra muestra tiempo/volumen -->
+      <text x="30" y="40" fill="#4a5a7a" font-family="Inconsolata" font-size="9">1530</text>
+      <rect x="60" y="32" width="30" height="10" fill="rgba(0,255,224,0.3)" rx="1"/>
+
+      <text x="30" y="55" fill="#4a5a7a" font-family="Inconsolata" font-size="9">1528</text>
+      <rect x="60" y="47" width="55" height="10" fill="rgba(0,255,224,0.3)" rx="1"/>
+
+      <text x="30" y="70" fill="#4a5a7a" font-family="Inconsolata" font-size="9">1526</text>
+      <rect x="60" y="62" width="90" height="10" fill="rgba(0,255,224,0.4)" rx="1"/>
+
+      <text x="30" y="85" fill="#ffd166" font-family="Inconsolata" font-size="9">1524</text>
+      <rect x="60" y="77" width="140" height="10" fill="rgba(255,209,102,0.5)" rx="1"/>
+      <text x="205" y="86" fill="#ffd166" font-family="Inconsolata" font-size="8">VAH</text>
+
+      <text x="30" y="100" fill="#4a5a7a" font-family="Inconsolata" font-size="9">1522</text>
+      <rect x="60" y="92" width="170" height="10" fill="rgba(0,255,224,0.4)" rx="1"/>
+
+      <text x="30" y="115" fill="#4a5a7a" font-family="Inconsolata" font-size="9">1520</text>
+      <rect x="60" y="107" width="195" height="10" fill="rgba(0,255,224,0.45)" rx="1"/>
+
+      <!-- POC -->
+      <text x="30" y="130" fill="#ff2d6b" font-family="Inconsolata" font-size="9" font-weight="700">1518</text>
+      <rect x="60" y="122" width="240" height="10" fill="rgba(255,45,107,0.5)" rx="1"/>
+      <text x="305" y="131" fill="#ff2d6b" font-family="Inconsolata" font-size="9" font-weight="700">◄ POC</text>
+
+      <text x="30" y="145" fill="#4a5a7a" font-family="Inconsolata" font-size="9">1516</text>
+      <rect x="60" y="137" width="210" height="10" fill="rgba(0,255,224,0.45)" rx="1"/>
+
+      <text x="30" y="160" fill="#4a5a7a" font-family="Inconsolata" font-size="9">1514</text>
+      <rect x="60" y="152" width="185" height="10" fill="rgba(0,255,224,0.4)" rx="1"/>
+
+      <text x="30" y="175" fill="#4a5a7a" font-family="Inconsolata" font-size="9">1512</text>
+      <rect x="60" y="167" width="155" height="10" fill="rgba(0,255,224,0.35)" rx="1"/>
+
+      <text x="30" y="190" fill="#ffd166" font-family="Inconsolata" font-size="9">1510</text>
+      <rect x="60" y="182" width="120" height="10" fill="rgba(255,209,102,0.5)" rx="1"/>
+      <text x="185" y="191" fill="#ffd166" font-family="Inconsolata" font-size="8">VAL</text>
+
+      <text x="30" y="205" fill="#4a5a7a" font-family="Inconsolata" font-size="9">1508</text>
+      <rect x="60" y="197" width="70" height="10" fill="rgba(0,255,224,0.3)" rx="1"/>
+
+      <text x="30" y="220" fill="#4a5a7a" font-family="Inconsolata" font-size="9">1506</text>
+      <rect x="60" y="212" width="35" height="10" fill="rgba(0,255,224,0.2)" rx="1"/>
+
+      <!-- Value Area box -->
+      <rect x="56" y="77" width="248" height="115" fill="none" stroke="rgba(255,209,102,0.3)" stroke-width="1" stroke-dasharray="4,3"/>
+      <text x="180" y="248" fill="#ffd166" font-family="Inconsolata" font-size="10" text-anchor="middle">VALUE AREA (70% del volumen)</text>
+
+      <!-- Leyenda derecha -->
+      <text x="380" y="60" fill="#ff2d6b" font-family="Rajdhani" font-size="13" font-weight="700">POC — Point of Control</text>
+      <text x="380" y="78" fill="#8a9fc0" font-family="Inconsolata" font-size="11">Precio con mayor volumen negociado.</text>
+      <text x="380" y="92" fill="#8a9fc0" font-family="Inconsolata" font-size="11">Actúa como imán e S/R dinámico.</text>
+
+      <text x="380" y="125" fill="#ffd166" font-family="Rajdhani" font-size="13" font-weight="700">VAH — Value Area High</text>
+      <text x="380" y="143" fill="#8a9fc0" font-family="Inconsolata" font-size="11">Límite superior del 70% del volumen.</text>
+      <text x="380" y="157" fill="#8a9fc0" font-family="Inconsolata" font-size="11">Resistencia dinámica.</text>
+
+      <text x="380" y="190" fill="#ffd166" font-family="Rajdhani" font-size="13" font-weight="700">VAL — Value Area Low</text>
+      <text x="380" y="208" fill="#8a9fc0" font-family="Inconsolata" font-size="11">Límite inferior del 70% del volumen.</text>
+      <text x="380" y="222" fill="#8a9fc0" font-family="Inconsolata" font-size="11">Soporte dinámico.</text>
+    </svg>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ 09 INSTITUCIONAL -->
+<section id="institucional" class="fade">
+  <div class="sec-eyebrow">Módulo 09 — Élite</div>
+  <h2>TRADING INSTITUCIONAL</h2>
+  <div class="sec-divider"></div>
+
+  <p>Los <strong>algoritmos institucionales y los market makers</strong> controlan el 80% del volumen del mercado. Comprender cómo operan es la diferencia entre ser el predador o la presa.</p>
+
+  <div class="grid-2">
+    <div class="card purple-card">
+      <div class="card-eyebrow">Concepto Élite 01</div>
+      <h4 class="purple">MARKET MAKER MODEL (MMM)</h4>
+      <p>Los market makers siguen un ciclo predecible: <strong>(1) Acumulación</strong> en rangos laterales, <strong>(2) Manipulación</strong> barriendo liquidez en la dirección equivocada, <strong>(3) Distribución</strong> del movimiento real, <strong>(4) Continuación</strong> hasta el siguiente punto de liquidez.</p>
+    </div>
+    <div class="card purple-card">
+      <div class="card-eyebrow">Concepto Élite 02</div>
+      <h4 class="purple">JUDAS SWING</h4>
+      <p>Movimiento falso en la apertura de la sesión (London o NY) que va en la <strong>dirección opuesta</strong> al movimiento real del día. Los institucionales "engañan" a los traders de la sesión asiática antes de revertir. El Judas Swing es la entrada óptima del día.</p>
+    </div>
+    <div class="card orange-card">
+      <div class="card-eyebrow">Concepto Élite 03</div>
+      <h4 class="orange">OPTIMAL TRADE ENTRY (OTE)</h4>
+      <p>La zona 62%-79% de retroceso tras un BOS (Break of Structure). Combina el Golden Pocket de Fibonacci con un Order Block institucional. Es la entrada con mejor relación riesgo/beneficio que usa el dinero inteligente. Stop por debajo del mínimo del OB.</p>
+    </div>
+    <div class="card orange-card">
+      <div class="card-eyebrow">Concepto Élite 04</div>
+      <h4 class="orange">PREMIUM vs DISCOUNT</h4>
+      <p><strong>Premium (sobre 50% del rango):</strong> zona cara, los institucionales VENDEN aquí. <strong>Discount (bajo 50% del rango):</strong> zona barata, los institucionales COMPRAN aquí. La regla es simple: compra en discount, vende en premium.</p>
+    </div>
+  </div>
+
+  <h3>SESIONES Y TEMPORALIDAD INSTITUCIONAL</h3>
+
+  <table>
+    <tr><th>Sesión</th><th>Horario (UTC)</th><th>Característica</th><th>Estrategia</th></tr>
+    <tr><td><strong style="color:var(--muted)">Asiática</strong></td><td>00:00 – 08:00</td><td>Rango lateral, liquidez en construcción</td><td>Mapear extremos del rango asiático</td></tr>
+    <tr><td><strong style="color:var(--cyan)">Londres</strong></td><td>08:00 – 12:00</td><td>Mayor volumen. Judas Swing común en apertura</td><td>Esperar Judas Swing, entrar en reversión</td></tr>
+    <tr><td><strong style="color:var(--bull)">Nueva York</strong></td><td>13:00 – 17:00</td><td>Solapamiento Londres/NY = mayor movimiento</td><td>Confluencia con dirección de Londres</td></tr>
+    <tr><td><strong style="color:var(--purple)">Kill Zones</strong></td><td>08:00-10:00 / 13:00-15:00</td><td>Ventanas de mayor actividad institucional</td><td>Las mejores entradas del día ocurren aquí</td></tr>
+  </table>
+</section>
+
+<!-- ═══════════════════════════════════════════ 10 RIESGO PRO -->
+<section id="riesgo" class="fade">
+  <div class="sec-eyebrow">Módulo 10 — Avanzado</div>
+  <h2>GESTIÓN DE RIESGO AVANZADA</h2>
+  <div class="sec-divider"></div>
+
+  <div class="formula">
+    TAMAÑO POSICIÓN = (Capital × % Riesgo) ÷ (Precio Entrada – Precio Stop) × Valor por Pip
+  </div>
+
+  <div class="grid-3">
+    <div class="card gold-card">
+      <div class="card-eyebrow">Riesgo — Regla 1</div>
+      <h4 class="gold">KELLY CRITERION</h4>
+      <p>Fórmula matemática para el tamaño óptimo de posición:<br>
+      <strong>f* = (W × R – L) / R</strong><br>
+      Donde W=Win rate, L=Loss rate, R=Reward/Risk ratio. Usar 25-50% del Kelly para ser conservador.</p>
+    </div>
+    <div class="card gold-card">
+      <div class="card-eyebrow">Riesgo — Regla 2</div>
+      <h4 class="gold">R:R ASIMÉTRICO</h4>
+      <p>Nunca aceptes una operación con R:R menor a 1:2. Los mejores setups tienen 1:3 a 1:5 o más. Con 40% de win rate y R:R 1:3 eres consistentemente rentable. <strong>Las pérdidas se controlan. Las ganancias se dejan correr.</strong></p>
+    </div>
+    <div class="card gold-card">
+      <div class="card-eyebrow">Riesgo — Regla 3</div>
+      <h4 class="gold">GESTIÓN DE LA POSICIÓN</h4>
+      <p><strong>Escalonamiento:</strong> Cierra 50% en el primer objetivo (R:R 1:1 para breakeven), deja correr el resto con stop en entry.<br>
+      <strong>Trailing Stop:</strong> Mueve el stop siguiendo los swings de la estructura para maximizar la ganancia.</p>
+    </div>
+  </div>
+
+  <h3>DRAWDOWN Y RECUPERACIÓN</h3>
+
+  <div class="svg-wrap">
+    <svg width="640" height="200" viewBox="0 0 640 200">
+      <text x="320" y="18" fill="#4a5a7a" font-family="Inconsolata" font-size="10" text-anchor="middle" letter-spacing="2">DRAWDOWN vs RECUPERACIÓN NECESARIA</text>
+
+      <!-- Barras -->
+      <rect x="30" y="50" width="50" height="100" fill="rgba(255,45,107,0.3)" stroke="#ff2d6b" stroke-width="1" rx="1"/>
+      <text x="55" y="165" fill="#ff2d6b" font-family="Inconsolata" font-size="9" text-anchor="middle">-10%</text>
+      <text x="55" y="45" fill="#ffd166" font-family="Inconsolata" font-size="9" text-anchor="middle">+11%</text>
+
+      <rect x="110" y="35" width="50" height="115" fill="rgba(255,45,107,0.4)" stroke="#ff2d6b" stroke-width="1" rx="1"/>
+      <text x="135" y="165" fill="#ff2d6b" font-family="Inconsolata" font-size="9" text-anchor="middle">-20%</text>
+      <text x="135" y="30" fill="#ffd166" font-family="Inconsolata" font-size="9" text-anchor="middle">+25%</text>
+
+      <rect x="190" y="20" width="50" height="130" fill="rgba(255,45,107,0.5)" stroke="#ff2d6b" stroke-width="1.5" rx="1"/>
+      <text x="215" y="165" fill="#ff2d6b" font-family="Inconsolata" font-size="9" text-anchor="middle">-30%</text>
+      <text x="215" y="15" fill="#ffd166" font-family="Inconsolata" font-size="9" text-anchor="middle">+43%</text>
+
+      <rect x="270" y="5" width="50" height="145" fill="rgba(255,45,107,0.65)" stroke="#ff2d6b" stroke-width="2" rx="1"/>
+      <text x="295" y="165" fill="#ff2d6b" font-family="Inconsolata" font-size="9" text-anchor="middle">-40%</text>
+      <text x="295" y="0" fill="#ffd166" font-family="Inconsolata" font-size="9" text-anchor="middle">+67%</text>
+
+      <rect x="350" y="-15" width="50" height="165" fill="rgba(255,45,107,0.8)" stroke="#ff2d6b" stroke-width="2" rx="1"/>
+      <text x="375" y="165" fill="#ff2d6b" font-family="Inconsolata" font-size="9" text-anchor="middle">-50%</text>
+      <text x="375" y="-5" fill="#ffd166" font-family="Inconsolata" font-size="9" text-anchor="middle">+100%</text>
+
+      <!-- Explicación -->
+      <text x="450" y="60" fill="#8a9fc0" font-family="Rajdhani" font-size="13">Perder el 50% de tu capital</text>
+      <text x="450" y="80" fill="#ff2d6b" font-family="Rajdhani" font-size="13" font-weight="700">requiere ganar +100% para</text>
+      <text x="450" y="100" fill="#ff2d6b" font-family="Rajdhani" font-size="13" font-weight="700">recuperarte.</text>
+      <text x="450" y="130" fill="#ffd166" font-family="Rajdhani" font-size="13">REGLA: Protege tu capital</text>
+      <text x="450" y="150" fill="#ffd166" font-family="Rajdhani" font-size="13">como prioridad #1.</text>
+    </svg>
+  </div>
+
+  <div class="box box-bear">
+    <div class="box-title">🛡️ REGLAS DE ORO DEL RIESGO PRO</div>
+    <p>
+      <strong>1% Rule:</strong> Nunca arriesgues más del 1% del capital total por operación.<br>
+      <strong>6% Rule:</strong> Si en el mes pierdes 6% del capital, para de operar ese mes. Revisa tu plan.<br>
+      <strong>Correlation Risk:</strong> Si tienes múltiples posiciones en activos correlacionados, el riesgo real es la suma de todos.<br>
+      <strong>Never Average Down:</strong> Nunca añadas posición a una operación perdedora. Solo añade en ganadores.<br>
+      <strong>Sunday Gap Rule:</strong> En forex, reduce posiciones el viernes antes del cierre para evitar gaps del fin de semana.
+    </p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ 11 PSICOLOGÍA PRO -->
+<section id="psicologia" class="fade">
+  <div class="sec-eyebrow">Módulo 11 — Avanzado</div>
+  <h2>PSICOLOGÍA AVANZADA</h2>
+  <div class="sec-divider"></div>
+
+  <div class="grid-2">
+    <div class="card bear-card">
+      <div class="card-eyebrow">Sesgo Cognitivo 01</div>
+      <h4 class="bear">SESGO DE CONFIRMACIÓN</h4>
+      <p>Buscamos información que confirme lo que ya creemos. En trading: cuando piensas que el mercado va a subir, solo ves señales alcistas y descartas las bajistas. <strong>Solución:</strong> Siempre busca activamente argumentos en tu contra antes de entrar.</p>
+    </div>
+    <div class="card bear-card">
+      <div class="card-eyebrow">Sesgo Cognitivo 02</div>
+      <h4 class="bear">LOSS AVERSION</h4>
+      <p>El dolor de perder $100 es psicológicamente el doble que la alegría de ganar $100 (Kahneman). Esto lleva a cortar ganancias pronto y dejar correr pérdidas. <strong>Solución:</strong> Take profit y stop loss mecánicos, sin intervención emocional.</p>
+    </div>
+    <div class="card bear-card">
+      <div class="card-eyebrow">Sesgo Cognitivo 03</div>
+      <h4 class="bear">RECENCY BIAS</h4>
+      <p>Después de 3 pérdidas seguidas, el trader asume que seguirá perdiendo. Después de 3 ganancias, asume que es invencible. Ambas son distorsiones estadísticas. <strong>Solución:</strong> Evaluar performance en mínimo 100 operaciones, no en rachas cortas.</p>
+    </div>
+    <div class="card bear-card">
+      <div class="card-eyebrow">Sesgo Cognitivo 04</div>
+      <h4 class="bear">GAMBLER'S FALLACY</h4>
+      <p>Creer que después de 5 pérdidas la siguiente es seguramente una ganancia. Cada operación es independiente. Las probabilidades no "se deben". <strong>Solución:</strong> Entender estadística básica. El mercado no te "debe" nada.</p>
+    </div>
+  </div>
+
+  <h3>EL ESTADO MENTAL ÓPTIMO: FLOW STATE</h3>
+
+  <div class="box box-bull">
+    <div class="box-title">🧠 MENTALIDAD PROFESIONAL</div>
+    <p>
+      <strong>Process vs Outcome:</strong> El trader profesional evalúa si siguió su plan, no si ganó o perdió. Una pérdida siguiendo el plan es un éxito. Una ganancia violando el plan es un fracaso.<br><br>
+      <strong>Journaling:</strong> Escribe CADA operación: setup, entrada, salida, emoción al entrar, emoción durante, emoción al salir. Patrón de errores emerge en 30 operaciones.<br><br>
+      <strong>Peak Performance:</strong> Opera solo cuando estás en óptimas condiciones físicas y mentales. El trading cansado, estresado o emocionalmente alterado destruye el capital.
+    </p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ 12 SISTEMAS -->
+<section id="sistemas" class="fade">
+  <div class="sec-eyebrow">Módulo 12 — Sistemas</div>
+  <h2>SISTEMAS Y BACKTESTING</h2>
+  <div class="sec-divider"></div>
+
+  <p>Un sistema de trading es un <strong>conjunto de reglas objetivas</strong> que definen exactamente cuándo entrar, cuándo salir y cuánto arriesgar. Sin sistema, no hay trading profesional.</p>
+
+  <h3>COMPONENTES DE UN SISTEMA COMPLETO</h3>
+
+  <table>
+    <tr><th>Componente</th><th>Pregunta que responde</th><th>Ejemplo</th></tr>
+    <tr><td><strong style="color:var(--bull)">Universe</strong></td><td>¿Qué activos operas?</td><td>Solo BTC, EUR/USD y ES futures</td></tr>
+    <tr><td><strong style="color:var(--bull)">Timeframe</strong></td><td>¿En qué marco temporal?</td><td>Contexto D1, entrada H1</td></tr>
+    <tr><td><strong style="color:var(--bull)">Filtros</strong></td><td>¿Cuándo NO operar?</td><td>No operar en datos macroeconómicos</td></tr>
+    <tr><td><strong style="color:var(--gold)">Señal de Entrada</strong></td><td>¿Qué dispara la entrada?</td><td>Engulfing alcista en OB con FVG</td></tr>
+    <tr><td><strong style="color:var(--gold)">Condición de Entrada</strong></td><td>¿Cómo confirmas?</td><td>Apertura de siguiente vela sobre máximo</td></tr>
+    <tr><td><strong style="color:var(--bear)">Stop Loss</strong></td><td>¿Dónde estás equivocado?</td><td>Bajo mínimo del Order Block</td></tr>
+    <tr><td><strong style="color:var(--cyan)">Take Profit</strong></td><td>¿Cuál es el objetivo?</td><td>Próxima zona de liquidez / R:R 1:3</td></tr>
+    <tr><td><strong style="color:var(--purple)">Tamaño</strong></td><td>¿Cuánto arriesgar?</td><td>1% del capital por operación</td></tr>
+    <tr><td><strong style="color:var(--purple)">Gestión</strong></td><td>¿Cómo manejas la posición?</td><td>50% en R:R 1:1, resto con trailing</td></tr>
+  </table>
+
+  <h3>MÉTRICAS DE EVALUACIÓN DE SISTEMA</h3>
+
+  <div class="grid-4">
+    <div class="card">
+      <div class="card-eyebrow">Métrica 01</div>
+      <h4 class="bull">WIN RATE</h4>
+      <p>% de operaciones ganadoras. Solo tiene sentido con el R:R. 40% win rate con R:R 1:3 = rentable.</p>
+    </div>
+    <div class="card">
+      <div class="card-eyebrow">Métrica 02</div>
+      <h4 class="gold">PROFIT FACTOR</h4>
+      <p>Ganancias brutas ÷ pérdidas brutas. > 1.5 es bueno. > 2.0 es excelente. < 1.0 destruye capital.</p>
+    </div>
+    <div class="card">
+      <div class="card-eyebrow">Métrica 03</div>
+      <h4 class="orange">MAX DRAWDOWN</h4>
+      <p>Mayor caída desde un pico de equity. Debe ser tolerable psicológica y financieramente.</p>
+    </div>
+    <div class="card">
+      <div class="card-eyebrow">Métrica 04</div>
+      <h4 class="purple">SHARPE RATIO</h4>
+      <p>Retorno ajustado por riesgo. > 1.0 aceptable. > 2.0 excelente. Compara sistemas eficientemente.</p>
+    </div>
+  </div>
+
+  <div class="box box-orange">
+    <div class="box-title">🔬 BACKTESTING CORRECTO</div>
+    <p>
+      <strong>Mínimo de muestra:</strong> 200-300 operaciones para resultados estadísticamente válidos.<br>
+      <strong>Out-of-sample testing:</strong> Prueba el sistema en datos que no usaste para desarrollarlo (walk-forward analysis).<br>
+      <strong>Curve fitting:</strong> El mayor peligro. No optimices parámetros en exceso sobre datos históricos o el sistema fallará en tiempo real.<br>
+      <strong>Slippage y comisiones:</strong> Siempre incluye costos reales de trading. Un sistema rentable sin costos puede ser perdedor con ellos.
+    </p>
+  </div>
+
+  <div class="disclaimer">
+    ⚠️ DISCLAIMER: Este manual es únicamente educativo y no constituye asesoramiento financiero. El trading de instrumentos financieros implica riesgo sustancial de pérdida de capital y no es apto para todos los inversores. Los conceptos avanzados descritos (SMC, VSA, Wyckoff, Order Flow) requieren práctica extensa en cuenta demo antes de operar con capital real. Los resultados históricos no garantizan rendimientos futuros. Consulta siempre a un asesor financiero regulado antes de tomar decisiones de inversión.
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div style="font-family:'Orbitron',monospace; font-size:20px; color:var(--bull); letter-spacing:4px; margin-bottom:12px;">TRADING AVANZADO PRO</div>
+  <p>SMC · VSA · Wyckoff · Order Flow · Elliott · Market Profile · Institutional Trading</p>
+  <p style="margin-top:6px; color:#1e2a45;">Educación financiera avanzada — Uso personal</p>
+</footer>
+
+<script>
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('show'); });
+}, { threshold: 0.08 });
+document.querySelectorAll('.fade').forEach(el => observer.observe(el));
+
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('nav a');
+window.addEventListener('scroll', () => {
+  let current = '';
+  sections.forEach(s => { if(window.scrollY >= s.offsetTop - 120) current = s.id; });
+  navLinks.forEach(a => {
+    a.classList.remove('active');
+    if(a.getAttribute('href') === '#'+current) a.classList.add('active');
+  });
+});
+</script>
+
+</body>
+</html>

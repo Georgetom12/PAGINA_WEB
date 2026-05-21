@@ -1,0 +1,12 @@
+# ── BRIDGE ────────────────────────────────────
+flask==3.0.3
+flask-cors==4.0.1
+gunicorn==22.0.0
+
+# ── BOTS COMPARTIDO ───────────────────────────
+python-telegram-bot==21.3
+aiohttp==3.9.5
+loguru==0.7.2
+python-dotenv==1.0.1
+requests==2.31.0
+cachetools==5.3.3

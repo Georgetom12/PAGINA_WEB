@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/trading-chat/"
+title = "Asesor Trading IA"
+version = "1.0.0"
+id = "artifacts/trading-chat"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/trading-chat/" ]
+localPort = 23725
+
+[services.development]
+run = "pnpm --filter @workspace/trading-chat run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/trading-chat", "run", "build" ]
+publicDir = "artifacts/trading-chat/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23725"
+BASE_PATH = "/trading-chat/"

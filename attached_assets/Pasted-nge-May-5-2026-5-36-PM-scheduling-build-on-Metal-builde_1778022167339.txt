@@ -1,0 +1,77 @@
+nge
+May 5, 2026, 5:36 PM
+scheduling build on Metal builder "production-builderv3-us-west1-srgn"
+fetched snapshot sha256:87d76b29496fecc8146012384d130cc4fcd151e5eed2d09c068273fa55b9b715 (48 MB bytes)
+fetching snapshot
+46.1 MB
+1.5s
+modified file: artifacts/api-server/src/index.ts (511b -> 609b)
+unpacking archive
+140.4 MB
+421ms
+using build driver railpack-v0.23.0
+                   
+╭─────────────────╮
+│ Railpack 0.23.0 │
+╰─────────────────╯
+ 
+  ↳ Detected Node
+  ↳ Using pnpm package manager
+  ↳ Found workspace with 14 packages
+            
+  Packages  
+  ──────────
+  node  │  22.22.2  │  railpack default (22)
+  pnpm  │  9.15.9   │  railpack default (9)
+            
+  Steps     
+  ──────────
+  ▸ install
+    $ pnpm install --no-frozen-lockfile
+         
+  ▸ build
+    $ pnpm --filter @workspace/api-server run build
+            
+  Deploy    
+  ──────────
+    $ pnpm --filter @workspace/api-server run start
+ 
+
+load build definition from ./railpack-plan.json
+0ms
+
+install apt packages: libatomic1
+2s
+Processing triggers for libc-bin (2.36-9+deb12u13) ...
+
+install mise packages: node, pnpm
+2s
+mise pnpm@9.15.9 ✓ installed
+uploading snapshot
+130.1 MB
+5.3s
+
+copy / /app, ., /mise/shims, /mise/installs
+1s
+
+pnpm install --no-frozen-lockfile
+9s
+Done in 8.8s using pnpm v9.15.9
+
+copy /usr/local/bin/mise, /etc/mise/config.toml, /root/.local/state/mise, / /app, .
+10s
+
+pnpm --filter @workspace/api-server run build
+793ms
+⚡ Done in 184ms
+
+copy /app/node_modules, /root/.cache, /app, /app
+33s
+
+exporting to docker image format
+19s
+containerimage.descriptor: eyJtZWRpYVR5cGUiOiJhcHBsaWNhdGlvbi92bmQub2NpLmltYWdlLm1hbmlmZXN0LnYxK2pzb24iLCJkaWdlc3QiOiJzaGEyNTY6YzVhYjMxODBjMWZkODVkMGMxZWY0ZWMzYjJjYTlmMjM4ZWJlYTk2YmQzN2JhYzU0MDFmYjdlNDdhYjRhODM5MSIsInNpemUiOjI1ODUsImFubm90YXRpb25zIjp7Im9yZy5vcGVuY29udGFpbmVycy5pbWFnZS5jcmVhdGVkIjoiMjAyNi0wNS0wNVQyMjo0Mjo1OFoifSwicGxhdGZvcm0iOnsiYXJjaGl0ZWN0dXJlIjoiYW1kNjQiLCJvcyI6ImxpbnV4In19
+containerimage.config.digest: sha256:d09a9bb0cde7a4193c3814c437427745f06d355640881bba217a86c2ca4e7aca
+containerimage.digest: sha256:c5ab3180c1fd85d0c1ef4ec3b2ca9f238ebea96bd37bac5401fb7e47ab4a8391
+image push
+402.7 MB / 402.8 MB

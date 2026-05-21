@@ -1,0 +1,117 @@
+You reached the start of the range
+May 19, 2026, 3:52 PM
+
+stage-0
+FROM ghcr.io/railwayapp/nixpacks:ubuntu-1745885067@sha256:d45c89d80e13d7ad0fd555b5130f22a866d9dd10e861f589932303ef2314c7de
+23ms
+
+stage-0
+WORKDIR /app/ cached
+583ms
+scheduling build on Metal builder "builder-vlejaa"
+unpacking archive
+5.5 MB
+62ms
+uploading snapshot
+1.1 MB
+1ms
+using build driver nixpacks-v1.41.0
+ 
+╔════════ Nixpacks v1.41.0 ════════╗
+║ setup      │ nodejs_24, npm-9_x  ║
+║──────────────────────────────────║
+║ install    │ npm i               ║
+║──────────────────────────────────║
+║ start      │ node dist/index.mjs ║
+╚══════════════════════════════════╝
+ 
+ 
+Saved output to:
+  snapshot-target-unpack
+
+internal
+load build definition from Dockerfile
+0ms
+
+internal
+load metadata for ghcr.io/railwayapp/nixpacks:ubuntu-1745885067
+378ms
+
+internal
+load .dockerignore
+0ms
+SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "APIFY_TOKEN") (line 11)(https://docs.docker.com/go/dockerfile/rule/secrets-used-in-arg-or-env/)
+ details: Sensitive data should not be used in the ARG or ENV commands
+SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "DUNE_API_KEY") (line 11)(https://docs.docker.com/go/dockerfile/rule/secrets-used-in-arg-or-env/)
+ details: Sensitive data should not be used in the ARG or ENV commands
+SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "ETHERSCAN_KEY") (line 11)(https://docs.docker.com/go/dockerfile/rule/secrets-used-in-arg-or-env/)
+ details: Sensitive data should not be used in the ARG or ENV commands
+SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "ORACLE_BOT_TOKEN") (line 11)(https://docs.docker.com/go/dockerfile/rule/secrets-used-in-arg-or-env/)
+ details: Sensitive data should not be used in the ARG or ENV commands
+SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "SESSION_SECRET") (line 11)(https://docs.docker.com/go/dockerfile/rule/secrets-used-in-arg-or-env/)
+ details: Sensitive data should not be used in the ARG or ENV commands
+SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "SIGNALS_BOT_TOKEN") (line 11)(https://docs.docker.com/go/dockerfile/rule/secrets-used-in-arg-or-env/)
+ details: Sensitive data should not be used in the ARG or ENV commands
+SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "TELEGRAM_BOT_TOKEN") (line 11)(https://docs.docker.com/go/dockerfile/rule/secrets-used-in-arg-or-env/)
+ details: Sensitive data should not be used in the ARG or ENV commands
+SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "WHALE_BOT_TOKEN") (line 11)(https://docs.docker.com/go/dockerfile/rule/secrets-used-in-arg-or-env/)
+ details: Sensitive data should not be used in the ARG or ENV commands
+SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "WHALPERP_BOT_TOKEN") (line 11)(https://docs.docker.com/go/dockerfile/rule/secrets-used-in-arg-or-env/)
+ details: Sensitive data should not be used in the ARG or ENV commands
+SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ENV "APIFY_TOKEN") (line 12)(https://docs.docker.com/go/dockerfile/rule/secrets-used-in-arg-or-env/)
+ details: Sensitive data should not be used in the ARG or ENV commands
+SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ENV "DUNE_API_KEY") (line 12)(https://docs.docker.com/go/dockerfile/rule/secrets-used-in-arg-or-env/)
+ details: Sensitive data should not be used in the ARG or ENV commands
+SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ENV "ETHERSCAN_KEY") (line 12)(https://docs.docker.com/go/dockerfile/rule/secrets-used-in-arg-or-env/)
+ details: Sensitive data should not be used in the ARG or ENV commands
+SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ENV "ORACLE_BOT_TOKEN") (line 12)(https://docs.docker.com/go/dockerfile/rule/secrets-used-in-arg-or-env/)
+ details: Sensitive data should not be used in the ARG or ENV commands
+SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ENV "SESSION_SECRET") (line 12)(https://docs.docker.com/go/dockerfile/rule/secrets-used-in-arg-or-env/)
+ details: Sensitive data should not be used in the ARG or ENV commands
+SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ENV "SIGNALS_BOT_TOKEN") (line 12)(https://docs.docker.com/go/dockerfile/rule/secrets-used-in-arg-or-env/)
+ details: Sensitive data should not be used in the ARG or ENV commands
+SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ENV "TELEGRAM_BOT_TOKEN") (line 12)(https://docs.docker.com/go/dockerfile/rule/secrets-used-in-arg-or-env/)
+ details: Sensitive data should not be used in the ARG or ENV commands
+SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ENV "WHALE_BOT_TOKEN") (line 12)(https://docs.docker.com/go/dockerfile/rule/secrets-used-in-arg-or-env/)
+ details: Sensitive data should not be used in the ARG or ENV commands
+SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ENV "WHALPERP_BOT_TOKEN") (line 12)(https://docs.docker.com/go/dockerfile/rule/secrets-used-in-arg-or-env/)
+ details: Sensitive data should not be used in the ARG or ENV commands
+UndefinedVar: Usage of undefined variable '$NIXPACKS_PATH' (line 18)(https://docs.docker.com/go/dockerfile/rule/undefined-var/)
+ details: Variables should be defined before their use
+
+internal
+load build context
+0ms
+
+stage-0
+RUN nix-env -if .nixpacks/nixpkgs-23f9169c4ccce521379e602cc82ed873a1f1b52b.nix && nix-collect-garbage -d cached
+0ms
+
+stage-0
+COPY .nixpacks/nixpkgs-23f9169c4ccce521379e602cc82ed873a1f1b52b.nix .nixpacks/nixpkgs-23f9169c4ccce521379e602cc82ed873a1f1b52b.nix cached
+0ms
+
+stage-0
+COPY . /app/.
+6s
+
+stage-0
+RUN npm i
+3s
+found 0 vulnerabilities
+
+stage-0
+RUN printf '\nPATH=/app/node_modules/.bin:$PATH' >> /root/.profile
+1s
+
+stage-0
+COPY . /app
+1s
+
+exporting to docker image format
+2s
+containerimage.descriptor: eyJtZWRpYVR5cGUiOiJhcHBsaWNhdGlvbi92bmQub2NpLmltYWdlLm1hbmlmZXN0LnYxK2pzb24iLCJkaWdlc3QiOiJzaGEyNTY6YTgyOTNlNThlOGEyM2UzMTE1ODIwMjY3MzMyZWMzYzNkYjU1ODhhNTMzZDc2MzdjNWQwMmJlNzAxNTI1MmYzNSIsInNpemUiOjIzODQsImFubm90YXRpb25zIjp7Im9yZy5vcGVuY29udGFpbmVycy5pbWFnZS5jcmVhdGVkIjoiMjAyNi0wNS0xOVQyMDo1NzozNFoifSwicGxhdGZvcm0iOnsiYXJjaGl0ZWN0dXJlIjoiYW1kNjQiLCJvcyI6ImxpbnV4In19
+containerimage.config.digest: sha256:e7a1254991fb3a46b0bdece1f3d0e5677c222df4ed633527cbf176be9be8d0ec
+containerimage.digest: sha256:a8293e58e8a23e3115820267332ec3c3db5588a533d7637c5d02be7015252f35
+image push
+274.2 MB

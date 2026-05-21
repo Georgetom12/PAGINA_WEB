@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PSYCHOMETRIKS — Historial de Señales</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Share+Tech+Mono&family=Space+Grotesk:wght@400;500;700&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#020408;--bg2:#060a0f;--bg3:#080d14;
+  --border:#1a2535;--border2:#243040;
+  --gold:#ffd700;--cyan:#00e5ff;--green:#00e676;--red:#ff1744;--purple:#e040fb;--orange:#ff6d00;
+  --white:#e8f0f8;--gray:#546e7a;--muted:#2a4a5a;--faint:#1a2535;
+}
+html,body{background:var(--bg);color:var(--white);font-family:'Rajdhani',sans-serif;min-height:100vh;overflow-x:hidden}
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:linear-gradient(rgba(0,229,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,.025) 1px,transparent 1px);
+  background-size:48px 48px;
+}
+
+/* ── TOPBAR ── */
+.topbar{
+  position:sticky;top:0;z-index:100;
+  background:rgba(2,4,8,.92);border-bottom:1px solid var(--border);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 24px;height:56px;
+}
+.topbar-brand{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:.1em;color:var(--white);text-decoration:none}
+.topbar-brand span{color:var(--cyan)}
+.topbar-links{display:flex;align-items:center;gap:20px}
+.topbar-links a{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);text-decoration:none;transition:color .2s}
+.topbar-links a:hover{color:var(--cyan)}
+.topbar-links a.active{color:var(--gold)}
+
+/* ── HERO ── */
+.hero{
+  position:relative;z-index:1;
+  padding:48px 24px 32px;border-bottom:1px solid var(--border);
+  background:linear-gradient(180deg,rgba(255,215,0,.03) 0%,transparent 100%);
+}
+.hero-label{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:.4em;text-transform:uppercase;color:var(--gold);display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.hero-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+.hero h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(40px,8vw,80px);line-height:1;color:var(--white)}
+.hero h1 span{color:var(--gold)}
+.hero-sub{font-family:'Space Grotesk',sans-serif;font-size:12px;color:var(--muted);margin-top:8px}
+.hero-actions{display:flex;align-items:center;gap:12px;margin-top:16px;flex-wrap:wrap}
+.btn-outline{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:.15em;text-transform:uppercase;padding:8px 16px;border:1px solid var(--border2);color:var(--muted);background:transparent;cursor:pointer;transition:all .2s}
+.btn-outline:hover{border-color:var(--gold);color:var(--gold)}
+.btn-solid{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:.15em;text-transform:uppercase;padding:8px 16px;border:none;background:var(--gold);color:#020408;cursor:pointer;font-weight:700;transition:opacity .2s}
+.btn-solid:hover{opacity:.85}
+.badge-live{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:.2em;padding:4px 10px;border:1px solid var(--muted);color:var(--muted)}
+
+/* ── STATS GRID ── */
+.stats-grid{
+  display:grid;grid-template-columns:repeat(2,1fr);
+  border-bottom:1px solid var(--border);position:relative;z-index:1;
+}
+@media(min-width:640px){.stats-grid{grid-template-columns:repeat(4,1fr)}}
+@media(min-width:900px){.stats-grid{grid-template-columns:repeat(6,1fr)}}
+.stat-cell{
+  background:var(--bg3);border-right:1px solid var(--border);border-bottom:1px solid var(--border);
+  padding:20px 16px;text-align:center;
+}
+.stat-cell:last-child{border-right:none}
+.stat-label{font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.stat-value{font-family:'Bebas Neue',sans-serif;font-size:36px;line-height:1}
+.stat-sub{font-family:'Space Grotesk',monospace;font-size:9px;color:var(--muted);margin-top:2px}
+
+/* ── WIN RATE BAR ── */
+.wr-section{
+  position:relative;z-index:1;padding:20px 24px;border-bottom:1px solid var(--border);
+  background:var(--bg2);display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+}
+.wr-label{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;white-space:nowrap}
+.wr-bar-wrap{flex:1;min-width:200px;height:6px;background:var(--faint);position:relative;overflow:hidden}
+.wr-bar-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--cyan));transition:width .6s ease;position:relative}
+.wr-bar-fill::after{content:'';position:absolute;right:0;top:50%;transform:translateY(-50%);width:8px;height:8px;border-radius:50%;background:var(--cyan);box-shadow:0 0 8px var(--cyan)}
+.wr-pct{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--green);line-height:1;white-space:nowrap}
+.wr-detail{font-family:'Space Grotesk',sans-serif;font-size:10px;color:var(--muted)}
+
+/* ── FILTERS ── */
+.filters{
+  position:relative;z-index:1;padding:16px 24px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+}
+.filter-btn{
+  font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:.15em;text-transform:uppercase;
+  padding:6px 14px;border:1px solid var(--border);color:var(--muted);background:transparent;cursor:pointer;transition:all .2s;
+}
+.filter-btn.active-all{border-color:var(--muted);color:var(--white);background:var(--faint)}
+.filter-btn.active-open{border-color:var(--cyan);color:var(--cyan);background:rgba(0,229,255,.08)}
+.filter-btn.active-win{border-color:var(--green);color:var(--green);background:rgba(0,230,118,.08)}
+.filter-btn.active-loss{border-color:var(--red);color:var(--red);background:rgba(255,23,68,.08)}
+.filter-btn:hover{border-color:var(--border2);color:var(--white)}
+.filter-sep{width:1px;height:20px;background:var(--border);margin:0 4px}
+.search-box{
+  font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:.1em;
+  padding:6px 12px;border:1px solid var(--border);background:var(--bg3);color:var(--white);
+  outline:none;width:160px;transition:border-color .2s;
+}
+.search-box::placeholder{color:var(--muted)}
+.search-box:focus{border-color:var(--gold)}
+
+/* ── TABLE ── */
+.table-wrap{position:relative;z-index:1;padding:0 24px 40px;overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:700px}
+thead tr{border-bottom:1px solid var(--border)}
+th{font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);padding:12px 10px;text-align:left;font-weight:400;white-space:nowrap;cursor:pointer;user-select:none;transition:color .2s}
+th:hover{color:var(--white)}
+th.sort-asc::after{content:' ↑';color:var(--gold)}
+th.sort-desc::after{content:' ↓';color:var(--gold)}
+tbody tr{border-bottom:1px solid var(--faint);transition:background .15s;cursor:default}
+tbody tr:hover{background:rgba(255,255,255,.02)}
+td{padding:12px 10px;font-family:'Space Grotesk',sans-serif;font-size:12px;vertical-align:middle;white-space:nowrap}
+.td-id{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted)}
+.td-asset{font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--white)}
+.td-ch{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted)}
+.dir-badge{display:inline-block;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:.1em;padding:3px 8px;font-weight:700}
+.dir-long{color:var(--green);background:rgba(0,230,118,.1);border:1px solid rgba(0,230,118,.3)}
+.dir-short{color:var(--red);background:rgba(255,23,68,.1);border:1px solid rgba(255,23,68,.3)}
+.status-badge{display:inline-block;font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:.08em;padding:3px 8px;border:1px solid}
+.s-open{color:var(--cyan);border-color:rgba(0,229,255,.3);background:rgba(0,229,255,.07)}
+.s-win{color:var(--green);border-color:rgba(0,230,118,.3);background:rgba(0,230,118,.07)}
+.s-loss{color:var(--red);border-color:rgba(255,23,68,.3);background:rgba(255,23,68,.07)}
+.mono{font-family:'Share Tech Mono',monospace;font-size:10px}
+.td-note{font-family:'Space Grotesk',sans-serif;font-size:10px;color:var(--muted);max-width:220px;white-space:normal;line-height:1.4}
+.td-ts{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted)}
+
+/* ── EMPTY / LOADING ── */
+.state-box{text-align:center;padding:80px 24px;position:relative;z-index:1}
+.state-icon{font-size:48px;margin-bottom:16px}
+.state-title{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--white);margin-bottom:8px}
+.state-desc{font-family:'Space Grotesk',sans-serif;font-size:12px;color:var(--muted);line-height:1.6;max-width:400px;margin:0 auto 24px}
+
+/* ── PAGINATION ── */
+.pagination{display:flex;align-items:center;gap:8px;justify-content:center;padding:24px 24px 0;position:relative;z-index:1}
+.page-btn{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:.1em;padding:6px 12px;border:1px solid var(--border);color:var(--muted);background:transparent;cursor:pointer;transition:all .2s}
+.page-btn:hover:not(:disabled){border-color:var(--gold);color:var(--gold)}
+.page-btn:disabled{opacity:.3;cursor:default}
+.page-btn.current{border-color:var(--gold);color:var(--gold);background:rgba(255,215,0,.08)}
+.page-info{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted)}
+
+/* ── FOOTER ── */
+.footer{border-top:1px solid var(--border);padding:20px 24px;position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.footer-text{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:.1em}
+.footer-links{display:flex;gap:16px}
+.footer-links a{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);text-decoration:none;letter-spacing:.1em;transition:color .2s}
+.footer-links a:hover{color:var(--cyan)}
+.updated-chip{font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:.1em;color:var(--muted);border:1px solid var(--border);padding:3px 8px}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <a href="/" class="topbar-brand">PSY<span>KO</span></a>
+  <div class="topbar-links">
+    <a href="/signals">Señales Live</a>
+    <a href="/signals-history" class="active">Historial</a>
+    <a href="/dashboard">Dashboard</a>
+    <a href="/pricing">Planes</a>
+  </div>
+</div>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-label">
+    <span class="hero-dot"></span>
+    PSYCHOMETRIKS · CANAL DE SEÑALES · HISTORIAL COMPLETO
+  </div>
+  <h1>HISTORIAL DE<br><span>SEÑALES</span></h1>
+  <div class="hero-sub">Registro histórico de todas las señales emitidas · Win rate calculado en tiempo real sobre señales cerradas</div>
+  <div class="hero-actions">
+    <button class="btn-solid" onclick="loadSignals()">↻ ACTUALIZAR</button>
+    <a href="/signals" class="btn-outline" style="text-decoration:none">📡 VER EN VIVO</a>
+    <div id="last-update" class="badge-live" style="display:none"></div>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="stats-grid" id="stats-grid">
+  <div class="stat-cell">
+    <div class="stat-label">Total señales</div>
+    <div class="stat-value" id="st-total" style="color:var(--white)">—</div>
+    <div class="stat-sub">históricas</div>
+  </div>
+  <div class="stat-cell">
+    <div class="stat-label">Abiertas</div>
+    <div class="stat-value" id="st-open" style="color:var(--cyan)">—</div>
+    <div class="stat-sub">activas ahora</div>
+  </div>
+  <div class="stat-cell">
+    <div class="stat-label">Ganadas</div>
+    <div class="stat-value" id="st-won" style="color:var(--green)">—</div>
+    <div class="stat-sub">TP alcanzado</div>
+  </div>
+  <div class="stat-cell">
+    <div class="stat-label">Perdidas</div>
+    <div class="stat-value" id="st-lost" style="color:var(--red)">—</div>
+    <div class="stat-sub">stop loss</div>
+  </div>
+  <div class="stat-cell">
+    <div class="stat-label">Win Rate</div>
+    <div class="stat-value" id="st-wr" style="color:var(--green)">—</div>
+    <div class="stat-sub">señales cerradas</div>
+  </div>
+  <div class="stat-cell">
+    <div class="stat-label">Racha actual</div>
+    <div class="stat-value" id="st-streak" style="color:var(--gold)">—</div>
+    <div class="stat-sub" id="st-streak-label">consecutivas</div>
+  </div>
+</div>
+
+<!-- WIN RATE BAR -->
+<div class="wr-section">
+  <div class="wr-label">Win Rate</div>
+  <div class="wr-bar-wrap">
+    <div class="wr-bar-fill" id="wr-bar" style="width:0%"></div>
+  </div>
+  <div class="wr-pct" id="wr-pct">0%</div>
+  <div class="wr-detail" id="wr-detail">calculando...</div>
+</div>
+
+<!-- FILTERS -->
+<div class="filters">
+  <button class="filter-btn active-all" id="f-all"   onclick="setFilter('all')">TODAS</button>
+  <button class="filter-btn" id="f-open"  onclick="setFilter('open')">ABIERTAS</button>
+  <button class="filter-btn" id="f-win"   onclick="setFilter('win')">GANADAS ✅</button>
+  <button class="filter-btn" id="f-loss"  onclick="setFilter('loss')">PERDIDAS ❌</button>
+  <div class="filter-sep"></div>
+  <select id="f-asset" onchange="applyFilters()" style="font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:.1em;padding:6px 10px;border:1px solid var(--border);background:var(--bg3);color:var(--muted);outline:none;cursor:pointer">
+    <option value="">TODOS LOS ACTIVOS</option>
+  </select>
+  <select id="f-dir" onchange="applyFilters()" style="font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:.1em;padding:6px 10px;border:1px solid var(--border);background:var(--bg3);color:var(--muted);outline:none;cursor:pointer">
+    <option value="">LONG + SHORT</option>
+    <option value="LONG">LONG</option>
+    <option value="SHORT">SHORT</option>
+  </select>
+  <div class="filter-sep"></div>
+  <input type="text" class="search-box" id="f-search" placeholder="buscar..." oninput="applyFilters()">
+  <div style="margin-left:auto">
+    <span id="result-count" style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted)"></span>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div id="main-content">
+  <div class="state-box" id="loading-state">
+    <div class="state-icon" style="animation:pulse 1s infinite">📡</div>
+    <div class="state-title">CARGANDO SEÑALES</div>
+    <div class="state-desc">Conectando con Railway...</div>
+  </div>
+  <div class="state-box" id="error-state" style="display:none">
+    <div class="state-icon">⚠️</div>
+    <div class="state-title">ERROR DE CONEXIÓN</div>
+    <div class="state-desc" id="error-msg">No se pudo conectar con el servidor</div>
+    <button class="btn-solid" onclick="loadSignals()">↻ REINTENTAR</button>
+  </div>
+  <div class="state-box" id="empty-state" style="display:none">
+    <div class="state-icon">🔍</div>
+    <div class="state-title">SIN SEÑALES</div>
+    <div class="state-desc">No hay señales que coincidan con el filtro seleccionado. Las señales emitidas por el bot aparecen aquí automáticamente.</div>
+  </div>
+
+  <div id="table-wrap" class="table-wrap" style="display:none">
+    <table>
+      <thead>
+        <tr>
+          <th onclick="sortBy('id')"      id="th-id">      #</th>
+          <th onclick="sortBy('asset')"   id="th-asset">   ACTIVO</th>
+          <th onclick="sortBy('dir')"     id="th-dir">     DIR</th>
+          <th onclick="sortBy('entry')"   id="th-entry">   ENTRADA</th>
+          <th onclick="sortBy('tp1')"     id="th-tp1">     TP1</th>
+          <th onclick="sortBy('tp2')"     id="th-tp2">     TP2</th>
+          <th onclick="sortBy('sl')"      id="th-sl">      STOP</th>
+          <th onclick="sortBy('rr')"      id="th-rr">      R/R</th>
+          <th onclick="sortBy('status')"  id="th-status">  STATUS</th>
+          <th onclick="sortBy('channel')" id="th-channel"> CANAL</th>
+          <th onclick="sortBy('date')"    id="th-date">    FECHA</th>
+          <th>NOTA</th>
+        </tr>
+      </thead>
+      <tbody id="signals-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- PAGINATION -->
+<div id="pagination" class="pagination" style="display:none"></div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <div class="footer-text">⚠️ SOLO EDUCATIVO · NO ES ASESORAMIENTO FINANCIERO · EL TRADING IMPLICA RIESGO DE PÉRDIDA</div>
+  <div class="footer-links">
+    <a href="/">Inicio</a>
+    <a href="/signals">Señales Live</a>
+    <a href="/pricing">Planes</a>
+    <a href="https://t.me/psychometriks_pro" target="_blank">Telegram</a>
+  </div>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────────
+let allSignals = [];
+let filtered   = [];
+let currentFilter = 'all';
+let currentSort   = { key: 'date', asc: false };
+let currentPage   = 1;
+const PER_PAGE    = 25;
+
+// ── Status helpers ────────────────────────────────────────────────────────
+function statusCategory(s) {
+  if (!s) return 'open';
+  if (s === 'ACTIVA') return 'open';
+  if (s.includes('✅') || s === 'CERRADA ✅') return 'win';
+  if (s.includes('❌') || s === 'INVALIDADA ❌') return 'loss';
+  return 'open';
+}
+function statusBadge(s) {
+  const cat = statusCategory(s);
+  const cls = cat === 'open' ? 's-open' : cat === 'win' ? 's-win' : 's-loss';
+  const lbl = cat === 'open' ? (s || 'ACTIVA') : s;
+  return `<span class="status-badge ${cls}">${lbl}</span>`;
+}
+function fmtDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  const h = (Date.now() - d) / 3600000;
+  if (h < 1)  return `Hace ${Math.round(h*60)}m`;
+  if (h < 24) return `Hoy ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
+  if (h < 48) return `Ayer ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
+  return d.toLocaleDateString('es-EC',{day:'2-digit',month:'short',year:'2-digit'});
+}
+function streak(sigs) {
+  let count = 0, isWin = null;
+  for (let i = sigs.length-1; i >= 0; i--) {
+    const cat = statusCategory(sigs[i].status);
+    if (cat === 'open') continue;
+    if (isWin === null) isWin = cat === 'win';
+    if ((cat === 'win') !== isWin) break;
+    count++;
+  }
+  return { count, isWin };
+}
+
+// ── Load ─────────────────────────────────────────────────────────────────
+async function loadSignals() {
+  showState('loading');
+  try {
+    const r = await fetch('/api/signals');
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const data = await r.json();
+    allSignals = (data.signals || []).sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+    populateAssetFilter();
+    updateStats();
+    applyFilters();
+    const upd = document.getElementById('last-update');
+    upd.textContent = 'UPD ' + new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    upd.style.display = 'inline-block';
+  } catch(e) {
+    document.getElementById('error-msg').textContent = String(e);
+    showState('error');
+  }
+}
+
+function populateAssetFilter() {
+  const assets = [...new Set(allSignals.map(s => s.asset))].sort();
+  const sel = document.getElementById('f-asset');
+  sel.innerHTML = '<option value="">TODOS LOS ACTIVOS</option>' +
+    assets.map(a => `<option value="${a}">${a}</option>`).join('');
+}
+
+// ── Stats ─────────────────────────────────────────────────────────────────
+function updateStats() {
+  const total  = allSignals.length;
+  const open   = allSignals.filter(s => statusCategory(s.status) === 'open').length;
+  const won    = allSignals.filter(s => statusCategory(s.status) === 'win').length;
+  const lost   = allSignals.filter(s => statusCategory(s.status) === 'loss').length;
+  const closed = won + lost;
+  const wr     = closed > 0 ? Math.round(won/closed*100) : 0;
+  const sk     = streak(allSignals);
+
+  document.getElementById('st-total').textContent = total;
+  document.getElementById('st-open').textContent  = open;
+  document.getElementById('st-won').textContent   = won;
+  document.getElementById('st-lost').textContent  = lost;
+  document.getElementById('st-wr').textContent    = wr + '%';
+  document.getElementById('st-wr').style.color    = wr >= 70 ? 'var(--green)' : wr >= 50 ? 'var(--gold)' : 'var(--red)';
+  document.getElementById('st-streak').textContent = sk.count || '0';
+  document.getElementById('st-streak').style.color = sk.isWin ? 'var(--green)' : sk.count > 0 ? 'var(--red)' : 'var(--gold)';
+  document.getElementById('st-streak-label').textContent = sk.isWin ? '✅ ganadas' : sk.count > 0 ? '❌ perdidas' : 'consecutivas';
+
+  document.getElementById('wr-bar').style.width = wr + '%';
+  document.getElementById('wr-pct').textContent = wr + '%';
+  document.getElementById('wr-pct').style.color = wr >= 70 ? 'var(--green)' : wr >= 50 ? 'var(--gold)' : 'var(--red)';
+  document.getElementById('wr-detail').textContent = closed > 0
+    ? `${won} ganadas · ${lost} perdidas · ${closed} cerradas · ${open} abiertas`
+    : 'Sin señales cerradas aún — win rate calculado al cerrar señales';
+}
+
+// ── Filters ───────────────────────────────────────────────────────────────
+function setFilter(f) {
+  currentFilter = f;
+  currentPage   = 1;
+  ['all','open','win','loss'].forEach(id => {
+    const btn = document.getElementById('f-' + id);
+    btn.className = 'filter-btn' + (id === f ? ` active-${id === 'all' ? 'all' : id === 'open' ? 'open' : id === 'win' ? 'win' : 'loss'}` : '');
+  });
+  applyFilters();
+}
+
+function applyFilters() {
+  const asset  = document.getElementById('f-asset').value;
+  const dir    = document.getElementById('f-dir').value;
+  const search = document.getElementById('f-search').value.trim().toLowerCase();
+
+  filtered = allSignals.filter(s => {
+    const cat = statusCategory(s.status);
+    if (currentFilter === 'open' && cat !== 'open') return false;
+    if (currentFilter === 'win'  && cat !== 'win')  return false;
+    if (currentFilter === 'loss' && cat !== 'loss') return false;
+    if (asset && s.asset !== asset) return false;
+    if (dir   && s.direction !== dir) return false;
+    if (search) {
+      const hay = `${s.asset} ${s.direction} ${s.channelSlug} ${s.note||''} ${s.source||''}`.toLowerCase();
+      if (!hay.includes(search)) return false;
+    }
+    return true;
+  });
+
+  sortSignals();
+  currentPage = 1;
+  renderTable();
+}
+
+// ── Sort ──────────────────────────────────────────────────────────────────
+function sortBy(key) {
+  if (currentSort.key === key) currentSort.asc = !currentSort.asc;
+  else { currentSort.key = key; currentSort.asc = false; }
+  document.querySelectorAll('th').forEach(th => {
+    th.className = '';
+    th.removeAttribute('class');
+  });
+  const map = {id:'th-id',asset:'th-asset',dir:'th-dir',entry:'th-entry',tp1:'th-tp1',tp2:'th-tp2',sl:'th-sl',rr:'th-rr',status:'th-status',channel:'th-channel',date:'th-date'};
+  if (map[key]) {
+    document.getElementById(map[key]).className = currentSort.asc ? 'sort-asc' : 'sort-desc';
+  }
+  sortSignals();
+  renderTable();
+}
+function sortSignals() {
+  const k = currentSort.key;
+  filtered.sort((a,b) => {
+    let va, vb;
+    if (k === 'id')      { va = a.id; vb = b.id; }
+    else if (k==='asset') { va = a.asset; vb = b.asset; }
+    else if (k==='dir')   { va = a.direction; vb = b.direction; }
+    else if (k==='entry') { va = parseFloat(a.entry)||0; vb = parseFloat(b.entry)||0; }
+    else if (k==='tp1')   { va = parseFloat(a.tp1)||0; vb = parseFloat(b.tp1)||0; }
+    else if (k==='tp2')   { va = parseFloat(a.tp2||'0')||0; vb = parseFloat(b.tp2||'0')||0; }
+    else if (k==='sl')    { va = parseFloat(a.sl)||0; vb = parseFloat(b.sl)||0; }
+    else if (k==='rr')    { va = a.rr||''; vb = b.rr||''; }
+    else if (k==='status'){ va = statusCategory(a.status); vb = statusCategory(b.status); }
+    else if (k==='channel'){va = a.channelSlug||''; vb = b.channelSlug||''; }
+    else { va = new Date(a.createdAt||0); vb = new Date(b.createdAt||0); }
+    if (va < vb) return currentSort.asc ? -1 : 1;
+    if (va > vb) return currentSort.asc ?  1 : -1;
+    return 0;
+  });
+}
+
+// ── Render ────────────────────────────────────────────────────────────────
+function renderTable() {
+  const count = document.getElementById('result-count');
+  count.textContent = `${filtered.length} señal${filtered.length!==1?'es':''}`;
+
+  if (filtered.length === 0) {
+    showState('empty');
+    document.getElementById('pagination').style.display = 'none';
+    return;
+  }
+
+  showState('table');
+
+  const totalPages = Math.ceil(filtered.length / PER_PAGE);
+  currentPage = Math.min(currentPage, totalPages);
+  const start = (currentPage-1) * PER_PAGE;
+  const page  = filtered.slice(start, start + PER_PAGE);
+
+  const tbody = document.getElementById('signals-tbody');
+  tbody.innerHTML = page.map(s => {
+    const isLong = s.direction === 'LONG';
+    const cat    = statusCategory(s.status);
+    return `<tr>
+      <td class="td-id">#${s.id}</td>
+      <td>
+        <div class="td-asset">${s.asset}</div>
+        <div class="td-ch">${s.channelSlug||'—'}</div>
+      </td>
+      <td><span class="dir-badge ${isLong?'dir-long':'dir-short'}">${s.direction}</span></td>
+      <td class="mono" style="color:var(--white)">${s.entry}</td>
+      <td class="mono" style="color:var(--green)">${s.tp1||'—'}</td>
+      <td class="mono" style="color:var(--green);opacity:.7">${s.tp2||'—'}</td>
+      <td class="mono" style="color:var(--red);opacity:.7">${s.sl||'—'}</td>
+      <td class="mono" style="color:var(--cyan)">${s.rr||'—'}</td>
+      <td>${statusBadge(s.status)}</td>
+      <td class="td-ch">${s.channelSlug||'general'}</td>
+      <td class="td-ts">${fmtDate(s.createdAt)}</td>
+      <td class="td-note">${s.note||'—'}</td>
+    </tr>`;
+  }).join('');
+
+  renderPagination(totalPages);
+}
+
+function renderPagination(totalPages) {
+  const pag = document.getElementById('pagination');
+  if (totalPages <= 1) { pag.style.display = 'none'; return; }
+  pag.style.display = 'flex';
+  let html = `<button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>← ANTERIOR</button>`;
+  const range = [];
+  for (let i = 1; i <= totalPages; i++) {
+    if (i===1 || i===totalPages || Math.abs(i-currentPage)<=2) range.push(i);
+    else if (range[range.length-1]!=='…') range.push('…');
+  }
+  range.forEach(p => {
+    if (p==='…') html += `<span class="page-info">…</span>`;
+    else html += `<button class="page-btn ${p===currentPage?'current':''}" onclick="goPage(${p})">${p}</button>`;
+  });
+  html += `<button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage===totalPages?'disabled':''}>SIGUIENTE →</button>`;
+  pag.innerHTML = html;
+}
+function goPage(p) { currentPage = p; renderTable(); window.scrollTo({top:0,behavior:'smooth'}); }
+
+// ── State helpers ─────────────────────────────────────────────────────────
+function showState(s) {
+  document.getElementById('loading-state').style.display = s==='loading' ? 'block' : 'none';
+  document.getElementById('error-state').style.display   = s==='error'   ? 'block' : 'none';
+  document.getElementById('empty-state').style.display   = s==='empty'   ? 'block' : 'none';
+  document.getElementById('table-wrap').style.display    = s==='table'   ? 'block' : 'none';
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────
+loadSignals();
+setInterval(loadSignals, 60000);
+</script>
+</body>
+</html>

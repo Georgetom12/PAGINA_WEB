@@ -1,0 +1,32 @@
+const psyPalette = {
+  background: "#060a0f",
+  foreground: "#eceff1",
+  border: "#1a2a3a",
+  input: "#243040",
+  card: "#0d1520",
+  cardForeground: "#eceff1",
+  primary: "#00e5ff",
+  primaryForeground: "#060a0f",
+  secondary: "#101a26",
+  secondaryForeground: "#00e5ff",
+  muted: "#101a26",
+  mutedForeground: "#546e7a",
+  accent: "#00e5ff",
+  accentForeground: "#060a0f",
+  destructive: "#ff1744",
+  destructiveForeground: "#eceff1",
+  green: "#00e676",
+  red: "#ff1744",
+  gold: "#ffd700",
+  orange: "#ff6d00",
+  purple: "#e040fb",
+  teal: "#40c4ff",
+  bg2: "#0a1018",
+  bg3: "#0f1820",
+  radius: 4,
+};
+
+export default {
+  light: psyPalette,
+  dark: psyPalette,
+};

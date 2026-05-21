@@ -1,0 +1,1904 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PSYCHOMETRIKS — Signal Aggregator PRO v3</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#060a0f;--bg2:#0a1018;--bg3:#0f1820;--panel:#0d1520;
+  --border:#1a2a3a;--border2:#243040;
+  --cyan:#00e5ff;--green:#00e676;--red:#ff1744;--gold:#ffd700;
+  --orange:#ff6d00;--purple:#e040fb;--teal:#40c4ff;--neut:#00ffcc;
+  --white:#eceff1;--gray:#546e7a;--dgray:#263238;--navy:#0d2137;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--white);font-family:'Rajdhani',sans-serif;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,.025) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+
+/* ═══ LOGIN SCREEN ═══ */
+#loginScreen{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:var(--bg);}
+#loginScreen::before{content:'';position:absolute;inset:0;background-image:linear-gradient(rgba(0,229,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,.04) 1px,transparent 1px);background-size:40px 40px;}
+.login-box{position:relative;width:420px;background:var(--panel);border:1px solid var(--border2);border-radius:8px;overflow:hidden;box-shadow:0 0 60px rgba(0,229,255,.15),0 0 120px rgba(0,229,255,.05);}
+.login-box::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--cyan),var(--green),var(--gold),var(--purple),var(--cyan));background-size:200% 100%;animation:borderFlow 3s linear infinite;}
+@keyframes borderFlow{0%{background-position:0%}100%{background-position:200%}}
+.login-header{padding:32px 32px 24px;text-align:center;border-bottom:1px solid var(--border);}
+.login-logo{font-family:'Orbitron',monospace;font-size:1.5rem;font-weight:900;letter-spacing:.3em;color:var(--cyan);text-shadow:0 0 20px rgba(0,229,255,.5);}
+.login-sub{font-family:'Share Tech Mono',monospace;font-size:.6rem;color:var(--gray);letter-spacing:.2em;margin-top:6px;}
+.login-body{padding:28px 32px 32px;}
+.login-field{margin-bottom:16px;}
+.login-label{font-family:'Share Tech Mono',monospace;font-size:.65rem;color:var(--gray);letter-spacing:.12em;margin-bottom:6px;display:block;}
+.login-input{width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:4px;color:var(--white);font-family:'Share Tech Mono',monospace;font-size:.85rem;padding:10px 14px;transition:all .2s;outline:none;}
+.login-input:focus{border-color:var(--cyan);box-shadow:0 0 12px rgba(0,229,255,.2);}
+.login-btn{width:100%;padding:13px;background:linear-gradient(135deg,rgba(0,229,255,.15),rgba(0,230,118,.1));border:1px solid var(--cyan);border-radius:4px;color:var(--cyan);font-family:'Orbitron',monospace;font-size:.8rem;font-weight:700;letter-spacing:.2em;cursor:pointer;transition:all .3s;margin-top:8px;}
+.login-btn:hover{background:linear-gradient(135deg,rgba(0,229,255,.25),rgba(0,230,118,.2));box-shadow:0 0 20px rgba(0,229,255,.3);}
+.login-err{color:var(--red);font-family:'Share Tech Mono',monospace;font-size:.7rem;text-align:center;margin-top:10px;min-height:18px;}
+.login-footer{padding:12px 32px;background:var(--bg3);border-top:1px solid var(--border);text-align:center;}
+.login-footer span{font-family:'Share Tech Mono',monospace;font-size:.58rem;color:var(--gray);letter-spacing:.1em;}
+
+/* ═══ ADMIN MODAL ═══ */
+.modal-overlay{position:fixed;inset:0;z-index:8888;background:rgba(0,0,0,.85);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal-box{background:var(--panel);border:1px solid var(--border2);border-radius:8px;width:580px;max-height:85vh;overflow-y:auto;position:relative;}
+.modal-box::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--gold),var(--orange),var(--purple));}
+.modal-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.modal-title{font-family:'Orbitron',monospace;font-size:.85rem;font-weight:700;color:var(--gold);letter-spacing:.15em;}
+.modal-close{background:none;border:none;color:var(--gray);font-size:1.4rem;cursor:pointer;padding:4px 8px;border-radius:3px;transition:color .2s;}
+.modal-close:hover{color:var(--red);}
+.modal-body{padding:20px 24px;}
+.user-list{margin-bottom:20px;}
+.user-item{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;margin-bottom:8px;}
+.user-info{display:flex;flex-direction:column;gap:2px;}
+.user-name{font-family:'Share Tech Mono',monospace;font-size:.8rem;color:var(--white);}
+.user-role{font-size:.65rem;color:var(--gray);}
+.user-actions{display:flex;gap:6px;}
+.ubtn{padding:4px 10px;border-radius:3px;font-family:'Share Tech Mono',monospace;font-size:.62rem;cursor:pointer;border:1px solid;transition:all .2s;}
+.ubtn-del{border-color:var(--red);color:var(--red);background:rgba(255,23,68,.1);}
+.ubtn-del:hover{background:rgba(255,23,68,.25);}
+.ubtn-edit{border-color:var(--cyan);color:var(--cyan);background:rgba(0,229,255,.1);}
+.ubtn-edit:hover{background:rgba(0,229,255,.2);}
+.add-user-form{background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:16px;}
+.form-title{font-family:'Share Tech Mono',monospace;font-size:.65rem;color:var(--cyan);letter-spacing:.1em;margin-bottom:12px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.form-field label{font-family:'Share Tech Mono',monospace;font-size:.6rem;color:var(--gray);display:block;margin-bottom:4px;}
+.form-field input,.form-field select{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:3px;color:var(--white);font-family:'Share Tech Mono',monospace;font-size:.78rem;padding:7px 10px;outline:none;transition:border-color .2s;}
+.form-field input:focus,.form-field select:focus{border-color:var(--cyan);}
+.form-field select option{background:var(--bg);}
+.add-btn{width:100%;padding:9px;background:rgba(0,230,118,.1);border:1px solid var(--green);border-radius:3px;color:var(--green);font-family:'Share Tech Mono',monospace;font-size:.72rem;cursor:pointer;letter-spacing:.1em;transition:all .2s;margin-top:4px;}
+.add-btn:hover{background:rgba(0,230,118,.2);}
+
+/* ═══ APP ═══ */
+#appScreen{display:none;position:relative;z-index:1;}
+.wrap{max-width:1600px;margin:0 auto;padding:16px;}
+
+/* TOPBAR */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:var(--panel);border:1px solid var(--border2);border-radius:4px;margin-bottom:16px;}
+.topbar-left{display:flex;align-items:center;gap:16px;}
+.topbar-logo{font-family:'Orbitron',monospace;font-size:1.1rem;font-weight:900;color:var(--cyan);letter-spacing:.2em;text-shadow:0 0 20px rgba(0,229,255,.4);}
+.topbar-right{display:flex;align-items:center;gap:10px;}
+.user-badge{font-family:'Share Tech Mono',monospace;font-size:.65rem;color:var(--gray);background:var(--bg3);border:1px solid var(--border);padding:4px 10px;border-radius:3px;}
+.tbtn{padding:6px 12px;border-radius:3px;font-family:'Share Tech Mono',monospace;font-size:.65rem;cursor:pointer;border:1px solid;transition:all .2s;background:transparent;letter-spacing:.08em;}
+.tbtn-admin{border-color:var(--gold);color:var(--gold);}
+.tbtn-admin:hover{background:rgba(255,215,0,.1);}
+.tbtn-logout{border-color:var(--gray);color:var(--gray);}
+.tbtn-logout:hover{border-color:var(--red);color:var(--red);}
+
+/* HEADER */
+header{text-align:center;padding:16px 0 12px;border-bottom:1px solid var(--border2);margin-bottom:16px;position:relative;}
+header::after{content:'';position:absolute;bottom:-1px;left:50%;transform:translateX(-50%);width:300px;height:2px;background:linear-gradient(90deg,transparent,var(--cyan),var(--green),var(--gold),transparent);}
+.logo{font-family:'Orbitron',monospace;font-size:1.5rem;font-weight:900;letter-spacing:.3em;color:var(--cyan);text-shadow:0 0 30px rgba(0,229,255,.5);}
+.subtitle{font-family:'Share Tech Mono',monospace;font-size:.62rem;color:var(--gray);letter-spacing:.18em;margin-top:4px;}
+
+/* MASTER BAR */
+.master{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px;background:var(--panel);border:1px solid var(--border2);border-radius:4px;padding:14px;position:relative;overflow:hidden;}
+.master::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--cyan),var(--green),var(--gold),var(--purple));}
+.mcard{text-align:center;padding:10px;background:var(--bg3);border-radius:4px;border:1px solid var(--border);}
+.mlabel{font-family:'Share Tech Mono',monospace;font-size:.58rem;color:var(--gray);letter-spacing:.1em;margin-bottom:5px;}
+.mval{font-family:'Orbitron',monospace;font-size:1.4rem;font-weight:700;line-height:1;}
+.msub{font-size:.72rem;color:var(--gray);margin-top:3px;font-weight:500;}
+.sbar{height:3px;background:var(--dgray);border-radius:2px;margin-top:7px;overflow:hidden;}
+.sbar-fill{height:100%;border-radius:2px;transition:width .8s cubic-bezier(.4,0,.2,1);}
+
+/* LAYOUT */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;}
+.g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:12px;}
+
+/* PANEL */
+.panel{background:var(--panel);border:1px solid var(--border2);border-radius:4px;overflow:hidden;}
+.ph{padding:9px 12px;background:var(--bg3);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;font-family:'Orbitron',monospace;font-size:.6rem;font-weight:700;letter-spacing:.12em;}
+.pb{padding:12px;}
+
+/* INPUTS */
+.ir{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);gap:8px;}
+.ir:last-child{border-bottom:none;}
+.il{font-size:.78rem;color:var(--gray);font-weight:500;flex:1;white-space:nowrap;}
+.il span{font-family:'Share Tech Mono',monospace;font-size:.62rem;}
+input[type=number]{background:var(--bg);border:1px solid var(--border2);border-radius:3px;color:var(--white);font-family:'Share Tech Mono',monospace;font-size:.78rem;padding:4px 7px;width:78px;text-align:right;transition:border-color .2s;outline:none;}
+input[type=number]:focus{border-color:var(--cyan);box-shadow:0 0 6px rgba(0,229,255,.2);}
+.tg{display:flex;gap:3px;flex-wrap:wrap;}
+.tb{padding:3px 7px;border:1px solid var(--border2);border-radius:3px;background:transparent;color:var(--gray);font-family:'Share Tech Mono',monospace;font-size:.6rem;cursor:pointer;transition:all .2s;white-space:nowrap;}
+.tb.on-bull{background:rgba(0,230,118,.15);border-color:var(--green);color:var(--green);}
+.tb.on-bear{background:rgba(255,23,68,.15);border-color:var(--red);color:var(--red);}
+.tb.on-neut{background:rgba(84,110,122,.15);border-color:var(--gray);color:var(--gray);}
+.tb.on-gold{background:rgba(255,215,0,.15);border-color:var(--gold);color:var(--gold);}
+.tb.on-cyan{background:rgba(0,229,255,.15);border-color:var(--cyan);color:var(--cyan);}
+.tb:hover{border-color:var(--cyan);color:var(--cyan);}
+
+/* TF TABS */
+.tft{display:flex;gap:3px;margin-bottom:10px;background:var(--bg);padding:3px;border-radius:4px;border:1px solid var(--border);}
+.tftab{flex:1;padding:4px;text-align:center;font-family:'Orbitron',monospace;font-size:.55rem;font-weight:700;border-radius:3px;cursor:pointer;color:var(--gray);border:none;background:transparent;transition:all .2s;letter-spacing:.06em;}
+.tftab.active{background:var(--bg3);color:var(--cyan);border:1px solid var(--border2);}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:3px;font-family:'Share Tech Mono',monospace;font-size:.68rem;font-weight:700;letter-spacing:.06em;}
+.b-bull{background:rgba(0,230,118,.15);border:1px solid var(--green);color:var(--green);}
+.b-bear{background:rgba(255,23,68,.15);border:1px solid var(--red);color:var(--red);}
+.b-neut{background:rgba(84,110,122,.15);border:1px solid var(--gray);color:var(--gray);}
+.b-gold{background:rgba(255,215,0,.15);border:1px solid var(--gold);color:var(--gold);}
+.b-cyan{background:rgba(0,229,255,.15);border:1px solid var(--cyan);color:var(--cyan);}
+.b-purple{background:rgba(224,64,251,.15);border:1px solid var(--purple);color:var(--purple);}
+.b-neut2{background:rgba(0,255,204,.15);border:1px solid var(--neut);color:var(--neut);}
+
+.dot{width:6px;height:6px;border-radius:50%;display:inline-block;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+.sep{font-family:'Share Tech Mono',monospace;font-size:.58rem;color:var(--cyan);letter-spacing:.1em;padding:4px 0;opacity:.5;}
+.tag{display:inline-block;padding:1px 5px;border-radius:2px;font-family:'Share Tech Mono',monospace;font-size:.58rem;margin-left:4px;vertical-align:middle;}
+.tag-live{background:rgba(0,230,118,.2);color:var(--green);}
+.info{font-size:.7rem;color:var(--gray);font-style:italic;margin-top:4px;}
+
+/* TF MATRIX */
+.tfm{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-bottom:10px;}
+.tfc{background:var(--bg3);border:1px solid var(--border);border-radius:3px;padding:7px 5px;text-align:center;}
+.tfc-l{font-family:'Share Tech Mono',monospace;font-size:.55rem;color:var(--gray);margin-bottom:3px;}
+.tfc-v{font-family:'Orbitron',monospace;font-size:.95rem;font-weight:700;}
+
+/* MAG7 */
+.mag7-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.mag7-item{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:3px;}
+.mag7-ticker{font-family:'Share Tech Mono',monospace;font-size:.75rem;font-weight:700;color:var(--white);min-width:42px;}
+.mag7-pct{font-family:'Share Tech Mono',monospace;font-size:.72rem;}
+.mag7-chk{font-size:.8rem;}
+.mag7-scores{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;}
+.mag7-score-card{background:var(--bg3);border:1px solid var(--border);border-radius:3px;padding:8px;text-align:center;}
+.mag7-score-label{font-family:'Share Tech Mono',monospace;font-size:.55rem;color:var(--gray);margin-bottom:4px;}
+.mag7-score-val{font-family:'Orbitron',monospace;font-size:1rem;font-weight:700;}
+.macro-g{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.macro-item{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);}
+.macro-item:last-child{border-bottom:none;}
+.macro-lbl{font-size:.76rem;color:var(--gray);font-weight:500;}
+
+/* DSF QUANTUM */
+.dsf-states{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px;}
+.dsf-card{padding:8px;background:var(--bg3);border:1px solid var(--border);border-radius:3px;text-align:center;}
+.dsf-label{font-family:'Share Tech Mono',monospace;font-size:.58rem;color:var(--gray);margin-bottom:4px;}
+.dsf-val{font-family:'Orbitron',monospace;font-size:.85rem;font-weight:700;}
+
+/* SUMMARY */
+.stbl{width:100%;border-collapse:collapse;}
+.stbl th{font-family:'Share Tech Mono',monospace;font-size:.58rem;color:var(--gray);letter-spacing:.08em;padding:6px 8px;text-align:left;border-bottom:1px solid var(--border2);}
+.stbl td{padding:7px 8px;font-size:.78rem;font-weight:500;border-bottom:1px solid var(--border);}
+.stbl tr:last-child td{border-bottom:none;}
+.stbl tr:hover td{background:rgba(255,255,255,.02);}
+
+/* ANALYSIS */
+.analysis-box{background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:12px;font-size:.76rem;line-height:1.9;font-family:'Share Tech Mono',monospace;min-height:80px;white-space:pre-wrap;}
+.alert-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+
+/* BOTTOM */
+.bottom-bar{text-align:center;padding:14px;margin-top:14px;border-top:1px solid var(--border);font-family:'Share Tech Mono',monospace;font-size:.58rem;color:var(--gray);letter-spacing:.1em;}
+
+/* HELP BTN */
+.help-btn{background:none;border:1px solid var(--border2);border-radius:50%;width:18px;height:18px;font-family:'Share Tech Mono',monospace;font-size:.6rem;color:var(--gray);cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;justify-content:center;margin-left:auto;flex-shrink:0;}
+.help-btn:hover{border-color:var(--cyan);color:var(--cyan);box-shadow:0 0 8px rgba(0,229,255,.3);}
+
+/* HELP MODAL */
+#helpModal{position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.88);backdrop-filter:blur(6px);display:none;align-items:flex-start;justify-content:center;padding:24px 16px;overflow-y:auto;}
+#helpModal.open{display:flex;}
+.help-box{background:var(--panel);border:1px solid var(--border2);border-radius:8px;width:100%;max-width:860px;position:relative;margin:auto;}
+.help-box::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--cyan),var(--green),var(--gold),var(--purple),var(--cyan));background-size:200% 100%;animation:borderFlow 3s linear infinite;}
+.help-header{padding:18px 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--panel);z-index:1;}
+.help-title{font-family:'Orbitron',monospace;font-size:.9rem;font-weight:700;color:var(--cyan);letter-spacing:.15em;}
+.help-tabs{display:flex;gap:6px;padding:14px 24px;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+.htab{padding:5px 12px;border:1px solid var(--border2);border-radius:3px;background:transparent;color:var(--gray);font-family:'Share Tech Mono',monospace;font-size:.62rem;cursor:pointer;transition:all .2s;letter-spacing:.06em;}
+.htab.active{background:rgba(0,229,255,.12);border-color:var(--cyan);color:var(--cyan);}
+.help-content{padding:20px 24px;display:none;}
+.help-content.active{display:block;}
+.hgroup{margin-bottom:20px;}
+.hgroup-title{font-family:'Orbitron',monospace;font-size:.7rem;font-weight:700;color:var(--gold);letter-spacing:.12em;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border);}
+.hrule{display:grid;grid-template-columns:1fr 2fr;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);align-items:start;}
+.hrule:last-child{border-bottom:none;}
+.hrule-field{font-family:'Share Tech Mono',monospace;font-size:.72rem;color:var(--white);font-weight:700;}
+.hrule-desc{font-size:.78rem;color:var(--gray);line-height:1.6;}
+.hrule-desc b{color:var(--white);}
+.hrule-desc .bull{color:var(--green);}
+.hrule-desc .bear{color:var(--red);}
+.hrule-desc .gold{color:var(--gold);}
+.hrule-desc .cyan{color:var(--cyan);}
+.hrule-desc .orange{color:var(--orange);}
+.htable{width:100%;border-collapse:collapse;margin-top:6px;font-size:.75rem;}
+.htable th{font-family:'Share Tech Mono',monospace;font-size:.6rem;color:var(--gray);padding:5px 8px;text-align:left;border-bottom:1px solid var(--border2);background:var(--bg3);}
+.htable td{padding:6px 8px;border-bottom:1px solid var(--border);line-height:1.5;}
+.htable tr:last-child td{border-bottom:none;}
+.htable tr:hover td{background:rgba(255,255,255,.02);}
+.htip{background:var(--bg3);border:1px solid var(--border);border-left:3px solid var(--cyan);border-radius:3px;padding:10px 14px;margin-top:10px;font-size:.76rem;color:var(--gray);line-height:1.7;}
+.htip b{color:var(--cyan);}
+.example-box{background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:10px 14px;margin-top:8px;font-family:'Share Tech Mono',monospace;font-size:.7rem;line-height:1.9;color:var(--gray);}
+.example-box .ev{color:var(--green);}
+.example-box .label{color:var(--cyan);}
+
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+
+@media(max-width:1200px){.g3,.g4{grid-template-columns:1fr 1fr;}.g2{grid-template-columns:1fr;}.master{grid-template-columns:repeat(3,1fr);}.tfm{grid-template-columns:repeat(3,1fr);}}
+@media(max-width:700px){.g2,.g3,.g4{grid-template-columns:1fr;}.master{grid-template-columns:1fr 1fr;}}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ LOGIN SCREEN ═══════════════ -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-header">
+      <div class="login-logo">PSYCHOMETRIKS</div>
+      <div class="login-sub">⬡ SIGNAL AGGREGATOR PRO v3 ⬡ ACCESO RESTRINGIDO</div>
+    </div>
+    <div class="login-body">
+      <div class="login-field">
+        <label class="login-label">USUARIO</label>
+        <input class="login-input" id="loginUser" type="text" placeholder="usuario" autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <div class="login-field">
+        <label class="login-label">CONTRASEÑA</label>
+        <input class="login-input" id="loginPass" type="password" placeholder="••••••••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <button class="login-btn" onclick="doLogin()">⬡ ACCEDER AL SISTEMA</button>
+      <div class="login-err" id="loginErr"></div>
+    </div>
+    <div class="login-footer">
+      <span>🔐 PSYCHOMETRIKS — Sistema de señales institucional ⬡ Solo educativo</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ ADMIN MODAL ═══════════════ -->
+<div class="modal-overlay" id="adminModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title">⬡ GESTIÓN DE USUARIOS</span>
+      <button class="modal-close" onclick="closeAdmin()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="user-list" id="userList"></div>
+      <div class="add-user-form">
+        <div class="form-title">➕ AGREGAR NUEVO USUARIO</div>
+        <div class="form-row">
+          <div class="form-field">
+            <label>USUARIO</label>
+            <input type="text" id="nu_user" placeholder="nombre_usuario">
+          </div>
+          <div class="form-field">
+            <label>CONTRASEÑA</label>
+            <input type="password" id="nu_pass" placeholder="contraseña">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label>NOMBRE COMPLETO</label>
+            <input type="text" id="nu_name" placeholder="Nombre Apellido">
+          </div>
+          <div class="form-field">
+            <label>ROL</label>
+            <select id="nu_role">
+              <option value="trader">Trader</option>
+              <option value="analista">Analista</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+        </div>
+        <button class="add-btn" onclick="addUser()">➕ AGREGAR USUARIO</button>
+        <div id="addUserMsg" style="font-family:'Share Tech Mono',monospace;font-size:.68rem;margin-top:8px;min-height:16px;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ HELP MODAL ═══════════════ -->
+<div id="helpModal">
+<div class="help-box">
+  <div class="help-header">
+    <span class="help-title">📖 GUÍA DE USO — PSYCHOMETRIKS</span>
+    <button class="modal-close" onclick="closeHelp()">✕</button>
+  </div>
+  <div class="help-tabs">
+    <button class="htab active" onclick="showHelp('wf')">🐋 WHALE FLOW</button>
+    <button class="htab" onclick="showHelp('pace')">🎯 PACE PRO</button>
+    <button class="htab" onclick="showHelp('crash')">💣 CRASH RADAR</button>
+    <button class="htab" onclick="showHelp('mag7')">🚀 MAG7 PRO</button>
+    <button class="htab" onclick="showHelp('dsf')">⚡ DSF QUANTUM</button>
+    <button class="htab" onclick="showHelp('adx')">📊 ADX + RSI</button>
+    <button class="htab" onclick="showHelp('macro')">📡 MACRO</button>
+    <button class="htab" onclick="showHelp('liq')">⚡ LIQUIDITY</button>
+    <button class="htab" onclick="showHelp('fx')">💱 FOREX + WY</button>
+  </div>
+
+  <!-- WHALE FLOW PRO -->
+  <div class="help-content active" id="hc-wf">
+    <div class="hgroup">
+      <div class="hgroup-title">🐋 WHALE FLOW PRO — Cómo llenar cada campo</div>
+      <div class="hrule">
+        <div class="hrule-field">🐋 Ballenas<br><span style="color:var(--gray);font-size:.62rem">(-100 a +100)</span></div>
+        <div class="hrule-desc">Copia el valor <b>"Ballenas"</b> directamente de la tabla del indicador en TradingView.<br>
+        <span class="bull">Positivo (ej: 0.8, 30, 80)</span> = ballenas comprando.<br>
+        <span class="bear">Negativo (ej: -20, -60)</span> = ballenas vendiendo.<br>
+        <b>Ejemplo tuyo con DOGE:</b> el indicador muestra <span class="gold">0.8</span> → pon 0.8</div>
+      </div>
+      <div class="hrule">
+        <div class="hrule-field">🫙 Manos Débiles</div>
+        <div class="hrule-desc">Copia el valor <b>"Manos Débiles"</b> o <b>"Retail"</b> de la tabla del indicador.<br>
+        <span class="bear">Valor alto (>60)</span> con ballenas bajas = señal débil, retail dominando.<br>
+        <span class="bull">Valor bajo (<30)</span> = retail saliendo, posible acumulación institucional.<br>
+        <b>Ejemplo tuyo:</b> indicador muestra <span class="gold">51.3</span> → pon 51.3</div>
+      </div>
+      <div class="hrule">
+        <div class="hrule-field">📊 RVOL (x)<br><span style="color:var(--gray);font-size:.62rem">multiplicador</span></div>
+        <div class="hrule-desc">Es el <b>Relative Volume</b> (volumen relativo). Cópialo de la tabla del indicador.<br>
+        <span class="bull">>2.0x</span> = volumen institucional alto (ballenas activas).<br>
+        <span class="gold">1.0-2.0x</span> = volumen normal.<br>
+        <span class="bear"><0.5x</span> = volumen muy bajo, no hay actividad.<br>
+        <b>Ejemplo tuyo:</b> indicador muestra <span class="gold">0.87x</span> → pon 0.87</div>
+      </div>
+      <div class="hrule">
+        <div class="hrule-field">💧 Flujo Alcista (%)</div>
+        <div class="hrule-desc">Si el indicador muestra el % directamente, cópialo. Si no:<br>
+        <table class="htable">
+          <tr><th>Situación</th><th>Valor a poner</th></tr>
+          <tr><td>Ballenas >30 y precio sube con volumen alto</td><td><span class="bull">60-80%</span></td></tr>
+          <tr><td>Ballenas neutral (0 a 10) o RVOL normal</td><td><span class="gold">40-55%</span></td></tr>
+          <tr><td>Ballenas negativas o RETAIL DOMINA</td><td><span class="bear">20-40%</span></td></tr>
+          <tr><td>Ballenas muy negativas + RVOL alto bajista</td><td><span class="bear">5-20%</span></td></tr>
+        </table>
+        <b>Ejemplo tuyo (DOGE):</b> Ballenas=0.8, RVOL=0.87x, Retail domina → pon <span class="gold">45%</span></div>
+      </div>
+      <div class="hrule">
+        <div class="hrule-field">🎯 Stop Hunt</div>
+        <div class="hrule-desc">Mira el campo <b>"Stop Hunt"</b> o <b>"Caza de liquidaciones"</b> en tu indicador:<br>
+        <table class="htable">
+          <tr><th>El indicador dice</th><th>Botón a presionar</th></tr>
+          <tr><td>🎯 CAZA SHORTS PRÓXIMA / Precio cerca zona shorts</td><td><span class="bull">SHORTS</span></td></tr>
+          <tr><td>🎯 CAZA LONGS PRÓXIMA / Precio cerca zona longs</td><td><span class="bear">LONGS</span></td></tr>
+          <tr><td>— Sin caza inmediata</td><td><span style="color:var(--gray)">─</span></td></tr>
+        </table>
+        <b>Ejemplo tuyo:</b> indica <span class="gold">"Sin caza inmediata"</span> → pon <b>─</b><br>
+        <div class="htip">💡 <b>Regla simple:</b> Si el precio bajó a barrer mínimos y rebotó = LONGS cazados (alcista). Si subió a barrer máximos y cayó = SHORTS cazados (bajista).</div></div>
+      </div>
+      <div class="hrule">
+        <div class="hrule-field">🌊 Bias WF</div>
+        <div class="hrule-desc">Mira el recuadro de estado en la parte <b>inferior</b> de la tabla del indicador:<br>
+        <table class="htable">
+          <tr><th>El indicador muestra</th><th>Botón a presionar</th></tr>
+          <tr><td>🐋 BALLENAS COMPRAN / 🚀 BALLENAS ACUMULAN</td><td><span class="bull">🟢 Verde</span></td></tr>
+          <tr><td>🟢 FLUJO ALCISTA</td><td><span class="bull">🟢 Verde</span></td></tr>
+          <tr><td>⚠️ BALLENAS VENDEN / 🔴 FLUJO BAJISTA</td><td><span class="bear">🔴 Rojo</span></td></tr>
+          <tr><td>🫙 RETAIL DOMINA / ⚖️ NEUTRAL</td><td><span style="color:var(--gray)">NEUT</span></td></tr>
+        </table>
+        <b>Ejemplo tuyo (DOGE):</b> muestra <span class="gold">"RETAIL DOMINA"</span> → pon <b>NEUT</b></div>
+      </div>
+    </div>
+    <div class="example-box">
+<span class="label">EJEMPLO COMPLETO DOGE (tu caso actual):</span>
+<span class="ev">Ballenas:      0.8</span>   → neutro/leve compra
+<span class="ev">Manos Débiles: 51.3</span>  → retail equilibrado
+<span class="ev">RVOL:          0.87x</span> → volumen bajo
+<span class="ev">Flujo Alcista: 45%</span>  → estimado por condiciones
+<span class="ev">Stop Hunt:     ─</span>    → sin caza inmediata
+<span class="ev">Bias WF:       NEUT</span> → RETAIL DOMINA
+Resultado esperado: Score WF ~47-52/100 (NEUTRAL)
+    </div>
+  </div>
+
+  <!-- PACE PRO -->
+  <div class="help-content" id="hc-pace">
+    <div class="hgroup">
+      <div class="hgroup-title">🎯 PACE PRO SNIPER v2 — Cómo llenar cada campo</div>
+      <div class="hrule">
+        <div class="hrule-field">📊 Score Total<br><span style="color:var(--gray);font-size:.62rem">(0-100)</span></div>
+        <div class="hrule-desc">Copia el <b>Score Total</b> que muestra la tabla principal del indicador PACE PRO.<br>Si lo tienes directamente, ese número tiene prioridad sobre todos los demás campos.<br><span class="gold">Si no tienes el Score Total, deja este campo vacío</span> y rellena los demás.</div>
+      </div>
+      <div class="hrule">
+        <div class="hrule-field">🌐 Score Macro<br><span style="color:var(--gray);font-size:.62rem">(0-100)</span></div>
+        <div class="hrule-desc">Score de la sección Macro del PACE PRO. Representa correlación con mercados macro (BTC.D, USDT.D, DXY, etc.).<br><span class="bull">>60</span> = macro favorable. <span class="bear"><40</span> = macro adversa.</div>
+      </div>
+      <div class="hrule">
+        <div class="hrule-field">🌊 Wyckoff Bull %<br>🌊 Wyckoff Bear %</div>
+        <div class="hrule-desc">Porcentajes del análisis Wyckoff dentro del PACE PRO (tabla Wyckoff).<br>
+        <span class="bull">Bull > Bear</span> = tendencia acumulación → favorece LONG.<br>
+        <span class="bear">Bear > Bull</span> = tendencia distribución → favorece SHORT.<br>
+        <div class="htip">💡 Si no ves estos valores, pon <b>60/40</b> si el mercado sube, <b>40/60</b> si baja.</div></div>
+      </div>
+      <div class="hrule">
+        <div class="hrule-field">📐 Zona Fibonacci</div>
+        <div class="hrule-desc">
+        <table class="htable">
+          <tr><th>El indicador señala</th><th>Botón</th><th>Significado</th></tr>
+          <tr><td>0.618 / Golden Zone</td><td><span class="gold">🔑 0.618</span></td><td>Zona de entrada institucional ideal</td></tr>
+          <tr><td>0.786 / Deep correction</td><td><span class="orange">⚠️ DEEP</span></td><td>Corrección profunda, posible reversión</td></tr>
+          <tr><td>0.886 / Neutralización</td><td><span class="cyan">🔄 0.886</span></td><td>Zona extrema, cerca de invalidación</td></tr>
+          <tr><td>Segan Destroy / Fibonacci Destroy</td><td><span class="bear">💥 SEGAN</span></td><td>Reversión extrema esperada</td></tr>
+          <tr><td>Sin zona clara</td><td><span style="color:var(--gray)">─</span></td><td>Precio en zona neutral</td></tr>
+        </table></div>
+      </div>
+      <div class="hrule">
+        <div class="hrule-field">⚡ Señal PACE</div>
+        <div class="hrule-desc">La señal principal que emite el indicador:
+        <table class="htable">
+          <tr><th>El indicador genera</th><th>Botón</th></tr>
+          <tr><td>LONG / COMPRA / Buy Signal ▲</td><td><span class="bull">🟢 LONG</span></td></tr>
+          <tr><td>SHORT / VENTA / Sell Signal ▼</td><td><span class="bear">🔴 SHORT</span></td></tr>
+          <tr><td>SEGAN / Segan Destroy / Reversión extrema</td><td><span class="gold">💥 SEGAN</span></td></tr>
+          <tr><td>WAIT / Sin señal / Esperando</td><td><span style="color:var(--gray)">WAIT</span></td></tr>
+        </table></div>
+      </div>
+      <div class="hrule">
+        <div class="hrule-field">🔺 Macro/Micro</div>
+        <div class="hrule-desc">¿La señal macro y la micro apuntan en la misma dirección?<br>
+        <span class="bull">✅ ALINEADOS</span> = ambas temporalidades dicen lo mismo (más confiable).<br>
+        <span class="bear">⚠️ DIVERGEN</span> = macro dice una cosa y micro dice otra (precaución).</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CRASH RADAR -->
+  <div class="help-content" id="hc-crash">
+    <div class="hgroup">
+      <div class="hgroup-title">💣 CRASH RADAR MTF — Cómo llenar cada campo</div>
+      <div class="hrule">
+        <div class="hrule-field">📅 Score Crash / Bull<br><span style="color:var(--gray);font-size:.62rem">por timeframe</span></div>
+        <div class="hrule-desc">La tabla del indicador muestra <b>Score Crash</b> (X/5) y <b>Score Bull</b> (X/5) para cada temporalidad:<br>
+        <b>Izquierda</b> del "/" = Score CRASH (bajista). <b>Derecha</b> = Score BULL (alcista).<br>
+        <table class="htable">
+          <tr><th>TF</th><th>Qué copiar</th><th>Ejemplo</th></tr>
+          <tr><td>MENSUAL (1M)</td><td>Score Crash 1M / Score Bull 1M</td><td>3 / 2</td></tr>
+          <tr><td>SEMANAL (1W)</td><td>Score Crash 1W / Score Bull 1W</td><td>2 / 3</td></tr>
+          <tr><td>DIARIO (1D)</td><td>Score Crash 1D / Score Bull 1D</td><td>1 / 4</td></tr>
+          <tr><td>4 HORAS (4H)</td><td>Score Crash 4H / Score Bull 4H</td><td>2 / 3</td></tr>
+        </table></div>
+      </div>
+      <div class="hrule">
+        <div class="hrule-field">🎯 Veredicto Crash</div>
+        <div class="hrule-desc">Copia el <b>VEREDICTO FINAL</b> de la tabla del indicador:
+        <table class="htable">
+          <tr><th>El indicador muestra</th><th>Botón</th></tr>
+          <tr><td>🚨 CRASH INMINENTE</td><td><span class="bear">🚨 CRASH</span></td></tr>
+          <tr><td>⚠️ PRESIÓN BAJISTA</td><td><span class="bear">⚠️ PRESIÓN</span></td></tr>
+          <tr><td>🚀 IMPULSO ALCISTA / SESGO ALCISTA</td><td><span class="bull">🚀 BULL</span></td></tr>
+          <tr><td>😴 SIN SEÑAL / NEUTRAL</td><td><span style="color:var(--gray)">😴 NEUT</span></td></tr>
+        </table></div>
+      </div>
+      <div class="hrule">
+        <div class="hrule-field">⚡ Squeeze</div>
+        <div class="hrule-desc">¿Algún timeframe muestra <b>🔥 ACTIVO</b> en la fila Squeeze?<br>
+        <span class="bull">🔥 ACTIVO</span> = energía acumulada, próximo movimiento fuerte (puede ser en cualquier dirección).<br>
+        <span style="color:var(--gray)">─ OFF</span> = sin squeeze, mercado sin tensión acumulada.</div>
+      </div>
+    </div>
+    <div class="htip">💡 <b>Pesos del indicador:</b> Mensual × 4, Semanal × 3, Diario × 2, 4H × 1. El mensual tiene más impacto en el score total.</div>
+  </div>
+
+  <!-- MAG7 -->
+  <div class="help-content" id="hc-mag7">
+    <div class="hgroup">
+      <div class="hgroup-title">🚀 MAG7 PRO — Cómo llenar cada campo</div>
+      <div class="hrule">
+        <div class="hrule-field">AAPL / MSFT /<br>NVDA / AMZN /<br>GOOGL / META /<br>TSLA</div>
+        <div class="hrule-desc">Para cada acción del MAG7, ve a TradingView y mira si está subiendo o bajando hoy:<br>
+        <table class="htable">
+          <tr><th>La acción</th><th>%</th><th>Botón</th></tr>
+          <tr><td>Está subiendo en el día</td><td>Ej: +2.5%</td><td><span class="bull">✅ Verde</span></td></tr>
+          <tr><td>Está bajando en el día</td><td>Ej: -1.8%</td><td><span class="bear">❌ Rojo</span></td></tr>
+          <tr><td>Sin cambio claro / no la revisaste</td><td>─</td><td><span style="color:var(--gray)">─ Gris</span></td></tr>
+        </table>
+        <b>El campo % (opcional):</b> ingresa el % de cambio del día para mayor precisión. Ej: si AAPL está +3.2%, pon 3.2</div>
+      </div>
+      <div class="hrule">
+        <div class="hrule-field">📊 VIX</div>
+        <div class="hrule-desc">El VIX es el índice de volatilidad/miedo del mercado. Búscalo en TradingView como <b>VIX</b>:<br>
+        <table class="htable">
+          <tr><th>Valor VIX</th><th>Estado</th><th>Botón</th></tr>
+          <tr><td>VIX > 30</td><td>Miedo extremo, mercado muy volátil</td><td><span class="bear">🔴 EXTREMO</span></td></tr>
+          <tr><td>VIX 20-30</td><td>Miedo elevado, precaución</td><td><span class="orange">😱 MIEDO</span></td></tr>
+          <tr><td>VIX < 20</td><td>Mercado tranquilo, risk-on</td><td><span class="bull">✅ OK</span></td></tr>
+        </table>
+        <b>Ingresa también el número exacto</b> del VIX para mayor precisión del score.</div>
+      </div>
+      <div class="hrule">
+        <div class="hrule-field">🏛️ Macro Estructura<br>📍 Micro Estructura</div>
+        <div class="hrule-desc">Lo encuentras directamente en la <b>tabla del indicador MAG7 PRO</b>:<br>
+        <span class="bull">ALCISTA</span> = estructura alcista confirmada en esa temporalidad.<br>
+        <span class="bear">BAJISTA</span> = estructura bajista confirmada.<br>
+        <span style="color:var(--gray)">NEUTRAL</span> = sin tendencia definida.<br>
+        <div class="htip">💡 <b>Macro</b> = estructura de largo plazo (semanas/meses). <b>Micro</b> = estructura de corto plazo (horas/días).</div></div>
+      </div>
+    </div>
+    <div class="htip">💡 <b>Pesos de las acciones:</b> AAPL 18% · MSFT 17% · NVDA 15% · AMZN 10% · GOOGL 8% · META 6% · TSLA 4%. NVDA y AAPL tienen más impacto en el score.</div>
+  </div>
+
+  <!-- DSF QUANTUM -->
+  <div class="help-content" id="hc-dsf">
+    <div class="hgroup">
+      <div class="hgroup-title">⚡ DSF QUANTUM ELITE — Cómo llenar cada campo</div>
+      <div class="hrule">
+        <div class="hrule-field">📊 MFI Micro<br>📊 MFI Macro</div>
+        <div class="hrule-desc">Son los valores del <b>Money Flow Index</b> (MFI) que muestra el panel del indicador:<br>
+        <b>MFI Micro</b> = MFI de la temporalidad actual (15m, 1H, etc.)<br>
+        <b>MFI Macro</b> = MFI de la temporalidad macro configurada (4H por defecto)<br>
+        <table class="htable">
+          <tr><th>Valor MFI</th><th>Interpretación</th></tr>
+          <tr><td><span class="bull">> 60</span></td><td>Flujo de dinero entrando — alcista</td></tr>
+          <tr><td>40 - 60</td><td>Neutro — sin dirección clara</td></tr>
+          <tr><td><span class="bear">< 40</span></td><td>Flujo de dinero saliendo — bajista</td></tr>
+          <tr><td><span class="bull">< 20</span></td><td>Sobrevendido extremo — posible rebote</td></tr>
+          <tr><td><span class="bear">> 80</span></td><td>Sobrecomprado extremo — posible caída</td></tr>
+        </table></div>
+      </div>
+      <div class="hrule">
+        <div class="hrule-field">⚡ Estado DSF</div>
+        <div class="hrule-desc">La barra de color de las velas te indica el estado:<br>
+        <table class="htable">
+          <tr><th>Barras del gráfico</th><th>Panel muestra</th><th>Botón</th></tr>
+          <tr><td>🟢 Verdes brillantes</td><td>INYECCIÓN / Acumulación</td><td><span class="bull">▲ INJECC.</span></td></tr>
+          <tr><td>🔴 Rojas brillantes</td><td>DISTRIBUCIÓN / Venta</td><td><span class="bear">▼ DISTRIB.</span></td></tr>
+          <tr><td>🟠 Naranjas</td><td>PRESIÓN / Divergencia</td><td><span class="orange">⚠️ PRESIÓN</span></td></tr>
+          <tr><td>⚫ Grises</td><td>Sin señal / Esperando</td><td><span style="color:var(--gray)">X ESPERA</span></td></tr>
+        </table></div>
+      </div>
+      <div class="hrule">
+        <div class="hrule-field">🔄 Señal Cambio</div>
+        <div class="hrule-desc">¿Las barras cambiaron de color <b>esta vela</b>?<br>
+        <span class="bull">NUEVO ▲</span> = las barras cambiaron a verde/alcista ahora mismo.<br>
+        <span class="bear">NUEVO ▼</span> = las barras cambiaron a rojo/bajista ahora mismo.<br>
+        <span style="color:var(--gray)">─</span> = sin cambio de estado en esta vela.
+        <div class="htip">💡 Los cambios de estado son las señales más fuertes del DSF Quantum. Si ves un cambio a verde con MFI Micro > 60 y MFI Macro > 50 = inyección confirmada.</div></div>
+      </div>
+      <div class="hrule">
+        <div class="hrule-field">📈 Barcolor Dominante</div>
+        <div class="hrule-desc">El color predominante de las <b>últimas 3-5 velas</b>:<br>
+        <span class="bull">🟢 VERDE</span> = MFI Micro > 60 y Macro > 50 (acumulación).<br>
+        <span class="bear">🔴 ROJO</span> = MFI Micro < 40 y Macro < 50 (distribución).<br>
+        <span class="orange">🟠 NARANJO</span> = divergencia (micro y macro discrepan).<br>
+        <span style="color:var(--gray)">⚫ GRIS</span> = sin señal clara.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADX + RSI -->
+  <div class="help-content" id="hc-adx">
+    <div class="hgroup">
+      <div class="hgroup-title">📊 ADX MOUNTAIN PRO + RSI — Cómo llenar cada campo</div>
+      <div class="hrule">
+        <div class="hrule-field">💪 ADX Valor</div>
+        <div class="hrule-desc">El valor numérico del ADX que muestra el indicador:
+        <table class="htable">
+          <tr><th>Valor ADX</th><th>Significado</th></tr>
+          <tr><td><span class="bear">> 40</span></td><td>Tendencia muy fuerte (alcista o bajista según color)</td></tr>
+          <tr><td><span class="gold">25-40</span></td><td>Tendencia moderada-fuerte</td></tr>
+          <tr><td>15-25</td><td>Tendencia débil</td></tr>
+          <tr><td><span style="color:var(--gray)">< 15</span></td><td>Sin tendencia, mercado en rango</td></tr>
+        </table></div>
+      </div>
+      <div class="hrule">
+        <div class="hrule-field">🎨 Color Zona ADX</div>
+        <div class="hrule-desc">El color del indicador ADX Mountain Pro:
+        <table class="htable">
+          <tr><th>Color</th><th>Significado</th><th>Acción</th></tr>
+          <tr><td>🟢 Verde</td><td>Alcista con fuerza creciente</td><td><span class="bull">Buscar LONG</span></td></tr>
+          <tr><td>🟠 Naranja</td><td>Alcista pero agotándose</td><td><span class="orange">Precaución, posible techo</span></td></tr>
+          <tr><td>🔴 Rojo</td><td>Bajista con fuerza creciente</td><td><span class="bear">Evitar longs</span></td></tr>
+          <tr><td>🔵 Azul</td><td>Bajista agotándose (oportunidad)</td><td><span class="bull">Posible reversión alcista</span></td></tr>
+        </table></div>
+      </div>
+      <div class="hrule">
+        <div class="hrule-field">📈 DI Dirección</div>
+        <div class="hrule-desc">Las líneas DI+ y DI- del indicador:
+        <table class="htable">
+          <tr><th>Situación</th><th>Botón</th></tr>
+          <tr><td>DI+ (verde) está por encima de DI- (rojo)</td><td><span class="bull">DI+ > DI-</span> → alcista</td></tr>
+          <tr><td>DI- (rojo) está por encima de DI+ (verde)</td><td><span class="bear">DI- > DI+</span> → bajista</td></tr>
+        </table></div>
+      </div>
+      <div class="hrule">
+        <div class="hrule-field">📉 RSI Macro<br>📉 RSI Micro</div>
+        <div class="hrule-desc"><b>RSI Macro</b> = RSI de periodo largo (21). <b>RSI Micro</b> = RSI de periodo corto (7).<br>
+        Encuéntralos en el panel del indicador Institutional Alpha Pro o Forex Institutional Pro.<br>
+        <table class="htable">
+          <tr><th>Valor RSI</th><th>Interpretación</th></tr>
+          <tr><td><span class="bull">< 30</span></td><td>Sobrevendido — zona de posible compra</td></tr>
+          <tr><td>30 - 50</td><td>Zona neutra-bajista</td></tr>
+          <tr><td>50 - 70</td><td>Zona neutra-alcista</td></tr>
+          <tr><td><span class="bear">> 70</span></td><td>Sobrecomprado — zona de posible venta</td></tr>
+        </table></div>
+      </div>
+      <div class="hrule">
+        <div class="hrule-field">🔀 Divergencia RSI</div>
+        <div class="hrule-desc">¿El indicador marca una divergencia RSI?<br>
+        <span class="bull">▲ ALCISTA</span> = precio hace mínimos más bajos pero RSI hace mínimos más altos → señal de reversión alcista.<br>
+        <span class="bear">▼ BAJISTA</span> = precio hace máximos más altos pero RSI hace máximos más bajos → señal de reversión bajista.<br>
+        <span style="color:var(--gray)">─</span> = sin divergencia.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MACRO -->
+  <div class="help-content" id="hc-macro">
+    <div class="hgroup">
+      <div class="hgroup-title">📡 MACRO CORRELATION PRO — Cómo llenar cada campo</div>
+      <div class="hrule">
+        <div class="hrule-field">₿ BTC Dom<br>💵 USDT Dom</div>
+        <div class="hrule-desc">Busca en TradingView los símbolos <b>BTC.D</b> y <b>USDT.D</b>. Mira si su gráfico está subiendo o bajando:
+        <table class="htable">
+          <tr><th>BTC.D sube ▲</th><td>Bitcoin dominando, altcoins perdiendo terreno</td></tr>
+          <tr><th>BTC.D baja ▼</th><td><span class="bull">Altcoins activándose</span> — favorable para crypto en general</td></tr>
+          <tr><th>USDT.D sube ▲</th><td><span class="bear">Cash saliendo de crypto</span> — bajista para BTC/alts</td></tr>
+          <tr><th>USDT.D baja ▼</th><td><span class="bull">Cash entrando a crypto</span> — alcista para BTC/alts</td></tr>
+        </table>
+        <div class="htip">💡 <b>Regla de oro:</b> USDT.D bajando = dinero rotando a crypto = señal alcista. Esta es la señal más importante del módulo macro.</div></div>
+      </div>
+      <div class="hrule">
+        <div class="hrule-field">🌐 TOTAL 1/2/3</div>
+        <div class="hrule-desc">Busca en TradingView los símbolos <b>TOTAL</b>, <b>TOTAL2</b> y <b>TOTAL3</b>:<br>
+        <b>TOTAL</b> = capitalización total de todo crypto.<br>
+        <b>TOTAL2</b> = cap total sin Bitcoin.<br>
+        <b>TOTAL3</b> = cap total sin BTC ni ETH.<br>
+        <span class="bull">Subiendo ▲</span> = dinero entrando al mercado. <span class="bear">Bajando ▼</span> = dinero saliendo.</div>
+      </div>
+      <div class="hrule">
+        <div class="hrule-field">📈 NASDAQ<br>📊 S&P 500</div>
+        <div class="hrule-desc">Busca <b>NASDAQ:NDX</b> o <b>QQQ</b> y <b>SPX500</b> en TradingView.<br>
+        <span class="bull">Subiendo ▲</span> = mercados tradicionales en modo risk-on → favorable para crypto.<br>
+        <span class="bear">Bajando ▼</span> = modo risk-off → inversores venden activos de riesgo incluido crypto.</div>
+      </div>
+      <div class="hrule">
+        <div class="hrule-field">💲 DXY</div>
+        <div class="hrule-desc">El <b>DXY</b> es el índice del dólar. Búscalo como <b>DXY</b> en TradingView:<br>
+        <span class="bear">DXY FUERTE (subiendo)</span> = dólar fuerte → presión bajista en crypto y commodities.<br>
+        <span class="bull">DXY DÉBIL (bajando)</span> = dólar débil → alcista para crypto, oro, etc.<br>
+        <span style="color:var(--gray)">NEUT</span> = DXY sin movimiento claro, lateral.</div>
+      </div>
+      <div class="hrule">
+        <div class="hrule-field">😱 Fear & Greed</div>
+        <div class="hrule-desc">Busca el índice en <b>alternative.me/crypto/fear-and-greed-index/</b><br>
+        <table class="htable">
+          <tr><th>Valor</th><th>Estado</th><th>Para crypto</th></tr>
+          <tr><td>0-25</td><td>Miedo Extremo</td><td><span class="bull">Zona de compra institucional</span></td></tr>
+          <tr><td>25-45</td><td>Miedo</td><td><span class="bull">Leve oportunidad</span></td></tr>
+          <tr><td>45-55</td><td>Neutral</td><td>Sin señal clara</td></tr>
+          <tr><td>55-75</td><td>Codicia</td><td>Precaución, mercado caliente</td></tr>
+          <tr><td>75-100</td><td>Codicia Extrema</td><td><span class="bear">Zona de posible techo</span></td></tr>
+        </table></div>
+      </div>
+      <div class="hrule">
+        <div class="hrule-field">🌊 Temporada</div>
+        <div class="hrule-desc">¿En qué temporada está el mercado crypto?
+        <table class="htable">
+          <tr><th>Botón</th><th>Cuándo usarlo</th></tr>
+          <tr><td><span class="bull">🌊 ALT</span></td><td>Altcoins subiendo más que BTC (BTC.D bajando, TOTAL2 sube)</td></tr>
+          <tr><td><span class="gold">₿ BTC</span></td><td>Solo BTC sube, alts estables o bajando (BTC.D subiendo)</td></tr>
+          <tr><td><span style="color:var(--gray)">TRANS</span></td><td>Transición, sin temporada clara o mercado lateral</td></tr>
+        </table></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LIQUIDITY -->
+  <div class="help-content" id="hc-liq">
+    <div class="hgroup">
+      <div class="hgroup-title">⚡ LIQUIDITY PRO + BOLLINGER — Cómo llenar cada campo</div>
+      <div class="hrule">
+        <div class="hrule-field">🔵 Zona Liquidez</div>
+        <div class="hrule-desc">¿En qué zona de liquidez está el precio actualmente?
+        <table class="htable">
+          <tr><th>El indicador muestra</th><th>Botón</th></tr>
+          <tr><td>Precio en zona de BUY STOPS / LONGS (arriba del rango)</td><td><span class="bull">BUY STOPS</span></td></tr>
+          <tr><td>Precio en zona de SELL STOPS / SHORTS (abajo del rango)</td><td><span class="bear">SELL STOPS</span></td></tr>
+          <tr><td>Sin zona activa</td><td><span style="color:var(--gray)">─</span></td></tr>
+        </table></div>
+      </div>
+      <div class="hrule">
+        <div class="hrule-field">📈 EMA 50 Bias</div>
+        <div class="hrule-desc">¿El precio está por encima o por debajo de la EMA 50?<br>
+        <span class="bull">SOBRE</span> = precio > EMA 50 → bias alcista.<br>
+        <span class="bear">BAJO</span> = precio < EMA 50 → bias bajista.<br>
+        Lo puedes ver directamente en el gráfico si tienes la EMA 50 activada.</div>
+      </div>
+      <div class="hrule">
+        <div class="hrule-field">◆ POC vs Precio</div>
+        <div class="hrule-desc">El <b>POC (Point of Control)</b> es el nivel de precio con mayor volumen negociado (línea del Volume Profile):<br>
+        <span class="bull">SOBRE POC</span> = precio > POC → comprado a precio justo o más caro.<br>
+        <span class="bear">BAJO POC</span> = precio < POC → barato respecto al valor.<br>
+        <span style="color:var(--gray)">EN POC</span> = precio exactamente en el POC → zona de equilibrio.</div>
+      </div>
+      <div class="hrule">
+        <div class="hrule-field">⚡ Liq. Barrida</div>
+        <div class="hrule-desc">¿El precio acaba de barrer una zona de liquidez y rebotó?<br>
+        <span class="bull">BARRIDA</span> = se barrió liquidez recientemente (stop hunt) y el precio revirtió. Es una señal fuerte.<br>
+        <span style="color:var(--gray)">─</span> = sin barrida reciente.</div>
+      </div>
+      <div class="hrule">
+        <div class="hrule-field">📊 BB Micro / Macro</div>
+        <div class="hrule-desc">Bandas de Bollinger en temporalidad actual (Micro) y en macro (4H/1D):<br>
+        <table class="htable">
+          <tr><th>Posición precio</th><th>Botón</th><th>Señal</th></tr>
+          <tr><td>Precio toca/supera banda superior</td><td><span class="bear">BANDA SUP</span></td><td>Sobrecomprado, posible reversión</td></tr>
+          <tr><td>Precio en la media (línea central)</td><td><span style="color:var(--gray)">MEDIA</span></td><td>Zona de equilibrio</td></tr>
+          <tr><td>Precio toca/supera banda inferior</td><td><span class="bull">BANDA INF</span></td><td>Sobrevendido, posible rebote</td></tr>
+        </table></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOREX + WYCKOFF -->
+  <div class="help-content" id="hc-fx">
+    <div class="hgroup">
+      <div class="hgroup-title">💱 FOREX INSTITUTIONAL + WYCKOFF SNIPER — Cómo llenar cada campo</div>
+      <div class="hrule">
+        <div class="hrule-field">📐 Tendencia MS<br>(Market Structure)</div>
+        <div class="hrule-desc">¿Cuál es la tendencia de la estructura de mercado según el indicador Forex Institutional Pro?<br>
+        <span class="bull">▲ ALCISTA</span> = la estructura de mercado está formando máximos y mínimos más altos.<br>
+        <span class="bear">▼ BAJISTA</span> = la estructura está formando máximos y mínimos más bajos.</div>
+      </div>
+      <div class="hrule">
+        <div class="hrule-field">⚡ BOS / CHoCH</div>
+        <div class="hrule-desc">Eventos de estructura de mercado que marca el indicador:
+        <table class="htable">
+          <tr><th>Evento</th><th>Botón</th><th>Significado</th></tr>
+          <tr><td>BOS alcista (Break of Structure ▲)</td><td><span class="bull">BOS ▲</span></td><td>Continuación de tendencia alcista</td></tr>
+          <tr><td>BOS bajista (Break of Structure ▼)</td><td><span class="bear">BOS ▼</span></td><td>Continuación de tendencia bajista</td></tr>
+          <tr><td>CHoCH alcista (Change of Character ▲)</td><td><span class="bull">CHoCH ▲</span></td><td>Cambio de tendencia a alcista (más fuerte)</td></tr>
+          <tr><td>CHoCH bajista (Change of Character ▼)</td><td><span class="bear">CHoCH ▼</span></td><td>Cambio de tendencia a bajista (más fuerte)</td></tr>
+          <tr><td>Sin evento reciente</td><td><span style="color:var(--gray)">─</span></td><td>Mercado sin estructura clara</td></tr>
+        </table></div>
+      </div>
+      <div class="hrule">
+        <div class="hrule-field">🌊 Fase Wyckoff</div>
+        <div class="hrule-desc">La fase que muestra el dashboard del Wyckoff Sniper:
+        <table class="htable">
+          <tr><th>Fase</th><th>Descripción</th><th>Señal</th></tr>
+          <tr><td>FASE A</td><td>Inicio — parada de tendencia previa</td><td>Observar</td></tr>
+          <tr><td>FASE B</td><td>Construcción — mercado en rango amplio</td><td>Observar</td></tr>
+          <tr><td>FASE C</td><td>Test crítico — Spring o UTAD</td><td><span class="bull">🔥 Oportunidad</span></td></tr>
+          <tr><td>FASE D</td><td>Confirmación — SOS o SOW</td><td><span class="bull">Entrada</span></td></tr>
+          <tr><td>FASE E</td><td>Tendencia declarada</td><td>Gestionar posición</td></tr>
+        </table></div>
+      </div>
+      <div class="hrule">
+        <div class="hrule-field">🌱 Evento Wyckoff</div>
+        <div class="hrule-desc">El evento específico que marca el Wyckoff Sniper:
+        <table class="htable">
+          <tr><th>El indicador marca</th><th>Botón</th><th>Señal</th></tr>
+          <tr><td>🌱 SPRING / Spring</td><td><span class="bull">🌱 SPRING</span></td><td>Reversión alcista inminente (muy fuerte)</td></tr>
+          <tr><td>⚡ UTAD</td><td><span class="bear">⚡ UTAD</span></td><td>Distribución, posible caída</td></tr>
+          <tr><td>SOS / Sign of Strength ▲</td><td><span class="bull">SOS ▲</span></td><td>Fuerza alcista confirmada</td></tr>
+          <tr><td>SOW / Sign of Weakness ▼</td><td><span class="bear">SOW ▼</span></td><td>Debilidad bajista confirmada</td></tr>
+          <tr><td>Sin evento</td><td><span style="color:var(--gray)">─</span></td><td>Sin señal específica</td></tr>
+        </table></div>
+      </div>
+      <div class="hrule">
+        <div class="hrule-field">🌊 Esquema Wyckoff</div>
+        <div class="hrule-desc">¿El rango actual es de acumulación o distribución?<br>
+        <span class="bull">ACUMULACIÓN</span> = las instituciones están comprando (rango antes de subida).<br>
+        <span class="bear">DISTRIBUCIÓN</span> = las instituciones están vendiendo (rango antes de caída).<br>
+        Lo puedes ver por el contexto: si venía de una bajada larga = probable acumulación. Si venía de una subida larga = probable distribución.</div>
+      </div>
+    </div>
+    <div class="htip">💡 <b>Combinación más poderosa:</b> FASE C + SPRING + SSL CAZADO + Score Bull > 60% = señal de entrada Wyckoff de máxima calidad.</div>
+  </div>
+
+</div>
+</div>
+
+<!-- ═══════════════ APP SCREEN ═══════════════ -->
+<div id="appScreen">
+<div class="wrap">
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <span class="topbar-logo">⬡ PSY</span>
+    <span style="font-family:'Share Tech Mono',monospace;font-size:.62rem;color:var(--gray);" id="topDate"></span>
+  </div>
+  <div class="topbar-right">
+    <span class="user-badge" id="topUserBadge">─</span>
+    <button class="tbtn tbtn-admin" id="adminBtn" onclick="openAdmin()" style="display:none">⬡ USUARIOS</button>
+    <button class="tbtn" style="border-color:var(--cyan);color:var(--cyan);" onclick="openHelp()">📖 GUÍA</button>
+    <button class="tbtn tbtn-logout" onclick="doLogout()">↩ SALIR</button>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">PSYCHOMETRIKS</div>
+  <div class="subtitle">⬡ SIGNAL AGGREGATOR PRO v3 ⬡ 8 INDICADORES ⬡ CONFLUENCIA INSTITUCIONAL</div>
+</header>
+
+<!-- MASTER BAR -->
+<div class="master" id="masterBar">
+  <div class="mcard">
+    <div class="mlabel">SEÑAL MAESTRA</div>
+    <div class="mval" id="mSignal" style="color:var(--gray);font-size:.85rem">─ DATOS ─</div>
+    <div class="msub" id="mSub">Completa los módulos</div>
+  </div>
+  <div class="mcard">
+    <div class="mlabel">SCORE TOTAL</div>
+    <div class="mval" id="mScore" style="color:var(--gray)">0</div>
+    <div class="sbar"><div class="sbar-fill" id="mBar" style="width:0%;background:var(--gray)"></div></div>
+    <div class="msub" id="mBarLbl">Sin datos</div>
+  </div>
+  <div class="mcard">
+    <div class="mlabel">CONFIANZA</div>
+    <div class="mval" id="mConf" style="color:var(--gray)">─</div>
+    <div class="msub" id="mConfSub">Módulos: 0/8</div>
+  </div>
+  <div class="mcard">
+    <div class="mlabel">BIAS DOMINANTE</div>
+    <div class="mval" id="mBias" style="color:var(--gray);font-size:.85rem">NEUTRAL</div>
+    <div class="msub" id="mBiasSub">Multi-indicador</div>
+  </div>
+  <div class="mcard">
+    <div class="mlabel">ACCIÓN SUGERIDA</div>
+    <div class="mval" id="mAction" style="color:var(--gray);font-size:.82rem">ESPERAR</div>
+    <div class="msub" id="mActionSub">Ingresa datos</div>
+  </div>
+</div>
+
+<!-- TF MATRIX -->
+<div class="panel" style="margin-bottom:12px">
+  <div class="ph"><span class="dot" style="background:var(--gold)"></span>MATRIZ MULTI-TIMEFRAME — CONFLUENCIA POR TEMPORALIDAD</div>
+  <div class="pb">
+    <div class="tfm">
+      <div class="tfc"><div class="tfc-l">5M</div><div class="tfc-v" id="tf5m" style="color:var(--gray)">─</div></div>
+      <div class="tfc"><div class="tfc-l">15M</div><div class="tfc-v" id="tf15m" style="color:var(--gray)">─</div></div>
+      <div class="tfc"><div class="tfc-l">30M</div><div class="tfc-v" id="tf30m" style="color:var(--gray)">─</div></div>
+      <div class="tfc"><div class="tfc-l">1H</div><div class="tfc-v" id="tf1h" style="color:var(--gray)">─</div></div>
+      <div class="tfc"><div class="tfc-l">4H</div><div class="tfc-v" id="tf4h" style="color:var(--gray)">─</div></div>
+    </div>
+    <p class="info">💡 Matriz calculada en base a todos los módulos ponderados por temporalidad.</p>
+  </div>
+</div>
+
+<!-- ROW 1: WHALE FLOW + PACE PRO + CRASH RADAR -->
+<div class="g3">
+
+  <!-- WHALE FLOW PRO -->
+  <div class="panel">
+    <div class="ph" style="color:var(--cyan)"><span class="dot" style="background:var(--cyan)"></span>🐋 WHALE FLOW PRO <span class="tag tag-live">28%</span><button class="help-btn" onclick="openHelp('wf')">?</button></div>
+    <div class="pb">
+      <div class="tft">
+        <button class="tftab active" onclick="setTF(this,'wf','30m')">30M</button>
+        <button class="tftab" onclick="setTF(this,'wf','1h')">1H</button>
+        <button class="tftab" onclick="setTF(this,'wf','4h')">4H</button>
+        <button class="tftab" onclick="setTF(this,'wf','1d')">1D</button>
+      </div>
+      <div class="ir"><div class="il">🐋 Ballenas <span>(-100/+100)</span></div><input type="number" id="wf_b" min="-100" max="100" placeholder="0" oninput="calc()"></div>
+      <div class="ir"><div class="il">🫙 Manos Débiles</div><input type="number" id="wf_r" min="0" max="100" placeholder="0" oninput="calc()"></div>
+      <div class="ir"><div class="il">📊 RVOL <span>(x)</span></div><input type="number" id="wf_rv" min="0" max="10" step="0.1" placeholder="1.0" oninput="calc()"></div>
+      <div class="ir"><div class="il">💧 Flujo Alcista <span>(%)</span></div><input type="number" id="wf_fa" min="0" max="100" placeholder="0" oninput="calc()"></div>
+      <div class="ir">
+        <div class="il">🎯 Stop Hunt</div>
+        <div class="tg">
+          <button class="tb on-bull" id="sh_l" onclick="tog(this,'sh','longs')">LONGS</button>
+          <button class="tb" id="sh_s" onclick="tog(this,'sh','shorts')">SHORTS</button>
+          <button class="tb" id="sh_n" onclick="tog(this,'sh','none')">─</button>
+        </div>
+      </div>
+      <div class="ir">
+        <div class="il">🌊 Bias WF</div>
+        <div class="tg">
+          <button class="tb" id="wf_bull" onclick="tog(this,'wfbias','bull')">🟢</button>
+          <button class="tb" id="wf_bear" onclick="tog(this,'wfbias','bear')">🔴</button>
+          <button class="tb on-neut" id="wf_neut" onclick="tog(this,'wfbias','neut')">NEUT</button>
+        </div>
+      </div>
+      <div class="ir"><div class="il" style="color:var(--cyan);font-family:'Share Tech Mono',monospace;font-size:.68rem">SCORE WF</div><span id="wf_out" class="badge b-neut">0/100</span></div>
+    </div>
+  </div>
+
+  <!-- PACE PRO SNIPER -->
+  <div class="panel">
+    <div class="ph" style="color:var(--gold)"><span class="dot" style="background:var(--gold)"></span>🎯 PACE PRO SNIPER v2 <span class="tag tag-live">22%</span><button class="help-btn" onclick="openHelp('pace')">?</button></div>
+    <div class="pb">
+      <div class="ir"><div class="il">📊 Score Total <span>(0-100)</span></div><input type="number" id="pp_s" min="0" max="100" placeholder="0" oninput="calc()"></div>
+      <div class="ir"><div class="il">🌐 Score Macro <span>(0-100)</span></div><input type="number" id="pp_m" min="0" max="100" placeholder="0" oninput="calc()"></div>
+      <div class="ir"><div class="il">🌊 Wyckoff Bull <span>(%)</span></div><input type="number" id="wy_b" min="0" max="100" placeholder="0" oninput="calc()"></div>
+      <div class="ir"><div class="il">🌊 Wyckoff Bear <span>(%)</span></div><input type="number" id="wy_br" min="0" max="100" placeholder="0" oninput="calc()"></div>
+      <div class="ir">
+        <div class="il">📐 Zona Fibo</div>
+        <div class="tg">
+          <button class="tb" id="fz_g" onclick="tog(this,'fz','golden')">🔑 0.618</button>
+          <button class="tb" id="fz_d" onclick="tog(this,'fz','deep')">⚠️ DEEP</button>
+          <button class="tb" id="fz_nt" onclick="tog(this,'fz','neut')">🔄 0.886</button>
+          <button class="tb" id="fz_sd" onclick="tog(this,'fz','destroy')">💥 SEGAN</button>
+          <button class="tb on-neut" id="fz_n" onclick="tog(this,'fz','none')">─</button>
+        </div>
+      </div>
+      <div class="ir">
+        <div class="il">⚡ Señal PACE</div>
+        <div class="tg">
+          <button class="tb" id="pp_long" onclick="tog(this,'pp','long')">🟢 LONG</button>
+          <button class="tb" id="pp_short" onclick="tog(this,'pp','short')">🔴 SHORT</button>
+          <button class="tb" id="pp_segan" onclick="tog(this,'pp','segan')">💥 SEGAN</button>
+          <button class="tb on-neut" id="pp_wait" onclick="tog(this,'pp','wait')">WAIT</button>
+        </div>
+      </div>
+      <div class="ir">
+        <div class="il">🔺 Macro/Micro</div>
+        <div class="tg">
+          <button class="tb" id="ali_y" onclick="tog(this,'ali','yes')">✅ ALIN.</button>
+          <button class="tb" id="ali_n" onclick="tog(this,'ali','no')">⚠️ DIV.</button>
+        </div>
+      </div>
+      <div class="ir"><div class="il" style="color:var(--gold);font-family:'Share Tech Mono',monospace;font-size:.68rem">SCORE PACE</div><span id="pp_out" class="badge b-neut">0/100</span></div>
+    </div>
+  </div>
+
+  <!-- CRASH RADAR MTF -->
+  <div class="panel">
+    <div class="ph" style="color:var(--red)"><span class="dot" style="background:var(--red)"></span>💣 CRASH RADAR MTF <span class="tag tag-live">12%</span><button class="help-btn" onclick="openHelp('crash')">?</button></div>
+    <div class="pb">
+      <div class="sep">── SCORE CRASH / BULL por TF ──</div>
+      <div class="ir"><div class="il">📅 MENSUAL Crash/Bull <span>/5</span></div>
+        <div class="tg">
+          <input type="number" id="cr_1mc" min="0" max="5" placeholder="─" style="width:40px" oninput="calc()">
+          <span style="color:var(--gray);font-size:.7rem">/</span>
+          <input type="number" id="cr_1mb" min="0" max="5" placeholder="─" style="width:40px" oninput="calc()">
+        </div>
+      </div>
+      <div class="ir"><div class="il">📅 SEMANAL Crash/Bull <span>/5</span></div>
+        <div class="tg">
+          <input type="number" id="cr_1wc" min="0" max="5" placeholder="─" style="width:40px" oninput="calc()">
+          <span style="color:var(--gray);font-size:.7rem">/</span>
+          <input type="number" id="cr_1wb" min="0" max="5" placeholder="─" style="width:40px" oninput="calc()">
+        </div>
+      </div>
+      <div class="ir"><div class="il">📅 DIARIO Crash/Bull <span>/5</span></div>
+        <div class="tg">
+          <input type="number" id="cr_1dc" min="0" max="5" placeholder="─" style="width:40px" oninput="calc()">
+          <span style="color:var(--gray);font-size:.7rem">/</span>
+          <input type="number" id="cr_1db" min="0" max="5" placeholder="─" style="width:40px" oninput="calc()">
+        </div>
+      </div>
+      <div class="ir"><div class="il">📅 4H Crash/Bull <span>/5</span></div>
+        <div class="tg">
+          <input type="number" id="cr_4hc" min="0" max="5" placeholder="─" style="width:40px" oninput="calc()">
+          <span style="color:var(--gray);font-size:.7rem">/</span>
+          <input type="number" id="cr_4hb" min="0" max="5" placeholder="─" style="width:40px" oninput="calc()">
+        </div>
+      </div>
+      <div class="ir">
+        <div class="il">🎯 Veredicto Crash</div>
+        <div class="tg">
+          <button class="tb" id="cv_crash" onclick="tog(this,'crash','crash')">🚨 CRASH</button>
+          <button class="tb" id="cv_press" onclick="tog(this,'crash','press')">⚠️ PRESIÓN</button>
+          <button class="tb" id="cv_bull" onclick="tog(this,'crash','bull')">🚀 BULL</button>
+          <button class="tb on-neut" id="cv_neut" onclick="tog(this,'crash','neut')">😴 NEUT</button>
+        </div>
+      </div>
+      <div class="ir">
+        <div class="il">⚡ Squeeze Activo</div>
+        <div class="tg">
+          <button class="tb" id="sq_y" onclick="tog(this,'sq','yes')">🔥 ACTIVO</button>
+          <button class="tb on-neut" id="sq_n" onclick="tog(this,'sq','no')">─ OFF</button>
+        </div>
+      </div>
+      <div class="ir"><div class="il" style="color:var(--red);font-family:'Share Tech Mono',monospace;font-size:.68rem">SCORE CRASH</div><span id="cr_out" class="badge b-neut">0/100</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ROW 2: MAG7 PRO + DSF QUANTUM + ADX+RSI -->
+<div class="g3">
+
+  <!-- MAG7 PRO -->
+  <div class="panel">
+    <div class="ph" style="color:var(--gold)"><span class="dot" style="background:var(--gold)"></span>🚀 MAG7 PRO <span class="tag tag-live">10%</span><button class="help-btn" onclick="openHelp('mag7')">?</button></div>
+    <div class="pb">
+      <div class="sep">── SEÑAL POR ACCIÓN ──</div>
+      <div class="mag7-grid" id="mag7Grid">
+        <!-- generado por JS -->
+      </div>
+      <div class="mag7-scores">
+        <div class="mag7-score-card">
+          <div class="mag7-score-label">SCORE SIMPLE</div>
+          <div class="mag7-score-val" id="m7_simple" style="color:var(--gray)">─</div>
+        </div>
+        <div class="mag7-score-card">
+          <div class="mag7-score-label">SCORE PONDER.</div>
+          <div class="mag7-score-val" id="m7_pond" style="color:var(--gray)">─</div>
+        </div>
+        <div class="mag7-score-card">
+          <div class="mag7-score-label">MACRO ADJ.</div>
+          <div class="mag7-score-val" id="m7_macro" style="color:var(--gray)">─</div>
+        </div>
+      </div>
+      <div class="ir">
+        <div class="il">📊 VIX</div>
+        <div class="tg">
+          <button class="tb" id="vix_fear" onclick="tog(this,'vix','fear')">😱 MIEDO</button>
+          <button class="tb" id="vix_ext" onclick="tog(this,'vix','extreme')">🔴 EXTREMO</button>
+          <button class="tb on-neut" id="vix_ok" onclick="tog(this,'vix','ok')">✅ OK</button>
+        </div>
+      </div>
+      <div class="ir"><div class="il">📈 VIX Valor</div><input type="number" id="vix_v" min="0" max="100" step="0.1" placeholder="20" oninput="calc()"></div>
+      <div class="ir">
+        <div class="il">🏛️ Macro Estructura</div>
+        <div class="tg">
+          <button class="tb" id="me_bull" onclick="tog(this,'me','bull')">ALCISTA</button>
+          <button class="tb" id="me_bear" onclick="tog(this,'me','bear')">BAJISTA</button>
+          <button class="tb on-neut" id="me_neut" onclick="tog(this,'me','neut')">NEUT</button>
+        </div>
+      </div>
+      <div class="ir">
+        <div class="il">📍 Micro Estructura</div>
+        <div class="tg">
+          <button class="tb" id="mi_bull" onclick="tog(this,'mi','bull')">ALCISTA</button>
+          <button class="tb" id="mi_bear" onclick="tog(this,'mi','bear')">BAJISTA</button>
+          <button class="tb on-neut" id="mi_neut" onclick="tog(this,'mi','neut')">NEUT</button>
+        </div>
+      </div>
+      <div class="ir"><div class="il" style="color:var(--gold);font-family:'Share Tech Mono',monospace;font-size:.68rem">SCORE MAG7</div><span id="m7_out" class="badge b-neut">0/100</span></div>
+    </div>
+  </div>
+
+  <!-- DSF QUANTUM ELITE -->
+  <div class="panel">
+    <div class="ph" style="color:var(--neut)"><span class="dot" style="background:var(--neut)"></span>⚡ DSF QUANTUM ELITE <span class="tag tag-live">8%</span><button class="help-btn" onclick="openHelp('dsf')">?</button></div>
+    <div class="pb">
+      <div class="sep">── MFI MICRO + MACRO ──</div>
+      <div class="dsf-states">
+        <div class="dsf-card">
+          <div class="dsf-label">MFI MICRO</div>
+          <div class="dsf-val" id="dsf_micro_disp" style="color:var(--gray)">─</div>
+        </div>
+        <div class="dsf-card">
+          <div class="dsf-label">MFI MACRO</div>
+          <div class="dsf-val" id="dsf_macro_disp" style="color:var(--gray)">─</div>
+        </div>
+        <div class="dsf-card">
+          <div class="dsf-label">ESTADO</div>
+          <div class="dsf-val" id="dsf_state_disp" style="color:var(--gray);font-size:.65rem">─</div>
+        </div>
+      </div>
+      <div class="ir"><div class="il">📊 MFI Micro <span>(0-100)</span></div><input type="number" id="dsf_mi" min="0" max="100" placeholder="50" oninput="calc()"></div>
+      <div class="ir"><div class="il">📊 MFI Macro <span>(0-100)</span></div><input type="number" id="dsf_ma" min="0" max="100" placeholder="50" oninput="calc()"></div>
+      <div class="ir">
+        <div class="il">⚡ Estado DSF</div>
+        <div class="tg">
+          <button class="tb" id="dsf_inj" onclick="tog(this,'dsf','inj')">▲ INJECC.</button>
+          <button class="tb" id="dsf_dis" onclick="tog(this,'dsf','dis')">▼ DISTRIB.</button>
+          <button class="tb" id="dsf_pre" onclick="tog(this,'dsf','pre')">⚠️ PRESIÓN</button>
+          <button class="tb on-neut" id="dsf_esp" onclick="tog(this,'dsf','esp')">X ESPERA</button>
+        </div>
+      </div>
+      <div class="ir">
+        <div class="il">🔄 Señal Cambio</div>
+        <div class="tg">
+          <button class="tb" id="dsc_b" onclick="tog(this,'dsc','bull')">NUEVO ▲</button>
+          <button class="tb" id="dsc_r" onclick="tog(this,'dsc','bear')">NUEVO ▼</button>
+          <button class="tb on-neut" id="dsc_n" onclick="tog(this,'dsc','none')">─</button>
+        </div>
+      </div>
+      <div class="ir">
+        <div class="il">📈 Barcolor Dominante</div>
+        <div class="tg">
+          <button class="tb" id="bc_g" onclick="tog(this,'bc','green')">🟢 VERDE</button>
+          <button class="tb" id="bc_r" onclick="tog(this,'bc','red')">🔴 ROJO</button>
+          <button class="tb" id="bc_o" onclick="tog(this,'bc','orange')">🟠 NARANJO</button>
+          <button class="tb on-neut" id="bc_gr" onclick="tog(this,'bc','gray')">⚫ GRIS</button>
+        </div>
+      </div>
+      <div class="ir"><div class="il" style="color:var(--neut);font-family:'Share Tech Mono',monospace;font-size:.68rem">SCORE DSF</div><span id="dsf_out" class="badge b-neut">0/100</span></div>
+    </div>
+  </div>
+
+  <!-- ADX + RSI + INST ALPHA -->
+  <div class="panel">
+    <div class="ph" style="color:var(--green)"><span class="dot" style="background:var(--green)"></span>📊 ADX + RSI + INST. ALPHA <span class="tag tag-live">10%</span><button class="help-btn" onclick="openHelp('adx')">?</button></div>
+    <div class="pb">
+      <div class="ir"><div class="il">💪 ADX Valor <span>(0-100)</span></div><input type="number" id="adx_v" min="0" max="100" placeholder="0" oninput="calc()"></div>
+      <div class="ir">
+        <div class="il">🎨 Color ADX</div>
+        <div class="tg">
+          <button class="tb on-bull" id="adx_g" onclick="tog(this,'adx','verde')">🟢</button>
+          <button class="tb" id="adx_o" onclick="tog(this,'adx','naranja')">🟠</button>
+          <button class="tb" id="adx_r" onclick="tog(this,'adx','rojo')">🔴</button>
+          <button class="tb" id="adx_bl" onclick="tog(this,'adx','azul')">🔵</button>
+        </div>
+      </div>
+      <div class="ir">
+        <div class="il">📈 DI Dirección</div>
+        <div class="tg">
+          <button class="tb" id="di_b" onclick="tog(this,'di','bull')">DI+ &gt; DI-</button>
+          <button class="tb" id="di_r" onclick="tog(this,'di','bear')">DI- &gt; DI+</button>
+        </div>
+      </div>
+      <div class="ir"><div class="il">📉 RSI Macro <span>(0-100)</span></div><input type="number" id="rsi_ma" min="0" max="100" placeholder="50" oninput="calc()"></div>
+      <div class="ir"><div class="il">📉 RSI Micro <span>(0-100)</span></div><input type="number" id="rsi_mi" min="0" max="100" placeholder="50" oninput="calc()"></div>
+      <div class="ir">
+        <div class="il">🔀 Div. RSI</div>
+        <div class="tg">
+          <button class="tb" id="div_b" onclick="tog(this,'div','bull')">▲ ALC</button>
+          <button class="tb" id="div_r" onclick="tog(this,'div','bear')">▼ BAJ</button>
+          <button class="tb on-neut" id="div_n" onclick="tog(this,'div','none')">─</button>
+        </div>
+      </div>
+      <div class="sep">── INST. ALPHA ──</div>
+      <div class="ir"><div class="il">🧬 Score Inst. <span>(0-100)</span></div><input type="number" id="ia_s" min="0" max="100" placeholder="0" oninput="calc()"></div>
+      <div class="ir">
+        <div class="il">🕐 Kill Zone</div>
+        <div class="tg">
+          <button class="tb" id="kz_lon" onclick="tog(this,'kz','london')">🇬🇧 LON</button>
+          <button class="tb" id="kz_ny" onclick="tog(this,'kz','ny')">🗽 NY</button>
+          <button class="tb" id="kz_ov" onclick="tog(this,'kz','overlap')">⚡ OVL</button>
+          <button class="tb on-neut" id="kz_no" onclick="tog(this,'kz','none')">─</button>
+        </div>
+      </div>
+      <div class="ir">
+        <div class="il">🔺 Vela Inst.</div>
+        <div class="tg">
+          <button class="tb" id="vc_b" onclick="tog(this,'vc','bull')">📈 COMP</button>
+          <button class="tb" id="vc_r" onclick="tog(this,'vc','bear')">📉 VENTA</button>
+          <button class="tb" id="vc_ab" onclick="tog(this,'vc','absorb')">🔷 ABS</button>
+          <button class="tb on-neut" id="vc_n" onclick="tog(this,'vc','none')">─</button>
+        </div>
+      </div>
+      <div class="ir"><div class="il" style="color:var(--green);font-family:'Share Tech Mono',monospace;font-size:.68rem">SCORE ADX+RSI+IA</div><span id="adx_out" class="badge b-neut">0/100</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ROW 3: MACRO CORRELATION + LIQUIDITY + FOREX/WYCKOFF -->
+<div class="g3">
+
+  <!-- MACRO CORRELATION PRO -->
+  <div class="panel">
+    <div class="ph" style="color:var(--cyan)"><span class="dot" style="background:var(--cyan)"></span>📡 MACRO CORRELATION PRO <span class="tag tag-live">20%</span><button class="help-btn" onclick="openHelp('macro')">?</button></div>
+    <div class="pb">
+      <div class="macro-g">
+        <div>
+          <div class="sep">── DOMINANCIAS ──</div>
+          <div class="macro-item"><div class="macro-lbl">₿ BTC Dom</div><div class="tg"><button class="tb" id="btcd_b" onclick="tog(this,'btcd','bull')">▲</button><button class="tb" id="btcd_r" onclick="tog(this,'btcd','bear')">▼</button></div></div>
+          <div class="macro-item"><div class="macro-lbl">💵 USDT Dom</div><div class="tg"><button class="tb" id="usdtd_b" onclick="tog(this,'usdtd','bull')">▲</button><button class="tb" id="usdtd_r" onclick="tog(this,'usdtd','bear')">▼</button></div></div>
+          <div class="macro-item"><div class="macro-lbl">🌐 TOTAL 1</div><div class="tg"><button class="tb" id="t1c_b" onclick="tog(this,'t1c','bull')">▲</button><button class="tb" id="t1c_r" onclick="tog(this,'t1c','bear')">▼</button></div></div>
+          <div class="macro-item"><div class="macro-lbl">🪙 TOTAL 2</div><div class="tg"><button class="tb" id="t2c_b" onclick="tog(this,'t2c','bull')">▲</button><button class="tb" id="t2c_r" onclick="tog(this,'t2c','bear')">▼</button></div></div>
+          <div class="macro-item"><div class="macro-lbl">🎲 TOTAL 3</div><div class="tg"><button class="tb" id="t3c_b" onclick="tog(this,'t3c','bull')">▲</button><button class="tb" id="t3c_r" onclick="tog(this,'t3c','bear')">▼</button></div></div>
+        </div>
+        <div>
+          <div class="sep">── MACRO GLOBAL ──</div>
+          <div class="macro-item"><div class="macro-lbl">📈 NASDAQ</div><div class="tg"><button class="tb" id="ndx_b" onclick="tog(this,'ndx','bull')">▲</button><button class="tb" id="ndx_r" onclick="tog(this,'ndx','bear')">▼</button></div></div>
+          <div class="macro-item"><div class="macro-lbl">📊 S&amp;P 500</div><div class="tg"><button class="tb" id="spx_b" onclick="tog(this,'spx','bull')">▲</button><button class="tb" id="spx_r" onclick="tog(this,'spx','bear')">▼</button></div></div>
+          <div class="macro-item"><div class="macro-lbl">💲 DXY</div><div class="tg"><button class="tb" id="dxy_b" onclick="tog(this,'dxy','strong')">FUERTE</button><button class="tb" id="dxy_r" onclick="tog(this,'dxy','weak')">DÉBIL</button><button class="tb on-neut" id="dxy_n" onclick="tog(this,'dxy','neut')">NEUT</button></div></div>
+          <div class="macro-item"><div class="macro-lbl">😱 Fear&amp;Greed</div><input type="number" id="fg_v" min="0" max="100" placeholder="50" style="width:62px" oninput="calc()"></div>
+          <div class="macro-item"><div class="macro-lbl">🌊 Temporada</div><div class="tg"><button class="tb" id="sea_alt" onclick="tog(this,'sea','alt')">ALT</button><button class="tb" id="sea_btc" onclick="tog(this,'sea','btc')">₿</button><button class="tb on-neut" id="sea_tr" onclick="tog(this,'sea','trans')">TRANS</button></div></div>
+        </div>
+      </div>
+      <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center">
+        <div style="font-family:'Share Tech Mono',monospace;font-size:.68rem;color:var(--cyan)">SCORE MACRO</div>
+        <span id="mac_out" class="badge b-neut">0/100</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- LIQUIDITY PRO -->
+  <div class="panel">
+    <div class="ph" style="color:var(--orange)"><span class="dot" style="background:var(--orange)"></span>⚡ LIQUIDITY PRO + BOLLINGER <span class="tag tag-live">8%</span><button class="help-btn" onclick="openHelp('liq')">?</button></div>
+    <div class="pb">
+      <div class="ir">
+        <div class="il">🔵 Zona Liquidez</div>
+        <div class="tg">
+          <button class="tb" id="liq_b" onclick="tog(this,'liq','bull')">BUY STOPS</button>
+          <button class="tb" id="liq_r" onclick="tog(this,'liq','bear')">SELL STOPS</button>
+          <button class="tb on-neut" id="liq_n" onclick="tog(this,'liq','none')">─</button>
+        </div>
+      </div>
+      <div class="ir">
+        <div class="il">📈 EMA 50 Bias</div>
+        <div class="tg">
+          <button class="tb" id="ema_b" onclick="tog(this,'ema','bull')">SOBRE</button>
+          <button class="tb" id="ema_r" onclick="tog(this,'ema','bear')">BAJO</button>
+        </div>
+      </div>
+      <div class="ir">
+        <div class="il">◆ POC vs Precio</div>
+        <div class="tg">
+          <button class="tb" id="poc_b" onclick="tog(this,'poc','above')">SOBRE</button>
+          <button class="tb" id="poc_r" onclick="tog(this,'poc','below')">BAJO</button>
+          <button class="tb on-neut" id="poc_n" onclick="tog(this,'poc','at')">EN POC</button>
+        </div>
+      </div>
+      <div class="ir">
+        <div class="il">⚡ Liq. Barrida</div>
+        <div class="tg">
+          <button class="tb" id="sw_y" onclick="tog(this,'sw','yes')">BARRIDA</button>
+          <button class="tb on-neut" id="sw_n" onclick="tog(this,'sw','no')">─</button>
+        </div>
+      </div>
+      <div class="sep">── BOLLINGER MICRO/MACRO ──</div>
+      <div class="ir">
+        <div class="il">📊 BB Micro</div>
+        <div class="tg">
+          <button class="tb" id="bm_ob" onclick="tog(this,'bm','ob')">BANDA SUP</button>
+          <button class="tb" id="bm_mid" onclick="tog(this,'bm','mid')">MEDIA</button>
+          <button class="tb" id="bm_os" onclick="tog(this,'bm','os')">BANDA INF</button>
+          <button class="tb on-neut" id="bm_n" onclick="tog(this,'bm','none')">─</button>
+        </div>
+      </div>
+      <div class="ir">
+        <div class="il">📊 BB Macro</div>
+        <div class="tg">
+          <button class="tb" id="bM_ob" onclick="tog(this,'bM','ob')">BANDA SUP</button>
+          <button class="tb" id="bM_mid" onclick="tog(this,'bM','mid')">MEDIA</button>
+          <button class="tb" id="bM_os" onclick="tog(this,'bM','os')">BANDA INF</button>
+          <button class="tb on-neut" id="bM_n" onclick="tog(this,'bM','none')">─</button>
+        </div>
+      </div>
+      <div class="ir">
+        <div class="il">📈 EMAs 20/50</div>
+        <div class="tg">
+          <button class="tb" id="e20_b" onclick="tog(this,'e20','bull')">E20 ▲</button>
+          <button class="tb" id="e50_b" onclick="tog(this,'e50','bull')">E50 ▲</button>
+          <button class="tb" id="e20_r" onclick="tog(this,'e20','bear')">E20 ▼</button>
+          <button class="tb" id="e50_r" onclick="tog(this,'e50','bear')">E50 ▼</button>
+        </div>
+      </div>
+      <div class="ir"><div class="il" style="color:var(--orange);font-family:'Share Tech Mono',monospace;font-size:.68rem">SCORE LIQ+BB</div><span id="liq_out" class="badge b-neut">0/100</span></div>
+    </div>
+  </div>
+
+  <!-- FOREX + WYCKOFF -->
+  <div class="panel">
+    <div class="ph" style="color:var(--purple)"><span class="dot" style="background:var(--purple)"></span>💱 FOREX INST. + WYCKOFF <span class="tag tag-live">10%</span><button class="help-btn" onclick="openHelp('fx')">?</button></div>
+    <div class="pb">
+      <div class="sep">── FOREX INSTITUTIONAL ──</div>
+      <div class="ir">
+        <div class="il">📐 Tendencia MS</div>
+        <div class="tg">
+          <button class="tb" id="fx_bull" onclick="tog(this,'fx','bull')">▲ ALCISTA</button>
+          <button class="tb" id="fx_bear" onclick="tog(this,'fx','bear')">▼ BAJISTA</button>
+        </div>
+      </div>
+      <div class="ir">
+        <div class="il">⚡ BOS/CHoCH</div>
+        <div class="tg">
+          <button class="tb" id="bos_b" onclick="tog(this,'bos','bull')">BOS ▲</button>
+          <button class="tb" id="bos_r" onclick="tog(this,'bos','bear')">BOS ▼</button>
+          <button class="tb" id="choch_b" onclick="tog(this,'choch','bull')">CHoCH ▲</button>
+          <button class="tb" id="choch_r" onclick="tog(this,'choch','bear')">CHoCH ▼</button>
+          <button class="tb on-neut" id="bos_n" onclick="tog(this,'bos','none')">─</button>
+        </div>
+      </div>
+      <div class="ir">
+        <div class="il">💧 Sweep</div>
+        <div class="tg">
+          <button class="tb" id="swp_b" onclick="tog(this,'swp','bull')">▲ ALC</button>
+          <button class="tb" id="swp_r" onclick="tog(this,'swp','bear')">▼ BAJ</button>
+          <button class="tb on-neut" id="swp_n" onclick="tog(this,'swp','none')">─</button>
+        </div>
+      </div>
+      <div class="ir">
+        <div class="il">🟦 Order Block</div>
+        <div class="tg">
+          <button class="tb" id="ob_b" onclick="tog(this,'ob','bull')">🟢 ACUM</button>
+          <button class="tb" id="ob_r" onclick="tog(this,'ob','bear')">🔴 DIST</button>
+          <button class="tb on-neut" id="ob_n" onclick="tog(this,'ob','none')">─</button>
+        </div>
+      </div>
+      <div class="sep">── WYCKOFF SNIPER ──</div>
+      <div class="ir">
+        <div class="il">🌊 Fase Wyckoff</div>
+        <div class="tg">
+          <button class="tb" id="wyf_a" onclick="tog(this,'wyf','a')">FASE A</button>
+          <button class="tb" id="wyf_b" onclick="tog(this,'wyf','b')">FASE B</button>
+          <button class="tb" id="wyf_c" onclick="tog(this,'wyf','c')">FASE C</button>
+          <button class="tb" id="wyf_d" onclick="tog(this,'wyf','d')">FASE D</button>
+          <button class="tb" id="wyf_e" onclick="tog(this,'wyf','e')">FASE E</button>
+        </div>
+      </div>
+      <div class="ir">
+        <div class="il">🌱 Evento Wyckoff</div>
+        <div class="tg">
+          <button class="tb" id="wye_spring" onclick="tog(this,'wye','spring')">🌱 SPRING</button>
+          <button class="tb" id="wye_utad" onclick="tog(this,'wye','utad')">⚡ UTAD</button>
+          <button class="tb" id="wye_sos" onclick="tog(this,'wye','sos')">SOS ▲</button>
+          <button class="tb" id="wye_sow" onclick="tog(this,'wye','sow')">SOW ▼</button>
+          <button class="tb on-neut" id="wye_n" onclick="tog(this,'wye','none')">─</button>
+        </div>
+      </div>
+      <div class="ir">
+        <div class="il">🌊 Esquema</div>
+        <div class="tg">
+          <button class="tb" id="ws_acc" onclick="tog(this,'ws','acc')">ACUMULACIÓN</button>
+          <button class="tb" id="ws_dis" onclick="tog(this,'ws','dis')">DISTRIBUCIÓN</button>
+        </div>
+      </div>
+      <div class="ir"><div class="il" style="color:var(--purple);font-family:'Share Tech Mono',monospace;font-size:.68rem">SCORE FX+WY</div><span id="fxwy_out" class="badge b-neut">0/100</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ROW 4: SUMMARY + ANALYSIS -->
+<div class="g2">
+  <div class="panel">
+    <div class="ph" style="color:var(--gold)"><span class="dot" style="background:var(--gold)"></span>📊 RESUMEN DE MÓDULOS — 8 INDICADORES</div>
+    <div class="pb">
+      <table class="stbl">
+        <thead><tr><th>MÓDULO</th><th>PESO</th><th>SCORE</th><th>SEÑAL</th></tr></thead>
+        <tbody id="sumTbl"><tr><td colspan="4" style="color:var(--gray)">Ingresa datos...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="ph" style="color:var(--gold)"><span class="dot" style="background:var(--gold)"></span>🧬 ANÁLISIS CONSOLIDADO FINAL <span class="tag tag-live">LIVE</span></div>
+    <div class="pb">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:10px">
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:3px;padding:8px;text-align:center">
+          <div class="mlabel">CONFLUENCIA</div>
+          <div id="confTotal" style="font-family:'Share Tech Mono',monospace;font-size:.75rem;color:var(--gray);margin-top:4px">─</div>
+        </div>
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:3px;padding:8px;text-align:center">
+          <div class="mlabel">FACTORES ▲</div>
+          <div id="bullF" style="font-family:'Share Tech Mono',monospace;font-size:1.1rem;color:var(--green);margin-top:4px">0</div>
+        </div>
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:3px;padding:8px;text-align:center">
+          <div class="mlabel">FACTORES ▼</div>
+          <div id="bearF" style="font-family:'Share Tech Mono',monospace;font-size:1.1rem;color:var(--red);margin-top:4px">0</div>
+        </div>
+      </div>
+      <div id="analysisBox" class="analysis-box" style="color:var(--gray)">Ingresa los datos de tus indicadores para generar el análisis consolidado...</div>
+      <div class="alert-row" id="alertBadges"></div>
+    </div>
+  </div>
+</div>
+
+<div class="bottom-bar">⬡ PSYCHOMETRIKS Signal Aggregator PRO v3 ⬡ Solo educativo — gestión de riesgo siempre ⬡ No es asesoría financiera</div>
+</div>
+</div><!-- /appScreen -->
+
+<script>
+// ═══════════════════════════════════════════
+// USER MANAGEMENT
+// ═══════════════════════════════════════════
+let USERS = JSON.parse(localStorage.getItem('psy_users') || 'null') || [
+  {user:'jorge',pass:'JORGE-ADMIN-2024',name:'Jorge',role:'admin'},
+  {user:'admin',pass:'JORGE-ADMIN-2024',name:'Administrador',role:'admin'}
+];
+let currentUser = null;
+
+function saveUsers(){localStorage.setItem('psy_users',JSON.stringify(USERS));}
+
+function doLogin(){
+  const u=document.getElementById('loginUser').value.trim().toLowerCase();
+  const p=document.getElementById('loginPass').value;
+  const found=USERS.find(x=>x.user.toLowerCase()===u&&x.pass===p);
+  if(found){
+    currentUser=found;
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('appScreen').style.display='block';
+    document.getElementById('topUserBadge').textContent='👤 '+found.name+' ['+found.role.toUpperCase()+']';
+    if(found.role==='admin') document.getElementById('adminBtn').style.display='';
+    setDate();
+    buildMag7();
+    calc();
+  } else {
+    document.getElementById('loginErr').textContent='⚠️ Usuario o contraseña incorrectos';
+    document.getElementById('loginPass').value='';
+    setTimeout(()=>document.getElementById('loginErr').textContent='',3000);
+  }
+}
+
+function doLogout(){
+  currentUser=null;
+  document.getElementById('loginScreen').style.display='flex';
+  document.getElementById('appScreen').style.display='none';
+  document.getElementById('loginUser').value='';
+  document.getElementById('loginPass').value='';
+  document.getElementById('adminBtn').style.display='none';
+}
+
+function openHelp(tab){
+  document.getElementById('helpModal').classList.add('open');
+  if(tab) showHelp(tab);
+}
+function closeHelp(){document.getElementById('helpModal').classList.remove('open');}
+function showHelp(tab){
+  document.querySelectorAll('.help-content').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.htab').forEach(el=>el.classList.remove('active'));
+  const c=document.getElementById('hc-'+tab);
+  if(c) c.classList.add('active');
+  const tabs=document.querySelectorAll('.htab');
+  const map={wf:0,pace:1,crash:2,mag7:3,dsf:4,adx:5,macro:6,liq:7,fx:8};
+  if(map[tab]!==undefined && tabs[map[tab]]) tabs[map[tab]].classList.add('active');
+}
+document.addEventListener('DOMContentLoaded',function(){
+  const hm=document.getElementById('helpModal');
+  if(hm) hm.addEventListener('click',function(e){if(e.target===this) closeHelp();});
+});
+
+function openAdmin(){
+  renderUserList();
+  document.getElementById('adminModal').classList.add('open');
+}
+function closeAdmin(){document.getElementById('adminModal').classList.remove('open');}
+
+function renderUserList(){
+  const el=document.getElementById('userList');
+  el.innerHTML=USERS.map((u,i)=>`
+    <div class="user-item">
+      <div class="user-info">
+        <div class="user-name">👤 ${u.user} <span style="color:var(--gray)">(${u.name})</span></div>
+        <div class="user-role">Rol: <span style="color:${u.role==='admin'?'var(--gold)':'var(--cyan)'}">${u.role.toUpperCase()}</span></div>
+      </div>
+      <div class="user-actions">
+        ${u.user!=='jorge'?`<button class="ubtn ubtn-del" onclick="delUser(${i})">✕ ELIMINAR</button>`:'<span style="font-family:\'Share Tech Mono\',monospace;font-size:.6rem;color:var(--gray)">MASTER</span>'}
+      </div>
+    </div>
+  `).join('');
+}
+
+function addUser(){
+  const u=document.getElementById('nu_user').value.trim().toLowerCase();
+  const p=document.getElementById('nu_pass').value;
+  const n=document.getElementById('nu_name').value.trim();
+  const r=document.getElementById('nu_role').value;
+  const msg=document.getElementById('addUserMsg');
+  if(!u||!p||!n){msg.style.color='var(--red)';msg.textContent='⚠️ Completa todos los campos';return;}
+  if(USERS.find(x=>x.user===u)){msg.style.color='var(--red)';msg.textContent='⚠️ El usuario ya existe';return;}
+  USERS.push({user:u,pass:p,name:n,role:r});
+  saveUsers();
+  msg.style.color='var(--green)';
+  msg.textContent='✅ Usuario '+u+' agregado correctamente';
+  document.getElementById('nu_user').value='';
+  document.getElementById('nu_pass').value='';
+  document.getElementById('nu_name').value='';
+  renderUserList();
+  setTimeout(()=>msg.textContent='',3000);
+}
+
+function delUser(i){
+  if(USERS[i].user==='jorge') return;
+  if(!confirm('¿Eliminar usuario "'+USERS[i].user+'"?')) return;
+  USERS.splice(i,1);
+  saveUsers();
+  renderUserList();
+}
+
+function setDate(){
+  const now=new Date();
+  document.getElementById('topDate').textContent=now.toLocaleString('es-ES',{weekday:'short',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}).toUpperCase();
+}
+setInterval(()=>{if(currentUser)setDate();},30000);
+
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+const S={
+  sh:'none',wfbias:'neut',fz:'none',pp:'wait',ali:null,
+  adx:'verde',di:null,div:'none',dvi:'none',
+  kz:'none',vc:'none',ob:'none',
+  liq:'none',ema:null,poc:'at',sw:'no',
+  bm:'none',bM:'none',e20:null,e50:null,
+  btcd:null,usdtd:null,t1c:null,t2c:null,t3c:null,
+  ndx:null,spx:null,dxy:'neut',sea:'trans',
+  crash:'neut',sq:'no',
+  vix:'ok',me:'neut',mi:'neut',
+  dsf:'esp',dsc:'none',bc:'gray',
+  fx:'bull',bos:'none',choch:'none',swp:'none',
+  wyf:null,wye:'none',ws:'acc',
+  mag7:[null,null,null,null,null,null,null]
+};
+
+const MAG7_TICKERS=['AAPL','MSFT','NVDA','AMZN','GOOGL','META','TSLA'];
+const MAG7_WEIGHTS=[18,17,15,10,8,6,4];
+
+function buildMag7(){
+  const g=document.getElementById('mag7Grid');
+  g.innerHTML=MAG7_TICKERS.map((t,i)=>`
+    <div class="mag7-item">
+      <div style="display:flex;flex-direction:column;gap:3px">
+        <div class="mag7-ticker">${t} <span style="font-size:.6rem;color:var(--gray)">${MAG7_WEIGHTS[i]}%</span></div>
+        <input type="number" id="m7p_${i}" min="-30" max="30" step="0.1" placeholder="%" style="width:70px;font-size:.72rem;padding:3px 6px" oninput="calcMag7()">
+      </div>
+      <div style="display:flex;gap:4px;align-items:center">
+        <button class="tb" id="m7b_${i}" onclick="togMag7(${i},'bull')">✅</button>
+        <button class="tb on-neut" id="m7n_${i}" onclick="togMag7(${i},'none')">─</button>
+        <button class="tb" id="m7r_${i}" onclick="togMag7(${i},'bear')">❌</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function togMag7(i,val){
+  S.mag7[i]=val;
+  const ids=['bull','none','bear'];
+  ids.forEach(v=>{
+    const el=document.getElementById(`m7${v==='bull'?'b':v==='none'?'n':'r'}_${i}`);
+    if(el) el.classList.remove('on-bull','on-bear','on-neut');
+  });
+  const el=document.getElementById(`m7${val==='bull'?'b':val==='none'?'n':'r'}_${i}`);
+  if(el) el.classList.add(val==='bull'?'on-bull':val==='bear'?'on-bear':'on-neut');
+  calcMag7();
+  calc();
+}
+
+function calcMag7(){
+  const bulls=S.mag7.filter(x=>x==='bull').length;
+  const bears=S.mag7.filter(x=>x==='bear').length;
+  const simple=bulls+'/7';
+  let pond=0;
+  S.mag7.forEach((v,i)=>{
+    const pct=parseFloat(document.getElementById('m7p_'+i)?.value)||0;
+    if(v==='bull') pond+=MAG7_WEIGHTS[i]*(1+pct/100);
+    else if(v==='bear') pond-=MAG7_WEIGHTS[i]*(1+Math.abs(pct)/100);
+  });
+  const pondScore=Math.round(Math.max(0,Math.min(100,50+pond)));
+  const vix_v=parseFloat(document.getElementById('vix_v')?.value)||20;
+  const vixAdj=vix_v>30?-10:vix_v>25?-5:vix_v<15?5:0;
+  const macroAdj=pondScore+vixAdj+(S.me==='bull'?8:S.me==='bear'?-8:0)+(S.mi==='bull'?4:S.mi==='bear'?-4:0);
+  const macroFinal=Math.max(0,Math.min(100,macroAdj));
+  const sc=document.getElementById('m7_simple');
+  const sp=document.getElementById('m7_pond');
+  const sm=document.getElementById('m7_macro');
+  if(sc){sc.textContent=simple;sc.style.color=bulls>=5?'var(--green)':bulls>=4?'var(--gold)':bears>=5?'var(--red)':'var(--gray)';}
+  if(sp){sp.textContent=pondScore+'/100';sp.style.color=pondScore>=60?'var(--green)':pondScore>=45?'var(--gold)':'var(--red)';}
+  if(sm){sm.textContent=macroFinal+'/100';sm.style.color=macroFinal>=60?'var(--green)':macroFinal>=45?'var(--gold)':'var(--red)';}
+}
+
+// ═══════════════════════════════════════════
+// TOGGLE
+// ═══════════════════════════════════════════
+function tog(btn,grp,val){
+  const prefix=btn.id.replace(/_[^_]+$/,'');
+  document.querySelectorAll(`button[id^="${prefix}"]`).forEach(b=>{
+    b.classList.remove('on-bull','on-bear','on-neut','on-gold','on-cyan');
+  });
+  S[grp]=val;
+  const bearVals=['bear','short','shorts','rojo','strong','crash','dis','red','bear'];
+  const neutVals=['none','neut','wait','trans','at','no','esp','gray','neut'];
+  if(bearVals.includes(val)) btn.classList.add('on-bear');
+  else if(neutVals.includes(val)) btn.classList.add('on-neut');
+  else btn.classList.add('on-bull');
+  if(grp==='me'||grp==='mi'||grp==='vix') calcMag7();
+  calc();
+}
+function setTF(btn,grp,val){
+  btn.closest('.tft').querySelectorAll('.tftab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ═══════════════════════════════════════════
+// SCORING
+// ═══════════════════════════════════════════
+function getNum(id,def=0){return parseFloat(document.getElementById(id)?.value)||def;}
+function clamp(v){return Math.max(0,Math.min(100,Math.round(v)));}
+function getSig(score){
+  if(score>=74) return{t:'🔥 LONG FUERTE',c:'var(--green)',cls:'b-bull'};
+  if(score>=63) return{t:'🟢 LONG',c:'var(--green)',cls:'b-bull'};
+  if(score>=57) return{t:'↗ SESGO ALC',c:'var(--teal)',cls:'b-bull'};
+  if(score>=44) return{t:'⚖️ NEUTRAL',c:'var(--gray)',cls:'b-neut'};
+  if(score>=38) return{t:'↘ SESGO BAJ',c:'var(--orange)',cls:'b-bear'};
+  if(score>=27) return{t:'🔴 SHORT',c:'var(--red)',cls:'b-bear'};
+  return{t:'💀 SHORT FUERTE',c:'var(--red)',cls:'b-bear'};
+}
+
+function calc(){
+  const ballenas=getNum('wf_b'),retail=getNum('wf_r'),rvol=getNum('wf_rv',1),flujoAlc=getNum('wf_fa');
+
+  // WHALE FLOW 28%
+  let wf=0;
+  if(ballenas>30)wf+=30;else if(ballenas>10)wf+=18;else if(ballenas>0)wf+=8;
+  else if(ballenas<-20)wf-=20;else if(ballenas<0)wf-=10;
+  if(retail>70&&ballenas<20)wf-=12;else if(retail<30)wf+=8;
+  if(rvol>=2.5)wf+=22;else if(rvol>=2)wf+=16;else if(rvol>=1.5)wf+=8;else if(rvol<0.5)wf-=10;
+  if(flujoAlc>60)wf+=15;else if(flujoAlc>40)wf+=7;
+  if(S.sh==='shorts')wf+=15;if(S.sh==='longs')wf-=15;
+  if(S.wfbias==='bull')wf+=22;if(S.wfbias==='bear')wf-=22;
+  wf=clamp(50+wf);
+
+  // PACE PRO 22%
+  const ppRaw=getNum('pp_s'),ppMac=getNum('pp_m'),wyB=getNum('wy_b'),wyBr=getNum('wy_br');
+  let pp=0;
+  if(ppRaw>0){pp=ppRaw;}else{
+    if(wyB>wyBr)pp+=35;else if(wyBr>wyB)pp-=35;
+    if(ppMac>60)pp+=18;if(ppMac>80)pp+=8;
+    if(S.fz==='golden')pp+=18;if(S.fz==='deep')pp+=10;if(S.fz==='neut')pp+=12;if(S.fz==='destroy')pp+=15;
+    if(S.pp==='long')pp+=22;if(S.pp==='short')pp-=22;if(S.pp==='segan')pp+=18;
+    if(S.ali==='yes')pp+=10;if(S.ali==='no')pp-=8;
+    pp=clamp(50+pp);
+  }
+  if(S.pp==='long')pp=Math.max(pp,62);if(S.pp==='short')pp=Math.min(pp,38);if(S.pp==='segan')pp=Math.max(pp,65);
+
+  // CRASH RADAR 12%
+  const c1mc=getNum('cr_1mc',0),c1mb=getNum('cr_1mb',0);
+  const c1wc=getNum('cr_1wc',0),c1wb=getNum('cr_1wb',0);
+  const c1dc=getNum('cr_1dc',0),c1db=getNum('cr_1db',0);
+  const c4hc=getNum('cr_4hc',0),c4hb=getNum('cr_4hb',0);
+  const totalCrash=(c1mc*4+c1wc*3+c1dc*2+c4hc)/50*100;
+  const totalBull=(c1mb*4+c1wb*3+c1db*2+c4hb)/50*100;
+  let cr=50;
+  if(S.crash==='crash')cr=Math.max(20,50-totalCrash*0.5);
+  else if(S.crash==='bull')cr=Math.min(80,50+totalBull*0.5);
+  else if(S.crash==='press')cr=Math.max(35,50-totalCrash*0.3);
+  if(S.sq==='yes')cr=Math.min(cr+10,85);
+  if(totalCrash>60)cr=Math.min(cr,40);if(totalBull>60)cr=Math.max(cr,60);
+  cr=clamp(cr);
+
+  // MAG7 10%
+  const bulls=S.mag7.filter(x=>x==='bull').length,bears=S.mag7.filter(x=>x==='bear').length;
+  let m7=0;
+  S.mag7.forEach((v,i)=>{const p=parseFloat(document.getElementById('m7p_'+i)?.value)||0;if(v==='bull')m7+=MAG7_WEIGHTS[i]*(1+p/100);else if(v==='bear')m7-=MAG7_WEIGHTS[i]*(1+Math.abs(p)/100);});
+  const vix_v=getNum('vix_v',20);
+  const vixAdj=vix_v>35?-15:vix_v>28?-8:vix_v>25?-5:vix_v<15?8:0;
+  m7=clamp(50+m7+vixAdj+(S.vix==='extreme'?-15:S.vix==='fear'?-8:5)+(S.me==='bull'?12:S.me==='bear'?-12:0)+(S.mi==='bull'?6:S.mi==='bear'?-6:0));
+
+  // DSF QUANTUM 8%
+  const mfi_mi=getNum('dsf_mi',50),mfi_ma=getNum('dsf_ma',50);
+  let dsf=0;
+  if(S.dsf==='inj')dsf+=30;if(S.dsf==='dis')dsf-=30;if(S.dsf==='pre')dsf+=5;
+  if(mfi_mi>60&&mfi_ma>50)dsf+=20;if(mfi_mi<40&&mfi_ma<50)dsf-=20;
+  if(mfi_mi<40&&mfi_ma>50)dsf-=10;if(mfi_mi>60&&mfi_ma<50)dsf+=5;
+  if(S.dsc==='bull')dsf+=15;if(S.dsc==='bear')dsf-=15;
+  if(S.bc==='green')dsf+=12;if(S.bc==='red')dsf-=12;if(S.bc==='orange')dsf-=5;
+  // Update DSF display
+  const dmi=document.getElementById('dsf_micro_disp'),dma=document.getElementById('dsf_macro_disp'),dst=document.getElementById('dsf_state_disp');
+  if(dmi){dmi.textContent=mfi_mi>0?Math.round(mfi_mi):'─';dmi.style.color=mfi_mi>60?'var(--green)':mfi_mi<40?'var(--red)':'var(--gray)';}
+  if(dma){dma.textContent=mfi_ma>0?Math.round(mfi_ma):'─';dma.style.color=mfi_ma>60?'var(--green)':mfi_ma<40?'var(--red)':'var(--gray)';}
+  if(dst){const states={inj:'▲ INJECC.',dis:'▼ DISTRIB.',pre:'⚠ PRESIÓN',esp:'X ESPERA'};dst.textContent=states[S.dsf]||'─';dst.style.color=S.dsf==='inj'?'var(--green)':S.dsf==='dis'?'var(--red)':S.dsf==='pre'?'var(--orange)':'var(--gray)';}
+  dsf=clamp(50+dsf);
+
+  // ADX + RSI + INST ALPHA 10%
+  const adxV=getNum('adx_v'),rsiMa=getNum('rsi_ma',50),rsiMi=getNum('rsi_mi',50);
+  let adxS=0;
+  if(S.adx==='verde')adxS+=28;else if(S.adx==='naranja')adxS-=5;else if(S.adx==='azul')adxS+=18;else if(S.adx==='rojo')adxS-=28;
+  if(adxV>=40)adxS+=16;else if(adxV>=25)adxS+=10;else if(adxV<15)adxS-=8;
+  if(S.di==='bull')adxS+=14;if(S.di==='bear')adxS-=14;
+  if(rsiMa>50&&rsiMa<70)adxS+=10;if(rsiMa>70)adxS-=12;if(rsiMa<30)adxS+=14;
+  if(rsiMi>50&&rsiMi<70)adxS+=6;if(rsiMi>70)adxS-=8;if(rsiMi<30)adxS+=10;
+  if(rsiMa<30&&rsiMi<30)adxS+=10;if(rsiMa>70&&rsiMi>70)adxS-=10;
+  if(S.div==='bull')adxS+=12;if(S.div==='bear')adxS-=12;
+  const iaRaw=getNum('ia_s');
+  if(iaRaw>0)adxS=(adxS+iaRaw)/2;
+  if(S.kz==='overlap')adxS+=15;else if(S.kz!=='none')adxS+=8;
+  if(S.vc==='bull')adxS+=12;if(S.vc==='bear')adxS-=12;if(S.vc==='absorb')adxS+=6;
+  adxS=clamp(50+adxS);
+
+  // MACRO 20%
+  let mac=0;
+  if(S.t1c==='bull')mac+=16;if(S.t1c==='bear')mac-=16;
+  if(S.t2c==='bull')mac+=12;if(S.t2c==='bear')mac-=12;
+  if(S.t3c==='bull')mac+=8;if(S.t3c==='bear')mac-=8;
+  if(S.usdtd==='bear')mac+=14;if(S.usdtd==='bull')mac-=14;
+  if(S.btcd==='bear')mac+=8;if(S.btcd==='bull')mac-=5;
+  if(S.ndx==='bull')mac+=9;if(S.ndx==='bear')mac-=9;
+  if(S.spx==='bull')mac+=7;if(S.spx==='bear')mac-=7;
+  if(S.dxy==='weak')mac+=12;if(S.dxy==='strong')mac-=12;
+  const fg=getNum('fg_v',50);
+  if(fg>=45&&fg<=75)mac+=8;if(fg>85)mac-=10;if(fg<15)mac+=10;
+  if(S.sea==='alt')mac+=14;else if(S.sea==='btc')mac+=6;else if(S.sea==='eth')mac+=8;
+  mac=clamp(50+mac);
+
+  // LIQUIDITY + BOLLINGER 8%
+  let liq=0;
+  if(S.liq==='bull')liq+=20;if(S.liq==='bear')liq-=20;
+  if(S.ema==='bull')liq+=15;if(S.ema==='bear')liq-=15;
+  if(S.poc==='above')liq+=8;if(S.poc==='below')liq-=8;
+  if(S.sw==='yes')liq+=10;
+  if(S.bm==='os')liq+=18;if(S.bm==='ob')liq-=18;if(S.bm==='mid')liq+=4;
+  if(S.bM==='os')liq+=16;if(S.bM==='ob')liq-=16;if(S.bM==='mid')liq+=4;
+  if(S.e20==='bull')liq+=10;if(S.e20==='bear')liq-=10;
+  if(S.e50==='bull')liq+=12;if(S.e50==='bear')liq-=12;
+  liq=clamp(50+liq);
+
+  // FOREX + WYCKOFF 10%
+  let fxwy=0;
+  if(S.fx==='bull')fxwy+=20;if(S.fx==='bear')fxwy-=20;
+  if(S.bos==='bull'||S.choch==='bull')fxwy+=18;if(S.bos==='bear'||S.choch==='bear')fxwy-=18;
+  if(S.swp==='bull')fxwy+=12;if(S.swp==='bear')fxwy-=12;
+  if(S.ob==='bull')fxwy+=12;if(S.ob==='bear')fxwy-=12;
+  if(S.wye==='spring')fxwy+=22;if(S.wye==='utad')fxwy-=15;
+  if(S.wye==='sos')fxwy+=15;if(S.wye==='sow')fxwy-=15;
+  if(S.ws==='acc')fxwy+=10;if(S.ws==='dis')fxwy-=10;
+  if(S.wyf==='c'||S.wyf==='d')fxwy+=8;
+  fxwy=clamp(50+fxwy);
+
+  // TOTAL
+  const totalW=.28+.22+.12+.10+.08+.10+.20+.08+.10;
+  const total=clamp((wf*.28+pp*.22+cr*.12+m7*.10+dsf*.08+adxS*.10+mac*.20+liq*.08+fxwy*.10)/totalW);
+
+  updateUI(wf,pp,cr,m7,dsf,adxS,mac,liq,fxwy,total);
+  updateTF(wf,pp,adxS,mac);
+  updateAnalysis(total,wf,pp,cr,m7,dsf,adxS,mac,liq,fxwy,ballenas,retail,rvol);
+}
+
+function updateUI(wf,pp,cr,m7,dsf,adxS,mac,liq,fxwy,total){
+  const modules=[
+    {id:'wf_out',  s:wf,   lbl:'🐋 Whale Flow Pro',    w:'28%'},
+    {id:'pp_out',  s:pp,   lbl:'🎯 PACE PRO Sniper',   w:'22%'},
+    {id:'cr_out',  s:cr,   lbl:'💣 Crash Radar MTF',   w:'12%'},
+    {id:'m7_out',  s:m7,   lbl:'🚀 MAG7 PRO',          w:'10%'},
+    {id:'dsf_out', s:dsf,  lbl:'⚡ DSF Quantum Elite', w:'8%'},
+    {id:'adx_out', s:adxS, lbl:'📊 ADX+RSI+Inst.',     w:'10%'},
+    {id:'mac_out', s:mac,  lbl:'📡 Macro Correlation', w:'20%'},
+    {id:'liq_out', s:liq,  lbl:'⚡ Liquidity+BB',      w:'8%'},
+    {id:'fxwy_out',s:fxwy, lbl:'💱 Forex+Wyckoff',     w:'10%'},
+  ];
+  modules.forEach(m=>{
+    const el=document.getElementById(m.id);
+    if(!el)return;
+    const sig=getSig(m.s);
+    el.textContent=m.s+'/100';
+    el.className=`badge ${sig.cls}`;
+  });
+
+  // Summary
+  const tbody=document.getElementById('sumTbl');
+  tbody.innerHTML=modules.map(m=>{
+    const sig=getSig(m.s);
+    return`<tr><td style="color:var(--white)">${m.lbl}</td><td style="color:var(--gray);font-family:'Share Tech Mono',monospace">${m.w}</td><td style="color:${sig.c};font-family:'Share Tech Mono',monospace">${m.s}/100</td><td><span class="badge ${sig.cls}" style="font-size:.58rem;padding:2px 6px">${sig.t}</span></td></tr>`;
+  }).join('')+`<tr style="border-top:1px solid var(--border2)"><td style="color:var(--gold);font-weight:700">TOTAL CONSOLIDADO</td><td style="color:var(--gray)">100%</td><td style="color:var(--gold);font-family:'Orbitron',monospace;font-weight:700">${total}/100</td><td><span class="badge b-gold" style="font-size:.58rem">${getSig(total).t}</span></td></tr>`;
+
+  // Master
+  const tSig=getSig(total);
+  const mS=document.getElementById('mScore');if(mS){mS.textContent=total;mS.style.color=tSig.c;}
+  const mSig=document.getElementById('mSignal');if(mSig){mSig.textContent=tSig.t;mSig.style.color=tSig.c;mSig.style.fontSize='1rem';}
+  const bar=document.getElementById('mBar');
+  if(bar){bar.style.width=total+'%';bar.style.background=total>=60?'var(--green)':total>=45?'var(--gold)':'var(--red)';}
+  const bl=total>=80?'BULL FUERTE':total>=65?'ALCISTA':total>=55?'ALC MODERADO':total>=45?'NEUTRAL':total>=35?'BAJ MODERADO':total>=25?'BAJISTA':'BEAR FUERTE';
+  const mBL=document.getElementById('mBarLbl');if(mBL)mBL.textContent=bl;
+
+  // Confidence
+  let active=0;
+  if(document.getElementById('wf_b')?.value||S.wfbias!=='neut')active++;
+  if(document.getElementById('pp_s')?.value||document.getElementById('wy_b')?.value)active++;
+  if(document.getElementById('cr_1mc')?.value||S.crash!=='neut')active++;
+  if(S.mag7.some(x=>x!==null))active++;
+  if(document.getElementById('dsf_mi')?.value||S.dsf!=='esp')active++;
+  if(document.getElementById('adx_v')?.value||S.adx!=='verde')active++;
+  if(S.t1c||S.ndx||S.dxy!=='neut')active++;
+  if(S.fx!=='bull'||S.wye!=='none')active++;
+  const confMap={0:'─',1:'BAJA',2:'BAJA',3:'MEDIA',4:'ALTA',5:'ALTA',6:'MUY ALTA',7:'MUY ALTA',8:'MÁXIMA'};
+  const confCol={0:'var(--gray)',1:'var(--red)',2:'var(--orange)',3:'var(--cyan)',4:'var(--cyan)',5:'var(--green)',6:'var(--green)',7:'var(--green)',8:'var(--gold)'};
+  const mC=document.getElementById('mConf');if(mC){mC.textContent=confMap[active]||'MÁXIMA';mC.style.color=confCol[active]||'var(--gold)';mC.style.fontSize='1.1rem';}
+  const mCS=document.getElementById('mConfSub');if(mCS)mCS.textContent=`Módulos activos: ${active}/8`;
+
+  // Bias
+  const scores=[wf,pp,cr,m7,dsf,adxS,mac,liq,fxwy];
+  const bs=scores.filter(s=>s>55).length,brs=scores.filter(s=>s<45).length;
+  const mB=document.getElementById('mBias'),mBS=document.getElementById('mBiasSub');
+  if(mB){
+    if(bs>brs){mB.textContent='▲ ALCISTA';mB.style.color='var(--green)';if(mBS)mBS.textContent=`${bs}/9 módulos alcistas`;}
+    else if(brs>bs){mB.textContent='▼ BAJISTA';mB.style.color='var(--red)';if(mBS)mBS.textContent=`${brs}/9 módulos bajistas`;}
+    else{mB.textContent='NEUTRAL';mB.style.color='var(--gray)';if(mBS)mBS.textContent='Sin confluencia clara';}
+    mB.style.fontSize='.9rem';
+  }
+
+  // Action
+  const action=total>=74?'🔥 BUSCAR LONG':total>=63?'✅ SETUP LONG':total>=57?'👀 MONITOR ALC':total>=44?'⚖️ ESPERAR':total>=38?'👀 MONITOR BAJ':total>=27?'⛔ SETUP SHORT':'💀 EVITAR LONGS';
+  const mA=document.getElementById('mAction');if(mA){mA.textContent=action;mA.style.color=tSig.c;mA.style.fontSize='.82rem';}
+  const mAS=document.getElementById('mActionSub');if(mAS)mAS.textContent=total>=60?'Confluencia alcista':total>=44?'Sin dirección clara':'Confluencia bajista';
+}
+
+function updateTF(wf,pp,adxS,mac){
+  const tfs=[
+    {id:'tf5m', s:clamp(adxS*.55+wf*.3+mac*.15)},
+    {id:'tf15m',s:clamp(adxS*.4+wf*.4+mac*.2)},
+    {id:'tf30m',s:clamp(wf*.45+adxS*.3+mac*.25)},
+    {id:'tf1h', s:clamp(wf*.4+pp*.3+mac*.3)},
+    {id:'tf4h', s:clamp(mac*.45+pp*.3+adxS*.25)},
+  ];
+  tfs.forEach(tf=>{
+    const el=document.getElementById(tf.id);
+    if(!el)return;
+    const sig=getSig(tf.s);
+    el.textContent=tf.s;
+    el.style.color=sig.c;
+  });
+}
+
+function updateAnalysis(total,wf,pp,cr,m7,dsf,adxS,mac,liq,fxwy,ballenas,retail,rvol){
+  const bulls=[],bears=[];
+  if(ballenas>30)bulls.push('Ballenas comprando fuertemente');
+  if(ballenas<-20)bears.push('Ballenas vendiendo agresivo');
+  if(retail>70&&ballenas<20)bears.push('Retail dominante sin soporte institucional');
+  if(rvol>=2)bulls.push(`RVOL ${rvol}x — volumen institucional`);
+  if(S.sh==='shorts')bulls.push('Caza de shorts próxima (BUY STOPS)');
+  if(S.sh==='longs')bears.push('Caza de longs próxima (SELL STOPS)');
+  if(S.wfbias==='bull')bulls.push('Whale Flow alcista confirmado');
+  if(S.wfbias==='bear')bears.push('Whale Flow bajista confirmado');
+  if(S.pp==='long')bulls.push('PACE PRO señal LONG activa');
+  if(S.pp==='short')bears.push('PACE PRO señal SHORT activa');
+  if(S.pp==='segan')bulls.push('💥 Segan Destroy — Reversión esperada');
+  if(S.fz==='golden')bulls.push('Precio en Golden Zone 0.618');
+  if(S.crash==='crash')bears.push('💣 Crash Radar — Señal de crash activa');
+  if(S.crash==='bull')bulls.push('🚀 Crash Radar — Impulso alcista MTF');
+  if(S.crash==='press')bears.push('⚠️ Crash Radar — Presión bajista acumulada');
+  if(S.sq==='yes')bulls.push('Squeeze activo — energía acumulada');
+  const m7bulls=S.mag7.filter(x=>x==='bull').length,m7bears=S.mag7.filter(x=>x==='bear').length;
+  if(m7bulls>=5)bulls.push(`MAG7: ${m7bulls}/7 acciones alcistas`);
+  if(m7bears>=5)bears.push(`MAG7: ${m7bears}/7 acciones bajistas`);
+  if(S.vix==='extreme')bears.push('VIX en zona de miedo extremo');
+  if(S.me==='bull')bulls.push('Macro Estructura ALCISTA (MAG7)');
+  if(S.me==='bear')bears.push('Macro Estructura BAJISTA (MAG7)');
+  if(S.dsf==='inj')bulls.push('DSF Quantum: INYECCIÓN de capital');
+  if(S.dsf==='dis')bears.push('DSF Quantum: DISTRIBUCIÓN de capital');
+  if(S.dsf==='pre')bears.push('DSF Quantum: Presión de flujo activa');
+  if(S.adx==='verde')bulls.push('ADX verde — alcista con fuerza');
+  if(S.adx==='rojo')bears.push('ADX rojo — bajista con fuerza');
+  if(S.adx==='azul')bulls.push('ADX azul — bajista agotándose (oportunidad)');
+  if(S.div==='bull')bulls.push('Divergencia RSI alcista');
+  if(S.div==='bear')bears.push('Divergencia RSI bajista');
+  if(S.kz==='overlap')bulls.push('Kill Zone Overlap activa — máx. liquidez');
+  if(S.t1c==='bull')bulls.push('TOTAL 1 alcista — crypto en expansión');
+  if(S.t1c==='bear')bears.push('TOTAL 1 bajista — crypto contrayéndose');
+  if(S.usdtd==='bear')bulls.push('USDT Dom bajando — cash rotando a crypto');
+  if(S.usdtd==='bull')bears.push('USDT Dom subiendo — cash saliendo de crypto');
+  if(S.dxy==='weak')bulls.push('DXY débil — favorable para crypto');
+  if(S.dxy==='strong')bears.push('DXY fuerte — presión en crypto');
+  if(S.sea==='alt')bulls.push('🌊 Altseason activa');
+  if(S.bm==='os'||S.bM==='os')bulls.push('Bollinger: precio en banda inferior (sobreventa)');
+  if(S.bm==='ob'||S.bM==='ob')bears.push('Bollinger: precio en banda superior (sobrecompra)');
+  if(S.wye==='spring')bulls.push('🌱 Wyckoff SPRING detectado — reversión alcista');
+  if(S.wye==='utad')bears.push('⚡ Wyckoff UTAD detectado — distribución');
+  if(S.wye==='sos')bulls.push('Wyckoff SOS — Señal de Fortaleza');
+  if(S.bos==='bull'||S.choch==='bull')bulls.push('Market Structure: BOS/CHoCH alcista');
+  if(S.bos==='bear'||S.choch==='bear')bears.push('Market Structure: BOS/CHoCH bajista');
+  if(S.swp==='bull')bulls.push('Liquidity Sweep alcista — rebote probable');
+  if(S.ob==='bull')bulls.push('Order Block alcista activo');
+  if(S.ob==='bear')bears.push('Order Block bajista activo');
+
+  const bF=document.getElementById('bullF'),brF=document.getElementById('bearF');
+  if(bF)bF.textContent=bulls.length;if(brF)brF.textContent=bears.length;
+  const cT=document.getElementById('confTotal');if(cT)cT.textContent=`${bulls.length} ALC vs ${bears.length} BAJ`;
+
+  let txt='';
+  if(!bulls.length&&!bears.length){txt='Ingresa los datos de tus indicadores para generar el análisis consolidado...';}
+  else{
+    if(bulls.length)txt+='✅ ALCISTAS:\n'+bulls.map(b=>'  · '+b).join('\n')+'\n\n';
+    if(bears.length)txt+='❌ BAJISTAS:\n'+bears.map(b=>'  · '+b).join('\n')+'\n\n';
+    txt+='─────────────────────────────────────────────\n';
+    if(total>=74)txt+='🔥 CONCLUSIÓN: Confluencia ALCISTA MUY FUERTE. 8 indicadores alineados. Setup de alta calidad.';
+    else if(total>=63)txt+='✅ CONCLUSIÓN: Señal ALCISTA. Mayoría de módulos positivos. Buscar entrada en retroceso.';
+    else if(total>=57)txt+='👀 CONCLUSIÓN: Sesgo alcista MODERADO. Esperar confirmación adicional.';
+    else if(total>=44)txt+='⚖️ CONCLUSIÓN: NEUTRAL. Sin dirección clara. Esperar ruptura o más datos.';
+    else if(total>=38)txt+='👀 CONCLUSIÓN: Sesgo bajista. Precaución con longs.';
+    else if(total>=27)txt+='⛔ CONCLUSIÓN: Señal BAJISTA. Mayoría de módulos negativos. Evitar longs.';
+    else txt+='💀 CONCLUSIÓN: Confluencia BAJISTA MUY FUERTE. Evitar compras. Considerar short setup.';
+  }
+  const box=document.getElementById('analysisBox');
+  if(box){box.textContent=txt;box.style.color=total>=60?'var(--green)':total>=44?'var(--white)':'var(--red)';}
+
+  // Badges
+  const badges=[];
+  if(S.sh==='shorts')badges.push({t:'🎯 CAZA SHORTS',c:'b-bull'});
+  if(S.fz==='golden')badges.push({t:'🔑 GOLDEN ZONE',c:'b-gold'});
+  if(S.fz==='destroy')badges.push({t:'💥 SEGAN DESTROY',c:'b-bear'});
+  if(S.crash==='crash')badges.push({t:'💣 CRASH SIGNAL',c:'b-bear'});
+  if(S.crash==='bull')badges.push({t:'🚀 BULL MTF',c:'b-bull'});
+  if(S.kz==='overlap')badges.push({t:'⚡ OVERLAP KZ',c:'b-gold'});
+  if(S.sea==='alt')badges.push({t:'🌊 ALTSEASON',c:'b-purple'});
+  if(rvol>=2)badges.push({t:`🐋 RVOL ${rvol}x`,c:'b-bull'});
+  if(S.adx==='azul')badges.push({t:'🔵 BAJISTA AGOTADO',c:'b-bull'});
+  if(S.pp==='segan')badges.push({t:'💥 SEGAN REVERSAL',c:'b-neut2'});
+  if(S.wye==='spring')badges.push({t:'🌱 SPRING WYCKOFF',c:'b-bull'});
+  if(S.wye==='utad')badges.push({t:'⚡ UTAD WYCKOFF',c:'b-bear'});
+  if(S.dsf==='inj')badges.push({t:'▲ DSF INYECCIÓN',c:'b-bull'});
+  if(S.dsf==='dis')badges.push({t:'▼ DSF DISTRIBUCIÓN',c:'b-bear'});
+  if(m7bulls>=5)badges.push({t:`🚀 MAG7 ${m7bulls}/7 ▲`,c:'b-gold'});
+  const ab=document.getElementById('alertBadges');
+  if(ab)ab.innerHTML=badges.map(b=>`<span class="badge ${b.c}" style="font-size:.65rem">${b.t}</span>`).join('');
+}
+
+// Init
+calc();
+</script>
+</body>
+</html>

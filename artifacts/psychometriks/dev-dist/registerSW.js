@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) navigator.serviceWorker.register('/psychometriks/dev-sw.js?dev-sw', { scope: '/psychometriks/', type: 'classic' })

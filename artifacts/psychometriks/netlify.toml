@@ -1,0 +1,24 @@
+# PSYCHOMETRIKS — Configuración para Netlify
+# Sitio: www.psychometriks.trade
+
+[build]
+  publish = "dist/public"
+  command = "pnpm run build:netlify"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# Proxy del API hacia el servidor en Replit
+# IMPORTANTE: Reemplaza REPLIT_API_URL con la URL de tu servidor desplegado en Replit
+# Ejemplo: https://tu-proyecto.replit.app
+[[redirects]]
+  from = "/api/*"
+  to = "https://REPLIT_API_URL/api/:splat"
+  status = 200
+  force = true
+
+# SPA routing — todas las rutas apuntan al index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

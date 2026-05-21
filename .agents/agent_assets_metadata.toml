@@ -1,0 +1,919 @@
+uploads = []
+
+[[generated]]
+id = "wrggkd9nEpcDhanXa8Bvg"
+uri = "file://artifacts/tap-dot/assets/images/icon.png"
+type = "image"
+title = "generated_image"
+
+[[outputs]]
+id = "cB58winacdsKu05n_XA62"
+uri = "file://signals-bot.tar.gz"
+type = "unspecified"
+title = "Bot Altcoins — Tier 1-4 (51 coins)"
+
+[[outputs]]
+id = "Qvf78crmRZMZ0oSVt6Hiq"
+uri = "file://psychometriks-netlify.tar.gz"
+type = "unspecified"
+title = "PSYCHOMETRIKS — Netlify (con login real)"
+
+[[outputs]]
+id = "7N_KNakB6pxE-wnNpJCpX"
+uri = "file://aula-virtual-netlify.zip"
+type = "unspecified"
+title = "Aula Virtual — Build Netlify (ZIP)"
+
+[[outputs]]
+id = "i3z55yBCWlSpgWHudxA-o"
+uri = "file://psychometriks-netlify-completo.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS — ZIP actualizado (pricing + indicators + dashboard)"
+
+[[outputs]]
+id = "GdMN1gHBldvNb-VtC7ucj"
+uri = "file://psychometriks-keys.txt"
+type = "text"
+title = "Template API Keys — PSYCHOMETRIKS"
+
+[[outputs]]
+id = "VxkyCtfu8TjZix5az22Da"
+uri = "file://psychometriks-netlify.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS — ZIP completo para Netlify"
+
+[[outputs]]
+id = "MFUrvhqKmcKLU6oqHJNDu"
+uri = "file://psychometriks-full.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS — Código fuente completo"
+
+[[outputs]]
+id = "GeNu-KsloWRujxtBAvllH"
+uri = "file://psychometriks-deploy.zip"
+type = "unspecified"
+title = "psychometriks-deploy.zip — Entrada / TP / SL / Wallet"
+
+[[outputs]]
+id = "h2afvpM2_tIAguhtK9kaH"
+uri = "file://railway-api-update.zip"
+type = "unspecified"
+title = "Railway API — Archivos actualizados"
+
+[[outputs]]
+id = "XPOLybUGb6588DLiaiaZo"
+uri = "file://psychometriks-v14-deploy.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v14 — Deploy ZIP (Netlify)"
+
+[[outputs]]
+id = "DM48vl1Ddtx1vIbCGqnIm"
+uri = "file://psychometriks-v15-deploy.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v15 — Deploy (Netlify)"
+
+[[outputs]]
+id = "L5nTMxE6QVnSu4LKB3koN"
+uri = "file://aula-psychometriks-v2-deploy.zip"
+type = "unspecified"
+title = "AULA VIRTUAL v2 — Deploy (Netlify)"
+
+[[outputs]]
+id = "5SZH0ao9zTMpIIy46dTri"
+uri = "file://psychometriks-v16-deploy.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v16 — Deploy (Netlify)"
+
+[[outputs]]
+id = "F0uBhzmUU95qD3ZPF9feS"
+uri = "file://aula-psychometriks-v3-deploy.zip"
+type = "unspecified"
+title = "AULA VIRTUAL v3 — Deploy (Netlify)"
+
+[[outputs]]
+id = "OKLsvkQWOm_EgcvDA7MwT"
+uri = "file://psychometriks-v17-deploy.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v17 — Deploy (Netlify)"
+
+[[outputs]]
+id = "eZcazPyrrZqumDCXc2VWI"
+uri = "file://psychometriks-v18-deploy.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v18 — Deploy (Netlify)"
+
+[[outputs]]
+id = "p9W6HAxgqBanDYExnMUuK"
+uri = "file://psychometriks-v19-deploy.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v19 — Deploy (Netlify)"
+
+[[outputs]]
+id = "Z3x07Jk3VqLuB4Wg11aod"
+uri = "file://psychometriks-v20-deploy.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v20 — Deploy (Netlify)"
+
+[[outputs]]
+id = "Lge2PjvTi2KC_XafjuOH6"
+uri = "file://psychometriks-v21-deploy.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v21 — Deploy (Netlify)"
+
+[[outputs]]
+id = "bQbIi_3TO3masSiTsxARZ"
+uri = "file://psychometriks-v22-deploy.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v22 — Deploy (Netlify)"
+
+[[outputs]]
+id = "-g17KqKZWjwCeUY5FTP0t"
+uri = "file://psychometriks-v23-deploy.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v23 — Deploy (Netlify)"
+
+[[outputs]]
+id = "EENGtu5-m_HCxLo0gXPH8"
+uri = "file://psychometriks-v24-deploy.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v24 — Deploy (Netlify)"
+
+[[outputs]]
+id = "TA0Bt0oKXQoRacgzGPAma"
+uri = "file://psychometriks-v25-deploy.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v25 — Deploy (Netlify)"
+
+[[outputs]]
+id = "BeNHb_SGmAgEKzFVAnG4I"
+uri = "file://psychometriks-v26-deploy.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v26 — Deploy (Netlify)"
+
+[[outputs]]
+id = "MceWgIlaelqzl-GLcRmtd"
+uri = "file://psychometriks-v27-deploy.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v27 — Deploy (Netlify)"
+
+[[outputs]]
+id = "EXPwBG3RSKKjIAB5so6Wm"
+uri = "file://psychometriks-v28-deploy.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v28 — Deploy Final (Netlify)"
+
+[[outputs]]
+id = "TntE7eUrrLHkIN0OEys-w"
+uri = "file://psychometriks-v29-deploy.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v29 — Señales desde Panel (Netlify)"
+
+[[outputs]]
+id = "5f_03QINmWle_Y651JqU3"
+uri = "file://psychometriks-v30-deploy.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v30 — Login por Correo (Netlify)"
+
+[[outputs]]
+id = "hKax8-JToy-_QDBXQg2vv"
+uri = "file://psychometriks-v31-deploy.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v31 — Reset Bóveda + Login Correo (Netlify)"
+
+[[outputs]]
+id = "o-XLulQQtMPLldv8AV5Ax"
+uri = "file://psychometriks-v32-security.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v32 — Seguridad Completa Restructurada (Netlify)"
+
+[[outputs]]
+id = "M1EWN2ev0lUYb9-NwfzO8"
+uri = "file://psychometriks-v33-login-fix.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v33 — Login Arreglado (Netlify)"
+
+[[outputs]]
+id = "sxozqATitGUlcu5b-Lp5V"
+uri = "file://psychometriks-v34-6paneles.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v34 — Dashboard 6 Paneles por Nivel (Netlify)"
+
+[[outputs]]
+id = "pBAVposD3gFTcgUK65bfh"
+uri = "file://psychometriks-v35-modal6paneles.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v35 — Modal 6 Paneles Acordeón (Netlify)"
+
+[[outputs]]
+id = "meaKxWCUZ9OO__kbckH6p"
+uri = "file://psychometriks-v36-fixes.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v36 — Todos los Fixes (Netlify)"
+
+[[outputs]]
+id = "RrjyvVnwiHpv_MnRyT2N4"
+uri = "file://psychometriks-v37-users-fix.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v37 — Fix Gestión de Usuarios (Netlify)"
+
+[[outputs]]
+id = "aL0-HO3jk3Y5dujGdIj7g"
+uri = "file://psychometriks-v38-edit-users.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v38 — Editar + Eliminar + Agregar Usuarios (Netlify)"
+
+[[outputs]]
+id = "2q_9AOQlOrNtwff6uor7e"
+uri = "file://psychometriks-v39.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v39 — Bóveda completa"
+
+[[outputs]]
+id = "t4JDNX1TNJ8-l0RTR89VI"
+uri = "file://psychometriks-v40.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v40 — Fecha de vencimiento corregida"
+
+[[outputs]]
+id = "stp8fhv71QAK4HQ-2VzvG"
+uri = "file://psychometriks-v41.zip"
+type = "unspecified"
+title = "psychometriks-v41.zip — Subir a Netlify"
+
+[[outputs]]
+id = "zz8oAYLvcyO7GV_0kGRgY"
+uri = "file://psychometriks-v42.zip"
+type = "unspecified"
+title = "psychometriks-v42.zip — Subir a Netlify"
+
+[[outputs]]
+id = "lD88g_6no_1KCVB8Am3Dy"
+uri = "file://psychometriks-v43.zip"
+type = "unspecified"
+title = "psychometriks-v43.zip — Exchange Admin + Fee Wallet fix"
+
+[[outputs]]
+id = "t_f6CRJpAD7BvNNoGra-k"
+uri = "file://psychometriks-v44.zip"
+type = "unspecified"
+title = "psychometriks-v44.zip — Portfolio real on-chain"
+
+[[outputs]]
+id = "YUusYXawuAlGYK8LREc-w"
+uri = "file://psychometriks-v45.zip"
+type = "unspecified"
+title = "psychometriks-v45.zip — Multi-wallet picker"
+
+[[outputs]]
+id = "wNmi7gXFuAOdn6_2egx5X"
+uri = "file://psychometriks-v46.zip"
+type = "unspecified"
+title = "psychometriks-v46.zip — API apunta a Railway"
+
+[[outputs]]
+id = "Ib6vPqlspZOl0UQsdArjp"
+uri = "file://psychometriks-v47.zip"
+type = "unspecified"
+title = "psychometriks-v47.zip — Affiliate links activos en Exchange"
+
+[[outputs]]
+id = "ov2QYovS4ImoTBi79Re7Z"
+uri = "file://psychometriks-v48.zip"
+type = "unspecified"
+title = "psychometriks-v48.zip — Señales Altcoins con AT real"
+
+[[outputs]]
+id = "QMCsiiZ-9RHte_Ec9P-UR"
+uri = "file://psychometriks-v49.zip"
+type = "unspecified"
+title = "psychometriks-v49.zip — Señales AT integradas en /signals"
+
+[[outputs]]
+id = "DjTN5XcegXKmzatTlO5yO"
+uri = "file://psychometriks-v50.zip"
+type = "unspecified"
+title = "psychometriks-v50.zip — AT Altcoins top 100"
+
+[[outputs]]
+id = "opRnpvpOem_4h3BQbg4B8"
+uri = "file://api-server-source.zip"
+type = "unspecified"
+title = "api-server-source.zip — Estado original (22 monedas, estable)"
+
+[[outputs]]
+id = "HV7fNo3D1QvPaZ_CKb3dz"
+uri = "file://psy-signals-server.zip"
+type = "unspecified"
+title = "psy-signals-server.zip — Servidor independiente de señales"
+
+[[outputs]]
+id = "eYTKS4Lo7W6AjW7W1hOLG"
+uri = "file://restaurar-altcoin-signals.zip"
+type = "unspecified"
+title = "restaurar-altcoin-signals.zip — archivo original para GitHub"
+
+[[outputs]]
+id = "MX8VHG6hcXzfWEzsZjofe"
+uri = "file://api-server-restaurado.zip"
+type = "unspecified"
+title = "api-server-restaurado.zip — sin altcoin-signals, listo para GitHub"
+
+[[outputs]]
+id = "ERrwi4GNxndODgFNG5_Eq"
+uri = "file://psychometriks-signals-v51.zip"
+type = "unspecified"
+title = "psychometriks-signals-v51.zip — frontend apuntando al servidor nuevo de señales"
+
+[[outputs]]
+id = "bBua3x005NT1T5zb0zbTc"
+uri = "file://api-server-db-fix.zip"
+type = "unspecified"
+title = "api-server-db-fix.zip — servidor que arranca aunque no haya DB"
+
+[[outputs]]
+id = "OamMCs__4nRm07h2lhxOr"
+uri = "file://api-server-db-fix-v2.zip"
+type = "unspecified"
+title = "api-server-db-fix-v2.zip — fix completo, arranca sin DATABASE_URL"
+
+[[outputs]]
+id = "YLFdm_RdKH5KXQ1MBYaem"
+uri = "file://psychometriks-v52.zip"
+type = "unspecified"
+title = "psychometriks-v52.zip — con /altcoins-signals restaurado + tab AT ALTCOINS"
+
+[[outputs]]
+id = "7AkwJrXijtWIWMr1mnO2n"
+uri = "file://psychometriks-v53.zip"
+type = "unspecified"
+title = "psychometriks-v53.zip — /altcoins-signals con señales reales del nuevo servidor"
+
+[[outputs]]
+id = "ZDE2IR2ZydmcYhZDtwXtm"
+uri = "file://psychometriks-v54.zip"
+type = "unspecified"
+title = "psychometriks-v54.zip — Screener + /altcoins-signals con AT real"
+
+[[outputs]]
+id = "sbj3Vui9wVeqnmCRUaq2a"
+uri = "file://signals-server-v2.zip"
+type = "unspecified"
+title = "signals-server-v2.zip — package.json corregido"
+
+[[outputs]]
+id = "mbnTfUN1uBD_Jf6x7ydIT"
+uri = "file://psychometriks-v55.zip"
+type = "unspecified"
+title = "psychometriks-v55.zip — subir a Netlify"
+
+[[outputs]]
+id = "uC9fPoCYRaoNEUMUNd9s4"
+uri = "file://psychometriks-v56.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v56 — Cloudflare Pages"
+
+[[outputs]]
+id = "eVPAMfiJ763xDfczobQ1s"
+uri = "file://psychometriks-app-v2.zip"
+type = "unspecified"
+title = "3. psychometriks-app-v2.zip — código fuente app móvil"
+
+[[outputs]]
+id = "Yqou3gB2ez8kFV3B-LL0-"
+uri = "file://psychometriks-v57.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v57 — Fix señales en .trade"
+
+[[outputs]]
+id = "WNPjVpMvhY2r9iZVaKnk5"
+uri = "file://psychometriks-v58.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v58 — Fix señales .trade (sube este)"
+
+[[outputs]]
+id = "ow-ZEX4tnUywTx2zkGJrS"
+uri = "file://psychometriks-v59.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v59 — Signals fix definitivo"
+
+[[outputs]]
+id = "HAd7jpOiV5M8pfRcXteCe"
+uri = "file://psychometriks-v60.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v60 — Worker proxy definitivo"
+
+[[outputs]]
+id = "DRSdblnnWv9cZC68mDbd7"
+uri = "file://psychometriks-v61.zip"
+type = "unspecified"
+title = "psychometriks-v61.zip — Web principal (Cloudflare Pages)"
+
+[[outputs]]
+id = "9LvsLHsC17fw7UI_euAkC"
+uri = "file://aula-psychometriks-v61.zip"
+type = "unspecified"
+title = "aula-psychometriks-v61.zip — Aula Virtual (Cloudflare Pages)"
+
+[[outputs]]
+id = "cDA_Rv5pfDrYMVGFista9"
+uri = "file://psychometriks-v62.zip"
+type = "unspecified"
+title = "psychometriks-v62.zip — Web principal (Cloudflare Pages)"
+
+[[outputs]]
+id = "meaGeRES0GUFB7y30VaI6"
+uri = "file://psychometriks-v63.zip"
+type = "unspecified"
+title = "psychometriks-v63.zip — Web principal"
+
+[[outputs]]
+id = "iBzt2lXGjpF7zDhIsOwQG"
+uri = "file://aula-psychometriks-v63.zip"
+type = "unspecified"
+title = "aula-psychometriks-v63.zip — Aula Virtual"
+
+[[outputs]]
+id = "CtZCYCOlO0I6RFsbpFCKJ"
+uri = "file://psychometriks-v64.zip"
+type = "unspecified"
+title = "psychometriks-v64.zip — Web principal (PSY Intelligence Feed + PSY Score fix)"
+
+[[outputs]]
+id = "zPxXZ21GTOb7I5_o074Sp"
+uri = "file://aula-psychometriks-v65.zip"
+type = "unspecified"
+title = "Aula Virtual v65 — Todos los módulos con gráficos"
+
+[[outputs]]
+id = "ioCYF3YpDZm0tF1q0ER16"
+uri = "file://aula-v66.zip"
+type = "unspecified"
+title = "Aula v66 — Gráficos N1+N2 conservados, N3-N8 revertidos"
+
+[[outputs]]
+id = "UFceFfh6sqtHuxbg73187"
+uri = "file://aula-v67.zip"
+type = "unspecified"
+title = "Aula v67 — Sin gráficos agregados (N1-N8 completamente limpios)"
+
+[[outputs]]
+id = "onpYmXSZY-tdxUZhPyzA6"
+uri = "file://aula-v68.zip"
+type = "unspecified"
+title = "Aula v68 — TODOS los gráficos N1 al N8 activos"
+
+[[outputs]]
+id = "e6gKcx7K4wjuK0R18lo0G"
+uri = "file://aula-v68-unified.zip"
+type = "unspecified"
+title = "aula-v68-unified.zip — Para deploy limpio (2.1 MB)"
+
+[[outputs]]
+id = "NcgkbmE3OIu4ZYqA-9Pce"
+uri = "file://aula-v69-unified.zip"
+type = "unspecified"
+title = "aula-v69-unified.zip — Con gráficos corregidos (2.1 MB)"
+
+[[outputs]]
+id = "QBTtg5I264rENFonWp6Yt"
+uri = "file://aula-v70-charts.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v70 — Aula con Gráficos"
+
+[[outputs]]
+id = "UrhOPF7zb476qEcQwY1SU"
+uri = "file://aula-v71-fixed.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v71 — Gráficos CORREGIDOS (sube este a Cloudflare)"
+
+[[outputs]]
+id = "SW5OxZDNipICVfjYDSCBk"
+uri = "file://psychometriks-v72.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v72 — MEXC + Bitget CORREGIDOS (sube este a Cloudflare)"
+
+[[outputs]]
+id = "zmbIIjM5BB3279yFjVjmc"
+uri = "file://psychometriks-v73.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v73 — Todos los Gráficos Completos (sube a Cloudflare)"
+
+[[outputs]]
+id = "zUNyQQyJasHcPnBiLxXBV"
+uri = "file://psychometriks-v74.zip"
+type = "unspecified"
+title = "psychometriks-v74.zip — POOLS con datos reales de los 5 exchanges"
+
+[[outputs]]
+id = "CjRM6HiZQLAmO6jBOslKA"
+uri = "file://psychometriks-v75.zip"
+type = "unspecified"
+title = "psychometriks-v75.zip — OI real corregido + Aula módulo 05 sin pantalla negra"
+
+[[outputs]]
+id = "XrEBLw8r5WfTV0f04ca1I"
+uri = "file://psychometriks-v76.zip"
+type = "unspecified"
+title = "psychometriks-v76.zip — Nuevos Listados dinámicos"
+
+[[outputs]]
+id = "wuF_asEMMIt80SnsNSGbE"
+uri = "file://psychometriks-v77.zip"
+type = "unspecified"
+title = "psychometriks-v77.zip — para Cloudflare Pages"
+
+[[outputs]]
+id = "iDgY9KOsgyveaH3As-Q_A"
+uri = "file://psychometriks-signals-bridge.zip"
+type = "unspecified"
+title = "psychometriks-signals-bridge.zip — Signal Bridge para GitHub"
+
+[[outputs]]
+id = "pV5UxpNAaWudiPpuDAqUl"
+uri = "file://psychometriks-v78.zip"
+type = "unspecified"
+title = "psychometriks-v78.zip — Pricing actualizado con REGLA 7"
+
+[[outputs]]
+id = "5D5n9N80-YqKAoEfK7Us_"
+uri = "file://psychometriks-v79.zip"
+type = "unspecified"
+title = "psychometriks-v79.zip — Whale Signals en plan Elite"
+
+[[outputs]]
+id = "a5oq-JNLtzpfTkgfJ70Fd"
+uri = "file://psychometriks-v80.zip"
+type = "unspecified"
+title = "psychometriks-v80.zip — PSY Wallet en plan Básico"
+
+[[outputs]]
+id = "M8GeZx3talogP9Xd9eRCH"
+uri = "file://psychometriks-v81.zip"
+type = "unspecified"
+title = "psychometriks-v81.zip — PSY Wallet fixes + CUENTA PSY"
+
+[[outputs]]
+id = "qPRj8dKPEs9KALxGeJaay"
+uri = "file://psychometriks-v82.zip"
+type = "unspecified"
+title = "psychometriks-v82.zip — PSY Wallet en los 4 niveles"
+
+[[outputs]]
+id = "NH6rY8hm7rrfF9WnF_fHB"
+uri = "file://psychometriks-v83.zip"
+type = "unspecified"
+title = "psychometriks-v83.zip — Fix pantalla negra PSY Wallet"
+
+[[outputs]]
+id = "4yyozc-UZu2XnbFg6Xmi4"
+uri = "file://psychometriks-v84.zip"
+type = "unspecified"
+title = "psychometriks-v84.zip — Fix MERCADO pantalla negra"
+
+[[outputs]]
+id = "WQIB5HE1yqBsGp8-fNRTT"
+uri = "file://psychometriks-v85.zip"
+type = "unspecified"
+title = "psychometriks-v85.zip — SWAP Arsenal Completo (34 tokens)"
+
+[[outputs]]
+id = "biWsfYxswkPfl1Pltt00f"
+uri = "file://psychometriks-v86.zip"
+type = "unspecified"
+title = "psychometriks-v86.zip — Exchange + SWAP 0x + Listing Tiers"
+
+[[outputs]]
+id = "ucoYUdK7YRQG8FgN9licB"
+uri = "file://psychometriks-v87.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v87 — Cloudflare Pages deploy"
+
+[[outputs]]
+id = "X8gueY0QlrxbLhv2AnznN"
+uri = "file://psychometriks-v88.zip"
+type = "unspecified"
+title = "psychometriks-v88.zip — Cloudflare Pages"
+
+[[outputs]]
+id = "m-0ohfJBq6is9aPlBHCj6"
+uri = "file://psychometriks-cloudflare.zip"
+type = "unspecified"
+title = "psychometriks-cloudflare.zip — Cloudflare Pages"
+
+[[outputs]]
+id = "NOFthm2ymvgHxrgS6RYR3"
+uri = "file://artifacts/psychometriks/dist/psychometriks-deploy.zip"
+type = "unspecified"
+title = "psychometriks-deploy.zip — Build completo (4 features nuevas)"
+
+[[outputs]]
+id = "dBme2zUCBungjwR6QsbhT"
+uri = "file://artifacts/psychometriks/psychometriks-cloudflare.zip"
+type = "unspecified"
+title = "psychometriks-cloudflare.zip — Cloudflare Pages"
+
+[[outputs]]
+id = "SAAGXEx_wsy1Jyvtzu-Ai"
+uri = "file://psychometriks-blindado.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS — Blindado v2 (Cloudflare Pages)"
+
+[[outputs]]
+id = "3u8ufO98bfbPvG-WYNTc0"
+uri = "file://psychometriks-blindado-v3.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS — Blindado v3 · Issues 11-12-13-15 (Cloudflare Pages)"
+
+[[outputs]]
+id = "t66ahWkdoTmuAqjZ84crS"
+uri = "file://psychometriks-blindado-v4.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS — Blindado v4 · Scan completo aplicado (Cloudflare Pages)"
+
+[[outputs]]
+id = "XQAd7iGDA9N8wQG9PIrmF"
+uri = "file://psychometriks-blindado-v5.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS — Blindado v5 · Fix pantalla negra (Cloudflare Pages)"
+
+[[outputs]]
+id = "Qacodw7o3T2fgt3Fvoh6y"
+uri = "file://api-server-r6fix.zip"
+type = "unspecified"
+title = "API Server — Fix R6 (admin-created members login)"
+
+[[outputs]]
+id = "f9zhffwS7Sa_NBXCVZPIE"
+uri = "file://psychometriks-blindado-v6.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS — Blindado v6 · Fix rutas SPA + login (Cloudflare Pages)"
+
+[[outputs]]
+id = "_foHMMZ7QKAdqUM5Lv7HG"
+uri = "file://psychometriks-blindado-v7.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS — Blindado v7 · Fix 404 /login (Cloudflare Pages)"
+
+[[outputs]]
+id = "P9XEjqdgoTx8FWzP134Hx"
+uri = "file://api-server-railway-deploy.zip"
+type = "unspecified"
+title = "API Server — Deploy Railway (fix login + registro)"
+
+[[outputs]]
+id = "QQfdHQn7aduhj2HHxGuX0"
+uri = "file://psychometriks-blindado-v8.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS — Blindado v8 · Fix sesión modal (Cloudflare Pages)"
+
+[[outputs]]
+id = "THzzAD2atbjniXOj9sxW6"
+uri = "file://psychometriks-blindado-v9.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS — Blindado v9 · Fix completo de auth (Cloudflare Pages)"
+
+[[outputs]]
+id = "8Y9djmop5I4yJABDVqlfT"
+uri = "file://psychometriks-blindado-v10.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v10 — Fix TradingView CSP"
+
+[[outputs]]
+id = "sa4iZO9tJgdvzCzIA84Tj"
+uri = "file://psychometriks-blindado-v11.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v11 — Order Book + Market Data LIVE"
+
+[[outputs]]
+id = "6IR0eWpKTPuBP4ktDK7Uz"
+uri = "file://psychometriks-blindado-v12.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v12 — TODOS los datos LIVE"
+
+[[outputs]]
+id = "IG7DkkBJKs8DBBF7HJlyq"
+uri = "file://psychometriks-blindado-v13.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v13 — URGENTE: Fix pantalla negra"
+
+[[outputs]]
+id = "PCBrQaDKPK_42ETTJldeH"
+uri = "file://psychometriks-blindado-v14.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v14 — Login Admin + Credenciales Reseteadas"
+
+[[outputs]]
+id = "XvF6hqOgcSrBT5rGFdYog"
+uri = "file://psychometriks-blindado-v15.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v15 — Fix Panel Maestro"
+
+[[outputs]]
+id = "UE8bSPWTw-B1jH369mJJ1"
+uri = "file://psychometriks-blindado-v16.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v16 — Panel Maestro totalmente funcional"
+
+[[outputs]]
+id = "wsjxlYN3yDXKV6yzkb1Gs"
+uri = "file://psychometriks-blindado-v17.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v17 — api.psychometriks.trade integrado"
+
+[[outputs]]
+id = "lWWCMa6xzZdVP0n8CNhyd"
+uri = "file://psychometriks-blindado-v18.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v18 — Fix definitivo login + acceso a rutas"
+
+[[outputs]]
+id = "OSbw7Te39ddZU-HwZAOi_"
+uri = "file://psychometriks-blindado-v19.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v19 — Fix definitivo creación de usuarios"
+
+[[outputs]]
+id = "9I1YFCDDE2N4hEM5ddQ6j"
+uri = "file://psychometriks-blindado-v20.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v20 — Auth reestructurada (sin XOR, JSON puro)"
+
+[[outputs]]
+id = "g7hXsMdJsLCYZvReb-Jve"
+uri = "file://psychometriks-v21.zip"
+type = "unspecified"
+title = "1. CLOUDFLARE PAGES — Sube este ZIP (psychometriks-v21)"
+
+[[outputs]]
+id = "M5IXkDsac5LoVJLSiu4vK"
+uri = "file://api-server-railway.zip"
+type = "unspecified"
+title = "API Server — Railway (fuente completa)"
+
+[[outputs]]
+id = "pkNQUrk7vaT7DffXAwFsg"
+uri = "file://psychometriks-v22.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v22 — Historial + Win Rate (/signals-history)"
+
+[[outputs]]
+id = "GdfHTQVs0VlvrBlbSix5i"
+uri = "file://api-server-railway-v2.zip"
+type = "unspecified"
+title = "API Server v2 — sin healthcheck (fix deploy)"
+
+[[outputs]]
+id = "Nki6mGvbFb7_skTOL2U8h"
+uri = "file://market-data-route.zip"
+type = "unspecified"
+title = "market-data.ts — único archivo nuevo"
+
+[[outputs]]
+id = "jal2c8I5t3eXv16HpGee3"
+uri = "file://api-server-prebuilt.zip"
+type = "unspecified"
+title = "api-server PRE-BUILT — listo para Railway (sin pnpm, sin workspace)"
+
+[[outputs]]
+id = "hE3MeLWGyhMQV7kQPOem-"
+uri = "file://market-data.zip"
+type = "unspecified"
+title = "market-data.ts — subilo en artifacts/api-server/src/routes/"
+
+[[outputs]]
+id = "0wf1zU7QADX81oQ855fMY"
+uri = "file://psychometriks-full-project.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS — Proyecto completo (579 archivos · src + public + configs)"
+
+[[outputs]]
+id = "8YaX6HLmbh-XlrSgt1rVn"
+uri = "file://routes-index-fix.zip"
+type = "unspecified"
+title = "index.ts — subilo en artifacts/api-server/src/routes/ (mismo lugar que market-data.ts)"
+
+[[outputs]]
+id = "BwFzTmMr2ihtn91JfOkwP"
+uri = "file://psychometriks-v23.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v23 — Cloudflare (incluye endpoint /api/marketing/generate)"
+
+[[outputs]]
+id = "1_dxNABYIG_MVYmh6Q2ra"
+uri = "file://psy-marketing-engine.zip"
+type = "unspecified"
+title = "PSY Marketing Engine — HTML standalone (listo para Netlify Drop)"
+
+[[outputs]]
+id = "S0IuU9sFU5TDnHHZ0ZXMF"
+uri = "file://artifacts/psychometriks/psychometriks_v24.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v24 — WHALE INTEL v2"
+
+[[outputs]]
+id = "DHUNM3I7XkUJ5KO53XnJG"
+uri = "file://artifacts/psychometriks/psychometriks_v25.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v25 — Fix GUARDAR Admin"
+
+[[outputs]]
+id = "epoeqbWzblg74x3w3wz0a"
+uri = "file://artifacts/psychometriks/psychometriks_v26.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v26 — Fix GUARDAR definitivo"
+
+[[outputs]]
+id = "ljYPhiOpfCqKR7KGZVcjv"
+uri = "file://artifacts/psychometriks/psychometriks_v27.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v27 — Fix GUARDAR definitivo"
+
+[[outputs]]
+id = "PwDQhq8QfFfm5zV9M7T0y"
+uri = "file://artifacts/psychometriks/psychometriks_v28.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS v28 — Fix GUARDAR definitivo"
+
+[[outputs]]
+id = "c8b_JrMrdXYHdaE1S2_mi"
+uri = "file://psychometriks-fuente.zip"
+type = "unspecified"
+title = "psychometriks-fuente.zip — Código fuente completo"
+
+[[outputs]]
+id = "2WszbhfxKuVOaJxntS4yh"
+uri = "file://whale-area-completo.zip"
+type = "unspecified"
+title = "whale-area-completo.zip — Backend + Frontend + DB Schema"
+
+[[outputs]]
+id = "FaYRFui0dbCAdi_Ttpk-u"
+uri = "file://PSYCHOMETRIKS_ARCHIVO_MADRE.md"
+type = "text"
+title = "PSYCHOMETRIKS — Archivo Madre (Mayo 2026)"
+
+[[outputs]]
+id = "wCPMzChqjo4ENKwImTENq"
+uri = "file://PSYCHOMETRIKS_ARCHIVO_MADRE.zip"
+type = "unspecified"
+title = "PSYCHOMETRIKS — Archivo Madre (Mayo 2026)"
+
+[[outputs]]
+id = "CjZEBv3M0IWWhFOXXbmzG"
+uri = "file://artifacts/psychometriks/psychometriks-deploy.zip"
+type = "unspecified"
+title = "psychometriks-deploy.zip — Cloudflare Pages (V2 Telegram)"
+
+[[outputs]]
+id = "TPoV0TSRTI0ybkxxFQ5_Q"
+uri = "file://psychometriks-whale-alert.zip"
+type = "unspecified"
+title = "Psychometriks — whale-alert.tsx actualizado"
+
+[[outputs]]
+id = "E81JQwzNPuLLx8lDftWxl"
+uri = "file://oracle-feeds-frontend.zip"
+type = "unspecified"
+title = "Oracle Feeds Frontend — index.html listo para subir"
+
+[[outputs]]
+id = "iqELcBO3jksgVJzGknwnD"
+uri = "file://api-server-railway-compiled.zip"
+type = "unspecified"
+title = "API Server COMPILADO — listo para Railway (1.1 MB)"
+
+[[outputs]]
+id = "PjqyVkpjHF_qkO3IA8f3F"
+uri = "file://api-server-railway-v3.zip"
+type = "unspecified"
+title = "API Server v3 — fix @google/genai (sube y reemplaza todo)"
+
+[[outputs]]
+id = "hnuClAkYqJ47cFoD4jCtC"
+uri = "file://api-server-railway-v4.zip"
+type = "unspecified"
+title = "API Server v4 — @google/genai y @anthropic bundleados (sin npm install)"
+
+[[outputs]]
+id = "rZdmSap7PjIBd6Bn18a0H"
+uri = "file://psychometriks-railway-api.zip"
+type = "unspecified"
+title = "Railway API — 6 archivos SOLAMENTE (sin node_modules)"
+
+[[outputs]]
+id = "z9zENbxzgoN9vTYXDUomG"
+uri = "file://railway-fix-409.zip"
+type = "unspecified"
+title = "railway-fix-409.zip — API Server con fix 409"
+
+[[outputs]]
+id = "FQqY4bSgesqAqYRffxdXp"
+uri = "file://railway-telegram-fix.zip"
+type = "unspecified"
+title = "railway-telegram-fix.zip — Build con rutas /api/telegram/*"
+
+[[outputs]]
+id = "iX4oAd5FO8TDdOXOyOtqh"
+uri = "file://psychometriks-csp-fix.zip"
+type = "unspecified"
+title = "psychometriks-csp-fix.zip — Deploy Cloudflare"

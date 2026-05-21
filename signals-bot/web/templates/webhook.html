@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 style="margin-bottom:20px">📡 TradingView Webhook</h2>
+
+{% if not enabled %}
+<div style="background:#3a1a1a;border:1px solid #f85149;border-radius:10px;padding:20px;margin-bottom:20px">
+  <h3 style="color:#f85149;margin-bottom:8px">⚠️ Webhook desactivado</h3>
+  <p style="color:#8b949e">Para activarlo, agrega esta variable en tu entorno (Railway o .env):</p>
+  <pre style="background:#0d1117;padding:12px;border-radius:6px;margin-top:10px;color:#f0f6fc;font-size:13px">TV_WEBHOOK_SECRET=cualquier_clave_secreta_aqui</pre>
+  <p style="color:#8b949e;margin-top:10px;font-size:13px">Luego reinicia el servicio en Railway y vuelve a esta página.</p>
+</div>
+{% else %}
+<div style="background:#1a3a1a;border:1px solid #3fb950;border-radius:10px;padding:20px;margin-bottom:20px">
+  <h3 style="color:#3fb950;margin-bottom:6px">✅ Webhook activo</h3>
+  <p style="color:#8b949e;font-size:13px">Cuando TradingView dispare una alerta, la señal llegará automáticamente al canal.</p>
+</div>
+
+<div class="card">
+  <h2>Tu URL de Webhook</h2>
+  <p style="color:#8b949e;font-size:13px;margin-bottom:12px">Pega esta URL en el campo "Webhook URL" de la alerta en TradingView:</p>
+  <div style="display:flex;gap:8px;align-items:center">
+    <input type="text" id="wurl" value="{{ webhook_url }}" readonly
+           style="font-size:12px;flex:1;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#58a6ff;padding:10px">
+    <button onclick="navigator.clipboard.writeText(document.getElementById('wurl').value);this.textContent='✅ Copiado!';setTimeout(()=>this.textContent='Copiar',2000)"
+            class="btn btn-blue">Copiar</button>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Formato de la alerta en TradingView</h2>
+  <p style="color:#8b949e;font-size:13px;margin-bottom:12px">
+    En TradingView → Alertas → Crear alerta → pestaña <strong>"Notificaciones"</strong> → activa <strong>"Webhook URL"</strong>.
+    <br>En el campo <strong>"Mensaje"</strong> de la alerta pon este JSON:
+  </p>
+  <pre style="background:#0d1117;border:1px solid #30363d;border-radius:6px;padding:16px;font-size:12px;color:#e6edf3;overflow-x:auto">{
+  "secret":   "{{ webhook_url.split('secret=')[1] if 'secret=' in webhook_url else 'TU_SECRETO' }}",
+  "symbol":   "{{"{{"}}ticker{{"}}"}}",
+  "action":   "BUY",
+  "price":    {{"{{"}}close{{"}}"}},
+  "interval": "{{"{{"}}interval{{"}}"}}",
+  "exchange": "{{"{{"}}exchange{{"}}"}}",
+  "message":  "Texto libre de tu alerta"
+}</pre>
+  <p style="color:#8b949e;font-size:12px;margin-top:10px">
+    💡 Cambia <code style="color:#f0f6fc">"BUY"</code> por: <code>SELL</code>, <code>STRONG_BUY</code>, <code>STRONG_SELL</code>, <code>LONG</code>, <code>SHORT</code>, <code>CLOSE</code>, <code>ALERT</code>
+  </p>
+</div>
+
+<div class="card">
+  <h2>Formato alternativo (texto simple)</h2>
+  <p style="color:#8b949e;font-size:13px;margin-bottom:12px">Si prefieres texto plano en vez de JSON, usa este formato separado por <code>|</code>:</p>
+  <pre style="background:#0d1117;border:1px solid #30363d;border-radius:6px;padding:14px;font-size:13px;color:#e6edf3">{{ webhook_url.split('secret=')[1] if 'secret=' in webhook_url else 'TU_SECRETO' }}|BUY|{{"{{"}}ticker{{"}}"}}|{{"{{"}}close{{"}}"}}|{{"{{"}}interval{{"}}"}}|Descripción opcional</pre>
+</div>
+
+<div class="card">
+  <h2>Probar webhook</h2>
+  <p style="color:#8b949e;font-size:13px;margin-bottom:12px">Envía una señal de prueba al canal ahora mismo:</p>
+  <form method="post" action="/admin/webhook/test">
+    <select name="action" style="background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#e6edf3;padding:8px;margin-bottom:10px;width:100%">
+      <option value="BUY">📈 BUY</option>
+      <option value="SELL">📉 SELL</option>
+      <option value="STRONG_BUY">🚀 STRONG BUY</option>
+      <option value="STRONG_SELL">💥 STRONG SELL</option>
+      <option value="ALERT">⚠️ ALERT</option>
+    </select>
+    <input type="text" name="symbol" placeholder="Símbolo (ej. BTCUSDT)" value="BTCUSDT">
+    <input type="text" name="price" placeholder="Precio (ej. 65000)">
+    <button type="submit" class="btn btn-blue">🧪 Enviar prueba al canal</button>
+  </form>
+</div>
+{% endif %}
+{% endblock %}

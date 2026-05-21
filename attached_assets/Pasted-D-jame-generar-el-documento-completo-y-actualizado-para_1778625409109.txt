@@ -1,0 +1,34 @@
+Déjame generar el documento completo y actualizado para Replit:Creó un archivo, archivo leídoCreó un archivo, archivo leídoAhí está hermano 🔥
+Pasos en orden:
+1️⃣ En Railway — Agregá estas 7 variables (vos ponés los tokens):
+WHALE_BOT_TOKEN
+SIGNALS_BOT_TOKEN  
+ALTCOINS_BOT_TOKEN
+WHALEPERP_BOT_TOKEN
+SIGNALS_CHAT_ID    = -1003707106507
+ALCOINS_CHAT_ID    = -1003702118104
+PRO_CHAT_ID        = -1003781020653
+2️⃣ En Replit — Pegá el contenido del archivo completo
+3️⃣ Después que Replit termine — Redeploy en Railway
+4️⃣ Mandá un mensaje en cada canal de Telegram para activar el listener
+En 5 minutos deberían aparecer las señales reales en la web. 🚀Prompt replit v2 completoDocumento · MD DescargarDijiste: si creeria que el de altcoins no hay que ingresar xq ya esta dentrosi creeria que el de altcoins no hay que ingresar xq ya esta dentro17:36Claude respondió: Exacto hermano!Exacto hermano! Tenés razón.
+El @signals_altcoins_bot ya está corriendo en Railway como servicio separado (signals-bot) y ya publica en el canal. Si le agregás otro listener con el mismo token vas a tener conflicto de polling — dos procesos peleando por los mismos mensajes.
+
+Entonces las variables correctas son solo estas:
+WHALE_BOT_TOKEN      = (token de @psychometriks_whale_bot)
+SIGNALS_BOT_TOKEN    = (token de @Psychometriks_signals_bot)
+WHALEPERP_BOT_TOKEN  = (token del bot WHALE_ALERT del canal pro)
+
+SIGNALS_CHAT_ID      = -1003707106507
+ALCOINS_CHAT_ID      = -1003702118104
+PRO_CHAT_ID          = -1003781020653
+
+Y en el prompt para Replit, en la sección de tokens cambiar:
+typescriptconst tokens = [
+  { token: process.env.WHALE_BOT_TOKEN,    name: 'whale-bot' },
+  { token: process.env.SIGNALS_BOT_TOKEN,  name: 'signals-bot' },
+  { token: process.env.WHALEPERP_BOT_TOKEN,name: 'whaleperp-bot' },
+  // ALTCOINS_BOT_TOKEN NO — ya corre en servicio separado
+].filter(b => !!b.token);
+Para las señales de altcoins el listener las recibe igual porque escucha el canal ALCOINS_CHAT_ID con otro bot que SÍ está en ese canal.
+¿Ponés las 6 variables en Railway y mandás el prompt a Replit? 🚀

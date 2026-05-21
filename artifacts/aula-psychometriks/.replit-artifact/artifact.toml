@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/aula-psychometriks/"
+title = "PSYCHOMETRIKS — Aula Virtual"
+version = "1.0.0"
+id = "artifacts/aula-psychometriks"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/aula-psychometriks/" ]
+localPort = 19461
+
+[services.development]
+run = "pnpm --filter @workspace/aula-psychometriks run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/aula-psychometriks", "run", "build" ]
+publicDir = "artifacts/aula-psychometriks/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19461"
+BASE_PATH = "/aula-psychometriks/"

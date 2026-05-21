@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PSYCHOMETRIKS — Command Center</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #020408;
+    --bg2: #060d14;
+    --bg3: #0a1520;
+    --panel: #0d1b2a;
+    --border: #0f3460;
+    --border2: #1a4a7a;
+    --accent: #00d4ff;
+    --accent2: #00ff88;
+    --accent3: #ff6b35;
+    --accent4: #c084fc;
+    --red: #ff3b5c;
+    --gold: #fbbf24;
+    --text: #c8d8e8;
+    --text2: #6b8fa8;
+    --text3: #3a5a7a;
+    --glow: 0 0 20px rgba(0,212,255,0.3);
+    --glow2: 0 0 20px rgba(0,255,136,0.3);
+    --glow-red: 0 0 20px rgba(255,59,92,0.3);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* SCANLINES */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* GRID BACKGROUND */
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* HEADER */
+  .header {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(6,13,20,0.95);
+    backdrop-filter: blur(10px);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-icon {
+    width: 36px;
+    height: 36px;
+    border: 1.5px solid var(--accent);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--glow);
+    animation: pulse-border 3s infinite;
+  }
+
+  @keyframes pulse-border {
+    0%, 100% { box-shadow: 0 0 10px rgba(0,212,255,0.3); }
+    50% { box-shadow: 0 0 25px rgba(0,212,255,0.7); }
+  }
+
+  .logo-icon svg { width: 20px; height: 20px; }
+
+  .logo-text {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 18px;
+    font-weight: 900;
+    letter-spacing: 3px;
+    color: var(--accent);
+    text-shadow: 0 0 20px rgba(0,212,255,0.5);
+  }
+
+  .logo-sub {
+    font-size: 10px;
+    color: var(--text2);
+    letter-spacing: 2px;
+    margin-top: 2px;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .live-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--accent2);
+    letter-spacing: 2px;
+  }
+
+  .live-dot {
+    width: 7px;
+    height: 7px;
+    background: var(--accent2);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--accent2);
+    animation: blink 1.5s infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.2; }
+  }
+
+  .clock {
+    font-size: 13px;
+    color: var(--text2);
+    letter-spacing: 1px;
+  }
+
+  /* NAV TABS */
+  .nav {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    gap: 0;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .nav::-webkit-scrollbar { display: none; }
+
+  .nav-tab {
+    padding: 12px 24px;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--text2);
+    cursor: pointer;
+    border-right: 1px solid var(--border);
+    transition: all 0.2s;
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    border-top: none;
+    border-left: none;
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  .nav-tab:hover { color: var(--accent); background: rgba(0,212,255,0.05); }
+  .nav-tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+    background: rgba(0,212,255,0.08);
+    text-shadow: 0 0 10px rgba(0,212,255,0.5);
+  }
+
+  /* MAIN LAYOUT */
+  .main {
+    position: relative;
+    z-index: 1;
+    padding: 20px 24px;
+  }
+
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* PANELS */
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0.5;
+  }
+
+  .panel-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 10px;
+    letter-spacing: 3px;
+...

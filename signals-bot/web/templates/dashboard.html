@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 style="margin-bottom:20px;color:#f0f6fc">Dashboard</h2>
+
+<div class="stat-grid">
+  <div class="stat"><div class="num">{{ total_users }}</div><div class="lbl">Usuarios</div></div>
+  <div class="stat"><div class="num" style="color:#3fb950">{{ active_subs }}</div><div class="lbl">Membresías activas</div></div>
+  <div class="stat"><div class="num" style="color:#d29922">{{ pending_pay }}</div><div class="lbl">Pagos pendientes</div></div>
+  <div class="stat"><div class="num" style="color:#d2a8ff">{{ total_signals }}</div><div class="lbl">Señales enviadas</div></div>
+</div>
+
+{% if pending_pay > 0 %}
+<div style="background:#533e00;border:1px solid #d29922;border-radius:8px;padding:14px;margin-bottom:20px;color:#d29922">
+  ⚠️ Tienes <strong>{{ pending_pay }}</strong> pago(s) pendiente(s) de revisión.
+  <a href="/admin/payments" style="color:#f0f6fc;margin-left:10px">→ Revisar ahora</a>
+</div>
+{% endif %}
+
+<div class="card">
+  <h2>Últimas señales</h2>
+  <table>
+    <tr><th>Símbolo</th><th>Tipo</th><th>Fuente</th><th>Fecha</th></tr>
+    {% for s in recent_signals %}
+    <tr>
+      <td>{{ s.symbol or '—' }}</td>
+      <td>{{ s.signal_type }}</td>
+      <td><span class="badge badge-{{ s.source }}">{{ s.source }}</span></td>
+      <td>{{ s.sent_at.strftime('%d/%m %H:%M') }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+
+<div class="card">
+  <h2>Usuarios recientes</h2>
+  <table>
+    <tr><th>Usuario</th><th>Telegram ID</th><th>Registrado</th></tr>
+    {% for u in recent_users %}
+    <tr>
+      <td>@{{ u.username or 'N/A' }}</td>
+      <td><code>{{ u.telegram_id }}</code></td>
+      <td>{{ u.joined_at.strftime('%d/%m/%Y') }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

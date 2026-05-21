@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PSYCHOMETRIKS — Trading Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --black: #020408;
+  --dark: #080d14;
+  --card: #0d1520;
+  --border: #1a2535;
+  --cyan: #00f5ff;
+  --cyan-dim: rgba(0,245,255,0.12);
+  --cyan-glow: rgba(0,245,255,0.35);
+  --gold: #f5a623;
+  --gold-dim: rgba(245,166,35,0.12);
+  --red: #ff3b5c;
+  --green: #00e676;
+  --white: #e8f4f8;
+  --gray: #4a6070;
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-mono: 'Space Mono', monospace;
+  --font-body: 'DM Sans', sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--black);
+  color: var(--white);
+  font-family: var(--font-body);
+  overflow-x: hidden;
+  cursor: none;
+}
+
+/* CUSTOM CURSOR */
+.cursor {
+  width: 8px; height: 8px;
+  background: var(--cyan);
+  border-radius: 50%;
+  position: fixed; top: 0; left: 0;
+  pointer-events: none; z-index: 9999;
+  transition: transform 0.1s;
+  mix-blend-mode: screen;
+}
+.cursor-ring {
+  width: 32px; height: 32px;
+  border: 1px solid var(--cyan-glow);
+  border-radius: 50%;
+  position: fixed; top: 0; left: 0;
+  pointer-events: none; z-index: 9998;
+  transition: transform 0.15s, width 0.2s, height 0.2s;
+}
+
+/* GRID BACKGROUND */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(rgba(0,245,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,245,255,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none; z-index: 0;
+}
+
+/* NAV */
+nav {
+  position: fixed; top: 0; width: 100%; z-index: 100;
+  padding: 20px 48px;
+  display: flex; align-items: center; justify-content: space-between;
+  background: linear-gradient(180deg, rgba(2,4,8,0.95) 0%, transparent 100%);
+  backdrop-filter: blur(8px);
+}
+.logo {
+  font-family: var(--font-mono);
+  font-size: 13px; font-weight: 700;
+  color: var(--cyan);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+.logo span { color: var(--white); }
+.nav-links { display: flex; gap: 32px; align-items: center; }
+.nav-links a {
+  font-family: var(--font-mono); font-size: 11px;
+  color: var(--gray); text-decoration: none;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--cyan); }
+.nav-cta {
+  background: var(--cyan) !important;
+  color: var(--black) !important;
+  padding: 10px 20px;
+  font-weight: 700 !important;
+}
+
+/* HERO */
+.hero {
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+  justify-content: center;
+  padding: 120px 48px 80px;
+  position: relative; overflow: hidden;
+}
+.hero-eyebrow {
+  font-family: var(--font-mono); font-size: 11px;
+  color: var(--cyan); letter-spacing: 0.3em;
+  text-transform: uppercase; margin-bottom: 24px;
+  display: flex; align-items: center; gap: 12px;
+}
+.hero-eyebrow::before {
+  content: ''; width: 32px; height: 1px; background: var(--cyan);
+}
+.hero h1 {
+  font-family: var(--font-display);
+  font-size: clamp(72px, 10vw, 140px);
+  line-height: 0.92; letter-spacing: 0.01em;
+  color: var(--white);
+  margin-bottom: 8px;
+}
+.hero h1 .accent { color: var(--cyan); }
+.hero h1 .dim { color: var(--gray); }
+.hero-sub {
+  font-size: 16px; color: var(--gray);
+  max-width: 480px; line-height: 1.7;
+  margin: 32px 0 48px;
+  font-weight: 300;
+}
+.hero-sub strong { color: var(--white); font-weight: 500; }
+.hero-actions { display: flex; gap: 16px; flex-wrap: wrap; }
+.btn-primary {
+  background: var(--cyan); color: var(--black);
+  font-family: var(--font-mono); font-size: 12px;
+  font-weight: 700; letter-spacing: 0.15em;
+  text-transform: uppercase; text-decoration: none;
+  padding: 16px 32px; display: inline-flex;
+  align-items: center; gap: 10px;
+  transition: all 0.2s; border: none; cursor: none;
+}
+.btn-primary:hover { background: white; transform: translate(-2px, -2px); box-shadow: 4px 4px 0 var(--cyan); }
+.btn-secondary {
+  border: 1px solid var(--border); color: var(--white);
+  font-family: var(--font-mono); font-size: 12px;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  text-decoration: none; padding: 16px 32px;
+  display: inline-flex; align-items: center; gap: 10px;
+  transition: all 0.2s; cursor: none;
+}
+.btn-secondary:hover { border-color: var(--cyan); color: var(--cyan); }
+
+/* TICKER */
+.ticker-bar {
+  background: var(--card); border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 0; overflow: hidden;
+  position: relative; z-index: 1;
+}
+.ticker-inner {
+  display: flex; gap: 64px;
+  animation: ticker 25s linear infinite;
+  white-space: nowrap; width: max-content;
+}
+.ticker-item {
+  font-family: var(--font-mono); font-size: 11px;
+  color: var(--gray); display: flex; gap: 8px; align-items: center;
+}
+.ticker-item .up { color: var(--green); }
+.ticker-item .down { color: var(--red); }
+@keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+/* SECTION BASE */
+section { padding: 100px 48px; position: relative; z-index: 1; }
+.section-label {
+  font-family: var(--font-mono); font-size: 10px;
+  color: var(--cyan); letter-spacing: 0.4em;
+  text-transform: uppercase; margin-bottom: 16px;
+  display: flex; align-items: center; gap: 12px;
+}
+.section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); max-width: 80px; }
+.section-title {
+  font-family: var(--font-display);
+  font-size: clamp(48px, 6vw, 80px);
+  line-height: 0.95; margin-bottom: 20px;
+}
+.section-desc { color: var(--gray); font-size: 15px; line-height: 1.7; max-width: 520px; }
+
+/* INDICADORES */
+.suite-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1px; background: var(--border);
+  margin-top: 64px; border: 1px solid var(--border);
+}
+.suite-card {
+  background: var(--dark); padding: 32px;
+  transition: background 0.3s;
+  position: relative; overflow: hidden;
+}
+.suite-card::before {
+  content: ''; position: absolute; top: 0; left: 0;
+  width: 3px; height: 0; background: var(--cyan);
+  transition: height 0.3s;
+}
+.suite-card:hover { background: var(--card); }
+.suite-card:hover::before { height: 100%; }
+.card-code {
+  font-family: var(--font-mono); font-size: 10px;
+  color: var(--cyan); letter-spacing: 0.2em;
+  margin-bottom: 12px;
+}
+.card-name {
+  font-family: var(--font-display); font-size: 28px;
+  color: var(--white); margin-bottom: 8px;
+}
+.card-desc { font-size: 13px; color: var(--gray); line-height: 1.6; }
+.card-tag {
+  display: inline-block; margin-top: 16px;
+  background: var(--cyan-dim); color: var(--cyan);
+  font-family: var(--font-mono); font-size: 10px;
+  padding: 4px 10px; letter-spacing: 0.1em;
+}
+
+/* AULA */
+.aula-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 48px; margin-top: 64px; align-items: start;
+}
+.aula-left {}
+.aula-modules { display: flex; flex-direction: column; gap: 2px; margin-top: 32px; }
+.module-item {
+  display: flex; align-items: center; gap: 16px;
+  padding: 20px 24px; background: var(--dark);
+  border-left: 3px solid transparent;
+  transition: all 0.2s; cursor: none;
+}
+.module-item:hover { border-left-color: var(--cyan); background: var(--card); }
+.module-num {
+  font-family: var(--font-mono); font-size: 11px;
+  color: var(--cyan); width: 24px; flex-shrink: 0;
+}
+.module-info { flex: 1; }
+.module-name { font-size: 14px; font-weight: 500; margin-bottom: 2px; }
+.module-sub { font-size: 12px; color: var(--gray); }
+.module-icon { font-size: 18px; }
+
+.aula-right {
+  background: var(--card); border: 1px solid var(--border);
+  padding: 40px; position: sticky; top: 100px;
+}
+.aula-preview-title {
+  font-family: var(--font-mono); font-size: 10px;
+  color: var(--cyan); letter-spacing: 0.2em;
+  margin-bottom: 24px; text-transform: uppercase;
+}
+.aula-stat { margin-bottom: 20px; }
+.aula-stat-label { font-size: 12px; color: var(--gray); margin-bottom: 4px; }
+.aula-stat-value {
+  font-family: var(--font-display); font-size: 36px;
+  color: var(--cyan);
+}
+.aula-features { margin-top: 32px; display: flex; flex-direction: column; gap: 10px; }
+.aula-feature {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 13px; color: var(--gray);
+}
+.aula-feature::before { content: '✓'; color: var(--green); font-weight: 700; }
+
+/* PRECIOS */
+.pricing-section { background: var(--dark); }
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px; background: var(--border);
+  margin-top: 64px; border: 1px solid var(--border);
+}
+.price-card {
+  background: var(--black); padding: 40px 32px;
+  position: relative; transition: background 0.3s;
+}
+.price-card.featured {
+  background: var(--card);
+  outline: 1px solid var(--cyan);
+  outline-offset: -1px;
+}
+.price-badge {
+  position: absolute; top: -1px; left: 50%; transform: translateX(-50%);
+  background: var(--cyan); color: var(--black);
+  font-family: var(--font-mono); font-size: 10px;
+  font-weight: 700; letter-spacing: 0.15em;
+  padding: 4px 16px; text-transform: uppercase;
+  white-space: nowrap;
+}
+.price-tier {
+  font-family: var(--font-mono); font-size: 10px;
+  color: var(--gray); letter-spacing: 0.3em;
+  text-transform: uppercase; margin-bottom: 20px;
+}
+.price-amount {
+  font-family: var(--font-display);
+  font-size: 72px; line-height: 1;
+  color: var(--white); margin-bottom: 4px;
+}
+.price-amount .currency {
+  font-family: var(--font-mono); font-size: 20px;
+  vertical-align: top; margin-top: 16px;
+  display: inline-block; color: var(--gray);
+}
+.price-period { font-size: 12px; color: var(--gray); margin-bottom: 32px; }
+.price-name {
+  font-family: var(--font-display); font-size: 28px;
+  color: var(--cyan); margin-bottom: 24px;
+}
+.price-features { list-style: none; display: flex; flex-direction: column; gap: 12px; margin-bottom: 40px; }
+.price-features li {
+  font-size: 13px; color: var(--gray);
+  display: flex; gap: 10px; align-items: flex-start;
+  line-height: 1.4;
+}
+.price-features li::before { content: '→'; color: var(--cyan); flex-shrink: 0; }
+.price-features li.highlight { color: var(--white); }
+.price-btn {
+  display: block; width: 100%;
+  background: transparent; border: 1px solid var(--border);
+  color: var(--white); font-family: var(--font-mono);
+  font-size: 12px; font-weight: 700; letter-spacing: 0.15em;
+  text-transform: uppercase; padding: 16px;
+  text-decoration: none; text-align: center;
+  transition: all 0.2s; cursor: none;
+}
+.price-btn:hover, .price-card.featured .price-btn {
+  background: var(--cyan); color: var(--black);
+  border-color: var(--cyan);
+}
+
+/* ANALISIS */
+.analisis-strip {
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 80px 48px;
+  display: grid; grid-template-columns: 1fr 2fr;
+  gap: 80px; align-items: center;
+}
+.analisis-indicators { display: flex; flex-direction: column; gap: 12px; margin-top: 32px; }
+.ind-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px; background: var(--card);
+  font-family: var(--font-mono); font-size: 11px;
+}
+.ind-name { color: var(--gray); }
+.ind-val { color: var(--cyan); }
+.ind-state-bull { color: var(--green); }
+.ind-state-bear { color: var(--red); }
+.ind-state-neutral { color: var(--gold); }
+
+/* TELEGRAM CTA */
+.tg-section {
+  text-align: center; padding: 120px 48px;
+  position: relative; overflow: hidden;
+}
+.tg-section::before {
+  content: '';
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(0,245,255,0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+.tg-section h2 {
+  font-family: var(--font-display);
+  font-size: clamp(56px, 8vw, 100px);
+  line-height: 0.95; margin-bottom: 24px;
+}
+.tg-section p { color: var(--gray); font-size: 16px; margin-bottom: 48px; max-width: 480px; margin-left: auto; margin-right: auto; }
+.tg-btn {
+  display: inline-flex; align-items: center; gap: 14px;
+  background: #229ED9; color: white;
+  font-family: var(--font-mono); font-size: 13px;
+  font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; text-decoration: none;
+  padding: 20px 40px; transition: all 0.2s; cursor: none;
+}
+.tg-btn:hover { background: white; color: #229ED9; transform: translate(-3px,-3px); box-shadow: 6px 6px 0 #229ED9; }
+.tg-icon { font-size: 24px; }
+
+/* FOOTER */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 40px 48px;
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 16px;
+}
+.footer-logo {
+  font-family: var(--font-mono); font-size: 12px;
+  color: var(--cyan); letter-spacing: 0.2em;
+}
+.footer-copy { font-family: var(--font-mono); font-size: 10px; color: var(--gray); }
+.footer-links { display: flex; gap: 24px; }
+.footer-links a {
+  font-family: var(--font-mono); font-size: 10px;
+  color: var(--gray); text-decoration: none;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  transition: color 0.2s;
+}
+.footer-links a:hover { color: var(--cyan); }
+
+/* ANIMATIONS */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.7s ease forwards; opacity: 0; }
+.delay-1 { animation-delay: 0.1s; }
+.delay-2 { animation-delay: 0.2s; }
+.delay-3 { animation-delay: 0.35s; }
+.delay-4 { animation-delay: 0.5s; }
+
+/* LIVE DOT */
+.live-dot {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--font-mono); font-size: 10px;
+  color: var(--green); letter-spacing: 0.1em;
+}
+.live-dot::before {
+  content: ''; width: 6px; height: 6px;
+  background: var(--green); border-radius: 50%;
+  animation: pulse 1.5s ease infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.7); }
+}
+
+@media (max-width: 768px) {
+  nav { padding: 16px 24px; }
+  .nav-links { display: none; }
+  section, .hero, .analisis-strip, .tg-section { padding: 60px 24px; }
+  .aula-grid, .analisis-strip { grid-template-columns: 1fr; }
+  .pricing-grid { grid-template-columns: 1fr; }
+  footer { padding: 32px 24px; flex-direction: column; text-align: center; }
+}
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="logo">PSY<span>CHOMETRIKS</span></div>
+  <div class="nav-links">
+    <a href="#suite">Suite</a>
+    <a href="#aula">Aula</a>
+    <a href="#precios">Precios</a>
+    <a href="#analisis">Análisis</a>
+    <a href="https://t.me/PSYCHOMETRIKS_pro" target="_blank" class="nav-cta">Telegram</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-eyebrow fade-up">
+    <span class="live-dot">LIVE</span>
+    &nbsp;· BTC $77,600 · Sistema activo
+  </div>
+  <h1 class="fade-up delay-1">
+    TRADING<br>
+    <span class="accent">INTELLIGENCE</span><br>
+    <span class="dim">SUITE</span>
+  </h1>
+  <p class="hero-sub fade-up delay-2">
+    Indicadores institucionales para TradingView. <strong>Leer el mercado como lo hace el dinero inteligente</strong> — no como lo hacen las masas.
+  </p>
+  <div class="hero-actions fade-up delay-3">
+    <a href="#precios" class="btn-primary">Ver planes →</a>
+    <a href="#suite" class="btn-secondary">Explorar suite</a>
+  </div>
+</section>
+
+<!-- TICKER -->
+<div class="ticker-bar">
+  <div class="ticker-inner" id="ticker">
+    <span class="ticker-item">BTC/USDT <span class="up">$77,600 ↑</span></span>
+    <span class="ticker-item">PSY-PULSE <span class="up">67.7 BULL</span></span>
+    <span class="ticker-item">XAU/USD <span class="up">$4,708</span></span>
+    <span class="ticker-item">PSY-MCI <span class="neutral" style="color:var(--gold)">4.7 NEUTRAL</span></span>
+    <span class="ticker-item">ETH/USDT <span class="up">$3,200 ↑</span></span>
+    <span class="ticker-item">PSY-SMD <span class="neutral" style="color:var(--gold)">SLSQZ</span></span>
+    <span class="ticker-item">BOME/USDT <span class="down">$0.00021</span></span>
+    <span class="ticker-item">VIX <span class="up">18.7</span></span>
+    <span class="ticker-item">DXY <span class="down">98.51</span></span>
+    <span class="ticker-item">SPX <span class="up">7165</span></span>
+    <!-- duplicate for seamless loop -->
+    <span class="ticker-item">BTC/USDT <span class="up">$77,600 ↑</span></span>
+    <span class="ticker-item">PSY-PULSE <span class="up">67.7 BULL</span></span>
+    <span class="ticker-item">XAU/USD <span class="up">$4,708</span></span>
+    <span class="ticker-item">PSY-MCI <span class="neutral" style="color:var(--gold)">4.7 NEUTRAL</span></span>
+    <span class="ticker-item">ETH/USDT <span class="up">$3,200 ↑</span></span>
+    <span class="ticker-item">PSY-SMD <span class="neutral" style="color:var(--gold)">SLSQZ</span></span>
+    <span class="ticker-item">BOME/USDT <span class="down">$0.00021</span></span>
+    <span class="ticker-item">VIX <span class="up">18.7</span></span>
+    <span class="ticker-item">DXY <span class="down">98.51</span></span>
+    <span class="ticker-item">SPX <span class="up">7165</span></span>
+  </div>
+</div>
+
+<!-- SUITE DE INDICADORES -->
+<section id="suite">
+  <div class="section-label">Suite de indicadores</div>
+  <h2 class="section-title">9 ARMAS.<br>UN SISTEMA.</h2>
+  <p class="section-desc">Cada indicador resuelve un problema específico. Juntos forman una visión institucional completa del mercado.</p>
+
+  <div class="suite-grid">
+    <div class="suite-card">
+      <div class="card-code">PSY-PULSE</div>
+      <div class="card-name">PULSE Panel</div>
+      <div class="card-desc">Score compuesto 0–100. Whale Flow + Liquidaciones + Sentimiento. El termómetro del mercado.</div>
+      <div class="card-tag">MULTI-MÓDULO</div>
+    </div>
+    <div class="suite-card">
+      <div class="card-code">PSY-SMD</div>
+      <div class="card-name">Smart Money</div>
+      <div class="card-desc">CVD + OI + Funding. Detecta manipulación institucional y squeezes antes de que ocurran.</div>
+      <div class="card-tag">MANIPULACIÓN</div>
+    </div>
+    <div class="suite-card">
+      <div class="card-code">PSY-EW</div>
+      <div class="card-name">Elliott Waves</div>
+      <div class="card-desc">Detección automática de ondas ABC. Targets proyectados en tiempo real con niveles Fibonacci.</div>
+      <div class="card-tag">ESTRUCTURA</div>
+    </div>
+    <div class="suite-card">
+      <div class="card-code">PSY-MCI</div>
+      <div class="card-name">Macro Crisis Index</div>
+      <div class="card-desc">VIX + DXY + Oil + Gold + SPX. Detecta regímenes de crisis macro antes de que impacten el crypto.</div>
+      <div class="card-tag">MACRO GLOBAL</div>
+    </div>
+    <div class="suite-card">
+      <div class="card-code">PSY-LVD</div>
+      <div class="card-name">Liquidity Vacuum</div>
+      <div class="card-desc">Detecta zonas de vacío de liquidez. Cajas azules activas, grises mitigadas. Imanes de precio.</div>
+      <div class="card-tag">LIQUIDEZ</div>
+    </div>
+    <div class="suite-card">
+      <div class="card-code">PSY-ZONES</div>
+      <div class="card-name">Order Blocks</div>
+      <div class="card-desc">Order blocks institucionales, FVGs y sweeps de liquidez con lógica de redraw completa.</div>
+      <div class="card-tag">SMC / ICT</div>
+    </div>
+    <div class="suite-card">
+      <div class="card-code">PSY-ORACLE</div>
+      <div class="card-name">Oráculo MTF</div>
+      <div class="card-desc">Bias 1M/1W + Fibonacci inteligente + divergencias RSI/MFI/MACD. La brújula del trader.</div>
+      <div class="card-tag">MULTI-TF</div>
+    </div>
+    <div class="suite-card">
+      <div class="card-code">WHALE PRO</div>
+      <div class="card-name">Whale Flow</div>
+      <div class="card-desc">Clasificación multicriteria de ballenas: RVOL + posición de vela + percentil de volumen.</div>
+      <div class="card-tag">ON-CHAIN</div>
+    </div>
+    <div class="suite-card">
+      <div class="card-code">FUSION v3</div>
+      <div class="card-name">Fusion Master</div>
+      <div class="card-desc">4 módulos en uno: Macro Global + Oracle MTF + SMC + Fibonacci. Motor de consenso unificado.</div>
+      <div class="card-tag">CONFLUENCIA</div>
+    </div>
+  </div>
+</section>
+
+<!-- AULA -->
+<section id="aula" style="background: var(--dark);">
+  <div class="section-label">Educación</div>
+  <h2 class="section-title">EL AULA<br>PSYCHOMETRIKS</h2>
+  <p class="section-desc">No vendemos señales. Enseñamos a leer el mercado. Desde cero hasta nivel institucional.</p>
+
+  <div class="aula-grid">
+    <div class="aula-left">
+      <div class="aula-modules">
+        <div class="module-item">
+          <div class="module-num">01</div>
+          <div class="module-info">
+            <div class="module-name">Fundamentos Crypto & Forex</div>
+            <div class="module-sub">Sessions, estructura, timeframes</div>
+          </div>
+          <div class="module-icon">📐</div>
+        </div>
+        <div class="module-item">
+          <div class="module-num">02</div>
+          <div class="module-info">
+            <div class="module-name">Price Action & Velas</div>
+            <div class="module-sub">22 patrones + contexto</div>
+          </div>
+          <div class="module-icon">🕯️</div>
+        </div>
+        <div class="module-item">
+          <div class="module-num">03</div>
+          <div class="module-info">
+            <div class="module-name">Fibonacci Avanzado</div>
+            <div class="module-sub">13 capítulos + extensiones Segan</div>
+          </div>
+          <div class="module-icon">🌀</div>
+        </div>
+        <div class="module-item">
+          <div class="module-num">04</div>
+          <div class="module-info">
+            <div class="module-name">SMC / ICT / Wyckoff</div>
+            <div class="module-sub">Order blocks, FVGs, acumulación</div>
+          </div>
+          <div class="module-icon">🏛️</div>
+        </div>
+        <div class="module-item">
+          <div class="module-num">05</div>
+          <div class="module-info">
+            <div class="module-name">CVD + OI + Funding</div>
+            <div class="module-sub">Matriz de 4 regímenes institucionales</div>
+          </div>
+          <div class="module-icon">📊</div>
+        </div>
+        <div class="module-item">
+          <div class="module-num">06</div>
+          <div class="module-info">
+            <div class="module-name">Ondas de Elliott</div>
+            <div class="module-sub">ABC, impulsos, conteo práctico</div>
+          </div>
+          <div class="module-icon">🌊</div>
+        </div>
+        <div class="module-item">
+          <div class="module-num">07</div>
+          <div class="module-info">
+            <div class="module-name">Gestión de Riesgo</div>
+            <div class="module-sub">Tamaño de posición, R:R, psicología</div>
+          </div>
+          <div class="module-icon">🛡️</div>
+        </div>
+        <div class="module-item">
+          <div class="module-num">08</div>
+          <div class="module-info">
+            <div class="module-name">Uso completo de la Suite PSY</div>
+            <div class="module-sub">Todos los indicadores en la práctica</div>
+          </div>
+          <div class="module-icon">🧠</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="aula-right">
+      <div class="aula-preview-title">// ACCESO AL AULA</div>
+      <div class="aula-stat">
+        <div class="aula-stat-label">Módulos de contenido</div>
+        <div class="aula-stat-value">8+</div>
+      </div>
+      <div class="aula-stat">
+        <div class="aula-stat-label">Manuales PDF + HTML</div>
+        <div class="aula-stat-value">12</div>
+      </div>
+      <div class="aula-stat">
+        <div class="aula-stat-label">Acceso</div>
+        <div class="aula-stat-value">∞</div>
+      </div>
+      <div class="aula-features">
+        <div class="aula-feature">Manuales descargables de cada módulo</div>
+        <div class="aula-feature">Sesiones en vivo por Telegram</div>
+        <div class="aula-feature">Análisis diario incluido</div>
+        <div class="aula-feature">Acceso de por vida al contenido base</div>
+        <div class="aula-feature">Comunidad privada de traders</div>
+      </div>
+      <br>
+      <a href="#precios" class="btn-primary" style="width:100%; justify-content:center; margin-top:8px;">Ver planes con aula →</a>
+    </div>
+  </div>
+</section>
+
+<!-- PRECIOS -->
+<section id="precios" class="pricing-section">
+  <div class="section-label">Planes</div>
+  <h2 class="section-title">SIN CONTRATOS.<br>SIN SORPRESAS.</h2>
+  <p class="section-desc">Cancela cuando quieras. Empieza hoy. El conocimiento no espera.</p>
+
+  <div class="pricing-grid">
+
+    <!-- STARTER -->
+    <div class="price-card">
+      <div class="price-tier">// STARTER</div>
+      <div class="price-amount"><span class="currency">$</span>5</div>
+      <div class="price-period">/ mes · acceso ilimitado</div>
+      <div class="price-name">APRENDIZ</div>
+      <ul class="price-features">
+        <li class="highlight">Aula PSYCHOMETRIKS completa</li>
+        <li>8 módulos de educación</li>
+        <li>Todos los manuales PDF + HTML</li>
+        <li>Comunidad Telegram</li>
+        <li>Análisis diario BTC en canal</li>
+        <li>Sin indicadores de TradingView</li>
+      </ul>
+      <a href="https://t.me/PSYCHOMETRIKS_pro" target="_blank" class="price-btn">Comenzar →</a>
+    </div>
+
+    <!-- GROWTH -->
+    <div class="price-card featured">
+      <div class="price-badge">MÁS POPULAR</div>
+      <div class="price-tier">// TRADER</div>
+      <div class="price-amount"><span class="currency">$</span>49</div>
+      <div class="price-period">/ mes · cancela cuando quieras</div>
+      <div class="price-name">TRADER</div>
+      <ul class="price-features">
+        <li class="highlight">Todo del plan Aprendiz</li>
+        <li class="highlight">Acceso invite-only TradingView</li>
+        <li class="highlight">Suite completa: 9 indicadores PSY</li>
+        <li>Actualizaciones automáticas</li>
+        <li>Soporte directo por Telegram</li>
+        <li>Bot de alertas PSYCHOMETRIKS</li>
+        <li>Sesiones en vivo mensuales</li>
+      </ul>
+      <a href="https://t.me/PSYCHOMETRIKS_pro" target="_blank" class="price-btn">Comenzar →</a>
+    </div>
+
+    <!-- PRO -->
+    <div class="price-card">
+      <div class="price-tier">// PRO</div>
+      <div class="price-amount"><span class="currency">$</span>99</div>
+      <div class="price-period">/ mes · para traders serios</div>
+      <div class="price-name">INSTITUCIONAL</div>
+      <ul class="price-features">
+        <li class="highlight">Todo del plan Trader</li>
+        <li class="highlight">Análisis diario personalizado</li>
+        <li class="highlight">Acceso anticipado a nuevos indicadores</li>
+        <li>Revisión de setups en vivo</li>
+        <li>Bot Telegram con alertas en tiempo real</li>
+        <li>Mentoría grupal semanal</li>
+        <li>XAU/USD + BTC + Meme Coins</li>
+      </ul>
+      <a href="https://t.me/PSYCHOMETRIKS_pro" target="_blank" class="price-btn">Comenzar →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ANÁLISIS DIARIO -->
+<section id="analisis">
+  <div class="analisis-strip" style="padding:0; border:none;">
+    <div>
+      <div class="section-label">Análisis diario</div>
+      <h2 class="section-title" style="font-size: clamp(40px,5vw,64px)">EL MERCADO,<br>CADA DÍA.</h2>
+      <p class="section-desc" style="margin-top:16px;">Publicamos lectura multi-timeframe diaria en nuestro canal de TikTok y Telegram. BTC, XAU/USD y meme coins — con los indicadores PSYCHOMETRIKS en tiempo real.</p>
+      <br><br>
+      <a href="https://t.me/PSYCHOMETRIKS_pro" target="_blank" class="btn-secondary">Seguir en Telegram →</a>
+    </div>
+
+    <div>
+      <div class="analisis-indicators">
+        <div class="ind-item">
+          <span class="ind-name">PSY-PULSE · Diario</span>
+          <span class="ind-val">67.7</span>
+          <span class="ind-state-bull">BULL</span>
+        </div>
+        <div class="ind-item">
+          <span class="ind-name">PSY-PULSE · 4H</span>
+          <span class="ind-val">57.1</span>
+          <span class="ind-state-neutral">NEUTRAL</span>
+        </div>
+        <div class="ind-item">
+          <span class="ind-name">PSY-SMD · Régimen</span>
+          <span class="ind-val">SLSQZ</span>
+          <span class="ind-state-neutral">SQUEEZE</span>
+        </div>
+        <div class="ind-item">
+          <span class="ind-name">PSY-MCI · Macro</span>
+          <span class="ind-val">4.7</span>
+          <span class="ind-state-neutral">NEUTRAL</span>
+        </div>
+        <div class="ind-item">
+          <span class="ind-name">PSY-EW · Target 4H</span>
+          <span class="ind-val">$81,563</span>
+          <span class="ind-state-bull">ALCISTA</span>
+        </div>
+        <div class="ind-item">
+          <span class="ind-name">CVD + OI · Señal</span>
+          <span class="ind-val">LIQUIDACIÓN</span>
+          <span class="ind-state-neutral">ESPERAR</span>
+        </div>
+        <div class="ind-item">
+          <span class="ind-name">Acción sugerida</span>
+          <span class="ind-val" style="color:var(--gold)">HOLDEAR / LONG</span>
+          <span class="ind-state-bull">DIARIO</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TELEGRAM CTA -->
+<div class="tg-section">
+  <div class="section-label" style="justify-content:center;">Comunidad</div>
+  <h2>¿LISTO PARA<br><span style="color:var(--cyan)">OPERAR</span><br>DIFERENTE?</h2>
+  <p>Únete a la comunidad PSYCHOMETRIKS. Sin spam, sin señales vacías. Solo análisis institucional real.</p>
+  <a href="https://t.me/PSYCHOMETRIKS_pro" target="_blank" class="tg-btn">
+    <span class="tg-icon">✈️</span>
+    Unirse al Telegram
+  </a>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">PSYCHOMETRIKS</div>
+  <div class="footer-links">
+    <a href="#suite">Suite</a>
+    <a href="#aula">Aula</a>
+    <a href="#precios">Precios</a>
+    <a href="https://t.me/PSYCHOMETRIKS_pro" target="_blank">Telegram</a>
+  </div>
+  <div class="footer-copy">© 2026 PSYCHOMETRIKS · No es consejo financiero</div>
+</footer>
+
+<script>
+// Cursor
+const cursor = document.getElementById('cursor');
+const ring = document.getElementById('cursorRing');
+let mx = 0, my = 0, rx = 0, ry = 0;
+document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+function animateCursor() {
+  cursor.style.transform = `translate(${mx-4}px, ${my-4}px)`;
+  rx += (mx - rx) * 0.12;
+  ry += (my - ry) * 0.12;
+  ring.style.transform = `translate(${rx-16}px, ${ry-16}px)`;
+  requestAnimationFrame(animateCursor);
+}
+animateCursor();
+document.querySelectorAll('a, button').forEach(el => {
+  el.addEventListener('mouseenter', () => ring.style.transform += ' scale(1.8)');
+  el.addEventListener('mouseleave', () => {});
+});
+
+// Scroll fade-in
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+document.querySelectorAll('.suite-card, .module-item, .price-card, .ind-item').forEach(el => {
+  el.style.opacity = '0';
+  el.style.transform = 'translateY(20px)';
+  el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+  observer.observe(el);
+});
+document.addEventListener('DOMContentLoaded', () => {
+  const obs2 = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if(e.isIntersecting) {
+        e.target.style.opacity = '1';
+        e.target.style.transform = 'translateY(0)';
+      }
+    });
+  }, {threshold: 0.1});
+  document.querySelectorAll('.suite-card, .module-item, .price-card, .ind-item').forEach(el => obs2.observe(el));
+});
+</script>
+</body>
+</html>

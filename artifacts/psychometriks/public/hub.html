@@ -1,0 +1,1443 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PSYCHOMETRIKS — Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#060a0f;--bg2:#0a1220;--bg3:#0d1828;
+  --border:#1a2a3a;--border2:#243040;
+  --gold:#ffd700;--cyan:#00e5ff;--green:#00e676;--red:#ff1744;--purple:#e040fb;--orange:#ff9800;
+  --white:#e8f0f8;--gray:#546e7a;--text:#b0bec5;
+}
+html,body{background:var(--bg);color:var(--white);font-family:'Rajdhani',sans-serif;overflow-x:hidden}
+
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(0,229,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,.03) 1px,transparent 1px);
+  background-size:40px 40px;pointer-events:none;z-index:0;
+}
+
+/* ── HEADER ── */
+.hub-header{
+  position:relative;z-index:10;text-align:center;padding:48px 20px 32px;
+  border-bottom:1px solid var(--border);
+  background:linear-gradient(180deg,rgba(0,229,255,.04) 0%,transparent 100%);
+}
+.hub-logo{font-family:'Orbitron',monospace;font-size:clamp(1.6rem,4vw,3rem);font-weight:900;letter-spacing:.15em;color:var(--white);text-shadow:0 0 30px rgba(0,229,255,.5),0 0 60px rgba(0,229,255,.2);}
+.hub-logo span{color:var(--cyan);}
+.hub-sub{font-family:'Share Tech Mono',monospace;font-size:.75rem;letter-spacing:.2em;color:var(--gray);margin-top:8px;text-transform:uppercase;}
+.hub-rainbow{height:2px;width:260px;margin:16px auto 0;background:linear-gradient(90deg,var(--purple),var(--cyan),var(--green),var(--gold),var(--orange),var(--red));border-radius:2px;box-shadow:0 0 12px rgba(0,229,255,.4);}
+
+/* ── MAIN ── */
+.hub-main{position:relative;z-index:10;max-width:1100px;margin:0 auto;padding:48px 20px 60px;}
+
+.section-title{font-family:'Share Tech Mono',monospace;font-size:.65rem;letter-spacing:.25em;color:var(--gray);text-transform:uppercase;margin-bottom:18px;display:flex;align-items:center;gap:10px;}
+.section-title::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* ── FEATURED CARD ── */
+.featured-card{
+  position:relative;overflow:hidden;
+  background:linear-gradient(135deg,rgba(0,229,255,.06) 0%,rgba(224,64,251,.04) 100%);
+  border:1px solid rgba(0,229,255,.25);border-radius:8px;padding:32px 36px;
+  margin-bottom:14px;cursor:pointer;transition:all .25s;display:flex;align-items:center;gap:28px;
+}
+.featured-card:hover{border-color:rgba(0,229,255,.6);box-shadow:0 0 30px rgba(0,229,255,.15),inset 0 0 20px rgba(0,229,255,.04);transform:translateY(-2px);}
+.featured-card::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent 60%,rgba(0,229,255,.04));pointer-events:none;}
+.fc-icon{font-size:2.8rem;flex-shrink:0;filter:drop-shadow(0 0 12px rgba(0,229,255,.5));}
+.fc-body{flex:1;}
+.fc-tag{font-family:'Share Tech Mono',monospace;font-size:.58rem;letter-spacing:.18em;color:var(--cyan);margin-bottom:6px;text-transform:uppercase;}
+.fc-title{font-family:'Orbitron',monospace;font-size:1.5rem;font-weight:700;color:var(--white);margin-bottom:4px;}
+.fc-desc{font-family:'Rajdhani',sans-serif;font-size:.9rem;color:var(--text);line-height:1.5;}
+.fc-badge{font-family:'Share Tech Mono',monospace;font-size:.58rem;letter-spacing:.12em;background:rgba(0,229,255,.12);border:1px solid rgba(0,229,255,.3);color:var(--cyan);padding:4px 12px;border-radius:3px;white-space:nowrap;}
+.fc-badge.live{background:rgba(0,230,118,.12);border-color:rgba(0,230,118,.3);color:var(--green);}
+.fc-badge.live::before{content:'● ';animation:blink 1.2s step-end infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ── GRID ── */
+.hub-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;margin-bottom:14px;}
+.hub-card{position:relative;overflow:hidden;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:22px 22px 20px;cursor:pointer;transition:all .22s;display:flex;flex-direction:column;gap:8px;text-decoration:none;color:inherit;}
+.hub-card:hover{transform:translateY(-3px);border-color:var(--card-color,var(--cyan));}
+.hub-card:hover .card-glow{opacity:1;}
+.card-glow{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .25s;background:radial-gradient(ellipse at 50% 0%,var(--card-glow,rgba(0,229,255,.08)) 0%,transparent 70%);}
+.card-icon{font-size:1.6rem;margin-bottom:2px;filter:drop-shadow(0 0 8px var(--card-glow,rgba(0,229,255,.4)));}
+.card-tag{font-family:'Share Tech Mono',monospace;font-size:.52rem;letter-spacing:.15em;color:var(--card-color,var(--cyan));text-transform:uppercase;}
+.card-title{font-family:'Orbitron',monospace;font-size:.9rem;font-weight:700;color:var(--white);}
+.card-desc{font-family:'Rajdhani',sans-serif;font-size:.8rem;color:var(--gray);line-height:1.4;margin-top:2px;}
+.card-arrow{position:absolute;bottom:14px;right:16px;font-size:.8rem;color:var(--card-color,var(--gray));opacity:.5;transition:opacity .2s,transform .2s;}
+.hub-card:hover .card-arrow{opacity:1;transform:translateX(3px);}
+
+/* ══════════════════════════════════════════
+   ENGAGEMENT BLOCK
+══════════════════════════════════════════ */
+.engage-block{
+  background:var(--bg2);border:1px solid var(--border2);border-radius:10px;overflow:hidden;margin-top:8px;
+}
+
+/* Tab bar */
+.engage-tabs{display:flex;border-bottom:1px solid var(--border);}
+.etab{
+  flex:1;padding:14px 10px;text-align:center;cursor:pointer;
+  font-family:'Share Tech Mono',monospace;font-size:.65rem;letter-spacing:.12em;
+  color:var(--gray);text-transform:uppercase;transition:all .2s;
+  border-bottom:2px solid transparent;position:relative;
+}
+.etab:hover{color:var(--white);background:rgba(255,255,255,.02);}
+.etab.active{color:var(--cyan);border-bottom-color:var(--cyan);background:rgba(0,229,255,.04);}
+.etab-icon{font-size:1rem;margin-bottom:4px;display:block;}
+.etab-notif{
+  position:absolute;top:8px;right:calc(50% - 28px);
+  background:var(--red);color:#fff;font-size:.45rem;font-family:'Share Tech Mono',monospace;
+  padding:1px 4px;border-radius:8px;min-width:16px;text-align:center;
+}
+
+/* Panel */
+.epanel{display:none;padding:24px;}
+.epanel.active{display:block;animation:fadeUp .3s ease both;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── COMUNIDAD ── */
+.forum-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;}
+.forum-stats{display:flex;gap:16px;}
+.fstat{font-family:'Share Tech Mono',monospace;font-size:.6rem;color:var(--gray);}
+.fstat span{color:var(--cyan);}
+
+.topic-filters{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;}
+.tf{
+  font-family:'Share Tech Mono',monospace;font-size:.55rem;letter-spacing:.1em;
+  padding:4px 10px;border:1px solid var(--border2);border-radius:20px;cursor:pointer;
+  color:var(--gray);background:transparent;transition:all .18s;
+}
+.tf.active,.tf:hover{border-color:var(--cyan);color:var(--cyan);background:rgba(0,229,255,.07);}
+
+.post-compose{
+  background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:14px;margin-bottom:16px;
+}
+.compose-row{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;}
+.compose-name{
+  flex:0 0 140px;padding:8px 10px;border:1px solid var(--border2);border-radius:4px;
+  background:var(--bg);color:var(--white);font-family:'Share Tech Mono',monospace;font-size:.65rem;
+}
+.compose-cat{
+  flex:0 0 140px;padding:8px 10px;border:1px solid var(--border2);border-radius:4px;
+  background:var(--bg);color:var(--white);font-family:'Share Tech Mono',monospace;font-size:.65rem;cursor:pointer;
+}
+.compose-text{
+  width:100%;padding:10px 12px;border:1px solid var(--border2);border-radius:4px;
+  background:var(--bg);color:var(--white);font-family:'Rajdhani',sans-serif;font-size:.85rem;
+  resize:vertical;min-height:70px;line-height:1.5;
+}
+.compose-text:focus,.compose-name:focus,.compose-cat:focus{outline:none;border-color:var(--cyan);}
+.compose-footer{display:flex;align-items:center;justify-content:space-between;}
+.char-count{font-family:'Share Tech Mono',monospace;font-size:.55rem;color:var(--gray);}
+.btn-post{
+  padding:8px 20px;background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.3);
+  color:var(--cyan);font-family:'Share Tech Mono',monospace;font-size:.62rem;letter-spacing:.1em;
+  border-radius:4px;cursor:pointer;transition:all .18s;
+}
+.btn-post:hover{background:rgba(0,229,255,.2);border-color:var(--cyan);}
+
+.posts-list{display:flex;flex-direction:column;gap:10px;max-height:420px;overflow-y:auto;}
+.posts-list::-webkit-scrollbar{width:4px;}
+.posts-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+
+.post-item{
+  background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:12px 14px;
+  transition:border-color .18s;
+}
+.post-item:hover{border-color:var(--border2);}
+.post-top{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;}
+.post-avatar{
+  width:28px;height:28px;border-radius:50%;
+  background:linear-gradient(135deg,var(--cyan),var(--purple));
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Orbitron',monospace;font-size:.6rem;font-weight:700;color:#fff;flex-shrink:0;
+}
+.post-author{font-family:'Share Tech Mono',monospace;font-size:.62rem;color:var(--white);}
+.post-cat-badge{
+  font-family:'Share Tech Mono',monospace;font-size:.5rem;letter-spacing:.1em;
+  padding:2px 7px;border-radius:10px;text-transform:uppercase;
+}
+.post-time{font-family:'Share Tech Mono',monospace;font-size:.52rem;color:var(--gray);margin-left:auto;}
+.post-body{font-family:'Rajdhani',sans-serif;font-size:.85rem;color:var(--text);line-height:1.5;margin-bottom:8px;}
+.post-actions{display:flex;gap:12px;align-items:center;}
+.post-action{
+  display:flex;align-items:center;gap:4px;cursor:pointer;
+  font-family:'Share Tech Mono',monospace;font-size:.55rem;color:var(--gray);
+  transition:color .15s;background:none;border:none;padding:0;
+}
+.post-action:hover{color:var(--cyan);}
+.post-action.liked{color:var(--gold);}
+
+/* Cat colors */
+.cat-psico{background:rgba(224,64,251,.15);color:var(--purple);border:1px solid rgba(224,64,251,.25);}
+.cat-analisis{background:rgba(0,229,255,.1);color:var(--cyan);border:1px solid rgba(0,229,255,.2);}
+.cat-resultado{background:rgba(0,230,118,.1);color:var(--green);border:1px solid rgba(0,230,118,.2);}
+.cat-duda{background:rgba(255,152,0,.1);color:var(--orange);border:1px solid rgba(255,152,0,.2);}
+.cat-general{background:rgba(84,110,122,.15);color:var(--gray);border:1px solid rgba(84,110,122,.3);}
+
+/* ── FAQ ── */
+.faq-list{display:flex;flex-direction:column;gap:8px;}
+.faq-item{background:var(--bg3);border:1px solid var(--border);border-radius:6px;overflow:hidden;transition:border-color .2s;}
+.faq-item.open{border-color:rgba(0,229,255,.25);}
+.faq-q{
+  padding:14px 18px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px;
+  font-family:'Rajdhani',sans-serif;font-size:.9rem;font-weight:600;color:var(--white);
+  transition:background .18s;
+}
+.faq-q:hover{background:rgba(255,255,255,.02);}
+.faq-icon{font-size:.7rem;color:var(--cyan);transition:transform .2s;flex-shrink:0;}
+.faq-item.open .faq-icon{transform:rotate(180deg);}
+.faq-a{
+  display:none;padding:0 18px 16px;
+  font-family:'Rajdhani',sans-serif;font-size:.85rem;color:var(--text);line-height:1.6;
+  border-top:1px solid var(--border);padding-top:12px;margin-top:0;
+}
+.faq-item.open .faq-a{display:block;animation:fadeUp .2s ease both;}
+.faq-tag{
+  display:inline-block;margin-bottom:8px;
+  font-family:'Share Tech Mono',monospace;font-size:.5rem;letter-spacing:.12em;
+  background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.2);color:var(--cyan);
+  padding:2px 8px;border-radius:3px;text-transform:uppercase;
+}
+.faq-search{
+  width:100%;padding:10px 14px;border:1px solid var(--border2);border-radius:5px;
+  background:var(--bg3);color:var(--white);font-family:'Share Tech Mono',monospace;font-size:.65rem;
+  margin-bottom:14px;
+}
+.faq-search:focus{outline:none;border-color:var(--cyan);}
+
+/* ── TEST DEL DÍA ── */
+.test-header{text-align:center;margin-bottom:24px;}
+.test-day-badge{
+  display:inline-block;font-family:'Share Tech Mono',monospace;font-size:.58rem;letter-spacing:.15em;
+  background:rgba(255,215,0,.1);border:1px solid rgba(255,215,0,.3);color:var(--gold);
+  padding:4px 14px;border-radius:20px;margin-bottom:12px;text-transform:uppercase;
+}
+.test-title{font-family:'Orbitron',monospace;font-size:1.1rem;font-weight:700;color:var(--white);margin-bottom:6px;}
+.test-category{font-family:'Share Tech Mono',monospace;font-size:.58rem;color:var(--gray);letter-spacing:.1em;}
+
+.test-streak{
+  display:flex;align-items:center;justify-content:center;gap:20px;
+  background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:12px 20px;
+  margin-bottom:20px;
+}
+.streak-item{text-align:center;}
+.streak-num{font-family:'Orbitron',monospace;font-size:1.4rem;font-weight:700;}
+.streak-label{font-family:'Share Tech Mono',monospace;font-size:.5rem;color:var(--gray);letter-spacing:.1em;text-transform:uppercase;}
+
+.test-question{
+  background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:20px;margin-bottom:16px;
+}
+.test-q-text{font-family:'Rajdhani',sans-serif;font-size:1rem;color:var(--white);line-height:1.5;margin-bottom:4px;}
+.test-q-hint{font-family:'Share Tech Mono',monospace;font-size:.58rem;color:var(--gray);}
+
+.test-options{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;}
+.test-opt{
+  padding:12px 16px;border:1px solid var(--border2);border-radius:6px;cursor:pointer;
+  font-family:'Rajdhani',sans-serif;font-size:.9rem;color:var(--text);
+  background:var(--bg3);transition:all .18s;display:flex;align-items:center;gap:10px;
+}
+.test-opt:hover:not(.disabled){border-color:var(--cyan);color:var(--white);background:rgba(0,229,255,.05);}
+.test-opt.selected-correct{border-color:var(--green);background:rgba(0,230,118,.1);color:var(--green);}
+.test-opt.selected-wrong{border-color:var(--red);background:rgba(255,23,68,.1);color:var(--red);}
+.test-opt.show-correct{border-color:var(--green);color:var(--green);}
+.test-opt.disabled{cursor:default;pointer-events:none;}
+.opt-letter{
+  width:22px;height:22px;border-radius:50%;border:1px solid var(--border2);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Share Tech Mono',monospace;font-size:.6rem;flex-shrink:0;
+}
+
+.test-explanation{
+  background:rgba(0,229,255,.04);border:1px solid rgba(0,229,255,.2);border-radius:6px;
+  padding:14px 16px;margin-bottom:16px;display:none;animation:fadeUp .3s ease both;
+}
+.test-explanation.show{display:block;}
+.exp-title{font-family:'Share Tech Mono',monospace;font-size:.58rem;letter-spacing:.15em;color:var(--cyan);margin-bottom:6px;text-transform:uppercase;}
+.exp-text{font-family:'Rajdhani',sans-serif;font-size:.85rem;color:var(--text);line-height:1.5;}
+
+.test-nav{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+.test-progress-dots{display:flex;gap:6px;}
+.tdot{width:8px;height:8px;border-radius:50%;background:var(--border2);transition:background .2s;}
+.tdot.done-correct{background:var(--green);}
+.tdot.done-wrong{background:var(--red);}
+.tdot.current{background:var(--cyan);box-shadow:0 0 6px var(--cyan);}
+
+.btn-next{
+  padding:10px 24px;background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.3);
+  color:var(--cyan);font-family:'Share Tech Mono',monospace;font-size:.62rem;letter-spacing:.1em;
+  border-radius:4px;cursor:pointer;transition:all .18s;
+}
+.btn-next:hover{background:rgba(0,229,255,.2);border-color:var(--cyan);}
+.btn-next:disabled{opacity:.3;cursor:default;}
+
+.test-result{
+  text-align:center;padding:30px 20px;display:none;animation:fadeUp .4s ease both;
+}
+.test-result.show{display:block;}
+.result-emoji{font-size:3rem;margin-bottom:12px;}
+.result-score{font-family:'Orbitron',monospace;font-size:2rem;font-weight:700;margin-bottom:6px;}
+.result-msg{font-family:'Rajdhani',sans-serif;font-size:.9rem;color:var(--text);margin-bottom:20px;}
+.btn-retake{
+  padding:10px 28px;background:rgba(255,215,0,.1);border:1px solid rgba(255,215,0,.3);
+  color:var(--gold);font-family:'Share Tech Mono',monospace;font-size:.62rem;letter-spacing:.1em;
+  border-radius:4px;cursor:pointer;transition:all .18s;
+}
+.btn-retake:hover{background:rgba(255,215,0,.2);border-color:var(--gold);}
+
+/* ── FOOTER ── */
+.hub-footer{position:relative;z-index:10;text-align:center;padding:20px;border-top:1px solid var(--border);font-family:'Share Tech Mono',monospace;font-size:.6rem;color:var(--gray);letter-spacing:.1em;}
+
+/* ── ANIMATIONS ── */
+.hub-main>*{animation:fadeUp .5s ease both;}
+.hub-main>*:nth-child(1){animation-delay:.05s;}
+.hub-main>*:nth-child(2){animation-delay:.1s;}
+.hub-main>*:nth-child(3){animation-delay:.15s;}
+.hub-main>*:nth-child(4){animation-delay:.2s;}
+.hub-main>*:nth-child(5){animation-delay:.25s;}
+.hub-main>*:nth-child(6){animation-delay:.3s;}
+.hub-main>*:nth-child(7){animation-delay:.35s;}
+
+/* ── SCORE RING ── */
+.score-ring-wrap{display:flex;flex-direction:column;align-items:center;gap:8px;margin:0 auto 20px;}
+.score-ring-svg{transform:rotate(-90deg);}
+.ring-bg{fill:none;stroke:var(--border2);stroke-width:10;}
+.ring-fill{fill:none;stroke-width:10;stroke-linecap:round;transition:stroke-dashoffset 1.4s cubic-bezier(.4,0,.2,1),stroke .4s;}
+.ring-label{position:absolute;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.ring-pct{font-family:'Orbitron',monospace;font-size:1.6rem;font-weight:700;}
+.ring-of{font-family:'Share Tech Mono',monospace;font-size:.55rem;color:var(--gray);}
+.ring-container{position:relative;display:flex;align-items:center;justify-content:center;width:120px;height:120px;}
+
+/* ── QUESTION BREAKDOWN ── */
+.breakdown-title{font-family:'Share Tech Mono',monospace;font-size:.6rem;letter-spacing:.15em;color:var(--gray);text-transform:uppercase;margin:18px 0 10px;}
+.breakdown-list{display:flex;flex-direction:column;gap:6px;margin-bottom:18px;}
+.bd-item{display:flex;align-items:center;gap:10px;}
+.bd-num{font-family:'Share Tech Mono',monospace;font-size:.55rem;color:var(--gray);width:16px;text-align:center;flex-shrink:0;}
+.bd-label{flex:1;font-family:'Rajdhani',sans-serif;font-size:.78rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px;}
+.bd-bar{height:6px;flex:1;background:var(--border);border-radius:3px;overflow:hidden;max-width:120px;}
+.bd-fill{height:100%;border-radius:3px;transition:width 1s ease .3s;}
+.bd-icon{font-size:.8rem;flex-shrink:0;width:20px;text-align:center;}
+
+/* ── AI INTERPRETATION ── */
+.ai-block{
+  background:linear-gradient(135deg,rgba(224,64,251,.05),rgba(0,229,255,.04));
+  border:1px solid rgba(224,64,251,.2);border-radius:8px;padding:14px 18px;margin-bottom:16px;
+}
+.ai-block-header{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.ai-avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--purple),var(--cyan));display:flex;align-items:center;justify-content:center;font-size:.75rem;flex-shrink:0;}
+.ai-tag{font-family:'Share Tech Mono',monospace;font-size:.55rem;letter-spacing:.12em;color:var(--purple);text-transform:uppercase;}
+.ai-text{font-family:'Rajdhani',sans-serif;font-size:.88rem;color:var(--text);line-height:1.55;}
+.ai-loading{display:flex;align-items:center;gap:8px;font-family:'Share Tech Mono',monospace;font-size:.62rem;color:var(--gray);}
+.ai-dot{width:5px;height:5px;border-radius:50%;background:var(--purple);animation:pulse 1.2s ease infinite;}
+.ai-dot:nth-child(2){animation-delay:.2s;}
+.ai-dot:nth-child(3){animation-delay:.4s;}
+@keyframes pulse{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.1)}}
+
+/* ── NEXT TEST RECOMMENDATION ── */
+.next-test-rec{
+  background:var(--bg3);border:1px solid var(--border2);border-radius:6px;
+  padding:12px 16px;margin-bottom:16px;cursor:pointer;transition:all .2s;
+  display:flex;align-items:center;gap:14px;
+}
+.next-test-rec:hover{border-color:var(--gold);transform:translateY(-1px);}
+.rec-icon{font-size:1.4rem;flex-shrink:0;}
+.rec-body{flex:1;}
+.rec-tag{font-family:'Share Tech Mono',monospace;font-size:.52rem;letter-spacing:.12em;color:var(--gold);text-transform:uppercase;margin-bottom:3px;}
+.rec-title{font-family:'Orbitron',monospace;font-size:.82rem;font-weight:700;color:var(--white);}
+.rec-arrow{font-size:.9rem;color:var(--gold);}
+
+/* ── SOCIAL SHARE ── */
+.share-title{font-family:'Share Tech Mono',monospace;font-size:.6rem;letter-spacing:.15em;color:var(--gray);text-transform:uppercase;margin-bottom:10px;}
+.share-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;margin-bottom:6px;}
+.share-btn{
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:10px 8px;border-radius:6px;cursor:pointer;transition:all .18s;
+  font-family:'Share Tech Mono',monospace;font-size:.5rem;letter-spacing:.08em;
+  border:1px solid var(--border2);background:var(--bg3);color:var(--gray);
+  text-align:center;
+}
+.share-btn:hover{transform:translateY(-2px);}
+.share-btn-icon{font-size:1.2rem;}
+.share-btn.tw:hover{border-color:#1da1f2;color:#1da1f2;background:rgba(29,161,242,.08);}
+.share-btn.wa:hover{border-color:#25d366;color:#25d366;background:rgba(37,211,102,.08);}
+.share-btn.tg:hover{border-color:#0088cc;color:#0088cc;background:rgba(0,136,204,.08);}
+.share-btn.cp:hover{border-color:var(--cyan);color:var(--cyan);background:rgba(0,229,255,.08);}
+.share-btn.dl:hover{border-color:var(--gold);color:var(--gold);background:rgba(255,215,0,.08);}
+.share-copied{font-family:'Share Tech Mono',monospace;font-size:.55rem;color:var(--green);text-align:center;height:14px;transition:opacity .3s;}
+
+/* ── RESULT TOP ── */
+.result-top{display:flex;align-items:center;justify-content:center;gap:24px;margin-bottom:8px;flex-wrap:wrap;}
+.result-info{text-align:left;}
+.result-test-name{font-family:'Share Tech Mono',monospace;font-size:.55rem;letter-spacing:.12em;color:var(--gray);text-transform:uppercase;margin-bottom:4px;}
+.result-score-big{font-family:'Orbitron',monospace;font-size:1.6rem;font-weight:700;}
+.result-verdict{font-family:'Rajdhani',sans-serif;font-size:.9rem;margin-top:4px;}
+.result-streak{font-family:'Share Tech Mono',monospace;font-size:.58rem;color:var(--gold);margin-top:6px;}
+
+/* Responsive */
+@media(max-width:600px){
+  .featured-card{flex-direction:column;text-align:center;}
+  .fc-badge{align-self:center;}
+  .engage-tabs{flex-wrap:wrap;}
+  .etab{font-size:.55rem;padding:10px 6px;}
+  .compose-row{flex-direction:column;}
+  .compose-name,.compose-cat{flex:1;}
+  .share-grid{grid-template-columns:repeat(3,1fr);}
+  .result-top{flex-direction:column;gap:12px;}
+  .result-info{text-align:center;}
+}
+</style>
+</head>
+<body>
+
+<header class="hub-header">
+  <div class="hub-logo">PSY<span>CHO</span>METRIKS</div>
+  <div class="hub-sub">◈ Portal Principal — Selecciona una plataforma</div>
+  <div class="hub-rainbow"></div>
+</header>
+
+<main class="hub-main">
+
+  <!-- FEATURED: LIQMAP -->
+  <div class="section-title">⚡ PLATAFORMA PRINCIPAL</div>
+  <div class="featured-card" onclick="go('/psychometriks/liquid-map.html')">
+    <div class="fc-icon">⚡</div>
+    <div class="fc-body">
+      <div class="fc-tag">Análisis de Liquidez Institucional</div>
+      <div class="fc-title">LIQMAP PRO</div>
+      <div class="fc-desc">Dashboard avanzado con mapa de liquidaciones en tiempo real, 5 exchanges consolidados, PSY Score, Order Book, Heatmap, RSI, Bollinger Bands y más.</div>
+    </div>
+    <div class="fc-badge live">EN VIVO</div>
+  </div>
+
+  <!-- EDUCATION -->
+  <div class="section-title">🎓 EDUCACIÓN</div>
+  <div class="hub-grid">
+    <a class="hub-card" style="--card-color:var(--purple);--card-glow:rgba(224,64,251,.12)" href="/aula-psychometriks/">
+      <div class="card-glow"></div>
+      <div class="card-icon">🎓</div>
+      <div class="card-tag">Formación</div>
+      <div class="card-title">AULA VIRTUAL</div>
+      <div class="card-desc">Cursos, módulos y material educativo exclusivo de trading profesional.</div>
+      <div class="card-arrow">→</div>
+    </a>
+  </div>
+
+  <!-- HERRAMIENTAS VIRALES -->
+  <div class="section-title">🧠 HERRAMIENTAS PSY</div>
+  <div class="hub-grid">
+    <div class="hub-card" style="--card-color:var(--gold);--card-glow:rgba(255,215,0,.1)" onclick="go('/psychometriks/psy-score')">
+      <div class="card-glow"></div><div class="card-icon">🎯</div>
+      <div class="card-tag">Análisis psicológico</div><div class="card-title">PSY SCORE</div>
+      <div class="card-desc">Score 0-100 del mercado basado en Fear&Greed, Funding Rate, L/S Ratio y liquidaciones.</div>
+      <div class="card-arrow">→</div>
+    </div>
+    <div class="hub-card" style="--card-color:var(--red);--card-glow:rgba(255,23,68,.1)" onclick="go('/psychometriks/war-room')">
+      <div class="card-glow"></div><div class="card-icon">🔴</div>
+      <div class="card-tag">Sala de crisis</div><div class="card-title">WAR ROOM</div>
+      <div class="card-desc">Sala de eventos macro con cuenta regresiva, precio BTC en vivo y asistente IA.</div>
+      <div class="card-arrow">→</div>
+    </div>
+    <div class="hub-card" style="--card-color:var(--cyan);--card-glow:rgba(0,229,255,.1)" onclick="go('/psychometriks/journal')">
+      <div class="card-glow"></div><div class="card-icon">📓</div>
+      <div class="card-tag">Bitácora de trading</div><div class="card-title">JOURNAL</div>
+      <div class="card-desc">Registrá tus operaciones y recibí análisis psicológico con IA de tus patrones.</div>
+      <div class="card-arrow">→</div>
+    </div>
+    <div class="hub-card" style="--card-color:var(--green);--card-glow:rgba(0,230,118,.1)" onclick="go('/psychometriks/replay')">
+      <div class="card-glow"></div><div class="card-icon">🎬</div>
+      <div class="card-tag">Historia del mercado</div><div class="card-title">MARKET REPLAY</div>
+      <div class="card-desc">Revivé los 4 eventos históricos más importantes de BTC frame a frame.</div>
+      <div class="card-arrow">→</div>
+    </div>
+  </div>
+
+  <!-- CALCULADORAS -->
+  <div class="section-title">🛠️ CALCULADORAS Y UTILIDADES</div>
+  <div class="hub-grid">
+    <div class="hub-card" style="--card-color:var(--orange);--card-glow:rgba(255,152,0,.1)" onclick="go('/psychometriks/calculadora')">
+      <div class="card-glow"></div><div class="card-icon">🧮</div>
+      <div class="card-tag">Gestión de riesgo</div><div class="card-title">CALCULADORA</div>
+      <div class="card-desc">Calculá tamaño de posición, riesgo por operación, SL/TP y PnL en tiempo real.</div>
+      <div class="card-arrow">→</div>
+    </div>
+    <div class="hub-card" style="--card-color:var(--cyan);--card-glow:rgba(0,229,255,.1)" onclick="go('/psychometriks/converter')">
+      <div class="card-glow"></div><div class="card-icon">💱</div>
+      <div class="card-tag">Conversión cripto</div><div class="card-title">CONVERTER</div>
+      <div class="card-desc">Convertí entre cualquier criptomoneda y moneda fiat con precios en tiempo real.</div>
+      <div class="card-arrow">→</div>
+    </div>
+    <div class="hub-card" style="--card-color:var(--purple);--card-glow:rgba(224,64,251,.1)" onclick="go('/psychometriks/economic-calendar')">
+      <div class="card-glow"></div><div class="card-icon">📅</div>
+      <div class="card-tag">Macro</div><div class="card-title">CALENDARIO ECONÓMICO</div>
+      <div class="card-desc">Eventos macro de alto impacto: Fed, CPI, NFP y más.</div>
+      <div class="card-arrow">→</div>
+    </div>
+    <div class="hub-card" style="--card-color:var(--gold);--card-glow:rgba(255,215,0,.1)" onclick="go('/psychometriks/leaderboard')">
+      <div class="card-glow"></div><div class="card-icon">🏆</div>
+      <div class="card-tag">Competencia</div><div class="card-title">LEADERBOARD</div>
+      <div class="card-desc">Ranking de los mejores traders de la comunidad PSYCHOMETRIKS.</div>
+      <div class="card-arrow">→</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════
+       ENGAGEMENT BLOCK
+  ═══════════════════════════════════ -->
+  <div class="section-title">🔥 COMUNIDAD &amp; APRENDIZAJE</div>
+
+  <div class="engage-block">
+    <div class="engage-tabs">
+      <div class="etab active" onclick="switchTab('comunidad',this)">
+        <span class="etab-icon">💬</span>COMUNIDAD
+        <span class="etab-notif" id="notif-comunidad"></span>
+      </div>
+      <div class="etab" onclick="switchTab('faq',this)">
+        <span class="etab-icon">❓</span>FAQ
+      </div>
+      <div class="etab" onclick="switchTab('test',this)">
+        <span class="etab-icon">📢</span>TEST DEL DÍA
+        <span class="etab-notif" id="notif-test" style="background:var(--gold);color:#000">!</span>
+      </div>
+    </div>
+
+    <!-- ───────── COMUNIDAD ───────── -->
+    <div class="epanel active" id="panel-comunidad">
+      <div class="forum-header">
+        <div>
+          <div style="font-family:'Orbitron',monospace;font-size:.85rem;font-weight:700;margin-bottom:4px;">FORO PSYCHOMETRIKS</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:.58rem;color:var(--gray);">Debatí, compartí resultados y aprendé de la comunidad</div>
+        </div>
+        <div class="forum-stats">
+          <div class="fstat">Posts hoy <span id="posts-today">0</span></div>
+          <div class="fstat">Total <span id="posts-total">0</span></div>
+        </div>
+      </div>
+
+      <div class="topic-filters">
+        <button class="tf active" onclick="filterPosts('all',this)">🌐 Todo</button>
+        <button class="tf" onclick="filterPosts('psico',this)">🧠 Psicología</button>
+        <button class="tf" onclick="filterPosts('analisis',this)">📊 Análisis</button>
+        <button class="tf" onclick="filterPosts('resultado',this)">✅ Resultados</button>
+        <button class="tf" onclick="filterPosts('duda',this)">🤔 Dudas</button>
+        <button class="tf" onclick="filterPosts('general',this)">💬 General</button>
+      </div>
+
+      <div class="post-compose">
+        <div class="compose-row">
+          <input class="compose-name" id="post-name" type="text" placeholder="Tu nombre / alias" maxlength="20">
+          <select class="compose-cat" id="post-cat">
+            <option value="psico">🧠 Psicología</option>
+            <option value="analisis">📊 Análisis</option>
+            <option value="resultado">✅ Resultado</option>
+            <option value="duda">🤔 Duda</option>
+            <option value="general">💬 General</option>
+          </select>
+        </div>
+        <textarea class="compose-text" id="post-text" placeholder="¿Qué querés compartir hoy con la comunidad? Resultados, análisis, preguntas..." maxlength="280" oninput="updateChar()"></textarea>
+        <div class="compose-footer">
+          <span class="char-count"><span id="char-n">0</span>/280</span>
+          <button class="btn-post" onclick="submitPost()">📤 PUBLICAR</button>
+        </div>
+      </div>
+
+      <div class="posts-list" id="posts-list">
+        <div style="text-align:center;padding:24px;font-family:'Share Tech Mono',monospace;font-size:.65rem;color:var(--gray);">Sé el primero en publicar hoy 👇</div>
+      </div>
+    </div>
+
+    <!-- ───────── FAQ ───────── -->
+    <div class="epanel" id="panel-faq">
+      <div style="font-family:'Orbitron',monospace;font-size:.85rem;font-weight:700;margin-bottom:4px;">PREGUNTAS FRECUENTES</div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:.58rem;color:var(--gray);margin-bottom:16px;">Respuestas rápidas sobre la plataforma y psicología del trading</div>
+
+      <input class="faq-search" id="faq-search" type="text" placeholder="🔍  Buscar pregunta..." oninput="filterFAQ()">
+
+      <div class="faq-list" id="faq-list"></div>
+    </div>
+
+    <!-- ───────── TEST DEL DÍA ───────── -->
+    <div class="epanel" id="panel-test">
+      <div class="test-header">
+        <div class="test-day-badge" id="test-date-badge">📅 Test de hoy</div>
+        <div class="test-title" id="test-block-title">TEST PSICOLÓGICO</div>
+        <div class="test-category" id="test-block-cat"></div>
+      </div>
+
+      <div class="test-streak">
+        <div class="streak-item">
+          <div class="streak-num" id="streak-num" style="color:var(--gold)">0</div>
+          <div class="streak-label">🔥 Racha</div>
+        </div>
+        <div class="streak-item">
+          <div class="streak-num" id="best-streak" style="color:var(--cyan)">0</div>
+          <div class="streak-label">⚡ Mejor</div>
+        </div>
+        <div class="streak-item">
+          <div class="streak-num" id="total-done" style="color:var(--green)">0</div>
+          <div class="streak-label">✅ Completados</div>
+        </div>
+      </div>
+
+      <!-- Questions zone -->
+      <div id="test-questions-zone">
+        <div class="test-question">
+          <div class="test-q-text" id="q-text"></div>
+          <div class="test-q-hint" id="q-hint"></div>
+        </div>
+        <div class="test-options" id="q-options"></div>
+        <div class="test-explanation" id="q-explanation">
+          <div class="exp-title">💡 EXPLICACIÓN PSY</div>
+          <div class="exp-text" id="q-exp-text"></div>
+        </div>
+        <div class="test-nav">
+          <div class="test-progress-dots" id="progress-dots"></div>
+          <button class="btn-next" id="btn-next" onclick="nextQuestion()" disabled>SIGUIENTE →</button>
+        </div>
+      </div>
+
+      <!-- Result zone -->
+      <div class="test-result" id="test-result">
+
+        <!-- Score Ring + Info -->
+        <div class="result-top">
+          <div class="ring-container">
+            <svg class="score-ring-svg" width="120" height="120" viewBox="0 0 120 120">
+              <circle class="ring-bg" cx="60" cy="60" r="52"/>
+              <circle class="ring-fill" id="ring-fill" cx="60" cy="60" r="52" stroke-dasharray="326.7" stroke-dashoffset="326.7"/>
+            </svg>
+            <div class="ring-label">
+              <div class="ring-pct" id="ring-pct-text">0%</div>
+              <div class="ring-of" id="ring-of-text">0/0</div>
+            </div>
+          </div>
+          <div class="result-info">
+            <div class="result-test-name" id="result-test-name">TEST DEL DÍA</div>
+            <div class="result-score-big" id="result-score-big"></div>
+            <div class="result-verdict" id="result-verdict"></div>
+            <div class="result-streak" id="result-streak-line"></div>
+          </div>
+        </div>
+
+        <!-- Per-question breakdown -->
+        <div class="breakdown-title">📊 DESGLOSE POR PREGUNTA</div>
+        <div class="breakdown-list" id="breakdown-list"></div>
+
+        <!-- AI interpretation -->
+        <div class="ai-block" id="ai-block">
+          <div class="ai-block-header">
+            <div class="ai-avatar">🧠</div>
+            <div class="ai-tag">PSY — Interpretación IA</div>
+          </div>
+          <div class="ai-loading" id="ai-loading">
+            <div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div>
+            <span>Analizando tu resultado...</span>
+          </div>
+          <div class="ai-text" id="ai-text" style="display:none"></div>
+        </div>
+
+        <!-- Next test recommendation -->
+        <div class="next-test-rec" id="next-test-rec" onclick="switchToNextTest()">
+          <div class="rec-icon" id="rec-icon">🎯</div>
+          <div class="rec-body">
+            <div class="rec-tag">PRÓXIMO TEST RECOMENDADO</div>
+            <div class="rec-title" id="rec-title">Cargando...</div>
+          </div>
+          <div class="rec-arrow">→</div>
+        </div>
+
+        <!-- Social share -->
+        <div class="share-title">🚀 COMPARTIR RESULTADO</div>
+        <div class="share-grid">
+          <button class="share-btn tw" onclick="shareToTwitter()">
+            <span class="share-btn-icon">𝕏</span>Twitter / X
+          </button>
+          <button class="share-btn wa" onclick="shareToWhatsApp()">
+            <span class="share-btn-icon">💬</span>WhatsApp
+          </button>
+          <button class="share-btn tg" onclick="shareToTelegram()">
+            <span class="share-btn-icon">✈️</span>Telegram
+          </button>
+          <button class="share-btn cp" onclick="copyShareText()">
+            <span class="share-btn-icon">🔗</span>Copiar texto
+          </button>
+          <button class="share-btn dl" onclick="downloadShareCard()">
+            <span class="share-btn-icon">📸</span>Descargar imagen
+          </button>
+        </div>
+        <div class="share-copied" id="share-copied"></div>
+
+        <div style="text-align:center;margin-top:16px;">
+          <button class="btn-retake" onclick="retakeTest()">🔄 REPETIR TEST</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer class="hub-footer">
+  PSYCHOMETRIKS © 2026 — Plataforma de análisis de liquidez institucional
+</footer>
+
+<script>
+// ═══════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════
+function go(path){window.location.href=path;}
+
+function switchTab(id,btn){
+  document.querySelectorAll('.etab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.epanel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('panel-'+id).classList.add('active');
+  if(id==='test')document.getElementById('notif-test').style.display='none';
+}
+
+// ═══════════════════════════════════════════════════
+// COMUNIDAD / FORO
+// ═══════════════════════════════════════════════════
+let allPosts=[];
+let currentFilter='all';
+
+const CAT_META={
+  psico:{label:'Psicología',cls:'cat-psico'},
+  analisis:{label:'Análisis',cls:'cat-analisis'},
+  resultado:{label:'Resultado',cls:'cat-resultado'},
+  duda:{label:'Duda',cls:'cat-duda'},
+  general:{label:'General',cls:'cat-general'},
+};
+
+function loadPosts(){
+  try{allPosts=JSON.parse(localStorage.getItem('psy_forum')||'[]');}catch{allPosts=[];}
+  // Seed with some starter posts if empty
+  if(!allPosts.length){
+    const now=Date.now();
+    allPosts=[
+      {id:1,name:'JorgeAdmin',cat:'psico',text:'Bienvenidos al foro de PSYCHOMETRIKS. Comparte tus análisis, resultados y preguntas. La comunidad crece cuando todos aportamos. 💪',ts:now-3600000,likes:12,liked:false},
+      {id:2,name:'TraderPSY',cat:'resultado',text:'Hoy cerré +3.2% en BTC con la señal del War Room. El PSY Score marcaba 68 — condiciones óptimas para entrar long. La herramienta es increíble.',ts:now-2400000,likes:8,liked:false},
+      {id:3,name:'MarcoFX',cat:'psico',text:'¿Alguien más siente que el miedo a perderse (FOMO) es su mayor enemigo en trading? El journal me ayudó a identificar que el 70% de mis malas operaciones tienen ese patrón.',ts:now-1200000,likes:15,liked:false},
+      {id:4,name:'CriptoPro2026',cat:'analisis',text:'BTC en zona crítica. Funding rate negativo + PSY Score en 42 = zona de acumulación. Espero confirmación de estructura antes de entrar.',ts:now-600000,likes:6,liked:false},
+    ];
+    savePosts();
+  }
+  renderPosts();
+}
+
+function savePosts(){
+  localStorage.setItem('psy_forum',JSON.stringify(allPosts.slice(0,200)));
+}
+
+function updateChar(){
+  const n=document.getElementById('post-text').value.length;
+  document.getElementById('char-n').textContent=n;
+}
+
+function submitPost(){
+  const name=document.getElementById('post-name').value.trim()||'Anónimo';
+  const cat=document.getElementById('post-cat').value;
+  const text=document.getElementById('post-text').value.trim();
+  if(!text||text.length<3){
+    document.getElementById('post-text').style.borderColor='var(--red)';
+    setTimeout(()=>document.getElementById('post-text').style.borderColor='',1500);
+    return;
+  }
+  const post={id:Date.now(),name,cat,text,ts:Date.now(),likes:0,liked:false};
+  allPosts.unshift(post);
+  savePosts();
+  document.getElementById('post-text').value='';
+  document.getElementById('char-n').textContent='0';
+  renderPosts();
+  localStorage.setItem('psy_name',name);
+}
+
+function filterPosts(cat,btn){
+  currentFilter=cat;
+  document.querySelectorAll('.tf').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderPosts();
+}
+
+function likePost(id){
+  const p=allPosts.find(p=>p.id===id);
+  if(!p)return;
+  p.liked=!p.liked;
+  p.likes+=p.liked?1:-1;
+  savePosts();
+  renderPosts();
+}
+
+function timeAgo(ts){
+  const s=(Date.now()-ts)/1000;
+  if(s<60)return'ahora mismo';
+  if(s<3600)return Math.floor(s/60)+'m';
+  if(s<86400)return Math.floor(s/3600)+'h';
+  return Math.floor(s/86400)+'d';
+}
+
+function renderPosts(){
+  const list=document.getElementById('posts-list');
+  const filtered=currentFilter==='all'?allPosts:allPosts.filter(p=>p.cat===currentFilter);
+  const today=new Date().toDateString();
+  const todayCount=allPosts.filter(p=>new Date(p.ts).toDateString()===today).length;
+  document.getElementById('posts-today').textContent=todayCount;
+  document.getElementById('posts-total').textContent=allPosts.length;
+
+  const newCount=allPosts.filter(p=>Date.now()-p.ts<300000).length;
+  const nb=document.getElementById('notif-comunidad');
+  if(newCount>0){nb.textContent=newCount;nb.style.display='block';}
+  else nb.style.display='none';
+
+  if(!filtered.length){
+    list.innerHTML='<div style="text-align:center;padding:24px;font-family:\'Share Tech Mono\',monospace;font-size:.65rem;color:var(--gray);">No hay posts en esta categoría aún.</div>';
+    return;
+  }
+
+  list.innerHTML=filtered.map(p=>{
+    const m=CAT_META[p.cat]||CAT_META.general;
+    const initials=p.name.substring(0,2).toUpperCase();
+    return`<div class="post-item" id="post-${p.id}">
+      <div class="post-top">
+        <div class="post-avatar">${initials}</div>
+        <span class="post-author">${escHtml(p.name)}</span>
+        <span class="post-cat-badge ${m.cls}">${m.label}</span>
+        <span class="post-time">${timeAgo(p.ts)}</span>
+      </div>
+      <div class="post-body">${escHtml(p.text)}</div>
+      <div class="post-actions">
+        <button class="post-action ${p.liked?'liked':''}" onclick="likePost(${p.id})">
+          ${p.liked?'⭐':'☆'} <span>${p.likes}</span>
+        </button>
+        <span style="font-family:'Share Tech Mono',monospace;font-size:.52rem;color:var(--gray);">💬 Responder próximamente</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// Restore name
+window.addEventListener('DOMContentLoaded',()=>{
+  const saved=localStorage.getItem('psy_name');
+  if(saved)document.getElementById('post-name').value=saved;
+});
+
+// ═══════════════════════════════════════════════════
+// FAQ
+// ═══════════════════════════════════════════════════
+const FAQS=[
+  {q:'¿Qué es el PSY Score?',a:'El PSY Score es un indicador compuesto (0-100) que mide el estado psicológico del mercado. Combina Fear&Greed Index, Funding Rate, Long/Short Ratio y el flujo de liquidaciones en tiempo real. Valores sobre 65 indican euforía alcista; valores bajo 35 indican pánico vendedor.',tag:'Herramienta'},
+  {q:'¿Cómo accedo al LiqMap PRO?',a:'LiqMap PRO está disponible para todos los miembros de PSYCHOMETRIKS con acceso activo. Desde este portal hacé clic en la carta "LIQMAP PRO" o buscá el botón en el menú de navegación principal.',tag:'Acceso'},
+  {q:'¿Qué exchanges cubre el LiqMap?',a:'El LiqMap consolida datos en tiempo real de 5 exchanges: Binance Futures, Bybit Perps, OKX Futures, MEXC Perps y Bitget Futures. Cada tab muestra datos propios de ese exchange (precio, OI, funding, L/S, order book, RSI y Bollinger Bands).',tag:'LiqMap'},
+  {q:'¿Para qué sirve el Journal de trading?',a:'El Journal te permite registrar cada operación con entrada, salida, resultado y notas. Luego la IA de PSYCHOMETRIKS analiza tus patrones psicológicos: FOMO, revenge trading, indisciplina de SL, etc. Es la herramienta más poderosa para mejorar tu mindset.',tag:'Journal'},
+  {q:'¿Qué es el War Room?',a:'El War Room es una sala de situación activada durante eventos macro de alto impacto (Fed, CPI, NFP). Muestra precio BTC en vivo, countdown al evento y tiene un asistente IA especializado en psicología del trading que responde preguntas en tiempo real.',tag:'War Room'},
+  {q:'¿Cómo funciona el Market Replay?',a:'El Market Replay te permite revivir 4 eventos históricos claves de BTC: el crash de COVID (Mar 2020), el bull run de 2021, el colapso de Luna (May 2022) y el bear market de FTX (Nov 2022). Cada evento tiene una barra de tiempo para navegar frame a frame con análisis técnico.',tag:'Replay'},
+  {q:'¿El funding rate alto es alcista o bajista?',a:'Un funding rate muy positivo (>0.05%) indica que los longs pagan a los shorts — señal de mercado sobrecomprado y posible liquidación de longs. Un funding negativo indica shorts dominantes, lo que puede desencadenar un short squeeze. La zona "saludable" es entre -0.01% y +0.03%.',tag:'Educación'},
+  {q:'¿Qué significa el Long/Short Ratio?',a:'Un ratio L/S >1 significa que hay más posiciones long que short abiertas en perpetuos. Si el ratio es muy alto (ej. 1.8+) hay exceso de longs que pueden liquidarse si el precio baja. Extremos del L/S son señales contrarias — el mercado suele ir en la dirección opuesta a la mayoría.',tag:'Educación'},
+  {q:'¿Qué es el Open Interest y por qué importa?',a:'El Open Interest (OI) es el número total de contratos abiertos en el mercado de futuros. Un OI creciente mientras el precio sube = tendencia con fuerza. OI cayendo con precio subiendo = rally sin convicción. Explosiones de OI suelen preceder liquidaciones en cascada.',tag:'Educación'},
+  {q:'¿Cómo uso la Calculadora de riesgo?',a:'La Calculadora de PSYCHOMETRIKS te permite ingresar tu capital, % de riesgo por operación y distancia al Stop Loss para calcular el tamaño correcto de posición. También calcula el precio de liquidación según tu apalancamiento. Usarla antes de cada trade es un hábito profesional.',tag:'Herramienta'},
+  {q:'¿El Aula Virtual tiene certificación?',a:'El Aula Virtual está en constante actualización. Los módulos cubren desde psicología del trading hasta análisis técnico avanzado y gestión de riesgo institucional. Actualmente en desarrollo la certificación oficial PSYCHOMETRIKS.',tag:'Aula Virtual'},
+  {q:'¿Puedo usar PSYCHOMETRIKS en celular?',a:'Sí, todas las herramientas están optimizadas para móvil. El portal, el LiqMap, el Journal, el PSY Score y el War Room funcionan correctamente en dispositivos iOS y Android. El LiqMap en mobile muestra los datos clave en layout adaptativo.',tag:'Plataforma'},
+];
+
+function buildFAQ(){
+  renderFAQ(FAQS);
+}
+
+function renderFAQ(items){
+  document.getElementById('faq-list').innerHTML=items.map((f,i)=>`
+    <div class="faq-item" id="faq-${i}">
+      <div class="faq-q" onclick="toggleFAQ(${i})">
+        <span>${f.q}</span>
+        <span class="faq-icon">▼</span>
+      </div>
+      <div class="faq-a">
+        <span class="faq-tag">${f.tag}</span>
+        <p>${f.a}</p>
+      </div>
+    </div>`).join('');
+}
+
+function toggleFAQ(i){
+  const item=document.getElementById('faq-'+i);
+  const isOpen=item.classList.contains('open');
+  document.querySelectorAll('.faq-item').forEach(el=>el.classList.remove('open'));
+  if(!isOpen)item.classList.add('open');
+}
+
+function filterFAQ(){
+  const q=document.getElementById('faq-search').value.toLowerCase();
+  if(!q){renderFAQ(FAQS);return;}
+  const filtered=FAQS.filter(f=>f.q.toLowerCase().includes(q)||f.a.toLowerCase().includes(q)||f.tag.toLowerCase().includes(q));
+  renderFAQ(filtered);
+}
+
+// ═══════════════════════════════════════════════════
+// TEST DEL DÍA
+// ═══════════════════════════════════════════════════
+const ALL_TESTS=[
+  {
+    title:'CONTROL EMOCIONAL',cat:'Psicología del Trader',
+    questions:[
+      {q:'Un trader acaba de perder 3 operaciones seguidas. ¿Cuál es la respuesta psicológicamente más saludable?',hint:'Piensa en la racionalidad vs. la reacción emocional.',
+        opts:['Doblar el tamaño de posición para recuperar más rápido','Tomar una pausa, revisar el journal y buscar el patrón de error','Cambiar de estrategia inmediatamente ya que la actual falló','Operar más veces para tener más probabilidades de ganar'],
+        correct:1,exp:'El "revenge trading" — operar con bronca para recuperar — destruye cuentas. Un trader profesional se detiene, analiza objetivamente qué salió mal y vuelve con claridad mental. La pausa es la herramienta más poderosa después de una racha negativa.'},
+      {q:'¿Qué es el FOMO en trading?',hint:'Fear Of Missing Out.',
+        opts:['Una estrategia de entrada en momentum','El miedo a perder una oportunidad que nos hace entrar tarde o impulsivamente','Un indicador técnico de sobrecompra','La disciplina de seguir el plan de trading sin importar las emociones'],
+        correct:1,exp:'El FOMO (Fear Of Missing Out) es el miedo a quedarse afuera de un movimiento. Lleva a entrar en trades sin setup, tarde en el movimiento, con tamaño excesivo. Es una de las principales causas de pérdidas en traders retail.'},
+      {q:'Tenés una operación abierta que va en tu contra. ¿Cuándo deberías mover tu stop loss?',hint:'Recuerda el plan de trading.',
+        opts:['Nunca — el stop loss debe respetarse siempre según el plan original','Si el precio llega al 80% de tu SL, moverlo para darte más margen','Solo si el precio muestra patrones bajistas nuevos','Cuando el drawdown supera el 15% del capital total'],
+        correct:0,exp:'Mover el stop loss "para darse más margen" es una de las trampas emocionales más comunes. El SL original fue calculado en frío, con racionalidad. Moverlo en el calor del momento es dejar que el miedo a admitir la pérdida controle la decisión.'},
+      {q:'¿Cuál de estas es una señal de sobretrading (trading compulsivo)?',hint:'El sobretrading tiene síntomas identificables.',
+        opts:['Tomar máximo 3 operaciones por día según el plan','Sentir la necesidad de estar siempre en el mercado, sin poder estar sin posiciones','Esperar setups de alta probabilidad aunque pasen días sin operar','Cerrar operaciones cuando el objetivo de ganancia diaria está alcanzado'],
+        correct:1,exp:'El sobretrading ocurre cuando el trader opera por aburrimiento, ansiedad o necesidad de "acción" — no porque haya un setup real. Es una forma de adicción al estímulo que genera comisiones excesivas y decisiones de baja calidad.'},
+    ]
+  },
+  {
+    title:'GESTIÓN DE RIESGO',cat:'Risk Management',
+    questions:[
+      {q:'Un trader con $10,000 quiere arriesgar el 2% por operación con un stop loss de 5%. ¿Cuál es el tamaño correcto de posición?',hint:'Capital × %Riesgo ÷ %SL.',
+        opts:['$200','$4,000','$1,000','$2,000'],
+        correct:1,exp:'Cálculo: $10,000 × 2% = $200 de riesgo máximo. Si el SL es 5%, la posición = $200 ÷ 0.05 = $4,000. Así si el precio baja 5%, perdés exactamente $200 = 2% del capital. Este es el cálculo fundamental de position sizing.'},
+      {q:'¿Cuál es el propósito principal de un stop loss?',hint:'Protección de capital.',
+        opts:['Maximizar las ganancias por operación','Limitar la pérdida máxima aceptable por operación','Evitar pagar comisiones excesivas','Señalar el punto exacto de reversión del precio'],
+        correct:1,exp:'El stop loss no predice el mercado — solo define el punto en que la tesis de la operación queda invalidada y la pérdida se vuelve inaceptable. Su función es proteger el capital para poder seguir operando en las próximas oportunidades.'},
+      {q:'¿Qué es el "riesgo de ruina" en trading?',hint:'Piensa en el largo plazo estadístico.',
+        opts:['El riesgo de que el broker quiebre y pierda los fondos','La probabilidad estadística de perder toda la cuenta dada una estrategia y un porcentaje de riesgo por operación','El riesgo de operar en mercados no regulados','La posibilidad de ser liquidado en un trade apalancado'],
+        correct:1,exp:'El riesgo de ruina es matemático: si arriesgás un % alto por operación y tenés una racha perdedora suficiente, la cuenta llega a cero. Con 2% de riesgo por trade y 50% win rate, el riesgo de ruina es prácticamente cero. Con 10%, es devastador.'},
+      {q:'¿Qué significa una relación riesgo/recompensa de 1:3?',hint:'Por cada dólar arriesgado...',
+        opts:['Por cada 3 dólares arriesgados, esperamos ganar 1','Por cada 1 dólar arriesgado, esperamos ganar 3','El 33% de las operaciones serán ganadoras','Se necesita un 75% de win rate para ser rentable'],
+        correct:1,exp:'Con ratio 1:3, si arriesgás $100 buscás ganar $300. Esto significa que podés ser rentable incluso ganando solo el 34% de tus operaciones. Un 40% de efectividad con 1:3 genera +$800 cada 10 trades ($4×300 - $6×100).'},
+    ]
+  },
+  {
+    title:'LECTURA DE MERCADO',cat:'Análisis Técnico PSY',
+    questions:[
+      {q:'El RSI de BTC está en 78. ¿Qué indica esto normalmente?',hint:'RSI por encima de 70.',
+        opts:['Zona de sobreventa — señal de compra','Zona de sobrecompra — precaución, posible corrección','Tendencia neutral sin señal clara','Precio subvalued vs. valor fundamental'],
+        correct:1,exp:'Un RSI sobre 70 indica sobrecompra — el activo ha subido muy rápido y puede estar "caliente". Sin embargo, en tendencias fuertes el RSI puede mantenerse en sobrecompra por semanas. Es una señal de precaución, no una orden de venta automática.'},
+      {q:'¿Qué indica un Open Interest creciente mientras el precio baja?',hint:'Piensa en quiénes están abriendo posiciones.',
+        opts:['Compras institucionales acumulando en soporte','Más traders abriendo posiciones short — la tendencia bajista tiene fuerza','Señal de reversión inminente','Liquidación de posiciones long existentes'],
+        correct:1,exp:'OI creciente + precio bajando = nuevos shorts se abren. La tendencia bajista tiene convicción del mercado. OI decreciente + precio bajando = cierre de longs (liquidaciones o take profits). Entender OI transforma cómo lees el mercado.'},
+      {q:'¿Qué es una "cascada de liquidaciones" en futuros perpetuos?',hint:'Piensa en stops y liquidaciones encadenadas.',
+        opts:['Una estrategia de escalonamiento de entradas en tendencia','Cuando el precio toca niveles de liquidación que fuerzan ventas, lo que baja más el precio y liquida más posiciones — efecto dominó','Un tipo de arbitraje entre exchanges','La distribución de ganancias de los market makers'],
+        correct:1,exp:'Las cascadas ocurren cuando el precio cae (o sube) a una zona densa de liquidaciones. Esas liquidaciones forzadas empujan aún más el precio, tocando más liquidaciones. El LiqMap muestra estas zonas de peligro para anticipar estos movimientos violentos.'},
+      {q:'El Funding Rate de BTC está en -0.05%. ¿Qué señal da esto?',hint:'Funding negativo = shorts pagan a longs.',
+        opts:['El mercado está dominado por longs — posible corrección bajista','Hay más shorts que longs — posible short squeeze alcista','El precio está en zona neutra sin dirección','Los exchanges están cobrando más comisiones que lo normal'],
+        correct:1,exp:'Funding negativo significa que los shorts son mayoritarios y pagan comisión a los longs cada 8 horas. Esto crea presión de cierre de shorts. Si el precio sube un poco y los shorts cierran, el movimiento se amplifica — el famoso "short squeeze".'},
+    ]
+  },
+  {
+    title:'MINDSET PROFESIONAL',cat:'Psicología Avanzada',
+    questions:[
+      {q:'¿Cuál es la diferencia entre un trader profesional y uno retail en cuanto a pérdidas?',hint:'La actitud ante el resultado.',
+        opts:['El profesional nunca pierde operaciones','El profesional acepta pérdidas como parte del proceso — son el costo de hacer negocios','El profesional tiene información privilegiada del mercado','El profesional opera con más apalancamiento para recuperar más rápido'],
+        correct:1,exp:'Los mejores traders del mundo pierden el 40-60% de sus operaciones. La diferencia está en cómo manejan las pérdidas: con compostura, respetando el plan, sin buscar culpables. Una pérdida dentro del plan es un resultado profesional. Un 10x sin plan es suerte.'},
+      {q:'¿Qué es el "sesgo de confirmación" en trading?',hint:'Es una trampa cognitiva universal.',
+        opts:['La tendencia a buscar información que confirma nuestra tesis, ignorando la que la contradice','Una estrategia de confirmación de entrada usando múltiples timeframes','El análisis de volumen para confirmar movimientos de precio','La correlación entre BTC y el índice de miedo y codicia'],
+        correct:0,exp:'Si creés que BTC va a subir, el sesgo de confirmación te hará buscar noticias, patterns e indicadores que lo confirmen — ignorando señales bajistas. El antídoto es buscar activamente razones por las que tu trade podría estar mal antes de entrar.'},
+      {q:'Un trader tiene 10 operaciones ganadoras seguidas. ¿Cuál es el riesgo psicológico principal?',hint:'El éxito tiene sus peligros.',
+        opts:['Riesgo de querer dejar de operar por miedo a perder la racha','Exceso de confianza que lleva a saltarse el plan de gestión de riesgo','Ansiedad por mantener la racha perfecta','No hay riesgo — una buena racha refuerza el sistema correctamente'],
+        correct:1,exp:'La sobreconfianza (overconfidence) tras rachas ganadoras es tan peligrosa como el miedo tras las perdedoras. Lleva a aumentar el tamaño de posición sin justificación, saltarse los stops o tomar trades sin setup. Las grandes pérdidas suelen seguir a las grandes rachas.'},
+      {q:'¿Cuántas horas al día debe monitorear el mercado un swing trader con horizonte de días?',hint:'Más tiempo no siempre es mejor.',
+        opts:['Las 24 horas — el cripto nunca duerme','16 horas con alertas activas en las otras 8','1-2 horas al día para revisión y gestión, con alertas de precio','Depende del apalancamiento usado'],
+        correct:2,exp:'El over-monitoring genera ansiedad, lleva a tomar decisiones impulsivas y agota mentalmente. Un swing trader establece niveles, configura alertas y revisa 1-2 veces al día. El mercado no necesita tu atención constante — tu plan lo maneja. Menos pantalla = menos errores.'},
+    ]
+  },
+  {
+    title:'LIQUIDACIONES Y FUTUROS',cat:'Mercado de Derivados',
+    questions:[
+      {q:'¿Qué ocurre cuando una posición es "liquidada" en futuros perpetuos?',hint:'El exchange cierra la posición automáticamente.',
+        opts:['El trader recibe una notificación y tiene 24h para agregar margen','El exchange cierra la posición automáticamente al llegar al precio de liquidación, perdiendo todo el margen','La posición se convierte automáticamente en spot','El trader puede mantener la posición pagando una penalidad'],
+        correct:1,exp:'En futuros con apalancamiento, si el precio llega al nivel de liquidación, el exchange cierra TODA la posición y el trader pierde el margen depositado. No hay aviso ni tiempo de reacción. Por eso el LiqMap muestra zonas de alta concentración de liquidaciones como señales de precio.'},
+      {q:'¿Qué apalancamiento se considera "seguro" para la mayoría de los traders?',hint:'Menos es más en trading con leverage.',
+        opts:['50x a 100x — el mercado cripto necesita apalancamiento alto','10x a 20x para maximizar retornos','2x a 5x con gestión de riesgo adecuada','El apalancamiento siempre es riesgoso — solo usar spot'],
+        correct:2,exp:'La mayoría de los traders profesionales usan 2x-5x máximo, controlando el riesgo real con position sizing. Con 10x, un movimiento del 10% liquida la posición. Con 3x, necesitás un 33% en tu contra para ser liquidado. El apalancamiento amplifica tanto ganancias como pérdidas.'},
+      {q:'¿Qué es el "mark price" vs. el "last price" en futuros?',hint:'Los exchanges usan uno para calcular liquidaciones.',
+        opts:['Son el mismo precio con diferente nombre según el exchange','Mark price es un precio indexado de múltiples fuentes para evitar manipulaciones; last price es el último precio ejecutado','Last price incluye comisiones; mark price no','Mark price solo aplica en opciones, no en perpetuos'],
+        correct:1,exp:'Los exchanges calculan liquidaciones sobre el "mark price" (promedio de varios exchanges) para evitar que manipulaciones temporales del last price liquiden posiciones injustamente. Por eso tu posición puede mostrar pérdidas temporales con el last price pero no ser liquidada si el mark price es diferente.'},
+      {q:'¿Qué indica un Open Interest cayendo mientras el precio sube?',hint:'Menos contratos abiertos + precio más alto.',
+        opts:['Señal fuerte alcista — institucionales comprando','Rally sin convicción — cierres de shorts, no nuevas compras','Señal de manipulación del precio','Condiciones normales de mercado en tendencia alcista'],
+        correct:1,exp:'OI cayendo + precio subiendo = los shorts están cerrando posiciones (buy to cover), no están entrando nuevos longs. Es un rally de short covering, generalmente débil. OI subiendo + precio subiendo = nuevos longs entran — eso sí es una tendencia con convicción.'},
+    ]
+  },
+  {
+    title:'ANÁLISIS ON-CHAIN',cat:'Métricas Avanzadas',
+    questions:[
+      {q:'¿Qué significa que los "whales" muevan BTC a exchanges?',hint:'Los exchanges son lugares de trading, no de almacenamiento.',
+        opts:['Señal de acumulación — los whales van a comprar más BTC en el exchange','Posible señal de venta — depositar en exchange suele preceder a ventas','Una operación neutra — solo están moviendo fondos para mayor seguridad','Señal de que van a hacer staking en el exchange'],
+        correct:1,exp:'Los inversores a largo plazo guardan BTC en wallets frías (cold storage). Mover BTC al exchange prepara para VENDER. Es una señal de posible presión vendedora. La inversa también aplica: retiros masivos de exchanges = acumulación. Las reservas de BTC en exchanges en mínimos históricos = señal alcista estructural.'},
+      {q:'¿Qué es el índice Fear & Greed y cómo usarlo?',hint:'Indicador de sentimiento de 0 a 100.',
+        opts:['Comprar cuando está en Extreme Greed (>75) para seguir el momentum','Vender cuando está en Extreme Fear (<25) porque el mercado va a colapsar','Comprar con precaución en Extreme Fear (<25) y reducir exposición en Extreme Greed (>75)','Es solo informativo — no tiene valor predictivo real'],
+        correct:2,exp:'El F&G es un indicador de sentimiento contrario. Warren Buffett lo resume: "Sé temeroso cuando otros son codiciosos, y codicioso cuando otros son temerosos." No es señal de entrada exacta, pero extremos de Fear (<20) han coincidido históricamente con excelentes puntos de acumulación en BTC.'},
+      {q:'¿Qué indica la dominancia de BTC cayendo mientras alts suben?',hint:'Flujo de capital entre BTC y altcoins.',
+        opts:['Señal bajista para todo el mercado','Capital rotando de BTC hacia altcoins — fase "altseason"','BTC siendo manipulado a la baja por institucionales','Correlación negativa normal en mercados eficientes'],
+        correct:1,exp:'Cuando la dominancia de BTC cae, el capital está fluyendo hacia altcoins — el clásico "altseason". Históricamente, el altseason ocurre después de que BTC consolida en máximos. Las alts pueden multiplicar x3-x10 mientras BTC apenas se mueve un 20-30%.'},
+      {q:'¿Qué significa que el "NUPL" (Net Unrealized Profit/Loss) esté en zona de euforia?',hint:'Piensa en las ganancias no realizadas del mercado.',
+        opts:['La mayoría del mercado está en pérdidas — señal de capitulación','La mayoría de los holders tienen ganancias significativas y podrían vender pronto','El precio está en valor justo sin prima ni descuento','Es una señal de compra — indica salud del mercado'],
+        correct:1,exp:'NUPL en euforia significa que el mercado en conjunto tiene ganancias no realizadas enormes. Históricamente, cuando NUPL supera 0.75, es zona de distribución de holders de largo plazo. Es una señal de alerta macro, no de venta inmediata, pero sí de reducir exposición progresivamente.'},
+    ]
+  },
+  {
+    title:'ESTRATEGIAS CRIPTO',cat:'Trading Operativo',
+    questions:[
+      {q:'¿Cuál es la diferencia entre trading de swing y scalping?',hint:'Horizonte temporal y frecuencia.',
+        opts:['El swing usa apalancamiento; el scalping es solo spot','Swing trading mantiene posiciones de días a semanas; scalping opera en minutos buscando pequeños movimientos','El swing es para principiantes; el scalping para profesionales','No hay diferencia relevante — ambos buscan ganancias con análisis técnico'],
+        correct:1,exp:'El swing trader espera setups de mayor probabilidad en timeframes de 4h-diario y mantiene posiciones días o semanas. El scalper opera en 1m-5m, múltiples veces por día, con pequeños objetivos. El swing requiere menos tiempo de pantalla; el scalping requiere sistemas rápidos y comisiones bajas.'},
+      {q:'¿Qué es una estrategia DCA (Dollar Cost Averaging)?',hint:'Una forma de acumulación gradual.',
+        opts:['Operar con el doble del capital después de cada pérdida para recuperar','Comprar un monto fijo de BTC a intervalos regulares sin importar el precio','Una estrategia de scalping usando medias móviles','Diversificar el capital en múltiples exchanges para reducir el riesgo de contraparte'],
+        correct:1,exp:'DCA significa invertir la misma cantidad de dinero (ej. $100) cada semana o mes, sin importar si el precio sube o baja. Esto promedia el precio de entrada en el tiempo. Es la estrategia más simple y efectiva para inversores de largo plazo que no quieren hacer timing del mercado.'},
+      {q:'¿Qué es un nivel de soporte en análisis técnico?',hint:'Zona donde la demanda ha sido históricamente fuerte.',
+        opts:['Un nivel de precio donde el activo tiende a rebotar hacia arriba porque la demanda supera a la oferta','El precio promedio de compra de todos los holders del activo','El nivel donde los market makers colocan órdenes de compra institucional','Un indicador calculado con la media del RSI y el MACD'],
+        correct:0,exp:'Un soporte es una zona de precio donde históricamente el precio ha frenado su caída y rebotado. Representa un área de demanda — compradores entran a ese nivel. Cuando un soporte se rompe con volumen, suele convertirse en resistencia. El LiqMap muestra zonas de liquidación que actúan como imanes de precio.'},
+      {q:'¿Qué es un "squeeze" en el mercado de futuros?',hint:'Movimiento forzado por posiciones atrapadas.',
+        opts:['Un período de baja volatilidad que precede a un movimiento explosivo (Bollinger squeeze)','Cuando los participantes con posiciones en la dirección equivocada se ven forzados a cerrar, amplificando el movimiento','Ambas definiciones son correctas','El cierre automático de posiciones al final del día en futuros con fecha de expiración'],
+        correct:2,exp:'El término "squeeze" tiene dos usos: 1) Bollinger Squeeze = las bandas se comprimen indicando baja volatilidad y anticipando una explosión. 2) Short/Long Squeeze = posiciones atrapadas que se cierran a la fuerza amplificando el precio. Ambos son conceptos clave para el trader PSY.'},
+    ]
+  },
+];
+
+let testState={
+  testSet:null,
+  questionIdx:0,
+  answers:[],
+  answered:false,
+  streak:0,
+  bestStreak:0,
+  totalDone:0,
+  lastDate:'',
+};
+
+function loadTestState(){
+  try{const s=JSON.parse(localStorage.getItem('psy_test')||'{}');Object.assign(testState,s);}catch{}
+}
+function saveTestState(){
+  localStorage.setItem('psy_test',JSON.stringify({streak:testState.streak,bestStreak:testState.bestStreak,totalDone:testState.totalDone,lastDate:testState.lastDate}));
+}
+
+function getDayKey(){
+  const d=new Date();
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+}
+
+function initTest(){
+  loadTestState();
+
+  // Pick test for today deterministically
+  const d=new Date();
+  const dayOfYear=Math.floor((d-new Date(d.getFullYear(),0,0))/86400000);
+  testState.testSet=ALL_TESTS[dayOfYear%ALL_TESTS.length];
+
+  // Update UI
+  const today=getDayKey();
+  const badge=document.getElementById('test-date-badge');
+  badge.textContent='📅 '+d.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'}).toUpperCase();
+  document.getElementById('test-block-title').textContent=testState.testSet.title;
+  document.getElementById('test-block-cat').textContent=testState.testSet.cat;
+
+  document.getElementById('streak-num').textContent=testState.streak;
+  document.getElementById('best-streak').textContent=testState.bestStreak;
+  document.getElementById('total-done').textContent=testState.totalDone;
+
+  // Check if already completed today
+  const alreadyDone=localStorage.getItem('psy_test_done_'+today);
+  if(alreadyDone){
+    const score=JSON.parse(alreadyDone);
+    showTestResult(score.correct,score.total,true);
+    return;
+  }
+
+  testState.questionIdx=0;
+  testState.answers=[];
+  testState.answered=false;
+  renderQuestion();
+  buildProgressDots();
+}
+
+function buildProgressDots(){
+  const n=testState.testSet.questions.length;
+  document.getElementById('progress-dots').innerHTML=
+    Array.from({length:n},(_,i)=>`<div class="tdot ${i===0?'current':''}" id="dot-${i}"></div>`).join('');
+}
+
+function updateProgressDots(){
+  const {answers,questionIdx,testSet}=testState;
+  testSet.questions.forEach((_,i)=>{
+    const dot=document.getElementById('dot-'+i);
+    if(!dot)return;
+    dot.className='tdot';
+    if(i<answers.length){
+      dot.classList.add(answers[i]===testSet.questions[i].correct?'done-correct':'done-wrong');
+    } else if(i===questionIdx){
+      dot.classList.add('current');
+    }
+  });
+}
+
+function renderQuestion(){
+  const {testSet,questionIdx}=testState;
+  const q=testSet.questions[questionIdx];
+  document.getElementById('q-text').textContent=q.q;
+  document.getElementById('q-hint').textContent='💭 '+q.hint;
+  document.getElementById('q-options').innerHTML=q.opts.map((o,i)=>`
+    <div class="test-opt" id="opt-${i}" onclick="selectOpt(${i})">
+      <div class="opt-letter">${'ABCD'[i]}</div>
+      <span>${o}</span>
+    </div>`).join('');
+  document.getElementById('q-explanation').classList.remove('show');
+  document.getElementById('btn-next').disabled=true;
+  testState.answered=false;
+}
+
+function selectOpt(chosen){
+  if(testState.answered)return;
+  testState.answered=true;
+  const q=testState.testSet.questions[testState.questionIdx];
+  const correct=q.correct;
+  testState.answers.push(chosen);
+
+  document.querySelectorAll('.test-opt').forEach(el=>el.classList.add('disabled'));
+  document.getElementById('opt-'+chosen).classList.add(chosen===correct?'selected-correct':'selected-wrong');
+  if(chosen!==correct)document.getElementById('opt-'+correct).classList.add('show-correct');
+
+  document.getElementById('q-exp-text').textContent=q.exp;
+  document.getElementById('q-explanation').classList.add('show');
+  document.getElementById('btn-next').disabled=false;
+  updateProgressDots();
+}
+
+function nextQuestion(){
+  const {testSet,answers}=testState;
+  testState.questionIdx++;
+  if(testState.questionIdx>=testSet.questions.length){
+    const correct=answers.filter((a,i)=>a===testSet.questions[i].correct).length;
+    const today=getDayKey();
+    localStorage.setItem('psy_test_done_'+today,JSON.stringify({correct,total:testSet.questions.length,answers}));
+
+    const yesterday=new Date(); yesterday.setDate(yesterday.getDate()-1);
+    const yKey=`${yesterday.getFullYear()}-${yesterday.getMonth()}-${yesterday.getDate()}`;
+    if(testState.lastDate===yKey||!testState.lastDate){
+      testState.streak++;
+    } else if(testState.lastDate!==today){
+      testState.streak=1;
+    }
+    testState.bestStreak=Math.max(testState.streak,testState.bestStreak);
+    testState.totalDone++;
+    testState.lastDate=today;
+    saveTestState();
+
+    document.getElementById('streak-num').textContent=testState.streak;
+    document.getElementById('best-streak').textContent=testState.bestStreak;
+    document.getElementById('total-done').textContent=testState.totalDone;
+
+    showTestResult(correct,testSet.questions.length,false,answers,testSet);
+    return;
+  }
+  renderQuestion();
+  updateProgressDots();
+  const btnNext=document.getElementById('btn-next');
+  btnNext.textContent=testState.questionIdx===testSet.questions.length-1?'VER RESULTADO →':'SIGUIENTE →';
+  btnNext.disabled=true;
+}
+
+// ─── Shared result state for social sharing ───
+let _shareData={title:'',cat:'',correct:0,total:0,pct:0,streak:0,verdict:''};
+
+function showTestResult(correct,total,alreadyDone,answers,testSet){
+  document.getElementById('test-questions-zone').style.display='none';
+  const pct=Math.round(correct/total*100);
+  let verdict='',color='var(--cyan)';
+  if(pct===100){verdict='¡Perfecto! 100% correcto.';color='var(--gold)';}
+  else if(pct>=75){verdict='Muy bien — sólidos fundamentos.';color='var(--green)';}
+  else if(pct>=50){verdict='En progreso — hay conceptos a reforzar.';color='var(--orange)';}
+  else{verdict='Más práctica necesaria — el mercado siempre enseña.';color='var(--red)';}
+
+  const ts=testSet||testState.testSet;
+  const ans=answers||(()=>{
+    try{const d=JSON.parse(localStorage.getItem('psy_test_done_'+getDayKey())||'{}');return d.answers||[];}catch{return[];}
+  })();
+
+  _shareData={title:ts.title,cat:ts.cat,correct,total,pct,streak:testState.streak,verdict};
+
+  // Score ring animation
+  const ring=document.getElementById('ring-fill');
+  const circumference=326.7;
+  const offset=circumference-(pct/100)*circumference;
+  ring.style.stroke=color;
+  setTimeout(()=>{ ring.style.strokeDashoffset=offset; },80);
+  document.getElementById('ring-pct-text').textContent=pct+'%';
+  document.getElementById('ring-pct-text').style.color=color;
+  document.getElementById('ring-of-text').textContent=correct+'/'+total;
+
+  // Header info
+  document.getElementById('result-test-name').textContent='TEST: '+ts.title;
+  document.getElementById('result-score-big').textContent=correct+'/'+total+' correctas';
+  document.getElementById('result-score-big').style.color=color;
+  document.getElementById('result-verdict').textContent=verdict;
+  document.getElementById('result-verdict').style.color=color;
+  document.getElementById('result-streak-line').textContent=
+    testState.streak>1?`🔥 Racha de ${testState.streak} días seguidos`:'';
+
+  // Per-question breakdown
+  const bdList=document.getElementById('breakdown-list');
+  if(ts&&ans.length){
+    bdList.innerHTML=ts.questions.map((q,i)=>{
+      const isCorrect=ans[i]===q.correct;
+      const shortQ=q.q.length>55?q.q.slice(0,52)+'…':q.q;
+      return`<div class="bd-item">
+        <div class="bd-num">${i+1}</div>
+        <div class="bd-label" title="${escHtml(q.q)}">${escHtml(shortQ)}</div>
+        <div class="bd-bar"><div class="bd-fill" style="width:${isCorrect?'100%':'0%'};background:${isCorrect?'var(--green)':'var(--red)'}"></div></div>
+        <div class="bd-icon">${isCorrect?'✅':'❌'}</div>
+      </div>`;
+    }).join('');
+    // Animate bars
+    setTimeout(()=>{
+      bdList.querySelectorAll('.bd-fill').forEach(el=>{
+        const w=el.style.width;el.style.width='0%';
+        requestAnimationFrame(()=>requestAnimationFrame(()=>{el.style.width=w;}));
+      });
+    },200);
+  }
+
+  // Next test recommendation
+  const testIdx=ALL_TESTS.indexOf(ts);
+  const recIdx=getNextTestRec(testIdx,pct);
+  const recTest=ALL_TESTS[recIdx];
+  const recIcons=['🧠','📊','📈','🎯','⚡','🔗','🚀'];
+  document.getElementById('rec-icon').textContent=recIcons[recIdx]||'🎯';
+  document.getElementById('rec-title').textContent=recTest.title+' — '+recTest.cat;
+
+  // AI interpretation
+  if(alreadyDone){
+    document.getElementById('ai-loading').style.display='none';
+    document.getElementById('ai-text').style.display='block';
+    document.getElementById('ai-text').textContent='Ya completaste el test de hoy. Los resultados se mantienen hasta mañana. ¡Volvé con el próximo desafío!';
+  } else if(ts&&ans.length){
+    const wrongTopics=ts.questions.filter((_,i)=>ans[i]!==ts.questions[i].correct).map(q=>q.q.slice(0,40));
+    const rightTopics=ts.questions.filter((_,i)=>ans[i]===ts.questions[i].correct).map(q=>q.q.slice(0,40));
+    fetchAIInterpret(ts.title,ts.cat,correct,total,wrongTopics,rightTopics,testState.streak);
+  }
+
+  document.getElementById('test-result').classList.add('show');
+}
+
+function getNextTestRec(currentIdx,pct){
+  // If low score: recommend same category difficulty; if high: recommend next
+  const total=ALL_TESTS.length;
+  if(pct<75){
+    // suggest a different test on same theme or foundational
+    const fallback=[1,0,3,2,1,3,0]; // per-test fallback recommendations
+    return fallback[currentIdx]!==undefined?fallback[currentIdx]:(currentIdx+2)%total;
+  }
+  return (currentIdx+1)%total;
+}
+
+let _nextTestTargetIdx=-1;
+function switchToNextTest(){
+  const ts=testState.testSet;
+  const currentIdx=ALL_TESTS.indexOf(ts);
+  const pct=_shareData.pct;
+  _nextTestTargetIdx=getNextTestRec(currentIdx,pct);
+  // Force that test for this session
+  testState.testSet=ALL_TESTS[_nextTestTargetIdx];
+  document.getElementById('test-block-title').textContent=testState.testSet.title;
+  document.getElementById('test-block-cat').textContent=testState.testSet.cat;
+  retakeTest();
+}
+
+async function fetchAIInterpret(title,cat,correct,total,wrongTopics,rightTopics,streak){
+  document.getElementById('ai-loading').style.display='flex';
+  document.getElementById('ai-text').style.display='none';
+  try{
+    const r=await fetch('/api/test-interpret',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({testTitle:title,testCat:cat,correct,total,wrongTopics,rightTopics,streak})
+    });
+    if(!r.ok)throw new Error('api');
+    const d=await r.json();
+    document.getElementById('ai-loading').style.display='none';
+    document.getElementById('ai-text').style.display='block';
+    document.getElementById('ai-text').textContent=d.interpretation||'Análisis completado.';
+  }catch{
+    document.getElementById('ai-loading').style.display='none';
+    document.getElementById('ai-text').style.display='block';
+    const pct=Math.round(correct/total*100);
+    const msgs={100:'Perfecto. Dominás este tema completamente. Probá el siguiente test para seguir subiendo el nivel.',75:'Buen trabajo. Tu base es sólida. Repasá las preguntas que fallaste para cerrar los gaps.',50:'Hay conceptos clave para reforzar. Revisá las explicaciones y visitá el Aula Virtual.',0:'Más práctica necesaria. Cada error es aprendizaje — revisá las explicaciones de cada pregunta.'};
+    const key=pct>=100?100:pct>=75?75:pct>=50?50:0;
+    document.getElementById('ai-text').textContent=msgs[key];
+  }
+}
+
+// ─── SOCIAL SHARING ───
+function buildShareText(){
+  const {title,correct,total,pct,streak,cat}=_shareData;
+  const stars=pct===100?'🏆':pct>=75?'⚡':pct>=50?'📊':'📖';
+  const streakLine=streak>1?`\n🔥 Racha de ${streak} días seguidos`:'';
+  return`${stars} Test del Día PSYCHOMETRIKS\n📊 ${title} (${cat})\n✅ ${correct}/${total} — ${pct}% correcto${streakLine}\n\n¿Podés superarme?\n👉 psychometriks.trade/hub.html\n\n#PSYCHOMETRIKS #CryptoTrading #TradingPsicologia`;
+}
+
+function shareToTwitter(){
+  const text=encodeURIComponent(buildShareText());
+  window.open('https://twitter.com/intent/tweet?text='+text,'_blank');
+}
+function shareToWhatsApp(){
+  const text=encodeURIComponent(buildShareText());
+  window.open('https://wa.me/?text='+text,'_blank');
+}
+function shareToTelegram(){
+  const text=encodeURIComponent(buildShareText());
+  const url=encodeURIComponent('https://psychometriks.trade/hub.html');
+  window.open('https://t.me/share/url?url='+url+'&text='+text,'_blank');
+}
+function copyShareText(){
+  navigator.clipboard.writeText(buildShareText()).then(()=>{
+    const el=document.getElementById('share-copied');
+    el.textContent='✅ Texto copiado al portapapeles';
+    el.style.opacity='1';
+    setTimeout(()=>{el.style.opacity='0';},2500);
+  });
+}
+
+// ─── CANVAS SHARE CARD ───
+function downloadShareCard(){
+  const {title,correct,total,pct,streak}=_shareData;
+  const W=900,H=500;
+  const canvas=document.createElement('canvas');
+  canvas.width=W;canvas.height=H;
+  const ctx=canvas.getContext('2d');
+
+  // Background
+  ctx.fillStyle='#060a0f';
+  ctx.fillRect(0,0,W,H);
+
+  // Grid lines
+  ctx.strokeStyle='rgba(0,229,255,0.04)';
+  ctx.lineWidth=1;
+  for(let x=0;x<W;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=0;y<H;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+
+  // Top border gradient
+  const topGrad=ctx.createLinearGradient(0,0,W,0);
+  topGrad.addColorStop(0,'#e040fb');topGrad.addColorStop(.25,'#00e5ff');
+  topGrad.addColorStop(.5,'#00e676');topGrad.addColorStop(.75,'#ffd700');
+  topGrad.addColorStop(1,'#ff9800');
+  ctx.fillStyle=topGrad;ctx.fillRect(0,0,W,4);
+
+  // Score ring (left)
+  const cx=150,cy=H/2,r=90;
+  const scoreColor=pct===100?'#ffd700':pct>=75?'#00e676':pct>=50?'#ff9800':'#ff1744';
+  ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);
+  ctx.strokeStyle='#1a2a3a';ctx.lineWidth=14;ctx.stroke();
+  const start=-Math.PI/2,end=start+(pct/100)*Math.PI*2;
+  ctx.beginPath();ctx.arc(cx,cy,r,start,end);
+  ctx.strokeStyle=scoreColor;ctx.lineWidth=14;ctx.lineCap='round';ctx.stroke();
+
+  // Ring text
+  ctx.fillStyle=scoreColor;
+  ctx.font='bold 48px monospace';ctx.textAlign='center';
+  ctx.fillText(pct+'%',cx,cy+14);
+  ctx.fillStyle='#546e7a';ctx.font='16px monospace';
+  ctx.fillText(correct+'/'+total,cx,cy+38);
+
+  // Right content
+  const rx=280;
+  // Logo
+  ctx.fillStyle='#e8f0f8';
+  ctx.font='bold 28px monospace';ctx.textAlign='left';
+  ctx.fillText('PSY',rx,60);
+  ctx.fillStyle='#00e5ff';
+  ctx.fillText('CHO',rx+54,60);
+  ctx.fillStyle='#e8f0f8';
+  ctx.fillText('METRIKS',rx+108,60);
+
+  // Test badge
+  ctx.fillStyle='rgba(0,229,255,0.1)';
+  roundRect(ctx,rx,78,W-rx-40,34,6);ctx.fill();
+  ctx.fillStyle='#00e5ff';ctx.font='13px monospace';ctx.textAlign='left';
+  ctx.fillText('📢 TEST DEL DÍA',rx+12,101);
+
+  // Test title
+  ctx.fillStyle='#ffffff';ctx.font='bold 32px monospace';
+  ctx.fillText(title,rx,158);
+  ctx.fillStyle='#546e7a';ctx.font='16px monospace';
+  ctx.fillText(_shareData.cat,rx,182);
+
+  // Verdict bar
+  const verdictColor=pct===100?'#ffd700':pct>=75?'#00e676':pct>=50?'#ff9800':'#ff1744';
+  const verdict=pct===100?'PERFECTO':'':pct>=75?'MUY BIEN':pct>=50?'EN PROGRESO':'EN APRENDIZAJE';
+  ctx.fillStyle=verdictColor+'22';
+  roundRect(ctx,rx,198,200,28,4);ctx.fill();
+  ctx.fillStyle=verdictColor;ctx.font='bold 13px monospace';
+  ctx.fillText(verdict,rx+10,218);
+
+  // Breakdown bars
+  const qs=testState.testSet?.questions||[];
+  const savedAnswers=(()=>{try{const d=JSON.parse(localStorage.getItem('psy_test_done_'+getDayKey())||'{}');return d.answers||[];}catch{return[];}})();
+  const bStartY=260;
+  qs.forEach((q,i)=>{
+    const isOk=savedAnswers[i]===q.correct;
+    const bx=rx,by=bStartY+i*32;
+    ctx.fillStyle='#1a2a3a';
+    roundRect(ctx,bx,by,W-rx-40,20,3);ctx.fill();
+    ctx.fillStyle=isOk?'#00e676':'#ff1744';
+    const bw=isOk?(W-rx-40):40;
+    roundRect(ctx,bx,by,bw,20,3);ctx.fill();
+    ctx.fillStyle='rgba(0,0,0,.4)';ctx.font='11px monospace';ctx.textAlign='left';
+    const label='P'+(i+1)+' '+(isOk?'✓':'✗')+' '+q.q.slice(0,30)+(q.q.length>30?'…':'');
+    ctx.fillText(label,bx+8,by+14);
+  });
+
+  // Streak
+  if(streak>1){
+    ctx.fillStyle='#ffd700';ctx.font='bold 16px monospace';ctx.textAlign='left';
+    ctx.fillText('🔥 Racha de '+streak+' días',rx,bStartY+qs.length*32+28);
+  }
+
+  // URL bottom
+  ctx.fillStyle='#243040';ctx.fillRect(0,H-50,W,50);
+  ctx.fillStyle='#546e7a';ctx.font='15px monospace';ctx.textAlign='center';
+  ctx.fillText('psychometriks.trade — Test del Día · Psicología y Trading Profesional',W/2,H-18);
+
+  // Download
+  const link=document.createElement('a');
+  link.download='psychometriks-test-'+Date.now()+'.png';
+  link.href=canvas.toDataURL('image/png');
+  link.click();
+}
+
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);
+  ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);
+  ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);
+  ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);
+  ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();
+}
+
+function retakeTest(){
+  document.getElementById('test-questions-zone').style.display='';
+  document.getElementById('test-result').classList.remove('show');
+  // Reset ring
+  document.getElementById('ring-fill').style.strokeDashoffset='326.7';
+  testState.questionIdx=0;testState.answers=[];testState.answered=false;
+  renderQuestion();buildProgressDots();
+  document.getElementById('btn-next').textContent='SIGUIENTE →';
+  document.getElementById('btn-next').disabled=true;
+}
+
+// ═══════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded',()=>{
+  loadPosts();
+  buildFAQ();
+  initTest();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Login</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',sans-serif;background:#0d1117;color:#e6edf3;display:flex;align-items:center;justify-content:center;min-height:100vh}
+    .box{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:40px;width:340px;text-align:center}
+    h1{font-size:22px;margin-bottom:6px}
+    p{color:#8b949e;font-size:13px;margin-bottom:24px}
+    input{width:100%;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#e6edf3;padding:10px 14px;font-size:14px;margin-bottom:14px}
+    button{width:100%;background:#238636;color:#fff;border:none;border-radius:6px;padding:10px;font-size:15px;font-weight:600;cursor:pointer}
+    button:hover{background:#2ea043}
+    .err{background:#3a1a1a;border:1px solid #f85149;color:#f85149;padding:10px;border-radius:6px;font-size:13px;margin-bottom:14px}
+  </style>
+</head>
+<body>
+<div class="box">
+  <h1>📡 Señales VIP</h1>
+  <p>Panel de administración</p>
+  {% if error %}<div class="err">{{ error }}</div>{% endif %}
+  <form method="post">
+    <input type="password" name="password" placeholder="Contraseña de admin" autofocus>
+    <button type="submit">Entrar</button>
+  </form>
+</div>
+</body>
+</html>
