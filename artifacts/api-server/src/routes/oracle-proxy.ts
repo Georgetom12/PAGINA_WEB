@@ -63,9 +63,13 @@ async function forwardRequest(req: Request, res: Response): Promise<void> {
   }
 }
 
-for (const prefix of PROXY_PREFIXES) {
-  router.all(`${prefix}`, forwardRequest);
-  router.all(`${prefix}/*`, forwardRequest);
-}
+router.use((req, res, next) => {
+  const shouldProxy = PROXY_PREFIXES.some((p) => req.originalUrl.startsWith(p));
+  if (shouldProxy) {
+    forwardRequest(req, res);
+  } else {
+    next();
+  }
+});
 
 export default router;
