@@ -33,6 +33,9 @@ import telegramListenerRouter from "./telegram-listener";
 import psyBrainRouter from "./psy-brain";
 import oracleFeedsRouter from "./oracle-feeds";
 import psyAlgoRouter from "./psy-algo";
+import scanRouter from "./scan";
+import buffettRouter from "./buffett";
+import psyLaunchRouter from "./psy-launch";
 
 const router: IRouter = Router();
 
@@ -70,5 +73,8 @@ router.use(telegramListenerRouter);
 router.use(psyBrainRouter);
 router.use(oracleFeedsRouter);
 router.use(psyAlgoRouter);
+router.use(scanRouter);
+router.use(buffettRouter);
+router.use(psyLaunchRouter);
 
 export default router;
