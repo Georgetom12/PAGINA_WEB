@@ -12,12 +12,19 @@
  *   SUPERADMIN_PASSWORD   → contraseña del usuario "admin"    (REQUERIDA — sin fallback)
  *   SUPERADMIN_PASSWORD_2 → contraseña del usuario "jorge"    (REQUERIDA — sin fallback)
  *   SESSION_SECRET        → clave para firmar JWT (CAMBIAR en Railway)
+ *
+ * Hashing:
+ *   Nuevos hashes → bcrypt (cost 12)
+ *   Hashes legacy → SHA-256 + PSY_SALT_2025 (backward compat, auto-upgrade en login)
  */
 
 import { db, operators } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { createHash, createHmac } from "crypto";
+import bcrypt from "bcrypt";
 import { verifyJwt } from "./jwt";
+
+const BCRYPT_ROUNDS = 12;
 
 // ── Superadmin credentials from env (REQUIRED — no hardcoded fallbacks) ─────
 const SA_PWD_1 = process.env["SUPERADMIN_PASSWORD"];
@@ -31,9 +38,24 @@ const SUPERADMIN_TOKENS = new Set([
   Buffer.from(`SUPERADMIN:jorge-2026:${SA_PWD_2}`).toString("base64"),
 ]);
 
-// ── Hash helper (SHA-256 hex + salt) ───────────────────────────────────────
-export function hashPassword(password: string): string {
+// ── Legacy SHA-256 hash (solo para backward compat — no usar para hashes nuevos) ──
+function legacyHash(password: string): string {
   return createHash("sha256").update(password + "PSY_SALT_2025").digest("hex");
+}
+
+// ── Hash nuevo con bcrypt (async) ───────────────────────────────────────────
+export async function hashPassword(password: string): Promise<string> {
+  return bcrypt.hash(password, BCRYPT_ROUNDS);
+}
+
+// ── Verificar contraseña contra hash almacenado (bcrypt o legacy SHA-256) ──
+// Detecta automáticamente el tipo de hash por su prefijo.
+export async function verifyPassword(password: string, storedHash: string): Promise<boolean> {
+  if (storedHash.startsWith("$2b$") || storedHash.startsWith("$2a$")) {
+    return bcrypt.compare(password, storedHash);
+  }
+  // Legacy: SHA-256 hex (64 chars)
+  return legacyHash(password) === storedHash;
 }
 
 // ── Role types ──────────────────────────────────────────────────────────────
@@ -60,14 +82,14 @@ export async function validateToken(token: string | undefined): Promise<AuthResu
     return { role: "superadmin", username: "admin" };
   }
 
-  // 3. Backward compat — operator base64 legacy
+  // 3. Backward compat — operator base64 legacy (usa SHA-256 directo — tokens viejos)
   try {
     const decoded = Buffer.from(token, "base64").toString("utf8");
     const parts = decoded.split(":");
     if (parts[0] !== "OPERATOR" || parts.length < 3) return { role: "none", username: "" };
     const username = parts[1];
     const password = parts.slice(2).join(":");
-    const hash = hashPassword(password);
+    const hash = legacyHash(password);
 
     const [op] = await db
       .select()
