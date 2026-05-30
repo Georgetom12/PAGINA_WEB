@@ -78,7 +78,6 @@ async function buildAll() {
       "kerberos",
       "leveldown",
       "miniflare",
-      "pg",
       "mysql2",
       "newrelic",
       "odbc",
