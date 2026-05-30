@@ -30,7 +30,7 @@ export function signJwt(
   const full: JwtPayload = { ...payload, iat: now, exp: now + expiresInSeconds };
   const header = b64url(JSON.stringify({ alg: "HS256", typ: "JWT" }));
   const body   = b64url(JSON.stringify(full));
-  const sig    = createHmac("sha256", JWT_SECRET).update(`${header}.${body}`).digest("base64url");
+  const sig    = createHmac("sha256", JWT_SECRET!).update(`${header}.${body}`).digest("base64url");
   return `${header}.${body}.${sig}`;
 }
 
@@ -40,7 +40,7 @@ export function verifyJwt(token: string): JwtPayload | null {
     if (parts.length !== 3) return null;
     const [header, body, sig] = parts as [string, string, string];
 
-    const expectedSig = createHmac("sha256", JWT_SECRET)
+    const expectedSig = createHmac("sha256", JWT_SECRET!)
       .update(`${header}.${body}`)
       .digest("base64url");
 
