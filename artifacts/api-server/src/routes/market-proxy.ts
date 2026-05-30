@@ -246,13 +246,11 @@ router.get("/proxy/okx/funding-rates", async (req: Request, res: Response) => {
   res.json({ data, sources, ts: Date.now() });
 });
 
-// ─── Signals (Railway) ────────────────────────────────────────────────────────
+// ─── Signals — PSY-ULT2 engine (interno, mismo servidor) ─────────────────────
 router.get("/proxy/signals/altcoins", async (req: Request, res: Response) => {
   if (!await checkAccess(req, res)) return;
-  await proxyFetch(
-    "https://signalsbotpaginaweb-production.up.railway.app/api/altcoin-signals",
-    res, req
-  );
+  const port = process.env["PORT"] ?? "8080";
+  await proxyFetch(`http://localhost:${port}/api/altcoin-signals`, res, req);
 });
 
 export default router;
