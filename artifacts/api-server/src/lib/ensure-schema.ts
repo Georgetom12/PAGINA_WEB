@@ -316,6 +316,17 @@ export async function ensureSchema(): Promise<void> {
         ON exchange_alerts_tg (ts, pair, exchange) WHERE pair IS NOT NULL;
     `);
 
+    // ── psy_whitelist ──────────────────────────────────────────────────────────
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS psy_whitelist (
+        id          SERIAL PRIMARY KEY,
+        email       TEXT NOT NULL UNIQUE,
+        created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        notified    BOOLEAN NOT NULL DEFAULT FALSE,
+        notified_at TIMESTAMPTZ
+      );
+    `);
+
     // ── Migración R6: agregar columna email_verified si no existe ──
     // DEFAULT true: todos los miembros existentes quedan verificados automáticamente.
     // Los nuevos registros (exchange) la reciben en false vía el flujo de registro.
