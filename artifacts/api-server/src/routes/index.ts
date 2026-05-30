@@ -36,6 +36,7 @@ import psyAlgoRouter from "./psy-algo";
 import scanRouter from "./scan";
 import buffettRouter from "./buffett";
 import psyLaunchRouter from "./psy-launch";
+import altcoinSignalsRouter from "./altcoin-signals";
 
 const router: IRouter = Router();
 
@@ -76,5 +77,6 @@ router.use(psyAlgoRouter);
 router.use(scanRouter);
 router.use(buffettRouter);
 router.use(psyLaunchRouter);
+router.use(altcoinSignalsRouter);
 
 export default router;
