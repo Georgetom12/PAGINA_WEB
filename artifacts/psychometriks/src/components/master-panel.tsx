@@ -69,7 +69,17 @@ function getToken(): string {
   try {
     const raw = localStorage.getItem("psyko_auth");
     if (!raw) return "";
-    return (JSON.parse(raw) as { token?: string }).token ?? "";
+    // Estrategia 1: JSON plano (formato nuevo)
+    try {
+      const s = JSON.parse(raw) as { token?: string };
+      if (s.token) return s.token;
+    } catch { /* intentar formato codificado */ }
+    // Estrategia 2: XOR + Base64 (formato legacy / TOTP)
+    try {
+      const s = JSON.parse(shieldRead(raw)) as { token?: string };
+      if (s.token) return s.token;
+    } catch { /* no se pudo decodificar */ }
+    return "";
   } catch { return ""; }
 }
 
