@@ -4,16 +4,15 @@
  * Bollinger, ATR, Fibonacci, OBV, harmonics, OI, insiders.
  */
 import { Router, type Request, type Response } from "express";
-import pg from "pg";
+import { Pool } from "@workspace/db";
 
 const router = Router();
-const { Pool } = pg;
 
 // ─── DB ───────────────────────────────────────────────────────────────────────
-let pool: pg.Pool | null = null;
+let pool: InstanceType<typeof Pool> | null = null;
 let tablesReady = false;
 
-async function ensureTables(db: pg.Pool) {
+async function ensureTables(db: InstanceType<typeof Pool>) {
   if (tablesReady) return;
   await db.query(`
     CREATE TABLE IF NOT EXISTS buffett_results (
