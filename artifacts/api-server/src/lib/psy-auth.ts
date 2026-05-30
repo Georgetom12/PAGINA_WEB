@@ -115,3 +115,4 @@ export function buildOperatorToken(username: string, password: string): string {
 export function buildWorkerHmac(secret: string, timestamp: string): string {
   return createHmac("sha256", secret).update(timestamp).digest("hex");
 }
+
