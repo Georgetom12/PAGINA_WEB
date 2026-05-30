@@ -37,6 +37,7 @@ import scanRouter from "./scan";
 import buffettRouter from "./buffett";
 import psyLaunchRouter from "./psy-launch";
 import altcoinSignalsRouter from "./altcoin-signals";
+import whitelistRouter from "./whitelist";
 
 const router: IRouter = Router();
 
@@ -78,5 +79,6 @@ router.use(scanRouter);
 router.use(buffettRouter);
 router.use(psyLaunchRouter);
 router.use(altcoinSignalsRouter);
+router.use(whitelistRouter);
 
 export default router;
