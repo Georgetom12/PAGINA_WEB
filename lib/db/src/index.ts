@@ -4,6 +4,8 @@ import * as schema from "./schema";
 
 const { Pool } = pg;
 
+export { Pool };
+
 const dbUrl = process.env.PSY_DATABASE_URL || process.env.DATABASE_URL;
 
 if (!dbUrl) {
