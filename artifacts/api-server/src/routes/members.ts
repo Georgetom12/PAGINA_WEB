@@ -1,7 +1,7 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { db, members } from "@workspace/db";
 import { eq, or } from "drizzle-orm";
-import { hashPassword, validateToken } from "../lib/psy-auth";
+import { hashPassword, verifyPassword, validateToken } from "../lib/psy-auth";
 import { signJwt } from "../lib/jwt";
 
 const IS_PROD = process.env["NODE_ENV"] === "production";
@@ -46,7 +46,6 @@ router.post("/auth/member-login", async (req: Request, res: Response) => {
   }
 
   try {
-    const hash = hashPassword(password);
     const identifier = username.toLowerCase().trim();
 
     // Fetch ALL candidates matching either email OR username in one query.
@@ -57,10 +56,18 @@ router.post("/auth/member-login", async (req: Request, res: Response) => {
       .from(members)
       .where(or(eq(members.email, identifier), eq(members.username, identifier)));
 
-    // Pick the first candidate whose password hash matches and account is active
-    const member = candidates.find(
-      c => c.active && c.passwordHash === hash
-    );
+    // Pick the first active candidate whose password matches (bcrypt or legacy SHA-256)
+    let member: typeof candidates[0] | undefined;
+    for (const c of candidates.filter(c => c.active)) {
+      if (await verifyPassword(password, c.passwordHash)) { member = c; break; }
+    }
+
+    // Auto-upgrade legacy SHA-256 → bcrypt silently in background
+    if (member && !member.passwordHash.startsWith("$2b$") && !member.passwordHash.startsWith("$2a$")) {
+      hashPassword(password).then(newHash =>
+        db.update(members).set({ passwordHash: newHash }).where(eq(members.id, member!.id))
+      ).catch(() => {});
+    }
 
     if (!member) {
       // Check if we found candidates but password was wrong vs no account at all
@@ -145,7 +152,7 @@ router.post("/admin/members", async (req: Request, res: Response) => {
   }
 
   try {
-    const passwordHash = hashPassword(password);
+    const passwordHash = await hashPassword(password);
     const [member] = await db.insert(members).values({
       username: username.toLowerCase().trim(),
       passwordHash,
@@ -188,7 +195,7 @@ router.patch("/admin/members/:id", async (req: Request, res: Response) => {
     if (expiresAt !== undefined) updates["expiresAt"] = expiresAt ? parseDateSafe(expiresAt) : null;
     if (password) {
       if (password.length < 6) { res.status(400).json({ error: "Contraseña mínimo 6 caracteres" }); return; }
-      updates["passwordHash"] = hashPassword(password);
+      updates["passwordHash"] = await hashPassword(password);
     }
     await db.update(members).set(updates).where(eq(members.id, id));
     res.json({ ok: true });

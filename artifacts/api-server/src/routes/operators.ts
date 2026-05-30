@@ -1,7 +1,7 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { db, operators } from "@workspace/db";
 import { eq } from "drizzle-orm";
-import { validateToken, hashPassword } from "../lib/psy-auth";
+import { validateToken, hashPassword, verifyPassword } from "../lib/psy-auth";
 import { signJwt } from "../lib/jwt";
 
 const IS_PROD = process.env["NODE_ENV"] === "production";
@@ -37,16 +37,23 @@ router.post("/auth/operator-login", async (req: Request, res: Response) => {
   }
 
   try {
-    const hash = hashPassword(password);
     const [op] = await db
       .select()
       .from(operators)
       .where(eq(operators.username, username.toLowerCase()))
       .limit(1);
 
-    if (!op || !op.active || op.passwordHash !== hash) {
+    const valid = op && op.active && await verifyPassword(password, op.passwordHash);
+    if (!valid) {
       res.status(401).json({ error: "Credenciales incorrectas o acceso revocado" });
       return;
+    }
+
+    // Auto-upgrade legacy SHA-256 → bcrypt silently in background
+    if (!op.passwordHash.startsWith("$2b$") && !op.passwordHash.startsWith("$2a$")) {
+      hashPassword(password).then(newHash =>
+        db.update(operators).set({ passwordHash: newHash }).where(eq(operators.id, op.id))
+      ).catch(() => {});
     }
 
     const token = signJwt({ sub: op.username, role: "operator" });
@@ -102,7 +109,7 @@ router.post("/admin/operators", async (req: Request, res: Response) => {
   }
 
   try {
-    const passwordHash = hashPassword(password);
+    const passwordHash = await hashPassword(password);
     const [op] = await db.insert(operators).values({
       username: username.toLowerCase().trim(),
       passwordHash,
@@ -141,7 +148,7 @@ router.patch("/admin/operators/:id", async (req: Request, res: Response) => {
         res.status(400).json({ error: "La contraseña debe tener al menos 6 caracteres" });
         return;
       }
-      updates.passwordHash = hashPassword(password);
+      updates.passwordHash = await hashPassword(password);
     }
     await db.update(operators).set(updates).where(eq(operators.id, id));
     res.json({ ok: true });
