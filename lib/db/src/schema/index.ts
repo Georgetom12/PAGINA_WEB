@@ -28,5 +28,6 @@ export * from "./members";
 export * from "./auth-tokens";
 export * from "./support-messages";
 export * from "./push-tokens";
+export * from "./psy-whitelist";
 export * from "./api-keys";
 export * from "./trader-snapshots";
