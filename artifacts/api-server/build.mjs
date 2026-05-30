@@ -78,6 +78,7 @@ async function buildAll() {
       "kerberos",
       "leveldown",
       "miniflare",
+      "pg",
       "mysql2",
       "newrelic",
       "odbc",
@@ -123,3 +124,4 @@ buildAll().catch((err) => {
   console.error(err);
   process.exit(1);
 });
+
