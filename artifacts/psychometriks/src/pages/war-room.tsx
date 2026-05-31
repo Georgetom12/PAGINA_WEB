@@ -179,19 +179,34 @@ function WarRoomContent() {
   }, []);
 
   useEffect(() => {
-    const ws = new WebSocket("wss://stream.binance.com:9443/stream?streams=btcusdt@ticker");
-    wsRef.current = ws;
-    ws.onmessage = (e) => {
-      try {
-        const msg = JSON.parse(e.data) as { data: { c: string; P: string } };
-        const p = parseFloat(msg.data.c);
-        const ch = parseFloat(msg.data.P);
-        setBtcPrice(p);
-        setBtcChange(ch);
-        setPriceHistory(prev => [...prev, p].slice(-60));
-      } catch {}
+    let ws: WebSocket | null = null;
+    let retryTimeout: ReturnType<typeof setTimeout> | null = null;
+    let destroyed = false;
+
+    const connect = () => {
+      if (destroyed) return;
+      ws = new WebSocket("wss://stream.binance.com:9443/stream?streams=btcusdt@ticker");
+      wsRef.current = ws;
+      ws.onclose = () => { if (!destroyed) retryTimeout = setTimeout(connect, 5000); };
+      ws.onerror = () => ws?.close();
+      ws.onmessage = (e) => {
+        try {
+          const msg = JSON.parse(e.data) as { data: { c: string; P: string } };
+          const p = parseFloat(msg.data.c);
+          const ch = parseFloat(msg.data.P);
+          setBtcPrice(p);
+          setBtcChange(ch);
+          setPriceHistory(prev => [...prev, p].slice(-60));
+        } catch {}
+      };
     };
-    return () => ws.close();
+
+    connect();
+    return () => {
+      destroyed = true;
+      if (retryTimeout) clearTimeout(retryTimeout);
+      ws?.close();
+    };
   }, []);
 
   const sendMessage = () => {
