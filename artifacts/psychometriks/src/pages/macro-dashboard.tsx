@@ -234,7 +234,7 @@ export default function MacroDashboard() {
       if (!d?.data?.length) return builtAssets;
 
       // Overlay real prices onto the simulated asset structure (keeps history/corr/interpretation)
-      const liveMap = new Map(d.data.map(q => [q.shortName, q]));
+      const liveMap = new Map((d?.data ?? []).map(q => [q.shortName, q]));
       return builtAssets.map(a => {
         const live = liveMap.get(a.shortName);
         if (!live || !live.live || live.price === 0) return a;
