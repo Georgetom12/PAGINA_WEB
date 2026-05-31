@@ -2204,7 +2204,7 @@ function OracleFeedsTab() {
               <div>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
                   <div style={{ fontSize: "0.55rem", color: "#22d4f5", letterSpacing: "0.15em" }}>● CRYPTO INTEL</div>
-                  <div style={{ fontSize: "0.48rem", color: "#3d6480" }}>{filterEntities([...data.etf, ...data.corporate]).length} ENTIDADES</div>
+                  <div style={{ fontSize: "0.48rem", color: "#3d6480" }}>{filterEntities([...(data?.etf ?? []), ...(data?.corporate ?? [])]).length} ENTIDADES</div>
                 </div>
                 <div style={{ fontSize: "0.45rem", color: "#3d6480", letterSpacing: "0.15em", marginBottom: 8, paddingBottom: 6, borderBottom: "1px solid #0d2030" }}>
                   — ETF / FONDOS INSTITUCIONALES —
@@ -2223,7 +2223,7 @@ function OracleFeedsTab() {
               <div>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
                   <div style={{ fontSize: "0.55rem", color: "#f0a020", letterSpacing: "0.15em" }}>● EQUITIES + ON-CHAIN</div>
-                  <div style={{ fontSize: "0.48rem", color: "#3d6480" }}>{filterEntities([...data.btcWallets, ...data.ethWallets]).length} ENTIDADES</div>
+                  <div style={{ fontSize: "0.48rem", color: "#3d6480" }}>{filterEntities([...(data?.btcWallets ?? []), ...(data?.ethWallets ?? [])]).length} ENTIDADES</div>
                 </div>
                 <div style={{ fontSize: "0.45rem", color: "#3d6480", letterSpacing: "0.15em", marginBottom: 8, paddingBottom: 6, borderBottom: "1px solid #0d2030" }}>
                   — WALLETS BTC ON-CHAIN IDENTIFICADAS —
@@ -2279,7 +2279,7 @@ function OracleFeedsTab() {
           {/* ─── ANALISTAS ─── */}
           {subTab === "analistas" && (
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-              {filterEntities([...data.analysts]).map(e => (
+              {filterEntities([...(data?.analysts ?? [])]).map(e => (
                 <div key={e.id} style={{ background: "#040f18", border: "1px solid #0d2030", borderLeft: `3px solid ${e.color}`, padding: "14px 16px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
                     <div style={{ width: 36, height: 36, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", background: `${e.color}15`, border: `1px solid ${e.color}40`, color: e.color, fontSize: "0.52rem", fontWeight: 700, flexShrink: 0, fontFamily: "'Syne', sans-serif" }}>{e.icon}</div>
