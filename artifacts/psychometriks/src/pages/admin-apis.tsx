@@ -186,7 +186,7 @@ function toProjectsJsonEntry(s: ExchangeSubmission): string {
 }
 
 function ExchangeSection() {
-  const API = "https://hello-who-joremogollon.replit.app";
+  const API = "https://api.psychometriks.trade";
 
   const [items,   setItems]   = useState<ExchangeSubmission[]>([]);
   const [loading, setLoading] = useState(true);
