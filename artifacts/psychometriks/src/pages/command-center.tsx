@@ -242,7 +242,7 @@ function ScannerSection() {
   const load = useCallback(async () => {
     try {
       const results = await Promise.allSettled(
-        PAIRS.map(p => fetch(`/api/proxy/okx/candles?instId=${p}&bar=1D&limit=2`).then(r=>r.json()))
+        PAIRS.map(p => fetch(`/api/proxy/okx/candles?instId=${p}&bar=1D&limit=2`).then(r=>r.ok ? r.json() : Promise.reject(r.status)))
       );
       const built: ScanRow[] = [];
       results.forEach((res, i) => {
@@ -815,8 +815,8 @@ function CommandCenterContent() {
   const loadMarket = useCallback(async () => {
     try {
       const [btcRes, ethRes] = await Promise.allSettled([
-        fetch("/api/proxy/kraken/price?pair=XBTUSD").then(r=>r.json()) as Promise<{ok:boolean;price?:number;change24h?:number}>,
-        fetch("/api/proxy/okx/candles?instId=ETH-USDT&bar=1D&limit=2").then(r=>r.json()) as Promise<{ok:boolean;candles?:Array<{c:number;o:number}>}>,
+        fetch("/api/proxy/kraken/price?pair=XBTUSD").then(r=>r.ok ? r.json() : Promise.reject(r.status)) as Promise<{ok:boolean;price?:number;change24h?:number}>,
+        fetch("/api/proxy/okx/candles?instId=ETH-USDT&bar=1D&limit=2").then(r=>r.ok ? r.json() : Promise.reject(r.status)) as Promise<{ok:boolean;candles?:Array<{c:number;o:number}>}>,
       ]);
 
       let btcPrice = 0, btcChange = 0;
