@@ -239,11 +239,13 @@ export default {
         return Response.json({ error: "Unknown MEXC endpoint" }, { status: 404 });
       }
       try {
-        const resp = await fetch(mexcUrl, { headers: { Accept: "application/json" } });
+        const resp = await fetch(mexcUrl, { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(8000) });
+        const ct = resp.headers.get("content-type") ?? "";
+        if (!ct.includes("application/json")) throw new Error(`MEXC non-JSON response (${resp.status})`);
         const data = await resp.json();
-        return Response.json(data, { headers: { "Cache-Control": "public, max-age=10" } });
+        return Response.json(data, { headers: { "Cache-Control": "public, max-age=10", ...corsHeaders(origin) } });
       } catch (err) {
-        return Response.json({ error: "MEXC proxy error", detail: String(err) }, { status: 502 });
+        return Response.json({ error: "MEXC proxy error", detail: String(err) }, { status: 502, headers: corsHeaders(origin) });
       }
     }
  
@@ -260,8 +262,11 @@ export default {
           `https://api.kraken.com/0/public/Depth?pair=${kPair}&count=12`,
           { signal: AbortSignal.timeout(6000) }
         );
+        const ct = resp.headers.get("content-type") ?? "";
+        if (!ct.includes("application/json")) throw new Error(`Kraken non-JSON response (${resp.status})`);
         const data = await resp.json();
-        const book = Object.values(data.result)[0];
+        const book = Object.values(data.result ?? {})[0];
+        if (!book) throw new Error("Kraken: resultado vacío o par no encontrado");
         let bidTotal = 0;
         const bids = book.bids.map(([p, s]) => {
           const size = parseFloat(s);
@@ -279,7 +284,7 @@ export default {
           { headers: { "Cache-Control": "public, max-age=10", ...corsHeaders(origin) } }
         );
       } catch (err) {
-        return Response.json({ error: "Kraken orderbook error", detail: String(err) }, { status: 502 });
+        return Response.json({ error: "Kraken orderbook error", detail: String(err) }, { status: 502, headers: corsHeaders(origin) });
       }
     }
  
@@ -297,7 +302,10 @@ export default {
           headers: { Accept: "application/json" },
           signal: AbortSignal.timeout(8000),
         });
+        const ct = resp.headers.get("content-type") ?? "";
+        if (!ct.includes("application/json")) throw new Error(`OKX non-JSON response (${resp.status})`);
         const json = await resp.json();
+        if (!Array.isArray(json.data)) throw new Error("OKX: respuesta inesperada, falta campo data");
         const tickerMap = new Map(json.data.map(t => [t.instId, t]));
         const assets = Object.entries(CRYPTO_IDS).flatMap(([id, sym]) => {
           const t = tickerMap.get(id);
@@ -311,7 +319,7 @@ export default {
           { headers: { "Cache-Control": "public, max-age=30", ...corsHeaders(origin) } }
         );
       } catch (err) {
-        return Response.json({ error: "OKX crypto error", detail: String(err) }, { status: 502 });
+        return Response.json({ error: "OKX crypto error", detail: String(err) }, { status: 502, headers: corsHeaders(origin) });
       }
     }
  
@@ -376,21 +384,21 @@ export default {
       }
     }
  
-    // ── Proxy: Kraken price (Ticker) — sin API key, edge-side ───────────────
     if (path === "/api/proxy/kraken/price") {
       const pair = url.searchParams.get("pair") ?? "XBTUSD";
       try {
         const resp = await fetch(`https://api.kraken.com/0/public/Ticker?pair=${pair}`, {
           headers: { Accept: "application/json" }, signal: AbortSignal.timeout(6000),
         });
+        const ct = resp.headers.get("content-type") ?? "";
+        if (!ct.includes("application/json")) throw new Error(`Kraken non-JSON (${resp.status})`);
         const data = await resp.json();
         return Response.json(data, { headers: { "Cache-Control": "public, max-age=10", ...corsHeaders(origin) } });
       } catch (err) {
-        return Response.json({ error: "Kraken price error", detail: String(err) }, { status: 502 });
+        return Response.json({ error: "Kraken price error", detail: String(err) }, { status: 502, headers: corsHeaders(origin) });
       }
     }
  
-    // ── Proxy: Kraken OHLC — sin API key, edge-side ──────────────────────────
     if (path === "/api/proxy/kraken/ohlc") {
       const pair     = url.searchParams.get("pair")     ?? "XBTUSD";
       const interval = url.searchParams.get("interval") ?? "10080";
@@ -402,28 +410,30 @@ export default {
         const resp = await fetch(krakenUrl, {
           headers: { Accept: "application/json" }, signal: AbortSignal.timeout(8000),
         });
+        const ct = resp.headers.get("content-type") ?? "";
+        if (!ct.includes("application/json")) throw new Error(`Kraken OHLC non-JSON (${resp.status})`);
         const data = await resp.json();
         return Response.json(data, { headers: { "Cache-Control": "public, max-age=300", ...corsHeaders(origin) } });
       } catch (err) {
-        return Response.json({ error: "Kraken OHLC error", detail: String(err) }, { status: 502 });
+        return Response.json({ error: "Kraken OHLC error", detail: String(err) }, { status: 502, headers: corsHeaders(origin) });
       }
     }
  
-    // ── Proxy: Coinbase price — sin API key, edge-side ───────────────────────
     if (path === "/api/proxy/coinbase/price") {
       const pair = url.searchParams.get("pair") ?? "BTC-USD";
       try {
         const resp = await fetch(`https://api.coinbase.com/v2/prices/${pair}/spot`, {
           headers: { Accept: "application/json" }, signal: AbortSignal.timeout(6000),
         });
+        const ct = resp.headers.get("content-type") ?? "";
+        if (!ct.includes("application/json")) throw new Error(`Coinbase non-JSON (${resp.status})`);
         const data = await resp.json();
         return Response.json(data, { headers: { "Cache-Control": "public, max-age=10", ...corsHeaders(origin) } });
       } catch (err) {
-        return Response.json({ error: "Coinbase price error", detail: String(err) }, { status: 502 });
+        return Response.json({ error: "Coinbase price error", detail: String(err) }, { status: 502, headers: corsHeaders(origin) });
       }
     }
  
-    // ── Proxy: OKX Open Interest — sin API key, edge-side ───────────────────
     if (path === "/api/proxy/okx/oi") {
       const instId = url.searchParams.get("instId") ?? "BTC-USDT-SWAP";
       try {
@@ -431,14 +441,15 @@ export default {
           `https://www.okx.com/api/v5/public/open-interest?instType=SWAP&instId=${instId}`,
           { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(6000) }
         );
+        const ct = resp.headers.get("content-type") ?? "";
+        if (!ct.includes("application/json")) throw new Error(`OKX OI non-JSON (${resp.status})`);
         const data = await resp.json();
         return Response.json(data, { headers: { "Cache-Control": "public, max-age=30", ...corsHeaders(origin) } });
       } catch (err) {
-        return Response.json({ error: "OKX OI error", detail: String(err) }, { status: 502 });
+        return Response.json({ error: "OKX OI error", detail: String(err) }, { status: 502, headers: corsHeaders(origin) });
       }
     }
  
-    // ── Proxy: OKX Candles — sin API key, edge-side ──────────────────────────
     if (path === "/api/proxy/okx/candles") {
       const instId = url.searchParams.get("instId") ?? "BTC-USDT-SWAP";
       const bar    = url.searchParams.get("bar")    ?? "1D";
@@ -448,14 +459,15 @@ export default {
           `https://www.okx.com/api/v5/market/history-candles?instId=${instId}&bar=${bar}&limit=${limit}`,
           { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(8000) }
         );
+        const ct = resp.headers.get("content-type") ?? "";
+        if (!ct.includes("application/json")) throw new Error(`OKX candles non-JSON (${resp.status})`);
         const data = await resp.json();
         return Response.json(data, { headers: { "Cache-Control": "public, max-age=300", ...corsHeaders(origin) } });
       } catch (err) {
-        return Response.json({ error: "OKX candles error", detail: String(err) }, { status: 502 });
+        return Response.json({ error: "OKX candles error", detail: String(err) }, { status: 502, headers: corsHeaders(origin) });
       }
     }
  
-    // ── Proxy: OKX OI History — sin API key, edge-side ──────────────────────
     if (path === "/api/proxy/okx/oi-history") {
       const ccy    = url.searchParams.get("ccy")    ?? "BTC";
       const period = url.searchParams.get("period") ?? "1D";
@@ -465,10 +477,12 @@ export default {
           `https://www.okx.com/api/v5/rubik/stat/contracts/open-interest-volume?ccy=${ccy}&period=${period}&limit=${limit}`,
           { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(8000) }
         );
+        const ct = resp.headers.get("content-type") ?? "";
+        if (!ct.includes("application/json")) throw new Error(`OKX OI-history non-JSON (${resp.status})`);
         const data = await resp.json();
         return Response.json(data, { headers: { "Cache-Control": "public, max-age=300", ...corsHeaders(origin) } });
       } catch (err) {
-        return Response.json({ error: "OKX OI-history error", detail: String(err) }, { status: 502 });
+        return Response.json({ error: "OKX OI-history error", detail: String(err) }, { status: 502, headers: corsHeaders(origin) });
       }
     }
  
@@ -477,13 +491,16 @@ export default {
       try {
         const resp = await fetch(SIGNALS_URL, {
           headers: { Accept: "application/json" },
+          signal: AbortSignal.timeout(8000),
         });
+        const ct = resp.headers.get("content-type") ?? "";
+        if (!ct.includes("application/json")) throw new Error(`Signals non-JSON response (${resp.status})`);
         const data = await resp.json();
         return Response.json(data, {
-          headers: { "Cache-Control": "public, max-age=60" },
+          headers: { "Cache-Control": "public, max-age=60", ...corsHeaders(origin) },
         });
       } catch (err) {
-        return Response.json({ error: "Proxy error", detail: String(err) }, { status: 502 });
+        return Response.json({ error: "Signals proxy error", detail: String(err) }, { status: 502, headers: corsHeaders(origin) });
       }
     }
  
@@ -504,8 +521,12 @@ export default {
       const antResp = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: { "x-api-key": apiKey, "anthropic-version": "2023-06-01", "content-type": "application/json" },
-        body: JSON.stringify({ model: "claude-opus-4-5", max_tokens: 1200, messages: [{ role: "user", content: prompt }] }),
+        body: JSON.stringify({ model: "claude-sonnet-4-5", max_tokens: 1200, messages: [{ role: "user", content: prompt }] }),
       });
+      if (!antResp.ok) {
+        const errText = await antResp.text();
+        return Response.json({ ok: false, error: `Anthropic error ${antResp.status}`, detail: errText }, { status: 502, headers: corsHeaders(origin) });
+      }
       const antData = await antResp.json();
       const text = antData.content?.[0]?.text ?? antData.error?.message ?? "Error generando contenido";
       return Response.json({ ok: true, text }, { headers: corsHeaders(origin) });
