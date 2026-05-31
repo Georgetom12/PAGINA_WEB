@@ -89,7 +89,7 @@ export default function FundingDashboard() {
       const json = await r.json() as { data?: { symbol: string; base: string; rate: number; nextFundingTime: number; price: number; change: number }[] };
       if (!json.data?.length) throw new Error("empty response");
 
-      const entries: FundingEntry[] = json.data.map(item => ({
+      const entries: FundingEntry[] = (json?.data ?? []).map(item => ({
         symbol: item.symbol,
         base: item.base,
         rate: item.rate,
