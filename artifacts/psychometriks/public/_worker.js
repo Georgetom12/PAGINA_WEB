@@ -852,7 +852,7 @@ export default {
         const ct = resp.headers.get("content-type") ?? "";
         if (!ct.includes("application/json")) throw new Error(`FRED non-JSON (${resp.status})`);
         const raw = await resp.json();
-        const observations = (raw.observations ?? []).map((o: { date: string; value: string }) => ({
+        const observations = (raw.observations ?? []).map((o) => ({
           date:  o.date,
           value: parseFloat(o.value) || 0,
         }));
