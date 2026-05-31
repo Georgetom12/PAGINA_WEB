@@ -738,6 +738,159 @@ export default {
       });
     }
  
+    // ── Proxy: Fear & Greed Index (alternative.me) ───────────────────────────
+    if (path === "/api/proxy/fear-greed") {
+      const limit = url.searchParams.get("limit") ?? "7";
+      try {
+        const resp = await fetch(
+          `https://api.alternative.me/fng/?limit=${limit}&format=json`,
+          { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(6000) }
+        );
+        const ct = resp.headers.get("content-type") ?? "";
+        if (!ct.includes("application/json")) throw new Error(`Fear&Greed non-JSON (${resp.status})`);
+        const data = await resp.json();
+        return Response.json(data, {
+          headers: { "Cache-Control": "public, max-age=300", ...corsHeaders(origin) }
+        });
+      } catch (err) {
+        return Response.json({ error: "Fear&Greed error", detail: String(err) }, { status: 502, headers: corsHeaders(origin) });
+      }
+    }
+ 
+    // ── Proxy: OKX Funding Rate (instId específico) ──────────────────────────
+    if (path === "/api/proxy/okx/funding") {
+      const instId = url.searchParams.get("instId") ?? "BTC-USDT-SWAP";
+      try {
+        const resp = await fetch(
+          `https://www.okx.com/api/v5/public/funding-rate?instId=${instId}`,
+          { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(6000) }
+        );
+        const ct = resp.headers.get("content-type") ?? "";
+        if (!ct.includes("application/json")) throw new Error(`OKX funding non-JSON (${resp.status})`);
+        const data = await resp.json();
+        return Response.json(data, {
+          headers: { "Cache-Control": "public, max-age=30", ...corsHeaders(origin) }
+        });
+      } catch (err) {
+        return Response.json({ error: "OKX funding error", detail: String(err) }, { status: 502, headers: corsHeaders(origin) });
+      }
+    }
+ 
+    // ── Proxy: OKX Long/Short Ratio ──────────────────────────────────────────
+    if (path === "/api/proxy/okx/ls-ratio") {
+      const ccy    = url.searchParams.get("ccy")    ?? "BTC";
+      const period = url.searchParams.get("period") ?? "1D";
+      const limit  = url.searchParams.get("limit")  ?? "30";
+      try {
+        const resp = await fetch(
+          `https://www.okx.com/api/v5/rubik/stat/contracts/long-short-account-ratio?ccy=${ccy}&period=${period}&limit=${limit}`,
+          { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(6000) }
+        );
+        const ct = resp.headers.get("content-type") ?? "";
+        if (!ct.includes("application/json")) throw new Error(`OKX L/S ratio non-JSON (${resp.status})`);
+        const data = await resp.json();
+        return Response.json(data, {
+          headers: { "Cache-Control": "public, max-age=60", ...corsHeaders(origin) }
+        });
+      } catch (err) {
+        return Response.json({ error: "OKX L/S ratio error", detail: String(err) }, { status: 502, headers: corsHeaders(origin) });
+      }
+    }
+ 
+    // ── Proxy: OKX Funding Rates (multi-par para Funding Dashboard) ──────────
+    if (path === "/api/proxy/okx/funding-rates") {
+      const PAIRS = [
+        "BTC-USDT-SWAP","ETH-USDT-SWAP","SOL-USDT-SWAP","BNB-USDT-SWAP",
+        "XRP-USDT-SWAP","AVAX-USDT-SWAP","DOGE-USDT-SWAP","ARB-USDT-SWAP",
+        "OP-USDT-SWAP","LINK-USDT-SWAP","DOT-USDT-SWAP","PEPE-USDT-SWAP",
+        "SUI-USDT-SWAP","WIF-USDT-SWAP","INJ-USDT-SWAP","TIA-USDT-SWAP",
+      ];
+      try {
+        const results = await Promise.allSettled(
+          PAIRS.map(id =>
+            fetch(`https://www.okx.com/api/v5/public/funding-rate?instId=${id}`, {
+              headers: { Accept: "application/json" }, signal: AbortSignal.timeout(8000)
+            }).then(r => r.ok ? r.json() : Promise.reject(r.status))
+          )
+        );
+        const data = results.flatMap((r, i) => {
+          if (r.status !== "fulfilled") return [];
+          const d = r.value?.data?.[0];
+          if (!d) return [];
+          const base = PAIRS[i].split("-")[0];
+          const price = parseFloat(d.nextFundingRate ?? "0") * 1e4; // placeholder
+          return [{
+            symbol: PAIRS[i],
+            base,
+            rate: parseFloat(d.fundingRate ?? "0"),
+            nextFundingTime: parseInt(d.nextFundingTime ?? "0"),
+            price: 0,
+            change: 0,
+          }];
+        });
+        return Response.json({ ok: true, data }, {
+          headers: { "Cache-Control": "public, max-age=60", ...corsHeaders(origin) }
+        });
+      } catch (err) {
+        return Response.json({ error: "OKX funding-rates error", detail: String(err) }, { status: 502, headers: corsHeaders(origin) });
+      }
+    }
+ 
+    // ── Proxy: FRED Federal Reserve Economic Data ────────────────────────────
+    if (path === "/api/proxy/fred/series") {
+      const seriesId = url.searchParams.get("id") ?? "FEDFUNDS";
+      const limit    = url.searchParams.get("limit") ?? "240";
+      const sort     = url.searchParams.get("sort")  ?? "asc";
+      // FRED API key pública de prueba (límite 120 req/min)
+      const FRED_KEY = "abcdefghijklmnopqrstuvwxyz123456"; // placeholder — set real key in env
+      const fredKey  = env.FRED_API_KEY || FRED_KEY;
+      try {
+        const resp = await fetch(
+          `https://api.stlouisfed.org/fred/series/observations?series_id=${seriesId}&limit=${limit}&sort_order=${sort}&file_type=json&api_key=${fredKey}`,
+          { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(8000) }
+        );
+        const ct = resp.headers.get("content-type") ?? "";
+        if (!ct.includes("application/json")) throw new Error(`FRED non-JSON (${resp.status})`);
+        const raw = await resp.json();
+        const observations = (raw.observations ?? []).map((o: { date: string; value: string }) => ({
+          date:  o.date,
+          value: parseFloat(o.value) || 0,
+        }));
+        return Response.json({ ok: true, observations }, {
+          headers: { "Cache-Control": "public, max-age=3600", ...corsHeaders(origin) }
+        });
+      } catch (err) {
+        return Response.json({ ok: false, error: "FRED error", detail: String(err), observations: [] }, { status: 502, headers: corsHeaders(origin) });
+      }
+    }
+ 
+    // ── Proxy: DeGate Pumps (24h top movers) ─────────────────────────────────
+    if (path === "/api/proxy/degate/pumps") {
+      const result = await fetchDeGateSafe(
+        "https://v1-mainnet-backend.degate.com/order-book-api/pairs?limit=200",
+        "https://api.degate.com/order-book-api/pairs?limit=200",
+        { timeout: 9000 }
+      );
+      if (!result.ok) {
+        return Response.json({ ok: false, error: "DeGate pumps no disponible", detail: result.error }, { status: 503, headers: corsHeaders(origin) });
+      }
+      // Extraer top movers por cambio 24h
+      const pairs = result.data?.data ?? result.data?.list ?? [];
+      const pumps: Record<string, { h24: number; vol: number }> = {};
+      for (const p of pairs) {
+        const base = (p.baseTokenSymbol ?? p.symbol ?? "").split("-")[0];
+        if (!base) continue;
+        const h24 = parseFloat(p.change24h ?? p.priceChange ?? "0");
+        const vol = parseFloat(p.quoteVolume ?? p.volume ?? "0");
+        if (!pumps[base] || Math.abs(h24) > Math.abs(pumps[base].h24)) {
+          pumps[base] = { h24, vol };
+        }
+      }
+      return Response.json({ ok: true, data: pumps }, {
+        headers: { "Cache-Control": "public, max-age=120", ...corsHeaders(origin) }
+      });
+    }
+ 
     // ── Proxy: resto de /api/* → Railway con firma HMAC ──────────────────────
     if (path.startsWith("/api/")) {
       const target    = API_SERVER + path + url.search;
