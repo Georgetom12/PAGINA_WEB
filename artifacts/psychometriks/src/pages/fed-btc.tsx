@@ -138,7 +138,7 @@ export default function FedBtc() {
         ]);
         const cbJson = await cbRes.json() as { data: { amount: string } };
         const krJson = await krRes.json() as { result: Record<string, { c: string[] }> };
-        const cb  = parseFloat(cbJson.data.amount);
+        const cb  = parseFloat(cbJson?.data?.amount ?? "0");
         const krTicker = Object.values(krJson.result ?? {})[0];
         const bn  = parseFloat(krTicker?.c?.[0] ?? "0");
         const pct = ((cb - bn) / bn) * 100;
