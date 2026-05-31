@@ -240,7 +240,7 @@ export default function Equities() {
         if (!r.ok) return;
         const json = await r.json() as { data?: { symbol: string; price: number; change: number; changePct: number }[] };
         if (!json.data?.length) return;
-        const priceMap = new Map(json.data.map(q => [q.symbol, q]));
+        const priceMap = new Map((json?.data ?? []).map(q => [q.symbol, q]));
         setLiveStocks(prev => prev.map(s => {
           const live = priceMap.get(s.sym) ?? priceMap.get(s.sym.replace("-", ""));
           if (!live || live.price <= 0) return s;
