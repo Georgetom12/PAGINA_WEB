@@ -1,6 +1,6 @@
 const SIGNALS_URL = "https://api.psychometriks.trade/api/altcoin-signals";
 const API_SERVER   = "https://api.psychometriks.trade";
- 
+
 // ── CAPA DE SEGURIDAD SOA — HMAC-SHA256 ────────────────────────────────────
 // El Worker firma cada request a Railway con HMAC-SHA256(timestamp, PSY_WORKER_SECRET).
 // Railway verifica la firma (modo soft: acepta si falta, rechaza si es inválida).
@@ -19,7 +19,7 @@ async function signWorkerRequest(secret, timestamp) {
     .map(b => b.toString(16).padStart(2, "0"))
     .join("");
 }
- 
+
 // Construye un Request hacia Railway con firma HMAC en headers.
 async function buildSignedRequest(target, originalRequest, env) {
   const secret = env.PSY_WORKER_SECRET;
@@ -37,7 +37,7 @@ async function buildSignedRequest(target, originalRequest, env) {
     redirect: "follow",
   });
 }
- 
+
 // ── CAPA SERVCLI — Validación de token en PSY BRAIN ───────────────────────
 // Verifica que el request viene de un usuario autenticado en la plataforma.
 // No hace verificación contra DB (sin latencia extra) — valida formato y presencia.
@@ -55,19 +55,19 @@ function isValidPsyToken(token) {
     return decoded.includes(":") || decoded.length > 20;
   } catch { return false; }
 }
- 
+
 // ── PSY BRAIN IA — Prompt system ───────────────────────────────────────────
 const PSY_BRAIN_SYSTEM = `Eres PSY BRAIN, el analista institucional de PSYCHOMETRIKS. Tu especialidad es identificar el flujo institucional real detrás de los movimientos del mercado. Analizas con precisión quirúrgica: flujo de órdenes, actividad de opciones, posicionamiento institucional 13F, correlaciones macro, narrativas dominantes y puntos de compresión técnica.
- 
+
 Tu respuesta debe ser:
 - Estructurada con secciones claras usando ═══ como separador
 - Con datos concretos y niveles clave específicos
 - Conclusiones accionables con bias claro (BULLISH/BEARISH/NEUTRAL)
 - Máximo 3 niveles de entrada/stop/objetivo
 - Formato terminal: usa ▸ para puntos clave, ⚡ para alertas críticas, 📊 para datos
- 
+
 Respondes siempre en español con terminología técnica institucional. No uses markdown headers (#), usa ═══ SECCIÓN ═══ para separar.`;
- 
+
 function buildBrainPrompt(asset, analysisType, userMessage) {
   const prompts = {
     flujo:     `Analiza el flujo institucional de ${asset}: CVD, dark pools, imbalances SMC/FVG, liq maps y señales de acumulación/distribución. Identifica si el smart money está posicionado long o short y en qué niveles clave.`,
@@ -79,7 +79,7 @@ function buildBrainPrompt(asset, analysisType, userMessage) {
   };
   return prompts[analysisType] || userMessage || `Analiza ${asset} desde una perspectiva institucional completa.`;
 }
- 
+
 // ── Headers CORS de respuesta ──────────────────────────────────────────────
 function corsHeaders(requestOrigin) {
   const allowed = [
@@ -96,13 +96,13 @@ function corsHeaders(requestOrigin) {
     "Vary": "Origin",
   };
 }
- 
+
 export default {
   async fetch(request, env) {
     const url    = new URL(request.url);
     const path   = url.pathname;
     const origin = request.headers.get("origin") ?? "";
- 
+
     // ── PSY BRAIN preflight ─────────────────────────────────────────────────
     if (path === "/api/psy-oracle/brain" && request.method === "OPTIONS") {
       return new Response(null, {
@@ -113,7 +113,7 @@ export default {
         },
       });
     }
- 
+
     // ── PSY BRAIN IA — Anthropic Claude (edge) ─────────────────────────────
     if (path === "/api/psy-oracle/brain" && request.method === "POST") {
       // ── Auth check: el token debe existir y tener formato válido ──────────
@@ -127,7 +127,7 @@ export default {
           },
         );
       }
- 
+
       const apiKey = env.ANTHROPIC_API_KEY;
       if (!apiKey) {
         return new Response(
@@ -135,7 +135,7 @@ export default {
           { status: 503, headers: { "Content-Type": "application/json", ...corsHeaders(origin) } }
         );
       }
- 
+
       let body;
       try { body = await request.json(); } catch {
         return new Response(
@@ -143,7 +143,7 @@ export default {
           { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders(origin) } },
         );
       }
- 
+
       const { asset, analysisType, userMessage } = body;
       if (!asset) {
         return new Response(
@@ -151,9 +151,9 @@ export default {
           { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders(origin) } },
         );
       }
- 
+
       const prompt = buildBrainPrompt(asset, analysisType || "full", userMessage);
- 
+
       const anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: {
@@ -169,7 +169,7 @@ export default {
           messages:   [{ role: "user", content: prompt }],
         }),
       });
- 
+
       if (!anthropicRes.ok) {
         const errText = await anthropicRes.text();
         return new Response(
@@ -177,12 +177,12 @@ export default {
           { status: 502, headers: { "Content-Type": "application/json", ...corsHeaders(origin) } }
         );
       }
- 
+
       // Transforma Anthropic SSE → formato SSE del frontend
       const { readable, writable } = new TransformStream();
       const writer = writable.getWriter();
       const enc    = new TextEncoder();
- 
+
       (async () => {
         const reader = anthropicRes.body.getReader();
         const dec    = new TextDecoder();
@@ -215,7 +215,7 @@ export default {
           await writer.close();
         }
       })();
- 
+
       return new Response(readable, {
         headers: {
           "Content-Type": "text/event-stream",
@@ -224,7 +224,7 @@ export default {
         },
       });
     }
- 
+
     // ── Proxy: MEXC contract API (server-to-server, sin CORS browser) ───────
     if (path.startsWith("/api/proxy/mexc/")) {
       const subpath = path.replace("/api/proxy/mexc/", "");
@@ -248,7 +248,7 @@ export default {
         return Response.json({ error: "MEXC proxy error", detail: String(err) }, { status: 502, headers: corsHeaders(origin) });
       }
     }
- 
+
     // ── Market Data: Order Book en tiempo real (Kraken public API) ──────────
     if (path.startsWith("/api/market-data/orderbook/")) {
       const pair = path.split("/").pop().toUpperCase();
@@ -287,7 +287,7 @@ export default {
         return Response.json({ error: "Kraken orderbook error", detail: String(err) }, { status: 502, headers: corsHeaders(origin) });
       }
     }
- 
+
     // ── Market Data: Crypto tickers en tiempo real (OKX public API) ─────────
     if (path === "/api/market-data/crypto") {
       const CRYPTO_IDS = {
@@ -322,7 +322,7 @@ export default {
         return Response.json({ error: "OKX crypto error", detail: String(err) }, { status: 502, headers: corsHeaders(origin) });
       }
     }
- 
+
     // ── Market Data: Macro (Yahoo Finance + Fear&Greed) ─────────────────────
     if (path === "/api/market-data/macro") {
       const YF_SYMBOLS = {
@@ -383,7 +383,7 @@ export default {
         return Response.json({ error: "Macro fetch error", detail: String(err) }, { status: 502 });
       }
     }
- 
+
     if (path === "/api/proxy/kraken/price") {
       const pair = url.searchParams.get("pair") ?? "XBTUSD";
       try {
@@ -398,7 +398,7 @@ export default {
         return Response.json({ error: "Kraken price error", detail: String(err) }, { status: 502, headers: corsHeaders(origin) });
       }
     }
- 
+
     if (path === "/api/proxy/kraken/ohlc") {
       const pair     = url.searchParams.get("pair")     ?? "XBTUSD";
       const interval = url.searchParams.get("interval") ?? "10080";
@@ -418,7 +418,7 @@ export default {
         return Response.json({ error: "Kraken OHLC error", detail: String(err) }, { status: 502, headers: corsHeaders(origin) });
       }
     }
- 
+
     if (path === "/api/proxy/coinbase/price") {
       const pair = url.searchParams.get("pair") ?? "BTC-USD";
       try {
@@ -433,7 +433,7 @@ export default {
         return Response.json({ error: "Coinbase price error", detail: String(err) }, { status: 502, headers: corsHeaders(origin) });
       }
     }
- 
+
     if (path === "/api/proxy/okx/oi") {
       const instId = url.searchParams.get("instId") ?? "BTC-USDT-SWAP";
       try {
@@ -449,7 +449,7 @@ export default {
         return Response.json({ error: "OKX OI error", detail: String(err) }, { status: 502, headers: corsHeaders(origin) });
       }
     }
- 
+
     if (path === "/api/proxy/okx/candles") {
       const instId = url.searchParams.get("instId") ?? "BTC-USDT-SWAP";
       const bar    = url.searchParams.get("bar")    ?? "1D";
@@ -467,7 +467,7 @@ export default {
         return Response.json({ error: "OKX candles error", detail: String(err) }, { status: 502, headers: corsHeaders(origin) });
       }
     }
- 
+
     if (path === "/api/proxy/okx/oi-history") {
       const ccy    = url.searchParams.get("ccy")    ?? "BTC";
       const period = url.searchParams.get("period") ?? "1D";
@@ -485,7 +485,7 @@ export default {
         return Response.json({ error: "OKX OI-history error", detail: String(err) }, { status: 502, headers: corsHeaders(origin) });
       }
     }
- 
+
     // ── Proxy: altcoin signals (server-to-server) ────────────────────────────
     if (path === "/api/proxy/signals/altcoins") {
       try {
@@ -503,7 +503,7 @@ export default {
         return Response.json({ error: "Signals proxy error", detail: String(err) }, { status: 502, headers: corsHeaders(origin) });
       }
     }
- 
+
     // ── Marketing Engine: proxy Anthropic (personal, sin auth estricta) ──────
     if (path === "/api/marketing/generate") {
       if (request.method === "OPTIONS") {
@@ -531,17 +531,17 @@ export default {
       const text = antData.content?.[0]?.text ?? antData.error?.message ?? "Error generando contenido";
       return Response.json({ ok: true, text }, { headers: corsHeaders(origin) });
     }
- 
+
     // ── Página: historial de señales + win rate ───────────────────────────────
     if (path === "/signals-history" || path === "/signals-history/") {
       return env.ASSETS.fetch(new Request(new URL("/signals-history.html", url).toString(), request));
     }
- 
+
     // ── Oracle Feeds: Whale Intelligence Dashboard (directo en Worker) ───────
     if (path === "/api/oracle/whale-dashboard") {
       const cors = corsHeaders(origin);
       if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: { ...cors, "Access-Control-Max-Age": "86400" } });
- 
+
       const ETF_ENTITIES = [
         { id:"blackrock", name:"BlackRock IBIT",   ticker:"IBIT", type:"ETF", label:"ETF / Fondos Institucionales", icon:"BLK", color:"#00e5ff", bg:"rgba(0,229,255,.12)",   holdings:"821,512 BTC",  aumUsd:"$55.2B",  flow1d:"+$412M", pct1d:2.1,  action:"BUY",  source:"Farside", updated:"HOY" },
         { id:"fidelity",  name:"Fidelity FBTC",    ticker:"FBTC", type:"ETF", label:"ETF / Fondos Institucionales", icon:"FID", color:"#1aeb8a", bg:"rgba(26,235,138,.12)",  holdings:"185,000 BTC",  aumUsd:"$20.8B",  flow1d:"+$89M",  pct1d:1.4,  action:"BUY",  source:"Farside", updated:"HOY" },
@@ -580,7 +580,7 @@ export default {
         { id:"kiyosaki",      name:"Robert Kiyosaki",      type:"TRADFI",    label:"Rich Dad Poor Dad",       icon:"KIY", color:"#9060f0", view:"ALCISTA", signal:"Crash USD inminente — BTC, oro, plata",                source:"Twitter/X" },
         { id:"druckenmiller", name:"S. Druckenmiller",     type:"TRADFI",    label:"Duquesne Family Office",  icon:"DRU", color:"#40c4ff", view:"NEUTRAL", signal:"BTC position reducida — cautela en macro",             source:"Bloomberg" },
       ];
- 
+
       // Fetch ETH balances from Etherscan (opcional — si falla retorna "—")
       const ethKey = env.ETHERSCAN_API_KEY || "";
       const fetchEthBal = async (addr) => {
@@ -595,7 +595,7 @@ export default {
           return eth > 999 ? `${(eth/1000).toFixed(1)}K ETH` : `${eth.toFixed(2)} ETH`;
         } catch { return "—"; }
       };
- 
+
       // Fetch RSS news (opcional)
       const fetchNews = async () => {
         try {
@@ -615,7 +615,7 @@ export default {
           return items;
         } catch { return []; }
       };
- 
+
       try {
         const [newsResult, ...ethResults] = await Promise.allSettled([
           fetchNews(),
@@ -635,7 +635,7 @@ export default {
         return Response.json({ ok: false, error: String(err) }, { status: 502, headers: cors });
       }
     }
- 
+
     // ── Proxy: DeGate DEX on-chain (Ethereum ZK-Rollup, sin API key) ─────────
     // El backend interno (v1-mainnet-backend.degate.com) bloquea IPs de Cloudflare
     // y retorna HTML en vez de JSON → crash "Unexpected token '<'".
@@ -643,16 +643,16 @@ export default {
     // Endpoints:
     //   Primario  → https://v1-mainnet-backend.degate.com  (puede bloquear CF)
     //   Fallback  → https://api.degate.com                 (API REST pública)
- 
+
     // Helper: fetch DeGate con parseo seguro — nunca explota con HTML
     async function fetchDeGateSafe(primaryUrl, fallbackUrl, opts = {}) {
       const headers = { Accept: "application/json", "User-Agent": "Mozilla/5.0 PSYCHOMETRIKS/2.0", ...opts.headers };
       const timeout = opts.timeout ?? 8000;
- 
+
       // Intenta primero el endpoint primario
       const urls = fallbackUrl ? [primaryUrl, fallbackUrl] : [primaryUrl];
       let lastErr = "unknown";
- 
+
       for (const targetUrl of urls) {
         try {
           const resp = await fetch(targetUrl, { headers, signal: AbortSignal.timeout(timeout) });
@@ -675,10 +675,10 @@ export default {
       }
       return { ok: false, error: lastErr };
     }
- 
+
     const DEGATE_PRIMARY  = "https://v1-mainnet-backend.degate.com";
     const DEGATE_FALLBACK = "https://api.degate.com";
- 
+
     if (path === "/api/proxy/degate/tickers") {
       const result = await fetchDeGateSafe(
         `${DEGATE_PRIMARY}/order-book-api/pairs?limit=100`,
@@ -694,7 +694,7 @@ export default {
         headers: { "Cache-Control": "public, max-age=30", ...corsHeaders(origin) },
       });
     }
- 
+
     if (path === "/api/proxy/degate/depth") {
       const baseTokenId  = url.searchParams.get("base_token_id")  ?? "1";
       const quoteTokenId = url.searchParams.get("quote_token_id") ?? "0";
@@ -715,7 +715,7 @@ export default {
         headers: { "Cache-Control": "public, max-age=8", ...corsHeaders(origin) }
       });
     }
- 
+
     if (path === "/api/proxy/degate/trades") {
       const baseTokenId  = url.searchParams.get("base_token_id")  ?? "1";
       const quoteTokenId = url.searchParams.get("quote_token_id") ?? "0";
@@ -737,7 +737,7 @@ export default {
         headers: { "Cache-Control": "public, max-age=10", ...corsHeaders(origin) },
       });
     }
- 
+
     // ── Proxy: Fear & Greed Index (alternative.me) ───────────────────────────
     if (path === "/api/proxy/fear-greed") {
       const limit = url.searchParams.get("limit") ?? "7";
@@ -756,7 +756,7 @@ export default {
         return Response.json({ error: "Fear&Greed error", detail: String(err) }, { status: 502, headers: corsHeaders(origin) });
       }
     }
- 
+
     // ── Proxy: OKX Funding Rate (instId específico) ──────────────────────────
     if (path === "/api/proxy/okx/funding") {
       const instId = url.searchParams.get("instId") ?? "BTC-USDT-SWAP";
@@ -775,7 +775,7 @@ export default {
         return Response.json({ error: "OKX funding error", detail: String(err) }, { status: 502, headers: corsHeaders(origin) });
       }
     }
- 
+
     // ── Proxy: OKX Long/Short Ratio ──────────────────────────────────────────
     if (path === "/api/proxy/okx/ls-ratio") {
       const ccy    = url.searchParams.get("ccy")    ?? "BTC";
@@ -796,7 +796,7 @@ export default {
         return Response.json({ error: "OKX L/S ratio error", detail: String(err) }, { status: 502, headers: corsHeaders(origin) });
       }
     }
- 
+
     // ── Proxy: OKX Funding Rates (multi-par para Funding Dashboard) ──────────
     if (path === "/api/proxy/okx/funding-rates") {
       const PAIRS = [
@@ -835,7 +835,7 @@ export default {
         return Response.json({ error: "OKX funding-rates error", detail: String(err) }, { status: 502, headers: corsHeaders(origin) });
       }
     }
- 
+
     // ── Proxy: FRED Federal Reserve Economic Data ────────────────────────────
     if (path === "/api/proxy/fred/series") {
       const seriesId = url.searchParams.get("id") ?? "FEDFUNDS";
@@ -863,7 +863,7 @@ export default {
         return Response.json({ ok: false, error: "FRED error", detail: String(err), observations: [] }, { status: 502, headers: corsHeaders(origin) });
       }
     }
- 
+
     // ── Proxy: DeGate Pumps (24h top movers) ─────────────────────────────────
     if (path === "/api/proxy/degate/pumps") {
       const result = await fetchDeGateSafe(
@@ -876,7 +876,7 @@ export default {
       }
       // Extraer top movers por cambio 24h
       const pairs = result.data?.data ?? result.data?.list ?? [];
-      const pumps: Record<string, { h24: number; vol: number }> = {};
+      const pumps = {};
       for (const p of pairs) {
         const base = (p.baseTokenSymbol ?? p.symbol ?? "").split("-")[0];
         if (!base) continue;
@@ -890,20 +890,20 @@ export default {
         headers: { "Cache-Control": "public, max-age=120", ...corsHeaders(origin) }
       });
     }
- 
+
     // ── Proxy: resto de /api/* → Railway con firma HMAC ──────────────────────
     if (path.startsWith("/api/")) {
       const target    = API_SERVER + path + url.search;
       const proxyReq  = await buildSignedRequest(target, request, env);
       return fetch(proxyReq);
     }
- 
+
     // ── Assets estáticos y SPA fallback ──────────────────────────────────────
     const assetRes = await env.ASSETS.fetch(request);
     const fetchedReq = assetRes.status === 404
       ? await env.ASSETS.fetch(new Request(new URL("/index.html", url).toString(), request))
       : assetRes;
- 
+
     // ── CSP y Security Headers en respuestas HTML ────────────────────────────
     // El build de Vite usa <script type="module" src="..."> sin inline scripts,
     // por lo que podemos usar script-src 'self' sin 'unsafe-inline'.
