@@ -791,22 +791,38 @@ export default function SignalsRealtime() {
   useEffect(() => { const i = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(i); }, []);
 
   // Binance WebSocket
+  // Binance WebSocket
   useEffect(() => {
-    const streams = WS_PAIRS.map(p => `${p.symbol.toLowerCase()}@ticker`).join("/");
-    const ws = new WebSocket(`wss://stream.binance.com:9443/stream?streams=${streams}`);
-    wsRef.current = ws;
-    ws.onmessage = (e) => {
-      try {
-        const msg = JSON.parse(e.data) as { data: { s: string; c: string; P: string; h: string; l: string; v: string } };
-        const d = msg.data;
-        const pair = WS_PAIRS.find(p => p.symbol === d.s);
-        if (!pair) return;
-        const price = parseFloat(d.c); const change = parseFloat(d.P);
-        setTickers(prev => { const next = new Map(prev); next.set(d.s, { symbol: d.s, label: pair.label, price, change, high: parseFloat(d.h), low: parseFloat(d.l), volume: parseFloat(d.v), icon: pair.icon, color: pair.color }); return next; });
-        setHistories(prev => { const next = new Map(prev); next.set(d.s, [...(prev.get(d.s) ?? []), price].slice(-40)); return next; });
-      } catch {}
+    let ws: WebSocket | null = null;
+    let retryTimeout: ReturnType<typeof setTimeout> | null = null;
+    let destroyed = false;
+
+    const connect = () => {
+      if (destroyed) return;
+      const streams = WS_PAIRS.map(p => `${p.symbol.toLowerCase()}@ticker`).join("/");
+      ws = new WebSocket(`wss://stream.binance.com:9443/stream?streams=${streams}`);
+      wsRef.current = ws;
+      ws.onclose = () => { if (!destroyed) retryTimeout = setTimeout(connect, 5000); };
+      ws.onerror = () => ws?.close();
+      ws.onmessage = (e) => {
+        try {
+          const msg = JSON.parse(e.data) as { data: { s: string; c: string; P: string; h: string; l: string; v: string } };
+          const d = msg.data;
+          const pair = WS_PAIRS.find(p => p.symbol === d.s);
+          if (!pair) return;
+          const price = parseFloat(d.c); const change = parseFloat(d.P);
+          setTickers(prev => { const next = new Map(prev); next.set(d.s, { symbol: d.s, label: pair.label, price, change, high: parseFloat(d.h), low: parseFloat(d.l), volume: parseFloat(d.v), icon: pair.icon, color: pair.color }); return next; });
+          setHistories(prev => { const next = new Map(prev); next.set(d.s, [...(prev.get(d.s) ?? []), price].slice(-40)); return next; });
+        } catch {}
+      };
     };
-    return () => { ws.close(); };
+
+    connect();
+    return () => {
+      destroyed = true;
+      if (retryTimeout) clearTimeout(retryTimeout);
+      ws?.close();
+    };
   }, []);
 
   // Load data
