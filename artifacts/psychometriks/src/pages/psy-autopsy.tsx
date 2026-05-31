@@ -301,7 +301,8 @@ function PsyAutopsyApp() {
         throw new Error(err.error ?? `Error ${res.status}`);
       }
       setPhase("result");
-      const reader = res.body!.getReader();
+      if (!res.body) throw new Error("Stream no disponible");
+      const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
       let fullText = "";
