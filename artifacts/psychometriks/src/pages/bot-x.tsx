@@ -113,7 +113,8 @@ function BotXApp({ auth }: { auth: { user?: string; role?: string; plan?: string
         const err = await res.json().catch(() => ({})) as { error?: string };
         throw new Error(err.error ?? `Error ${res.status}`);
       }
-      const reader = res.body!.getReader();
+      if (!res.body) throw new Error("Stream BOT-X no disponible");
+      const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
       let fullText = "";
