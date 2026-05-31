@@ -105,15 +105,26 @@ function PriceRow({ coin }: { coin: typeof TOP50_ALTCOINS[0] }) {
   const [data, setData] = useState<{ price: number; change: number } | null>(null);
 
   useEffect(() => {
-    const ws = new WebSocket(`wss://stream.binance.com:9443/ws/${coin.symbol.toLowerCase()}@miniTicker`);
-    ws.onmessage = (e) => {
-      const d = JSON.parse(e.data);
-      const price = parseFloat(d.c);
-      const open = parseFloat(d.o);
-      const change = open > 0 ? ((price - open) / open) * 100 : 0;
-      setData({ price, change });
+    let ws: WebSocket | null = null;
+    let retryTimeout: ReturnType<typeof setTimeout> | null = null;
+    let destroyed = false;
+    const connect = () => {
+      if (destroyed) return;
+      ws = new WebSocket(`wss://stream.binance.com:9443/ws/${coin.symbol.toLowerCase()}@miniTicker`);
+      ws.onclose = () => { if (!destroyed) retryTimeout = setTimeout(connect, 5000); };
+      ws.onerror = () => ws?.close();
+      ws.onmessage = (e) => {
+        try {
+          const d = JSON.parse(e.data);
+          const price = parseFloat(d.c);
+          const open = parseFloat(d.o);
+          const change = open > 0 ? ((price - open) / open) * 100 : 0;
+          setData({ price, change });
+        } catch {}
+      };
     };
-    return () => ws.close();
+    connect();
+    return () => { destroyed = true; if (retryTimeout) clearTimeout(retryTimeout); ws?.close(); };
   }, [coin.symbol]);
 
   const p = data?.price ?? 0;
@@ -180,22 +191,33 @@ export default function AltcoinsSignals() {
   // ── Live prices for Scanner tab (Binance WebSocket) ───────────────────────
   useEffect(() => {
     const streams = TOP50_ALTCOINS.slice(0, 25).map(c => `${c.symbol.toLowerCase()}@miniTicker`).join("/");
-    const ws = new WebSocket(`wss://stream.binance.com:9443/stream?streams=${streams}`);
-    ws.onmessage = (e) => {
-      const msg = JSON.parse(e.data);
-      const d = msg.data;
-      if (!d) return;
-      const price = parseFloat(d.c);
-      const open  = parseFloat(d.o);
-      const change = open > 0 ? ((price - open) / open) * 100 : 0;
-      setPrices(prev => ({
-        ...prev,
-        [d.s]: { symbol: d.s, price, change, high: parseFloat(d.h), low: parseFloat(d.l), volume: parseFloat(d.q) },
-      }));
-      setLastUpdate(new Date());
+    let ws: WebSocket | null = null;
+    let retryTimeout: ReturnType<typeof setTimeout> | null = null;
+    let destroyed = false;
+    const connect = () => {
+      if (destroyed) return;
+      ws = new WebSocket(`wss://stream.binance.com:9443/stream?streams=${streams}`);
+      ws1Ref.current = ws;
+      ws.onclose = () => { if (!destroyed) retryTimeout = setTimeout(connect, 5000); };
+      ws.onerror = () => ws?.close();
+      ws.onmessage = (e) => {
+        try {
+          const msg = JSON.parse(e.data);
+          const d = msg.data;
+          if (!d) return;
+          const price = parseFloat(d.c);
+          const open  = parseFloat(d.o);
+          const change = open > 0 ? ((price - open) / open) * 100 : 0;
+          setPrices(prev => ({
+            ...prev,
+            [d.s]: { symbol: d.s, price, change, high: parseFloat(d.h), low: parseFloat(d.l), volume: parseFloat(d.q) },
+          }));
+          setLastUpdate(new Date());
+        } catch {}
+      };
     };
-    ws1Ref.current = ws;
-    return () => ws.close();
+    connect();
+    return () => { destroyed = true; if (retryTimeout) clearTimeout(retryTimeout); ws?.close(); };
   }, []);
 
   // ── Real signals from backend (RSI + MACD + Volume) ───────────────────────
@@ -205,9 +227,11 @@ export default function AltcoinsSignals() {
     try {
       const r = await fetch("/api/proxy/signals/altcoins");
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const ct = r.headers.get("content-type") ?? "";
+      if (!ct.includes("application/json")) throw new Error("Respuesta inválida del servidor");
       const data = await r.json() as { signals: WhaleSignal[]; cachedAt: string };
-      setSignals(data.signals);
-      setCachedAt(data.cachedAt);
+      setSignals(data.signals ?? []);
+      setCachedAt(data.cachedAt ?? "");
     } catch (err) {
       setSigError("Error al cargar señales: " + String(err));
     } finally {
