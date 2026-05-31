@@ -371,7 +371,8 @@ function PsyAutopsyApp() {
         body: JSON.stringify({ records: history.slice(0, 20) }),
       });
       if (!res.ok) throw new Error("Error generando reporte");
-      const reader = res.body!.getReader();
+      if (!res.body) throw new Error("Stream reporte no disponible");
+      const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
       while (true) {
