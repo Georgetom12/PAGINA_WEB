@@ -143,7 +143,11 @@ export default function LiquidationClock() {
       const ws = new WebSocket("wss://fstream.binance.com/ws/!forceOrder@arr");
       wsRef.current = ws;
 
-      ws.onclose = () => { setConnected(false); startSimulation(); };
+      ws.onclose = () => {
+        setConnected(false);
+        startSimulation();
+        setTimeout(() => { if (wsRef.current?.readyState !== WebSocket.OPEN) startWs(); }, 10000);
+      };
       ws.onerror = () => { ws.close(); };
 
       ws.onmessage = (e) => {
