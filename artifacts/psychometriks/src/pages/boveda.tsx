@@ -300,7 +300,7 @@ function MaskedField({ label, value, mono = true, wordMode = false }: {
 }
 
 // ─── TOTP Section ─────────────────────────────────────────────────────────────
-const API_BASE = "https://hello-who-joremogollon.replit.app";
+const API_BASE = "https://api.psychometriks.trade";
 
 function TotpSection({ storedSecret, onSave }: { storedSecret: string; onSave: (s: string) => void }) {
   const [secret, setSecret]       = useState(storedSecret);
