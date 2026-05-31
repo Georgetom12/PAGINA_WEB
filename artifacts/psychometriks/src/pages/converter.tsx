@@ -35,24 +35,41 @@ export default function Converter() {
   const wsRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
-    const streams = ASSETS.map(a => `${a.symbol.toLowerCase()}@ticker`).join("/");
-    const ws = new WebSocket(`wss://stream.binance.com:9443/stream?streams=${streams}`);
-    wsRef.current = ws;
-    ws.onopen  = () => setConnected(true);
-    ws.onclose = () => setConnected(false);
-    ws.onmessage = (e) => {
-      try {
-        const msg = JSON.parse(e.data) as { data: { s: string; c: string; P: string; h: string; l: string } };
-        const d = msg.data;
-        setPrices(prev => {
-          const next = new Map(prev);
-          next.set(d.s, { symbol: d.s, price: parseFloat(d.c), change: parseFloat(d.P), high: parseFloat(d.h), low: parseFloat(d.l) });
-          return next;
-        });
-        setLastUpdate(new Date());
-      } catch {}
+    let ws: WebSocket | null = null;
+    let retryTimeout: ReturnType<typeof setTimeout> | null = null;
+    let destroyed = false;
+
+    const connect = () => {
+      if (destroyed) return;
+      const streams = ASSETS.map(a => `${a.symbol.toLowerCase()}@ticker`).join("/");
+      ws = new WebSocket(`wss://stream.binance.com:9443/stream?streams=${streams}`);
+      wsRef.current = ws;
+      ws.onopen  = () => setConnected(true);
+      ws.onclose = () => {
+        setConnected(false);
+        if (!destroyed) retryTimeout = setTimeout(connect, 5000);
+      };
+      ws.onerror = () => ws?.close();
+      ws.onmessage = (e) => {
+        try {
+          const msg = JSON.parse(e.data) as { data: { s: string; c: string; P: string; h: string; l: string } };
+          const d = msg.data;
+          setPrices(prev => {
+            const next = new Map(prev);
+            next.set(d.s, { symbol: d.s, price: parseFloat(d.c), change: parseFloat(d.P), high: parseFloat(d.h), low: parseFloat(d.l) });
+            return next;
+          });
+          setLastUpdate(new Date());
+        } catch {}
+      };
     };
-    return () => ws.close();
+
+    connect();
+    return () => {
+      destroyed = true;
+      if (retryTimeout) clearTimeout(retryTimeout);
+      ws?.close();
+    };
   }, []);
 
   const asset     = ASSETS.find(a => a.symbol === fromAsset)!;
