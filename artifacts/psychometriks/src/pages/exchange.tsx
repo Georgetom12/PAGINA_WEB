@@ -644,7 +644,7 @@ function SubmitTokenForm({ onClose }: { onClose: () => void }) {
     setSubmitting(true);
     setSubmitError("");
     try {
-      const res = await fetch("https://hello-who-joremogollon.replit.app/api/exchange/submit", {
+      const res = await fetch("https://api.psychometriks.trade/api/exchange/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
