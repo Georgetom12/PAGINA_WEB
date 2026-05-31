@@ -316,7 +316,8 @@ export default function PsyBrain() {
       setShowThinking(false);
       setShowAnalysis(true);
 
-      const reader = resp.body!.getReader();
+      if (!resp.body) throw new Error("Stream PSY BRAIN no disponible");
+      const reader = resp.body.getReader();
       const decoder = new TextDecoder();
       let buf = "";
       let full = "";
