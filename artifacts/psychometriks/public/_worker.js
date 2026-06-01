@@ -1,3 +1,4 @@
+// PSY WORKER v3.1
 const SIGNALS_URL = "https://api.psychometriks.trade/api/altcoin-signals";
 const API_SERVER   = "https://api.psychometriks.trade";
 
