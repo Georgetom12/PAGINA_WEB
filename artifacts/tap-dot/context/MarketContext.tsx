@@ -10,7 +10,7 @@ import React, {
 // ─── Shared API base — same server as web platform ───────────────────────────
 const API_BASE = process.env.EXPO_PUBLIC_DOMAIN
   ? `https://${process.env.EXPO_PUBLIC_DOMAIN}`
-  : "";
+  : "https://api.psychometriks.trade";
 
 const SIGNALS_SERVER = "https://signalsbotpaginaweb-production.up.railway.app";
 

@@ -44,6 +44,7 @@ const TOOLS_LINKS = [
   { href: "/simulador",         icon: "💀", label: "Simulador de Liquidación", desc: "Cómo te destruye el mercado",        plan: "basico"    },
   { href: "/psy-autopsy",       icon: "🔬", label: "PSY Autopsy",              desc: "Post-mortem forense de tu trade",    plan: "basico"    },
   { href: "/psy-wallet",        icon: "💱", label: "PSY Wallet",               desc: "DEX Exchange · Swap · Auditoría",    plan: ""          },
+  { href: "/psy-launch",        icon: "🚀", label: "PSY Launch",               desc: "Token Factory · BNB Chain",          plan: ""          },
   { href: "/war-room",          icon: "⚔️",  label: "War Room",                desc: "Sala de análisis en vivo",           plan: "pro"       },
   { href: "/journal",           icon: "📓", label: "Diario de Trading",        desc: "IA analiza tus errores",             plan: "basico"    },
   { href: "/replay",            icon: "⏮",  label: "Market Replay",           desc: "Reviví momentos históricos",         plan: "educacion" },

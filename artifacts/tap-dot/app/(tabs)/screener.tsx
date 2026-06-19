@@ -20,7 +20,7 @@ import { CryptoAsset, useMarket } from "@/context/MarketContext";
 
 const API_BASE = process.env.EXPO_PUBLIC_DOMAIN
   ? `https://${process.env.EXPO_PUBLIC_DOMAIN}`
-  : "";
+  : "https://api.psychometriks.trade";
 
 type Filter = "TODOS" | "COMPRA" | "VENTA" | "FUERTES";
 

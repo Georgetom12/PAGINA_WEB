@@ -347,12 +347,7 @@ function formatBotStatusMessage(d: Awaited<ReturnType<typeof fetchBotStatusData>
 
 // ── GET /api/telegram/webhook-url ────────────────────────────────────────────
 router.get("/telegram/webhook-url", (_req: Request, res: Response) => {
-  const domains    = process.env["REPLIT_DOMAINS"] ?? "";
-  const domain     = domains.split(",")[0]?.trim();
-  if (!domain) {
-    res.json({ ok: false, hint: "Deploy the app first to get a public URL." });
-    return;
-  }
+  const domain = process.env["PUBLIC_API_DOMAIN"] ?? "api.psychometriks.trade";
   const webhookUrl = `https://${domain}/api/telegram/webhook`;
   res.json({ ok: true, webhookUrl });
 });

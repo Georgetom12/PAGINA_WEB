@@ -237,8 +237,20 @@ function IndicatorsContent() {
     <div className="min-h-screen bg-[#020408] text-white font-rajdhani">
       <SiteNav />
 
+      {/* Banner: Suite funcional en vivo */}
+      <div className="px-6 md:px-12 pt-24">
+        <a href={authUser ? "/indicators-pro" : "/pricing"}
+          className="flex flex-wrap items-center justify-between gap-3 border border-[#00e5ff33] bg-[#00e5ff0a] hover:bg-[#00e5ff14] transition-colors px-5 py-4 no-underline">
+          <div>
+            <div className="font-sharetech text-[9px] tracking-[0.3em] text-[#00e5ff] mb-1">⚡ NUEVO · SUITE INTERACTIVA EN VIVO</div>
+            <div className="font-space text-[13px] text-white">ADX · RSI · MACD · OI+Funding · CVD · Volume Profile · LiqMap · Master — con gráficos en tiempo real por par y timeframe.</div>
+          </div>
+          <span className="font-space text-[10px] font-bold tracking-[0.15em] uppercase text-[#00e5ff] whitespace-nowrap">ABRIR SUITE →</span>
+        </a>
+      </div>
+
       {/* Hero */}
-      <section className="pt-32 pb-16 px-6 md:px-12">
+      <section className="pt-10 pb-16 px-6 md:px-12">
         <div className="font-space text-[10px] text-[#00e5ff] tracking-[0.4em] uppercase mb-4 flex items-center gap-3">
           Suite de Indicadores <div className="h-px bg-[#1a2535] flex-1 max-w-[80px]" />
           <PulsingDot color="#00e676" />

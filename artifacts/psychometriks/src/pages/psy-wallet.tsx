@@ -669,7 +669,16 @@ function SwapPanel({ tokens, walletAddress, chainId: walletChainId, onConnect, a
   const gasGwei = gasGweiStr ? parseInt(gasGweiStr) / 1e9 : null;
   const gasUnits = quote?.gas ?? 150000;
   const gasCostEth = gasGwei ? gasGwei * gasUnits * 1e-9 : null;
-  const gasCostUsd = gasCostEth && fromPrice ? gasCostEth * (fromPrice > 0 ? fromPrice : 3000) : null;
+  // Fallback de precio si fromPrice no cargó: usar un valor aproximado por chain
+  // en vez de asumir siempre ETH (~3000), ya que el gas se paga en el token
+  // nativo de la chain activa (BNB, MATIC, etc. tienen precios muy distintos).
+  const NATIVE_PRICE_FALLBACK: Record<string, number> = {
+    "0x1": 3000, "0xa4b1": 3000, "0xa": 3000, "0x2105": 3000, // chains ETH-nativas
+    "0x38": 600,   // BNB
+    "0x89": 0.5,   // MATIC/POL
+  };
+  const nativeFallback = NATIVE_PRICE_FALLBACK[chainHex] ?? 3000;
+  const gasCostUsd = gasCostEth && fromPrice ? gasCostEth * (fromPrice > 0 ? fromPrice : nativeFallback) : null;
 
   // ── Execute real swap via 1inch ────────────────────────────────────────────
   async function executeSwap() {
@@ -1399,10 +1408,12 @@ function WithdrawPanel({
   const isNative = sendToken === (native?.symbol ?? "ETH");
   const tokenDef = erc20s.find(t => t.symbol === sendToken);
   const tokenPrice = tokens.find(t => t.symbol.toUpperCase() === sendToken.toUpperCase())?.current_price ?? 0;
-  const ethPrice = tokens.find(t => t.id === "ethereum")?.current_price ?? 3000;
+  // El gas siempre se paga en el token nativo de la chain activa (ETH, BNB, MATIC...),
+  // así que el precio usado para el cálculo debe ser el de ESE token, no siempre ETH.
+  const nativePrice = tokens.find(t => t.id === (native?.cgId ?? "ethereum"))?.current_price ?? 3000;
   const gasUnits = isNative ? 21000 : 65000;
   const gasCostEth = (20 * gasUnits) / 1e9; // 20 Gwei conservative
-  const gasCostUsd = gasCostEth * ethPrice;
+  const gasCostUsd = gasCostEth * nativePrice;
   const chainLabel = { "0x1":"Ethereum","0x38":"BSC","0xa4b1":"Arbitrum","0x89":"Polygon","0xa":"Optimism","0x2105":"Base" }[chainHex] ?? "Ethereum";
 
   async function executeSend() {

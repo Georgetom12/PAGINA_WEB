@@ -1,4 +1,5 @@
-# PSYCHOMETRIKS — Configuración para Netlify
+# PSYCHOMETRIKS — Configuración legacy para Netlify (respaldo)
+# Despliegue principal: Cloudflare Pages + _worker.js (ver carpeta public/)
 # Sitio: www.psychometriks.trade
 
 [build]
@@ -8,12 +9,10 @@
 [build.environment]
   NODE_VERSION = "20"
 
-# Proxy del API hacia el servidor en Replit
-# IMPORTANTE: Reemplaza REPLIT_API_URL con la URL de tu servidor desplegado en Replit
-# Ejemplo: https://tu-proyecto.replit.app
+# Proxy del API hacia el backend en Railway
 [[redirects]]
   from = "/api/*"
-  to = "https://REPLIT_API_URL/api/:splat"
+  to = "https://api.psychometriks.trade/api/:splat"
   status = 200
   force = true
 

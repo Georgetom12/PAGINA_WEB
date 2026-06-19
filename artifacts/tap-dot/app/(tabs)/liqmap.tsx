@@ -371,7 +371,7 @@ export default function LiqMap() {
 
   const API_BASE = (() => {
     const domain = process.env.EXPO_PUBLIC_DOMAIN;
-    return domain ? `https://${domain}` : "";
+    return domain ? `https://${domain}` : "https://api.psychometriks.trade";
   })();
 
   const fetchNews = async () => {

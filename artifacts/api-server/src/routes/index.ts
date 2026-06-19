@@ -36,6 +36,7 @@ import psyAlgoRouter from "./psy-algo";
 import scanRouter from "./scan";
 import buffettRouter from "./buffett";
 import psyLaunchRouter from "./psy-launch";
+import psyWhalesRouter from "./psy-whales";
 import altcoinSignalsRouter from "./altcoin-signals";
 import whitelistRouter from "./whitelist";
 
@@ -78,6 +79,7 @@ router.use(psyAlgoRouter);
 router.use(scanRouter);
 router.use(buffettRouter);
 router.use(psyLaunchRouter);
+router.use(psyWhalesRouter);
 router.use(altcoinSignalsRouter);
 router.use(whitelistRouter);
 

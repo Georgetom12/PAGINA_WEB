@@ -62,7 +62,7 @@ const CHALLENGE_TARGET = 20;
 
 const WEB_DOMAIN = process.env.EXPO_PUBLIC_DOMAIN
   ? `https://${process.env.EXPO_PUBLIC_DOMAIN}`
-  : "https://psychometriks.replit.app";
+  : "https://psychometriks.trade";
 
 const API_BASE = WEB_DOMAIN;
 

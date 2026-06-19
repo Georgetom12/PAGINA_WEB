@@ -1656,7 +1656,7 @@ function ApiKeysSection() {
       <div className="mt-6 border border-[#ffd70022] bg-[#0a0900] p-5">
         <div className="font-space text-[10px] text-[#ffd700] mb-1">⚠️ SEGURIDAD</div>
         <div className="font-space text-[11px] text-[#6a7040] leading-relaxed">
-          Claves tipo "ENV" están en Replit Secrets (más seguro). Claves tipo "DB" se guardan en PostgreSQL encriptadas. Para producción, preferí siempre Replit Secrets.
+          Claves tipo "ENV" están en variables de entorno de Railway (más seguro). Claves tipo "DB" se guardan en PostgreSQL encriptadas. Para producción, preferí siempre variables de entorno de Railway.
         </div>
       </div>
     </div>

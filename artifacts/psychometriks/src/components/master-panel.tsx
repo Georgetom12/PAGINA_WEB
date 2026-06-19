@@ -879,7 +879,7 @@ function TabConfig() {
           ● ACTIVO: {effectiveApi}
         </div>
         <div style={{ fontFamily: "'Share Tech Mono',monospace", fontSize: 9, color: "#4a6070", marginBottom: 8, lineHeight: 1.6 }}>
-          URL de Replit ya configurada por defecto. Solo cambiá si usás otro servidor.
+          URL de Railway ya configurada por defecto. Solo cambiá si usás otro servidor.
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <input

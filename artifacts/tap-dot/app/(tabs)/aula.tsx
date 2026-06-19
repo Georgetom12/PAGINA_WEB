@@ -85,7 +85,7 @@ const FREE_LEVELS = new Set(["N1", "N2"]);
 
 const AULA_DOMAIN = process.env.EXPO_PUBLIC_DOMAIN
   ? `https://${process.env.EXPO_PUBLIC_DOMAIN}/aula`
-  : "https://psychometriks.replit.app/aula";
+  : "https://psychometriks.trade/aula";
 
 function ModuleCard({ item, colors }: { item: Module; colors: any }) {
   const meta = LEVEL_META[item.level];

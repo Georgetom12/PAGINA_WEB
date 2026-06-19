@@ -33,7 +33,7 @@ app.use(
       if (
         !origin || // mismo origen / curl
         ALLOWED_ORIGINS.includes(origin) ||
-        /\.(replit\.dev|replit\.app|repl\.co|railway\.app)$/.test(origin) ||
+        /\.(railway\.app)$/.test(origin) ||
         /^https?:\/\/localhost(:\d+)?$/.test(origin) ||
         /^https?:\/\/127\.0\.0\.1(:\d+)?$/.test(origin)
       ) {
@@ -157,7 +157,7 @@ app.use((req: Request, res: Response, next: NextFunction): void => {
   if (!origin) { next(); return; } // mismo origen o llamada server-to-server
   const allowed =
     ALLOWED_ORIGINS.includes(origin) ||
-    /\.(replit\.dev|replit\.app|repl\.co|railway\.app)$/.test(origin) ||
+    /\.(railway\.app)$/.test(origin) ||
     /^https?:\/\/localhost(:\d+)?$/.test(origin) ||
     /^https?:\/\/127\.0\.0\.1(:\d+)?$/.test(origin);
   if (!allowed) {

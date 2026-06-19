@@ -1,0 +1,1542 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PSY DEPTH CALCULATOR — PSYCHOMETRIKS</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+
+  :root {
+    --bg: #070a0f;
+    --bg2: #0c1117;
+    --bg3: #111820;
+    --border: #1a2535;
+    --border2: #243040;
+    --cyan: #00d4ff;
+    --cyan2: #0099cc;
+    --gold: #f0a500;
+    --gold2: #c8880a;
+    --red: #ff3d5a;
+    --red2: #cc1a33;
+    --green: #00e676;
+    --green2: #00a855;
+    --purple: #9c6fff;
+    --purple2: #6a3fcf;
+    --orange: #ff6b35;
+    --text: #e8edf5;
+    --text2: #8fa3bf;
+    --text3: #4d6380;
+    --fib618: #f0a500;
+    --fib5: #9c6fff;
+    --fib382: #00d4ff;
+    --fib236: #00e676;
+    --fibext: #ff3d5a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Space Grotesk', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  .header {
+    border-bottom: 1px solid var(--border);
+    padding: 14px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg2);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo {
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    color: var(--cyan);
+    text-transform: uppercase;
+  }
+  .logo span { color: var(--text3); }
+  .badge {
+    background: linear-gradient(135deg, var(--cyan2), var(--purple2));
+    color: #fff;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    padding: 4px 10px;
+    border-radius: 3px;
+    text-transform: uppercase;
+  }
+
+  /* LAYOUT */
+  .app {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    min-height: calc(100vh - 53px);
+  }
+
+  /* PANEL IZQUIERDO */
+  .panel {
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    padding: 24px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .section-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2.5px;
+    color: var(--text3);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px;
+  }
+
+  /* INPUTS */
+  .input-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .input-row.single { grid-template-columns: 1fr; }
+
+  .field label {
+    display: block;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text3);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .field input, .field select {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: 5px;
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    padding: 9px 12px;
+    transition: border-color .2s;
+    outline: none;
+  }
+  .field input:focus, .field select:focus { border-color: var(--cyan2); }
+  .field select option { background: var(--bg2); }
+
+  /* TOGGLE CHIPS */
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-top: 4px;
+  }
+  .chip {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 5px 10px;
+    border-radius: 4px;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--text2);
+    cursor: pointer;
+    transition: all .2s;
+    text-transform: uppercase;
+  }
+  .chip:hover { border-color: var(--cyan2); color: var(--cyan); }
+  .chip.active {
+    border-color: var(--cyan);
+    background: rgba(0,212,255,.08);
+    color: var(--cyan);
+  }
+  .chip.active.gold { border-color: var(--gold); background: rgba(240,165,0,.08); color: var(--gold); }
+  .chip.active.red { border-color: var(--red); background: rgba(255,61,90,.08); color: var(--red); }
+  .chip.active.purple { border-color: var(--purple); background: rgba(156,111,255,.08); color: var(--purple); }
+  .chip.active.green { border-color: var(--green); background: rgba(0,230,118,.08); color: var(--green); }
+
+  /* CTA BUTTON */
+  .calc-btn {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--cyan2) 0%, var(--purple2) 100%);
+    color: #fff;
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: opacity .2s, transform .1s;
+  }
+  .calc-btn:hover { opacity: .9; }
+  .calc-btn:active { transform: scale(.99); }
+
+  /* MAIN CONTENT */
+  .main {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    overflow-y: auto;
+  }
+
+  /* SCORE BANNER */
+  .score-banner {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 24px;
+  }
+  .score-big {
+    font-family: 'Space Mono', monospace;
+    font-size: 52px;
+    font-weight: 700;
+    line-height: 1;
+    background: linear-gradient(135deg, var(--cyan), var(--purple));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .score-label { font-size: 11px; color: var(--text3); letter-spacing: 1px; margin-top: 4px; }
+  .score-meta { display: flex; flex-direction: column; gap: 8px; }
+  .score-meta-row { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .verdict-box {
+    text-align: right;
+  }
+  .verdict {
+    font-family: 'Space Mono', monospace;
+    font-size: 18px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+  .verdict.bearish { color: var(--red); }
+  .verdict.neutral { color: var(--gold); }
+  .verdict.bullish { color: var(--green); }
+  .verdict-sub { font-size: 11px; color: var(--text3); margin-top: 4px; }
+
+  /* ZONA ÓPTIMA HIGHLIGHT */
+  .optimal-zone {
+    background: linear-gradient(135deg, rgba(0,212,255,.04), rgba(156,111,255,.04));
+    border: 1px solid var(--cyan2);
+    border-radius: 8px;
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .optimal-zone::before {
+    content: 'ZONA ÓPTIMA DE ACUMULACIÓN';
+    position: absolute;
+    top: 8px; left: 16px;
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--cyan2);
+    font-weight: 700;
+  }
+  .oz-prices {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 10px;
+  }
+  .oz-price {
+    font-family: 'Space Mono', monospace;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--cyan);
+  }
+  .oz-sep { font-size: 20px; color: var(--text3); }
+  .oz-label { font-size: 11px; color: var(--text3); }
+  .oz-badge {
+    background: rgba(0,212,255,.12);
+    border: 1px solid var(--cyan2);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--cyan);
+    letter-spacing: 1px;
+  }
+
+  /* GRID 2 COLS */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+  /* FIBONACCI TABLE */
+  .fib-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .fib-table thead tr th {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    color: var(--text3);
+    text-transform: uppercase;
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  .fib-table tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background .15s;
+  }
+  .fib-table tbody tr:hover { background: rgba(255,255,255,.02); }
+  .fib-table tbody td {
+    padding: 11px 12px;
+    font-size: 13px;
+  }
+  .fib-level {
+    font-family: 'Space Mono', monospace;
+    font-weight: 700;
+    font-size: 12px;
+  }
+  .fib-price {
+    font-family: 'Space Mono', monospace;
+    font-weight: 700;
+  }
+  .fib-bar-wrap { width: 120px; }
+  .fib-bar {
+    height: 4px;
+    border-radius: 2px;
+    background: var(--border2);
+    overflow: hidden;
+  }
+  .fib-bar-fill { height: 100%; border-radius: 2px; }
+  .strength-badge {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 3px 7px;
+    border-radius: 3px;
+    text-transform: uppercase;
+  }
+
+  /* CANDLE PATTERNS */
+  .pattern-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  .pattern-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    position: relative;
+    overflow: hidden;
+  }
+  .pattern-card.detected {
+    border-color: var(--red);
+    background: rgba(255,61,90,.04);
+  }
+  .pattern-card.detected.bullish-p {
+    border-color: var(--green);
+    background: rgba(0,230,118,.04);
+  }
+  .pattern-name {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .pattern-type {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: var(--text3);
+    text-transform: uppercase;
+  }
+  .pattern-signal {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+  .pattern-signal.bearish { color: var(--red); }
+  .pattern-signal.bullish { color: var(--green); }
+  .pattern-signal.neutral { color: var(--gold); }
+  .pattern-icon {
+    position: absolute;
+    top: 8px; right: 8px;
+    font-size: 16px;
+  }
+
+  /* METRICS */
+  .metric-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .metric-label {
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .metric-value {
+    font-family: 'Space Mono', monospace;
+    font-size: 20px;
+    font-weight: 700;
+  }
+  .metric-sub { font-size: 11px; color: var(--text2); }
+
+  /* ZONES VISUAL */
+  .depth-visual {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .depth-chart {
+    position: relative;
+    height: 300px;
+    margin-top: 16px;
+  }
+  .price-axis {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 90px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .price-tick {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--text3);
+    text-align: right;
+    padding-right: 10px;
+  }
+  .chart-area {
+    position: absolute;
+    left: 90px;
+    right: 0;
+    top: 0;
+    bottom: 0;
+  }
+  .zone-band {
+    position: absolute;
+    left: 0; right: 0;
+    border-left: 3px solid;
+    display: flex;
+    align-items: center;
+    padding-left: 8px;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    transition: opacity .3s;
+  }
+  .zone-band:hover { opacity: 1 !important; }
+  .h-line {
+    position: absolute;
+    left: 0; right: 0;
+    height: 1px;
+    display: flex;
+    align-items: center;
+  }
+  .h-line-label {
+    background: var(--bg3);
+    padding: 2px 6px;
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    border-radius: 3px;
+  }
+
+  /* CONFLUENCE METER */
+  .confluence-meter {
+    margin-top: 8px;
+  }
+  .conf-bar-bg {
+    height: 8px;
+    background: var(--bg);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 6px;
+  }
+  .conf-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 1s ease;
+  }
+  .conf-zones {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .conf-zone-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .conf-zone-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text);
+    width: 80px;
+  }
+  .conf-zone-price {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--text2);
+    width: 110px;
+  }
+  .conf-stars {
+    display: flex;
+    gap: 3px;
+  }
+  .star { font-size: 10px; }
+  .star.lit { color: var(--gold); }
+  .star.dim { color: var(--border2); }
+  .conf-score {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    margin-left: auto;
+    padding: 2px 8px;
+    border-radius: 3px;
+  }
+
+  /* EXTENSION TARGETS */
+  .ext-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .ext-level { font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 700; color: var(--text3); }
+  .ext-price { font-family: 'Space Mono', monospace; font-size: 16px; font-weight: 700; }
+  .ext-pct { font-size: 11px; color: var(--text2); }
+  .ext-tag { font-family: 'Space Mono', monospace; font-size: 9px; letter-spacing: 1px; padding: 3px 8px; border-radius: 3px; }
+
+  /* EMPTY STATE */
+  .empty {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    text-align: center;
+    padding: 60px 40px;
+  }
+  .empty-icon {
+    font-size: 48px;
+    filter: grayscale(1);
+    opacity: .3;
+  }
+  .empty-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text3);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .empty-sub { font-size: 13px; color: var(--text3); max-width: 300px; line-height: 1.6; }
+
+  /* TOOLTIP LIKE TAGS */
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 3px 8px;
+    border-radius: 3px;
+    text-transform: uppercase;
+  }
+  .tag-cyan { background: rgba(0,212,255,.1); color: var(--cyan); border: 1px solid rgba(0,212,255,.2); }
+  .tag-gold { background: rgba(240,165,0,.1); color: var(--gold); border: 1px solid rgba(240,165,0,.2); }
+  .tag-red { background: rgba(255,61,90,.1); color: var(--red); border: 1px solid rgba(255,61,90,.2); }
+  .tag-green { background: rgba(0,230,118,.1); color: var(--green); border: 1px solid rgba(0,230,118,.2); }
+  .tag-purple { background: rgba(156,111,255,.1); color: var(--purple); border: 1px solid rgba(156,111,255,.2); }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  /* ANIM */
+  @keyframes fadeIn { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: translateY(0); } }
+  .anim { animation: fadeIn .4s ease forwards; }
+  .anim-d1 { animation-delay: .05s; opacity:0; }
+  .anim-d2 { animation-delay: .1s; opacity:0; }
+  .anim-d3 { animation-delay: .15s; opacity:0; }
+  .anim-d4 { animation-delay: .2s; opacity:0; }
+  .anim-d5 { animation-delay: .25s; opacity:0; }
+
+  /* CANDLE SVG mini */
+  .candle-svg { vertical-align: middle; }
+  
+  /* WYCKOFF PHASE */
+  .wyckoff-phases {
+    display: flex;
+    gap: 0;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-top: 8px;
+  }
+  .wyckoff-phase {
+    flex: 1;
+    padding: 8px 6px;
+    text-align: center;
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--text3);
+    text-transform: uppercase;
+    border-right: 1px solid var(--border);
+    transition: all .2s;
+  }
+  .wyckoff-phase:last-child { border-right: none; }
+  .wyckoff-phase.active { background: rgba(0,212,255,.08); color: var(--cyan); }
+  .wyckoff-phase.warn { background: rgba(255,61,90,.08); color: var(--red); }
+
+  /* RISK TABLE */
+  .risk-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-top: 8px;
+  }
+  .risk-cell {
+    background: var(--bg3);
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .risk-cell-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; }
+  .risk-cell-val { font-family: 'Space Mono', monospace; font-size: 15px; font-weight: 700; }
+
+  .divider { height: 1px; background: var(--border); }
+  
+  @media (max-width: 900px) {
+    .app { grid-template-columns: 1fr; }
+    .panel { border-right: none; border-bottom: 1px solid var(--border); }
+    .grid2 { grid-template-columns: 1fr; }
+    .grid3 { grid-template-columns: 1fr 1fr; }
+    .pattern-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <a href="https://psychometriks.trade" style="text-decoration:none;color:var(--text2);font-family:'Space Mono',monospace;font-size:11px;display:flex;align-items:center;gap:6px;margin-right:18px;">← PSYCHOMETRIKS</a>
+  <div class="logo">PSY<span>◆</span>DEPTH <span style="color:var(--text3);font-weight:400">CALCULATOR</span></div>
+  <div style="display:flex;gap:10px;align-items:center;">
+    <span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--text3);letter-spacing:1px;">PSYCHOMETRIKS v1.0</span>
+    <div class="badge">PRO</div>
+  </div>
+</div>
+
+<div class="app">
+
+  <!-- PANEL IZQUIERDO -->
+  <div class="panel">
+
+    <div>
+      <div class="section-title">Configuración de precio</div>
+      <div class="card">
+        <div class="input-row">
+          <div class="field">
+            <label>Símbolo</label>
+            <input id="symbol" type="text" value="BTC/USDT" placeholder="BTC/USDT">
+          </div>
+          <div class="field">
+            <label>Precio Actual</label>
+            <input id="currentPrice" type="number" value="104500" placeholder="104500">
+          </div>
+        </div>
+        <div class="input-row">
+          <div class="field">
+            <label>Máximo (ATH / Swing H)</label>
+            <input id="high" type="number" value="109500" placeholder="109500">
+          </div>
+          <div class="field">
+            <label>Mínimo (Swing L / Base)</label>
+            <input id="low" type="number" value="52000" placeholder="52000">
+          </div>
+        </div>
+        <div class="input-row">
+          <div class="field">
+            <label>Máximo Micro (HH local)</label>
+            <input id="microHigh" type="number" value="107800" placeholder="107800">
+          </div>
+          <div class="field">
+            <label>Mínimo Micro (LL local)</label>
+            <input id="microLow" type="number" value="98000" placeholder="98000">
+          </div>
+        </div>
+        <div class="input-row single">
+          <div class="field">
+            <label>Timeframe principal</label>
+            <select id="tf">
+              <option value="weekly">Weekly — Macro</option>
+              <option value="daily" selected>Daily — Macro/Meso</option>
+              <option value="4h">4H — Meso</option>
+              <option value="1h">1H — Micro</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-title">Contexto de mercado</div>
+      <div class="card">
+        <div class="input-row single">
+          <div class="field">
+            <label>Tendencia macro</label>
+            <select id="macroTrend">
+              <option value="bullish">Alcista 🟢</option>
+              <option value="bearish" selected>Bajista 🔴</option>
+              <option value="ranging">Rango / Acumulación ⚫</option>
+            </select>
+          </div>
+        </div>
+        <div class="input-row single">
+          <div class="field">
+            <label>Tendencia micro</label>
+            <select id="microTrend">
+              <option value="bullish">Alcista 🟢</option>
+              <option value="bearish">Bajista 🔴</option>
+              <option value="ranging" selected>Rango ⚫</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-bottom:8px;">
+          <div class="section-title" style="margin-top:10px;">Patrones detectados macro</div>
+          <div class="chips" id="macroPatterns">
+            <button class="chip active red" data-group="macro" data-val="hs" onclick="toggleChip(this)">H&S</button>
+            <button class="chip" data-group="macro" data-val="doubleTop" onclick="toggleChip(this)">Double Top</button>
+            <button class="chip" data-group="macro" data-val="bearFlag" onclick="toggleChip(this)">Bear Flag</button>
+            <button class="chip" data-group="macro" data-val="descTri" onclick="toggleChip(this)">Desc. Triangle</button>
+            <button class="chip" data-group="macro" data-val="rising" onclick="toggleChip(this)">Rising Wedge</button>
+            <button class="chip active red" data-group="macro" data-val="wyckoff_dist" onclick="toggleChip(this)">Wyckoff Dist.</button>
+            <button class="chip" data-group="macro" data-val="none" onclick="toggleChip(this)">Ninguno</button>
+          </div>
+        </div>
+        <div>
+          <div class="section-title" style="margin-top:4px;">Señales adicionales</div>
+          <div class="chips">
+            <button class="chip active gold" data-val="bearDiv" onclick="toggleChip(this)">Bear Div RSI</button>
+            <button class="chip" data-val="vol_decline" onclick="toggleChip(this)">Vol. Decline</button>
+            <button class="chip active gold" data-val="oi_drop" onclick="toggleChip(this)">OI Drop</button>
+            <button class="chip" data-val="funding_neg" onclick="toggleChip(this)">Funding Neg.</button>
+            <button class="chip" data-val="bos" onclick="toggleChip(this)">BOS Bajista</button>
+            <button class="chip active gold" data-val="ob_tap" onclick="toggleChip(this)">OB Tap</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-title">Herramientas activas</div>
+      <div class="card">
+        <div class="chips">
+          <button class="chip active" id="tool_fib" onclick="toggleTool(this)">Fibonacci</button>
+          <button class="chip active" id="tool_ext" onclick="toggleTool(this)">Fib Extensions</button>
+          <button class="chip active" id="tool_wyck" onclick="toggleTool(this)">Wyckoff</button>
+          <button class="chip active" id="tool_vp" onclick="toggleTool(this)">Vol. Profile</button>
+          <button class="chip active" id="tool_candles" onclick="toggleTool(this)">Candle Patterns</button>
+          <button class="chip active" id="tool_smc" onclick="toggleTool(this)">SMC Zones</button>
+          <button class="chip active" id="tool_ema" onclick="toggleTool(this)">EMA Confluence</button>
+          <button class="chip" id="tool_elwave" onclick="toggleTool(this)">Elliott Wave</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="input-row">
+      <div class="field">
+        <label>Capital ($)</label>
+        <input id="capital" type="number" value="10000" placeholder="10000">
+      </div>
+      <div class="field">
+        <label>Riesgo %</label>
+        <input id="risk" type="number" value="2" placeholder="2">
+      </div>
+    </div>
+
+    <button class="calc-btn" onclick="calculate()">⚡ CALCULAR PROFUNDIDAD</button>
+
+  </div>
+
+  <!-- MAIN PANEL -->
+  <div class="main" id="mainContent">
+    <div class="empty" id="emptyState">
+      <div class="empty-icon">🎯</div>
+      <div class="empty-title">PSY Depth Calculator</div>
+      <div class="empty-sub">Ingresa los niveles de precio y haz clic en <strong>Calcular Profundidad</strong> para ver todas las zonas de retroceso con confluencia multi-herramienta</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const FIB_LEVELS = [
+  { level: '0.0%',   ratio: 0,      color: '#8fa3bf', strength: 1, label: 'Origen',    nameKey: 'origin' },
+  { level: '14.6%',  ratio: 0.146,  color: '#4d6380', strength: 1, label: 'Menor',     nameKey: 'minor' },
+  { level: '23.6%',  ratio: 0.236,  color: '#00e676', strength: 2, label: 'Menor',     nameKey: 'minor' },
+  { level: '38.2%',  ratio: 0.382,  color: '#00d4ff', strength: 4, label: 'Fuerte',    nameKey: 'strong' },
+  { level: '50.0%',  ratio: 0.5,    color: '#9c6fff', strength: 4, label: 'Clave',     nameKey: 'key' },
+  { level: '61.8%',  ratio: 0.618,  color: '#f0a500', strength: 5, label: 'Golden ✦',  nameKey: 'golden' },
+  { level: '70.5%',  ratio: 0.705,  color: '#f0a500', strength: 3, label: 'Deep',      nameKey: 'deep' },
+  { level: '78.6%',  ratio: 0.786,  color: '#ff6b35', strength: 4, label: 'Fuerte',    nameKey: 'strong' },
+  { level: '88.6%',  ratio: 0.886,  color: '#ff3d5a', strength: 4, label: 'Extremo',   nameKey: 'extreme' },
+  { level: '100%',   ratio: 1.0,    color: '#ff3d5a', strength: 2, label: 'Full Ret.', nameKey: 'full' },
+];
+
+const FIB_EXT = [
+  { level: '127.2%', ratio: 1.272, color: '#9c6fff' },
+  { level: '138.2%', ratio: 1.382, color: '#9c6fff' },
+  { level: '161.8%', ratio: 1.618, color: '#f0a500' },
+  { level: '200.0%', ratio: 2.0,   color: '#ff3d5a' },
+  { level: '261.8%', ratio: 2.618, color: '#ff3d5a' },
+];
+
+const CANDLE_PATTERNS = [
+  { id:'bearEngulf',   name:'Bearish Engulfing', type:'bearish', tf:'1D-4H', desc:'Confirmación de techo local',    icon:'🕯️', pwr:5 },
+  { id:'eveningStar',  name:'Evening Star',      type:'bearish', tf:'1W-1D', desc:'Señal de distribución fuerte',   icon:'⭐', pwr:5 },
+  { id:'shootingStar', name:'Shooting Star',     type:'bearish', tf:'1D-4H', desc:'Rechazo de resistencia',         icon:'💫', pwr:4 },
+  { id:'hangingMan',   name:'Hanging Man',       type:'bearish', tf:'1D',    desc:'Señal de agotamiento alcista',   icon:'🪝', pwr:3 },
+  { id:'darkCloud',    name:'Dark Cloud Cover',  type:'bearish', tf:'1D-4H', desc:'Cierre bajo el 50% de vela ant', icon:'☁️', pwr:4 },
+  { id:'bearHarami',   name:'Bear Harami',       type:'bearish', tf:'4H',    desc:'Indecisión tras impulso',        icon:'📉', pwr:3 },
+  { id:'threeBlack',   name:'Three Black Crows', type:'bearish', tf:'1D-1W', desc:'Distribución institucional',     icon:'🐦', pwr:5 },
+  { id:'hammerBull',   name:'Hammer (Reversión)',type:'bullish', tf:'1D-4H', desc:'Soporte testado, compras entran',icon:'🔨', pwr:4 },
+  { id:'morningStar',  name:'Morning Star',      type:'bullish', tf:'1D-1W', desc:'Señal de acumulación fuerte',    icon:'🌟', pwr:5 },
+  { id:'bullEngulf',   name:'Bull Engulfing',    type:'bullish', tf:'1D-4H', desc:'Inversión en soporte clave',     icon:'🟢', pwr:5 },
+  { id:'pinbar',       name:'Pin Bar / Wick',    type:'neutral', tf:'Todos', desc:'Rechazo de precio clave',        icon:'📌', pwr:4 },
+  { id:'doji',         name:'Doji / Indecisión', type:'neutral', tf:'1D-4H', desc:'Confluencia con Fib = señal fuerte',icon:'➕', pwr:3 },
+];
+
+let activeTools = new Set(['tool_fib','tool_ext','tool_wyck','tool_vp','tool_candles','tool_smc','tool_ema']);
+let activePatterns = new Set(['hs','wyckoff_dist']);
+let activeSignals = new Set(['bearDiv','oi_drop','ob_tap']);
+
+function toggleChip(el) {
+  el.classList.toggle('active');
+  if (el.classList.contains('active')) {
+    const color = el.dataset.val && ['hs','doubleTop','bearFlag','descTri','rising','wyckoff_dist'].includes(el.dataset.val) ? 'red' : 'gold';
+    if (!el.classList.contains('red') && !el.classList.contains('gold')) el.classList.add(color);
+  } else {
+    el.classList.remove('red','gold','purple','green');
+  }
+}
+
+function toggleTool(el) {
+  el.classList.toggle('active');
+  const id = el.id;
+  if (el.classList.contains('active')) activeTools.add(id); else activeTools.delete(id);
+}
+
+function fmt(n) {
+  if (!n && n!==0) return '—';
+  if (n >= 1000) return '$' + n.toLocaleString('en', {maximumFractionDigits:0});
+  return '$' + n.toFixed(4);
+}
+
+function pct(a, ref) { return ((a - ref) / ref * 100).toFixed(2) + '%'; }
+function stars(n, max=5) {
+  let s = '';
+  for(let i=1;i<=max;i++) s += `<span class="star ${i<=n?'lit':'dim'}">★</span>`;
+  return s;
+}
+
+function calculate() {
+  const sym      = document.getElementById('symbol').value || 'COIN';
+  const current  = parseFloat(document.getElementById('currentPrice').value);
+  const high     = parseFloat(document.getElementById('high').value);
+  const low      = parseFloat(document.getElementById('low').value);
+  const mHigh    = parseFloat(document.getElementById('microHigh').value);
+  const mLow     = parseFloat(document.getElementById('microLow').value);
+  const capital  = parseFloat(document.getElementById('capital').value);
+  const riskPct  = parseFloat(document.getElementById('risk').value);
+  const macroT   = document.getElementById('macroTrend').value;
+  const microT   = document.getElementById('microTrend').value;
+  const tf       = document.getElementById('tf').value;
+
+  if (!high || !low || !current) return alert('Ingresa los precios requeridos');
+
+  const range = high - low;
+  const microRange = mHigh - mLow;
+  const retracedPct = ((high - current) / range * 100).toFixed(1);
+
+  // Calcular Fibs macro
+  const macroFibs = FIB_LEVELS.map(f => ({
+    ...f,
+    price: high - range * f.ratio
+  }));
+
+  // Calcular Fibs micro
+  const microFibs = FIB_LEVELS.map(f => ({
+    ...f,
+    price: mHigh - microRange * f.ratio
+  }));
+
+  // Extensiones (si rompe el low)
+  const extLevels = FIB_EXT.map(f => ({
+    ...f,
+    price: high - range * f.ratio
+  }));
+
+  // EMAs aproximadas (simplificado relativo al precio)
+  const emas = [
+    { name: 'EMA 20',  val: current * 0.972, color: '#00d4ff' },
+    { name: 'EMA 50',  val: current * 0.945, color: '#9c6fff' },
+    { name: 'EMA 100', val: current * 0.905, color: '#f0a500' },
+    { name: 'EMA 200', val: current * 0.838, color: '#ff3d5a' },
+    { name: 'EMA 800', val: current * 0.71,  color: '#ff6b35' },
+  ];
+
+  // Wyckoff zones
+  const wyckZones = {
+    utad: high * 1.02,
+    resistance: high,
+    midBox: (high + low) / 2,
+    support: low * 1.05,
+    spring: low * 0.96
+  };
+
+  // Confluence scoring por zona Fib
+  function confScore(fibPrice) {
+    let score = 0;
+    let reasons = [];
+
+    // Cercanía a EMA
+    emas.forEach(e => {
+      if (Math.abs(fibPrice - e.val) / fibPrice < 0.025) { score += 2; reasons.push(e.name); }
+    });
+
+    // Overlap con micro fib
+    microFibs.forEach(mf => {
+      if (Math.abs(fibPrice - mf.price) / fibPrice < 0.02) { score += 2; reasons.push('Micro Fib ' + mf.level); }
+    });
+
+    // Wyckoff support zone
+    if (Math.abs(fibPrice - wyckZones.midBox) / fibPrice < 0.03) { score += 2; reasons.push('Wyckoff Mid'); }
+    if (Math.abs(fibPrice - wyckZones.support) / fibPrice < 0.03) { score += 3; reasons.push('Wyckoff Support'); }
+    if (Math.abs(fibPrice - wyckZones.spring) / fibPrice < 0.03) { score += 2; reasons.push('Wyckoff Spring'); }
+
+    return { score: Math.min(score, 10), reasons };
+  }
+
+  // Detectar zona óptima (Fib 0.618 macro + micro + EMA confluence)
+  const golden = macroFibs.find(f => f.ratio === 0.618);
+  const zone786 = macroFibs.find(f => f.ratio === 0.786);
+  const optimalLow  = Math.min(golden.price, zone786.price);
+  const optimalHigh = Math.max(golden.price, zone786.price);
+
+  // Determinar bearish score global
+  let bearScore = 50;
+  if (macroT === 'bearish') bearScore += 20;
+  if (macroT === 'bullish') bearScore -= 15;
+  const patternsActive = document.querySelectorAll('#macroPatterns .chip.active').length;
+  bearScore += patternsActive * 6;
+  const sigActive = document.querySelectorAll('.chips .chip.active').length - patternsActive;
+  bearScore += sigActive * 4;
+  if (microT === 'bullish') bearScore -= 8;
+  bearScore = Math.min(Math.max(bearScore, 0), 100);
+
+  const verdict = bearScore >= 65 ? 'BEARISH' : bearScore >= 40 ? 'NEUTRAL' : 'BULLISH';
+  const verdictClass = verdict === 'BEARISH' ? 'bearish' : verdict === 'NEUTRAL' ? 'neutral' : 'bullish';
+
+  // Risk calc
+  const riskAmt = capital * riskPct / 100;
+
+  // Calcular SL relativo al capital y riesgo
+  const sl = optimalLow * 0.97;
+  const slPct = ((optimalHigh - sl) / optimalHigh * 100).toFixed(2);
+  const posSize = (riskAmt / (optimalHigh - sl)).toFixed(6);
+  const posValue = (posSize * optimalHigh).toFixed(2);
+
+  // Render
+  const mc = document.getElementById('mainContent');
+  document.getElementById('emptyState').style.display = 'none';
+  mc.innerHTML = '';
+
+  // --- SCORE BANNER ---
+  const banner = document.createElement('div');
+  banner.className = 'score-banner anim anim-d1';
+  banner.innerHTML = `
+    <div>
+      <div class="score-big">${bearScore}</div>
+      <div class="score-label">BEAR CONFLUENCE SCORE</div>
+    </div>
+    <div class="score-meta">
+      <div class="score-meta-row"><span class="dot" style="background:var(--red)"></span><span style="font-size:12px;color:var(--text2)">Macro: <strong style="color:var(--text)">${macroT.toUpperCase()}</strong></span></div>
+      <div class="score-meta-row"><span class="dot" style="background:var(--cyan)"></span><span style="font-size:12px;color:var(--text2)">Micro: <strong style="color:var(--text)">${microT.toUpperCase()}</strong></span></div>
+      <div class="score-meta-row"><span class="dot" style="background:var(--gold)"></span><span style="font-size:12px;color:var(--text2)">TF: <strong style="color:var(--text)">${tf.toUpperCase()}</strong></span></div>
+      <div class="score-meta-row"><span class="dot" style="background:var(--purple)"></span><span style="font-size:12px;color:var(--text2)">Retroceso actual: <strong style="color:var(--text)">${retracedPct}%</strong></span></div>
+    </div>
+    <div class="verdict-box">
+      <div class="verdict ${verdictClass}">${verdict}</div>
+      <div class="verdict-sub">${sym.toUpperCase()} · ${fmt(current)}</div>
+      <div style="margin-top:8px;">
+        <span class="tag tag-${bearScore>=65?'red':bearScore>=40?'gold':'green'}">${bearScore>=65?'⚠ ALTA PRESIÓN BAJISTA':bearScore>=40?'◈ ZONA NEUTRAL':'✓ SESGO ALCISTA'}</span>
+      </div>
+    </div>
+  `;
+  mc.appendChild(banner);
+
+  // --- ZONA ÓPTIMA ---
+  const ozDiv = document.createElement('div');
+  ozDiv.className = 'optimal-zone anim anim-d2';
+  ozDiv.innerHTML = `
+    <div>
+      <div class="oz-prices">
+        <div>
+          <div class="oz-label">PISO ÓPTIMO</div>
+          <div class="oz-price">${fmt(optimalLow)}</div>
+        </div>
+        <div class="oz-sep">—</div>
+        <div>
+          <div class="oz-label">TECHO ÓPTIMO</div>
+          <div class="oz-price">${fmt(optimalHigh)}</div>
+        </div>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;">
+        <span class="tag tag-gold">Fib 0.618–0.786</span>
+        <span class="tag tag-purple">Golden Pocket</span>
+        <span class="tag tag-cyan">Entrada óptima de largo</span>
+      </div>
+    </div>
+    <div class="oz-badge">CONF ${confScore(golden.price).score + 2}/10</div>
+  `;
+  mc.appendChild(ozDiv);
+
+  // --- GRID FIBONACCI MACRO ---
+  if (activeTools.has('tool_fib')) {
+    const fibSection = document.createElement('div');
+    fibSection.className = 'card anim anim-d2';
+    fibSection.innerHTML = `<div class="section-title" style="margin-bottom:14px;">📐 Fibonacci Macro — ${fmt(high)} → ${fmt(low)}</div>`;
+    
+    const tbl = document.createElement('table');
+    tbl.className = 'fib-table';
+    tbl.innerHTML = `<thead><tr>
+      <th>Nivel</th><th>Precio</th><th>% desde ATH</th><th>Confluencia</th><th>Fuerza</th><th>Tipo</th>
+    </tr></thead>`;
+    const tbody = document.createElement('tbody');
+    
+    macroFibs.forEach(f => {
+      const cs = confScore(f.price);
+      const fromHigh = ((high - f.price) / high * 100).toFixed(1);
+      const barW = Math.round(f.strength / 5 * 100);
+      const isOptimal = (f.ratio >= 0.618 && f.ratio <= 0.786);
+      const tr = document.createElement('tr');
+      if (isOptimal) tr.style.background = 'rgba(240,165,0,.05)';
+      tr.innerHTML = `
+        <td><span class="fib-level" style="color:${f.color}">${f.level}</span></td>
+        <td><span class="fib-price" style="color:${f.color}">${fmt(f.price)}</span></td>
+        <td style="font-family:'Space Mono',monospace;font-size:12px;color:var(--text2)">-${fromHigh}%</td>
+        <td>
+          <div class="conf-bar-bg" style="width:80px;display:inline-block;margin-right:6px;">
+            <div class="conf-bar-fill" style="width:${cs.score*10}%;background:${cs.score>=6?'var(--gold)':cs.score>=3?'var(--cyan)':'var(--text3)'}"></div>
+          </div>
+          <span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--text2)">${cs.score}/10</span>
+        </td>
+        <td>${stars(f.strength)}</td>
+        <td>
+          ${isOptimal ? '<span class="strength-badge" style="background:rgba(240,165,0,.12);color:var(--gold);border:1px solid rgba(240,165,0,.3)">ÓPTIMO</span>' : 
+            f.strength >= 4 ? '<span class="strength-badge" style="background:rgba(0,212,255,.1);color:var(--cyan);border:1px solid rgba(0,212,255,.2)">FUERTE</span>' :
+            '<span class="strength-badge" style="background:var(--bg);color:var(--text3);border:1px solid var(--border)">MENOR</span>'}
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+    tbl.appendChild(tbody);
+    fibSection.appendChild(tbl);
+    mc.appendChild(fibSection);
+  }
+
+  // --- ZONA VISUAL / DEPTH CHART ---
+  const vizDiv = document.createElement('div');
+  vizDiv.className = 'depth-visual anim anim-d3';
+  vizDiv.innerHTML = `<div class="section-title">📊 Mapa de Profundidad — Zonas Clave</div>`;
+  
+  const canvas = document.createElement('canvas');
+  canvas.id = 'depthCanvas';
+  canvas.width = 0; canvas.height = 320;
+  canvas.style.cssText = 'width:100%;height:320px;border-radius:6px;display:block;';
+  vizDiv.appendChild(canvas);
+  mc.appendChild(vizDiv);
+
+  // --- GRID MICRO FIB + EMA ---
+  const g2 = document.createElement('div');
+  g2.className = 'grid2 anim anim-d3';
+  
+  // Micro Fib
+  const mfCard = document.createElement('div');
+  mfCard.className = 'card';
+  mfCard.innerHTML = `<div class="section-title" style="margin-bottom:12px;">🔬 Fibonacci Micro — ${fmt(mHigh)} → ${fmt(mLow)}</div>`;
+  microFibs.filter(f=>[0.382,0.5,0.618,0.786].includes(f.ratio)).forEach(f => {
+    mfCard.innerHTML += `
+      <div class="ext-card" style="margin-bottom:6px;">
+        <span class="ext-level" style="color:${f.color}">${f.level}</span>
+        <span class="ext-price" style="color:${f.color}">${fmt(f.price)}</span>
+        <span class="ext-pct">${pct(f.price, current)}</span>
+      </div>
+    `;
+  });
+  g2.appendChild(mfCard);
+
+  // EMA
+  if (activeTools.has('tool_ema')) {
+    const emaCard = document.createElement('div');
+    emaCard.className = 'card';
+    emaCard.innerHTML = `<div class="section-title" style="margin-bottom:12px;">📈 EMA Confluence — Soportes dinámicos</div>`;
+    emas.forEach(e => {
+      const diff = ((e.val - current) / current * 100).toFixed(2);
+      const below = e.val < current;
+      emaCard.innerHTML += `
+        <div class="ext-card" style="margin-bottom:6px;border-color:${e.color}22;">
+          <span class="ext-level" style="color:${e.color}">${e.name}</span>
+          <span class="ext-price" style="color:${e.color}">${fmt(e.val)}</span>
+          <span class="ext-tag" style="background:${below?'rgba(0,230,118,.1)':'rgba(255,61,90,.1)'};color:${below?'var(--green)':'var(--red)'}">
+            ${below ? '▼' : '▲'} ${Math.abs(diff)}%
+          </span>
+        </div>
+      `;
+    });
+    g2.appendChild(emaCard);
+  }
+  mc.appendChild(g2);
+
+  // --- PATRONES DE VELAS ---
+  if (activeTools.has('tool_candles')) {
+    const cpDiv = document.createElement('div');
+    cpDiv.className = 'card anim anim-d4';
+    cpDiv.innerHTML = `<div class="section-title" style="margin-bottom:14px;">🕯️ Patrones de Velas — Señales de Retroceso e Impulso</div>
+    <div class="pattern-grid" id="patternGrid"></div>
+    <div style="margin-top:12px;padding:10px 12px;background:var(--bg);border-radius:6px;border:1px solid var(--border);">
+      <div style="font-size:11px;color:var(--text3);line-height:1.8;">
+        <strong style="color:var(--text2)">Interpretación clave:</strong> Los patrones BEARISH en zona de resistencia confirman la continuación bajista.
+        Los patrones BULLISH en zona Fib 0.618–0.786 = señal de entrada óptima. Confluencia de 3+ patrones en misma zona = alta probabilidad.
+      </div>
+    </div>`;
+    mc.appendChild(cpDiv);
+
+    const pg = cpDiv.querySelector('#patternGrid');
+    CANDLE_PATTERNS.forEach(p => {
+      const pc = document.createElement('div');
+      pc.className = `pattern-card ${p.type === 'bearish' ? 'detected' : p.type === 'bullish' ? 'detected bullish-p' : ''}`;
+      pc.innerHTML = `
+        <span class="pattern-icon">${p.icon}</span>
+        <div class="pattern-name">${p.name}</div>
+        <div class="pattern-type">${p.tf}</div>
+        <div class="pattern-signal ${p.type}">${p.type.toUpperCase()}</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:4px;">${p.desc}</div>
+        <div style="margin-top:6px;">${stars(p.pwr)}</div>
+      `;
+      pg.appendChild(pc);
+    });
+  }
+
+  // --- EXTENSIONES BAJISTAS ---
+  if (activeTools.has('tool_ext')) {
+    const extDiv = document.createElement('div');
+    extDiv.className = 'card anim anim-d4';
+    extDiv.innerHTML = `<div class="section-title" style="margin-bottom:14px;">💀 Extensiones Bajistas — Si rompe ${fmt(low)}</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:12px;">Si el precio pierde el mínimo estructural, estos son los objetivos por extensión Fibonacci:</div>`;
+    extLevels.forEach(e => {
+      const fromCurrent = ((e.price - current) / current * 100).toFixed(1);
+      extDiv.innerHTML += `
+        <div class="ext-card" style="margin-bottom:6px;border-color:${e.color}33;">
+          <span class="ext-level" style="color:${e.color}">${e.level}</span>
+          <span class="ext-price" style="color:${e.color}">${fmt(e.price)}</span>
+          <span class="ext-pct" style="color:var(--text3)">${fromCurrent}% desde precio actual</span>
+          <span class="ext-tag" style="background:rgba(255,61,90,.1);color:var(--red);border:1px solid rgba(255,61,90,.2)">TARGET</span>
+        </div>
+      `;
+    });
+    mc.appendChild(extDiv);
+  }
+
+  // --- WYCKOFF + SMC ---
+  const g2b = document.createElement('div');
+  g2b.className = 'grid2 anim anim-d4';
+
+  if (activeTools.has('tool_wyck')) {
+    const wyckCard = document.createElement('div');
+    wyckCard.className = 'card';
+    wyckCard.innerHTML = `<div class="section-title" style="margin-bottom:12px;">🐋 Wyckoff — Fases de Distribución</div>
+    <div class="wyckoff-phases">
+      <div class="wyckoff-phase ${macroT==='bearish'?'warn':''}">DIST</div>
+      <div class="wyckoff-phase ${macroT==='bearish'?'warn':''}">AUTOM</div>
+      <div class="wyckoff-phase active">TEST</div>
+      <div class="wyckoff-phase">SOW</div>
+      <div class="wyckoff-phase">LPSY</div>
+    </div>
+    <div style="margin-top:14px;display:flex;flex-direction:column;gap:8px;">
+      ${[
+        { name:'UTAD',        val: wyckZones.utad,       col:'var(--red)',   tag:'PELIGRO' },
+        { name:'Resistencia', val: wyckZones.resistance,  col:'var(--red)',   tag:'TECHO' },
+        { name:'Mid Box',     val: wyckZones.midBox,      col:'var(--gold)',  tag:'CLAVE' },
+        { name:'Soporte',     val: wyckZones.support,     col:'var(--cyan)',  tag:'COMPRA' },
+        { name:'Spring',      val: wyckZones.spring,      col:'var(--green)', tag:'TRAMPA' }
+      ].map(z => `
+        <div class="ext-card" style="border-color:${z.col}33;">
+          <span class="ext-level" style="color:${z.col}">${z.name}</span>
+          <span class="ext-price" style="color:${z.col}">${fmt(z.val)}</span>
+          <span class="ext-tag" style="background:${z.col}18;color:${z.col};border:1px solid ${z.col}33;">${z.tag}</span>
+        </div>
+      `).join('')}
+    </div>`;
+    g2b.appendChild(wyckCard);
+  }
+
+  if (activeTools.has('tool_smc')) {
+    const smcCard = document.createElement('div');
+    smcCard.className = 'card';
+    const ob1 = current * 0.968;
+    const ob2 = current * 0.921;
+    const fvg1h = current * 0.988;
+    const fvg1l = current * 0.979;
+    const liq = low * 1.03;
+    smcCard.innerHTML = `<div class="section-title" style="margin-bottom:12px;">🧲 SMC Zones — Order Blocks & Liquidez</div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div class="ext-card" style="border-color:rgba(255,61,90,.4);flex-direction:column;align-items:flex-start;gap:4px;">
+        <div style="display:flex;width:100%;justify-content:space-between;align-items:center;">
+          <span class="tag tag-red">OB Bajista</span>
+          <span style="font-family:'Space Mono',monospace;font-size:11px;color:var(--red);">${fmt(ob1)}</span>
+        </div>
+        <span style="font-size:11px;color:var(--text3)">Order Block — rechazo esperado aquí</span>
+      </div>
+      <div class="ext-card" style="border-color:rgba(0,230,118,.4);flex-direction:column;align-items:flex-start;gap:4px;">
+        <div style="display:flex;width:100%;justify-content:space-between;align-items:center;">
+          <span class="tag tag-green">OB Alcista</span>
+          <span style="font-family:'Space Mono',monospace;font-size:11px;color:var(--green);">${fmt(ob2)}</span>
+        </div>
+        <span style="font-size:11px;color:var(--text3)">Zone de demanda institucional</span>
+      </div>
+      <div class="ext-card" style="border-color:rgba(156,111,255,.4);flex-direction:column;align-items:flex-start;gap:4px;">
+        <div style="display:flex;width:100%;justify-content:space-between;align-items:center;">
+          <span class="tag tag-purple">FVG</span>
+          <span style="font-family:'Space Mono',monospace;font-size:11px;color:var(--purple);">${fmt(fvg1l)} – ${fmt(fvg1h)}</span>
+        </div>
+        <span style="font-size:11px;color:var(--text3)">Fair Value Gap — imán de precio</span>
+      </div>
+      <div class="ext-card" style="border-color:rgba(240,165,0,.4);flex-direction:column;align-items:flex-start;gap:4px;">
+        <div style="display:flex;width:100%;justify-content:space-between;align-items:center;">
+          <span class="tag tag-gold">SSL</span>
+          <span style="font-family:'Space Mono',monospace;font-size:11px;color:var(--gold);">${fmt(liq)}</span>
+        </div>
+        <span style="font-size:11px;color:var(--text3)">Liquidez bajo mínimos — zona Spring</span>
+      </div>
+    </div>`;
+    g2b.appendChild(smcCard);
+  }
+  mc.appendChild(g2b);
+
+  // --- CONFLUENCIA SCORE ---
+  const confDiv = document.createElement('div');
+  confDiv.className = 'card anim anim-d5';
+  confDiv.innerHTML = `<div class="section-title" style="margin-bottom:14px;">🎯 Confluence Score — Zonas de Mayor Probabilidad</div>
+  <div class="conf-zones">
+    ${macroFibs.filter(f=>[0.382,0.5,0.618,0.786,0.886].includes(f.ratio)).map(f => {
+      const cs = confScore(f.price);
+      const color = cs.score>=7?'var(--gold)':cs.score>=4?'var(--cyan)':'var(--text3)';
+      return `
+        <div class="conf-zone-row">
+          <span class="conf-zone-label" style="color:${f.color}">Fib ${f.level}</span>
+          <span class="conf-zone-price">${fmt(f.price)}</span>
+          <div class="conf-stars">${stars(Math.round(cs.score/2))}</div>
+          <span class="conf-score" style="background:${color}18;color:${color};border:1px solid ${color}33">${cs.score}/10</span>
+        </div>
+        <div class="conf-bar-bg"><div class="conf-bar-fill" style="width:${cs.score*10}%;background:${color};"></div></div>
+      `;
+    }).join('')}
+  </div>`;
+  mc.appendChild(confDiv);
+
+  // --- RISK MANAGEMENT ---
+  const riskDiv = document.createElement('div');
+  riskDiv.className = 'card anim anim-d5';
+  riskDiv.innerHTML = `<div class="section-title" style="margin-bottom:10px;">💰 Risk Management — Entrada en Zona Óptima</div>
+  <div class="risk-grid">
+    <div class="risk-cell">
+      <div class="risk-cell-label">Entrada</div>
+      <div class="risk-cell-val" style="color:var(--cyan)">${fmt((optimalLow+optimalHigh)/2)}</div>
+      <div style="font-size:11px;color:var(--text3)">Punto medio Fib</div>
+    </div>
+    <div class="risk-cell">
+      <div class="risk-cell-label">Stop Loss</div>
+      <div class="risk-cell-val" style="color:var(--red)">${fmt(sl)}</div>
+      <div style="font-size:11px;color:var(--text3)">-${slPct}% del entry</div>
+    </div>
+    <div class="risk-cell">
+      <div class="risk-cell-label">Riesgo $</div>
+      <div class="risk-cell-val" style="color:var(--gold)">$${riskAmt.toFixed(2)}</div>
+      <div style="font-size:11px;color:var(--text3)">${riskPct}% del capital</div>
+    </div>
+    <div class="risk-cell">
+      <div class="risk-cell-label">TP1 (38.2%)</div>
+      <div class="risk-cell-val" style="color:var(--green)">${fmt(macroFibs.find(f=>f.ratio===0.382).price)}</div>
+      <div style="font-size:11px;color:var(--text3)">Primera toma</div>
+    </div>
+    <div class="risk-cell">
+      <div class="risk-cell-label">TP2 (23.6%)</div>
+      <div class="risk-cell-val" style="color:var(--green)">${fmt(macroFibs.find(f=>f.ratio===0.236).price)}</div>
+      <div style="font-size:11px;color:var(--text3)">Toma parcial</div>
+    </div>
+    <div class="risk-cell">
+      <div class="risk-cell-label">TP3 (ATH)</div>
+      <div class="risk-cell-val" style="color:var(--green)">${fmt(high)}</div>
+      <div style="font-size:11px;color:var(--text3)">Máximo swing</div>
+    </div>
+  </div>`;
+  mc.appendChild(riskDiv);
+
+  // Render canvas después de que está en el DOM
+  setTimeout(() => renderCanvas(macroFibs, microFibs, emas, wyckZones, current, high, low, mHigh, mLow, extLevels), 100);
+}
+
+function renderCanvas(macroFibs, microFibs, emas, wyckZones, current, high, low, mHigh, mLow, extLevels) {
+  const canvas = document.getElementById('depthCanvas');
+  if (!canvas) return;
+  const W = canvas.offsetWidth;
+  const H = 320;
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = '#0c1117';
+  ctx.fillRect(0,0,W,H);
+
+  const PAD_L = 90, PAD_R = 130, PAD_T = 20, PAD_B = 20;
+  const chartW = W - PAD_L - PAD_R;
+  const chartH = H - PAD_T - PAD_B;
+
+  // Price range — extender a spring
+  const pMin = Math.min(extLevels[extLevels.length-1].price, low * 0.93);
+  const pMax = high * 1.025;
+  const pRange = pMax - pMin;
+
+  function yForPrice(p) {
+    return PAD_T + chartH - ((p - pMin) / pRange * chartH);
+  }
+  function drawHLine(price, color, label, dashed=false, lw=1) {
+    const y = yForPrice(price);
+    if (y < PAD_T - 5 || y > H - PAD_B + 5) return;
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = lw;
+    if (dashed) ctx.setLineDash([4,5]);
+    ctx.beginPath(); ctx.moveTo(PAD_L, y); ctx.lineTo(W - PAD_R, y); ctx.stroke();
+    ctx.setLineDash([]);
+    // Label left
+    ctx.font = '700 9px Space Mono, monospace';
+    ctx.fillStyle = color;
+    ctx.textAlign = 'right';
+    ctx.fillText(label, PAD_L - 6, y + 3.5);
+    // Price right
+    ctx.textAlign = 'left';
+    ctx.font = '700 9px Space Mono, monospace';
+    ctx.fillStyle = color;
+    ctx.fillText(price >= 1000 ? '$'+Math.round(price).toLocaleString('en') : '$'+price.toFixed(4), W - PAD_R + 6, y + 3.5);
+    ctx.restore();
+  }
+  function fillBand(p1, p2, color, alpha=0.07) {
+    const y1 = yForPrice(Math.max(p1,p2));
+    const y2 = yForPrice(Math.min(p1,p2));
+    ctx.save();
+    ctx.fillStyle = color;
+    ctx.globalAlpha = alpha;
+    ctx.fillRect(PAD_L, y1, chartW, y2-y1);
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  }
+
+  // Grid horizontal
+  ctx.strokeStyle = '#1a2535';
+  ctx.lineWidth = 1;
+  for(let i=0;i<=8;i++){
+    const y = PAD_T + chartH * i/8;
+    ctx.beginPath(); ctx.moveTo(PAD_L,y); ctx.lineTo(W-PAD_R,y); ctx.stroke();
+  }
+  // Vertical grid
+  for(let i=0;i<=6;i++){
+    const x = PAD_L + chartW * i/6;
+    ctx.beginPath(); ctx.moveTo(x,PAD_T); ctx.lineTo(x,H-PAD_B); ctx.stroke();
+  }
+
+  // EMA ribbons
+  emas.forEach(e => fillBand(e.val*1.005, e.val*0.995, e.color, 0.05));
+  emas.forEach(e => drawHLine(e.val, e.color+'99', e.name, true));
+
+  // Wyckoff band
+  fillBand(wyckZones.support, wyckZones.spring, '#00d4ff', 0.05);
+
+  // Fib extension bands
+  extLevels.forEach(e => drawHLine(e.price, e.color+'88', e.level, true));
+
+  // Fib macro bands
+  macroFibs.filter(f=>[0.382,0.5,0.618,0.786,0.886].includes(f.ratio)).forEach(f => {
+    fillBand(f.price * 1.008, f.price * 0.992, f.color, 0.1);
+    drawHLine(f.price, f.color, f.level, false, 1.5);
+  });
+
+  // OPTIMAL ZONE shading
+  const og = macroFibs.find(f=>f.ratio===0.618).price;
+  const o786 = macroFibs.find(f=>f.ratio===0.786).price;
+  fillBand(Math.max(og,o786)*1.005, Math.min(og,o786)*0.995, '#f0a500', 0.18);
+
+  // Current price
+  drawHLine(current, '#ffffff', 'PRECIO', false, 2);
+
+  // ATH
+  drawHLine(high, '#ff3d5a', 'ATH/H', false, 2);
+
+  // Low
+  drawHLine(low, '#00e676', 'LOW', false, 1.5);
+
+  // LABEL OPTIMAL ZONE
+  const yOg  = yForPrice(og);
+  const yO786 = yForPrice(o786);
+  const midY  = (yOg + yO786) / 2;
+  ctx.save();
+  ctx.font = '700 10px Space Mono, monospace';
+  ctx.fillStyle = '#f0a500';
+  ctx.textAlign = 'center';
+  ctx.fillText('◆ ZONA ÓPTIMA', PAD_L + chartW/2, midY + 4);
+  ctx.restore();
+
+  // Simple price bars (illustrative)
+  const barCount = 35;
+  const barW = (chartW - 20) / barCount - 2;
+  ctx.save();
+  for(let i=0;i<barCount;i++){
+    const t = i/barCount;
+    // Simulate a descend then bounce near optimal
+    let bHigh, bLow, bOpen, bClose;
+    if(t < 0.7){
+      const progress = t/0.7;
+      bHigh  = high - range * progress * 0.65 + (Math.random()-0.3)*range*0.04;
+      bLow   = bHigh - range*0.04 - Math.random()*range*0.02;
+      bOpen  = bHigh - Math.random()*(bHigh-bLow)*0.4;
+      bClose = bLow  + Math.random()*(bHigh-bLow)*0.3;
+    } else {
+      const progress = (t-0.7)/0.3;
+      bLow   = og - (og-o786)*0.5 - Math.random()*range*0.02;
+      bHigh  = bLow + range*0.03 + Math.random()*range*0.03;
+      bOpen  = bHigh - Math.random()*(bHigh-bLow)*0.5;
+      bClose = bOpen + (bHigh-bLow)*progress*0.4;
+    }
+    const x = PAD_L + 10 + i*(barW+2);
+    const bullish = bClose >= bOpen;
+    const col = bullish ? '#00e67688' : '#ff3d5a88';
+    const colSolid = bullish ? '#00e676' : '#ff3d5a';
+    // wick
+    ctx.strokeStyle = colSolid;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x+barW/2, yForPrice(bHigh));
+    ctx.lineTo(x+barW/2, yForPrice(bLow));
+    ctx.stroke();
+    // body
+    ctx.fillStyle = col;
+    const bodyTop = yForPrice(Math.max(bOpen,bClose));
+    const bodyH   = Math.max(1, Math.abs(yForPrice(bOpen)-yForPrice(bClose)));
+    ctx.fillRect(x, bodyTop, barW, bodyH);
+  }
+  ctx.restore();
+
+  // Legend
+  ctx.save();
+  ctx.font = '700 8px Space Mono, monospace';
+  const legend = [
+    { color:'#f0a500', label:'Fib 0.618/0.786' },
+    { color:'#00d4ff', label:'Fib 0.382' },
+    { color:'#9c6fff', label:'Fib 0.500' },
+    { color:'#ff3d5a', label:'Fib 0.886+' },
+  ];
+  legend.forEach((l,i) => {
+    ctx.fillStyle = l.color;
+    ctx.fillRect(PAD_L+12 + i*110, H-PAD_B-14, 8, 8);
+    ctx.fillStyle = '#8fa3bf';
+    ctx.fillText(l.label, PAD_L+24 + i*110, H-PAD_B-7);
+  });
+  ctx.restore();
+}
+
+// Init state
+document.querySelectorAll('.chip.active').forEach(c => {
+  c.classList.add(c.classList.contains('red') ? 'red' : '');
+});
+</script>
+</body>
+</html>

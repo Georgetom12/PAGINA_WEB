@@ -95,9 +95,13 @@ const UNIVERSE = [
   "OKTA","MDB","GTLB","BILL","HIMS","CELH","ARM","RDDT","DUOL",
   "BABA","JD","PDD","BIDU","NIO","XPEV","LI","TCOM","EDU","VIPS",
   "TME","IQ","BILI","NTES","FUTU","MNSO","KANZHUN","SEA","GRAB",
+  // ADRs chinos adicionales (la API en plan free no soporta tickers nativos
+  // de Shanghai/Shenzhen/Hong Kong como 0700.HK — solo ADRs en NYSE/NASDAQ)
+  "WB","ZTO","YUMC","TAL","ATHM","QFIN","BEKE","MOMO","VNET","LX",
+  "HTHT","CCEP","ACM","HUYA","DOYU","RLX","EH","YY","UTSI","CD",
   // Extra S&P500
   "DXCM","VRSK","ANSS","CPRT","ODFL","FAST","CTVA","IQV","DLTR","BIIB",
-  "INTU","TTWO","POOL","MPWR","PAYC","PWR","KEYS","TROW","IDXX","VRSK",
+  "INTU","TTWO","POOL","MPWR","PAYC","PWR","KEYS","TROW",
 ];
 
 // ─── FMP Base ─────────────────────────────────────────────────────────────────
