@@ -79,7 +79,7 @@ export default function MasterTab({ triggerLoad }: Props) {
     const n=prices.length;
     const pts=prices.map((p,i)=>`${i/(n-1)*(W-2)+1},${H-2-(p-mn)/rng*(H-4)}`).join(' ');
     const fillPts=`1,${H-2} `+pts+` ${W-1},${H-2}`;
-    const col=color==='#00e6b4'?'rgba(0,230,180,':'color==='#e05555'?'rgba(224,85,85,':'rgba(230,180,0,';
+    const col=color==='#00e6b4'?'rgba(0,230,180,':color==='#e05555'?'rgba(224,85,85,':'rgba(230,180,0,';
     return(
       <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} style={{display:'block',marginTop:6}}>
         <polygon points={fillPts} fill={col+'0.12)'} />
