@@ -155,7 +155,7 @@ export default function ADXTab({ sym, tf, triggerLoad }: Props) {
           <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:7, marginBottom:10 }}>
             {[
               { l:'ADX', v: result?.adx.toFixed(1) || '—', c: result?.color },
-              { l:'DI+ vs DI−', v: result ? `${result.dip > result.dim ? 'DI+ ' : 'DI− '}${Math.abs(result.dip - result.dim).toFixed(1)}`, c: result && result.dip > result.dim ? PSY.teal : PSY.red },
+              { l:'DI+ vs DI−', v: result ? `${result.dip > result.dim ? 'DI+ ' : 'DI− '}${Math.abs(result.dip - result.dim).toFixed(1)}` : '—', c: result && result.dip > result.dim ? PSY.teal : PSY.red },
               { l:'MOMENTUM', v: result && result.adxArr.length > 4 ? (result.adx > result.adxArr[result.adxArr.length-5] ? '↑ Acelerando' : '↓ Frenando') : '—', c: PSY.txt2 },
               { l:'CRUCES', v: result ? `${result.crosses} detectados` : '—', c: PSY.txt2 },
             ].map(({ l, v, c }) => (
