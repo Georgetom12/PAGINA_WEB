@@ -1560,6 +1560,218 @@ function ShortSqueezeTab() {
   );
 }
 
+// ─── DEGATE TAB ───────────────────────────────────────────────────────────────
+interface DeGateTicker {
+  symbol: string;
+  base: string;
+  quote: string;
+  last: string;
+  high: string;
+  low: string;
+  vol: string;
+  quoteVol: string;
+  change: string;
+  priceChange: string;
+}
+
+function DeGateTab() {
+  const [tickers, setTickers] = useState<DeGateTicker[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError]     = useState("");
+  const [search, setSearch]   = useState("");
+  const [sortBy, setSortBy]   = useState<"vol"|"change"|"price">("vol");
+  const [filter, setFilter]   = useState<"all"|"gainers"|"losers">("all");
+
+  const load = async () => {
+    try {
+      // DeGate public API — no key required
+      const r = await fetch("https://v1-mainnet-backend.degate.com/order-book-api/ticker/24hr");
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      const data = await r.json();
+      // data is array of ticker objects
+      const arr = Array.isArray(data) ? data : (data.data ?? data.result ?? []);
+      setTickers(arr);
+      setError("");
+    } catch(e) {
+      setError("Error conectando con DeGate API");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); const id = setInterval(load, 30_000); return () => clearInterval(id); }, []);
+
+  const processed = tickers
+    .map(t => {
+      const chg = parseFloat(t.change ?? t.priceChange ?? "0") * 100;
+      const vol  = parseFloat(t.quoteVol ?? t.vol ?? "0");
+      const last = parseFloat(t.last ?? "0");
+      const symbol = t.symbol ?? `${t.base}/${t.quote}`;
+      return { ...t, chg, vol, last, displaySymbol: symbol };
+    })
+    .filter(t => {
+      if (t.last <= 0 || t.vol <= 0) return false;
+      if (search && !t.displaySymbol.toLowerCase().includes(search.toLowerCase())) return false;
+      if (filter === "gainers" && t.chg <= 0) return false;
+      if (filter === "losers"  && t.chg >= 0) return false;
+      return true;
+    })
+    .sort((a,b) => {
+      if (sortBy === "vol")    return b.vol - a.vol;
+      if (sortBy === "change") return b.chg - a.chg;
+      return b.last - a.last;
+    });
+
+  return (
+    <div>
+      {/* Header */}
+      <div className="mb-5">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-2 h-2 rounded-full bg-[#00e5ff] animate-pulse" />
+          <span className="font-sharetech text-[8px] text-[#00e5ff] tracking-[0.15em]">DEGATE DEX — LIVE · Sin API key · Actualización 30s</span>
+          <button onClick={load} className="ml-auto font-sharetech text-[7px] px-3 py-1 border border-[#0d2030] text-[#7ab3c8] hover:border-[#00e5ff] hover:text-[#00e5ff] transition-all">↻</button>
+        </div>
+        <p className="font-space text-[9px] text-[#5a8898]">
+          DeGate es un DEX on-chain de alta velocidad en Ethereum con libro de órdenes descentralizado. API pública gratuita.
+        </p>
+      </div>
+
+      {/* Stats overview */}
+      {!loading && tickers.length > 0 && (() => {
+        const gainers = processed.filter(t => t.chg > 0).length;
+        const losers  = processed.filter(t => t.chg < 0).length;
+        const topVol  = processed[0];
+        const topGain = [...processed].sort((a,b) => b.chg - a.chg)[0];
+        const topLose = [...processed].sort((a,b) => a.chg - b.chg)[0];
+        return (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+            {[
+              { label: "TOTAL PARES",  value: tickers.length.toString(), color: "#7ab3c8" },
+              { label: "GANADORES",    value: gainers.toString(),         color: "#00e676" },
+              { label: "PERDEDORES",   value: losers.toString(),          color: "#ff4444" },
+              { label: "TOP VOLUMEN",  value: topVol?.displaySymbol ?? "─", color: "#ffd700" },
+            ].map(c => (
+              <div key={c.label} className="border border-[#0d2030] bg-[#040f18] p-3">
+                <div className="font-sharetech text-[6px] tracking-[0.1em] text-[#5a8898] mb-1">{c.label}</div>
+                <div className="font-bebas text-xl" style={{ color: c.color }}>{c.value}</div>
+              </div>
+            ))}
+          </div>
+        );
+      })()}
+
+      {/* Filters */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        <input
+          type="text"
+          placeholder="Buscar par…"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="font-sharetech text-[8px] bg-[#040f18] border border-[#0d2030] text-[#7ab3c8] px-3 py-1.5 outline-none w-36 placeholder:text-[#3a4a5a]"
+        />
+        {(["all","gainers","losers"] as const).map(f => (
+          <button key={f} onClick={() => setFilter(f)}
+            className="font-sharetech text-[7px] px-3 py-1.5 border transition-all"
+            style={{ borderColor: filter===f?"#00e5ff":"#0d2030", color: filter===f?"#00e5ff":"#7ab3c8", background: filter===f?"rgba(0,229,255,.08)":"transparent" }}>
+            {f==="all"?"TODOS":f==="gainers"?"📈 GANADORES":"📉 PERDEDORES"}
+          </button>
+        ))}
+        <div className="ml-auto flex gap-1">
+          {(["vol","change","price"] as const).map(s => (
+            <button key={s} onClick={() => setSortBy(s)}
+              className="font-sharetech text-[6px] px-2 py-1 border transition-all"
+              style={{ borderColor: sortBy===s?"#ffd700":"#0d2030", color: sortBy===s?"#ffd700":"#5a8898" }}>
+              {s==="vol"?"VOL":s==="change"?"CAMBIO":"PRECIO"}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Table */}
+      {loading ? (
+        <div className="p-12 text-center font-sharetech text-[9px] text-[#7ab3c8] animate-pulse tracking-[0.2em]">
+          CARGANDO DEGATE DEX…
+        </div>
+      ) : error ? (
+        <div className="p-8 text-center border border-[#ff444430] bg-[#ff444408]">
+          <div className="font-sharetech text-[9px] text-[#ff4444] mb-1">{error}</div>
+          <button onClick={load} className="font-sharetech text-[7px] text-[#7ab3c8] hover:text-white">Reintentar</button>
+        </div>
+      ) : processed.length === 0 ? (
+        <div className="p-8 text-center font-sharetech text-[9px] text-[#5a8898]">Sin pares con los filtros actuales</div>
+      ) : (
+        <div className="border border-[#0d2030]">
+          {/* Header row */}
+          <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1.5fr] gap-3 px-4 py-2.5 border-b border-[#0d2030] font-sharetech text-[6.5px] tracking-[0.08em] text-[#5a8898]">
+            <div>PAR</div>
+            <div className="text-right">PRECIO</div>
+            <div className="text-right">24H %</div>
+            <div className="text-right">HIGH/LOW</div>
+            <div className="text-right">VOLUMEN 24H</div>
+          </div>
+
+          <div className="divide-y divide-[#081520] max-h-[500px] overflow-y-auto">
+            {processed.slice(0, 100).map((t, i) => {
+              const chgColor = t.chg > 0 ? "#00e676" : t.chg < 0 ? "#ff4444" : "#7ab3c8";
+              const isHot    = Math.abs(t.chg) > 5;
+              return (
+                <div key={t.displaySymbol + i}
+                  className="grid grid-cols-[2fr_1fr_1fr_1fr_1.5fr] gap-3 px-4 py-2.5 hover:bg-[#060f1a] transition-colors items-center"
+                  style={{ background: isHot ? `${chgColor}06` : undefined }}>
+
+                  {/* Pair */}
+                  <div className="flex items-center gap-2">
+                    <div>
+                      <div className="font-bebas text-base leading-none text-white">
+                        {t.displaySymbol}
+                        {isHot && <span className="ml-1.5 font-sharetech text-[6px] text-[#ffd700]">🔥</span>}
+                      </div>
+                      <div className="font-sharetech text-[5.5px] text-[#5a8898]">DeGate · ETH</div>
+                    </div>
+                  </div>
+
+                  {/* Price */}
+                  <div className="text-right font-space text-[9px] text-white">
+                    ${t.last < 0.001 ? t.last.toFixed(8) : t.last < 1 ? t.last.toFixed(6) : t.last.toFixed(4)}
+                  </div>
+
+                  {/* Change */}
+                  <div className="text-right font-space text-[9px] font-bold" style={{ color: chgColor }}>
+                    {t.chg > 0 ? "+" : ""}{t.chg.toFixed(2)}%
+                  </div>
+
+                  {/* High/Low */}
+                  <div className="text-right">
+                    <div className="font-sharetech text-[6px] text-[#00e676]">
+                      H: {parseFloat(t.high ?? "0").toFixed(4)}
+                    </div>
+                    <div className="font-sharetech text-[6px] text-[#ff4444]">
+                      L: {parseFloat(t.low ?? "0").toFixed(4)}
+                    </div>
+                  </div>
+
+                  {/* Volume */}
+                  <div className="text-right">
+                    <div className="font-space text-[8px] text-[#7ab3c8]">
+                      {t.vol >= 1_000_000 ? `$${(t.vol/1_000_000).toFixed(2)}M`
+                        : t.vol >= 1_000 ? `$${(t.vol/1_000).toFixed(1)}K`
+                        : `$${t.vol.toFixed(0)}`}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      <div className="mt-4 font-sharetech text-[6px] text-[#3a4a5a] text-center">
+        DeGate DEX · API Pública Gratuita · Ethereum Mainnet · Solo informativo
+      </div>
+    </div>
+  );
+}
+
 // ─── GEM HUNTER TAB ───────────────────────────────────────────────────────────
 function GemHunterTab({isEliteUser}:{isEliteUser:boolean}) {
   const [gems, setGems] = useState<Gem[]>([]);
@@ -2204,7 +2416,7 @@ function OracleFeedsTab() {
               <div>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
                   <div style={{ fontSize: "0.55rem", color: "#22d4f5", letterSpacing: "0.15em" }}>● CRYPTO INTEL</div>
-                  <div style={{ fontSize: "0.48rem", color: "#3d6480" }}>{filterEntities([...(data?.etf ?? []), ...(data?.corporate ?? [])]).length} ENTIDADES</div>
+                  <div style={{ fontSize: "0.48rem", color: "#3d6480" }}>{filterEntities([...data.etf, ...data.corporate]).length} ENTIDADES</div>
                 </div>
                 <div style={{ fontSize: "0.45rem", color: "#3d6480", letterSpacing: "0.15em", marginBottom: 8, paddingBottom: 6, borderBottom: "1px solid #0d2030" }}>
                   — ETF / FONDOS INSTITUCIONALES —
@@ -2223,7 +2435,7 @@ function OracleFeedsTab() {
               <div>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
                   <div style={{ fontSize: "0.55rem", color: "#f0a020", letterSpacing: "0.15em" }}>● EQUITIES + ON-CHAIN</div>
-                  <div style={{ fontSize: "0.48rem", color: "#3d6480" }}>{filterEntities([...(data?.btcWallets ?? []), ...(data?.ethWallets ?? [])]).length} ENTIDADES</div>
+                  <div style={{ fontSize: "0.48rem", color: "#3d6480" }}>{filterEntities([...data.btcWallets, ...data.ethWallets]).length} ENTIDADES</div>
                 </div>
                 <div style={{ fontSize: "0.45rem", color: "#3d6480", letterSpacing: "0.15em", marginBottom: 8, paddingBottom: 6, borderBottom: "1px solid #0d2030" }}>
                   — WALLETS BTC ON-CHAIN IDENTIFICADAS —
@@ -2279,7 +2491,7 @@ function OracleFeedsTab() {
           {/* ─── ANALISTAS ─── */}
           {subTab === "analistas" && (
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-              {filterEntities([...(data?.analysts ?? [])]).map(e => (
+              {filterEntities([...data.analysts]).map(e => (
                 <div key={e.id} style={{ background: "#040f18", border: "1px solid #0d2030", borderLeft: `3px solid ${e.color}`, padding: "14px 16px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
                     <div style={{ width: 36, height: 36, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", background: `${e.color}15`, border: `1px solid ${e.color}40`, color: e.color, fontSize: "0.52rem", fontWeight: 700, flexShrink: 0, fontFamily: "'Syne', sans-serif" }}>{e.icon}</div>
@@ -2331,7 +2543,7 @@ function OracleFeedsTab() {
 
 // ─── MAIN CONTENT ─────────────────────────────────────────────────────────────
 function WhaleIntelContent() {
-  const [tab, setTab] = useState<"signals"|"feeds"|"copy"|"gems"|"exchanges"|"squeeze"|"twitter"|"oracle">("signals");
+  const [tab, setTab] = useState<"signals"|"feeds"|"copy"|"gems"|"exchanges"|"squeeze"|"twitter"|"oracle"|"degate">("signals");
   const auth = getAuth();
   const elite = isElite(auth);
 
@@ -2344,6 +2556,7 @@ function WhaleIntelContent() {
     {key:"gems",      label:"💎 GEM HUNTER",        icon:"💎", elite:true},
     {key:"exchanges", label:"📡 EXCHANGE SIGNALS",  icon:"📡"},
     {key:"squeeze",   label:"💥 SHORT SQUEEZE",     icon:"💥"},
+    {key:"degate",    label:"🔷 DEGATE",            icon:"🔷"},
   ] as const;
 
   return (
@@ -2383,6 +2596,7 @@ function WhaleIntelContent() {
         {tab === "gems"      && <GemHunterTab isEliteUser={elite} />}
         {tab === "exchanges" && <ExchangeSignalsTab />}
         {tab === "squeeze"   && <ShortSqueezeTab />}
+        {tab === "degate"    && <DeGateTab />}
 
       </div>
     </div>

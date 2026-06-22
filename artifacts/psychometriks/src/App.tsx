@@ -12,10 +12,6 @@ import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
 import Pricing from "@/pages/pricing";
 import Indicators from "@/pages/indicators";
-import IndicatorsPro from "@/pages/indicators-pro/IndicatorsPage";
-import BuffettScanner from "@/pages/buffett-scanner";
-import PsyLaunch from "@/pages/psy-launch";
-import WhaleTracker from "@/pages/whale-tracker";
 import Signals from "@/pages/signals";
 import SignalsRealtime from "@/pages/signals-realtime";
 import AltcoinsSignals from "@/pages/altcoins-signals";
@@ -69,6 +65,8 @@ import CommandCenter from "@/pages/command-center";
 import PsyBrain from "@/pages/psy-brain";
 import OracleFeeds from "@/pages/oracle-feeds";
 import AdminApis from "@/pages/admin-apis";
+import BuffettScanner from "@/pages/buffett-scanner";
+import WhaleTracker from "@/pages/whale-tracker";
 import ChatWidget from "@/components/chat-widget";
 import MasterPanel from "@/components/master-panel";
 import UpgradeWall from "@/components/upgrade-wall";
@@ -190,14 +188,12 @@ function Router() {
       <Route path="/market-hours"    component={() => <Guard plan="pro"><MarketHours /></Guard>} />
       <Route path="/psy-score"       component={() => <Guard plan="pro"><PsyScore /></Guard>} />
       <Route path="/war-room"        component={() => <Guard plan="pro"><WarRoom /></Guard>} />
-      <Route path="/indicators-pro"  component={() => <Guard plan="pro"><IndicatorsPro /></Guard>} />
-      <Route path="/buffett-scanner" component={() => <Guard plan="pro"><BuffettScanner /></Guard>} />
-      <Route path="/psy-launch"       component={PsyLaunch} />
-      <Route path="/whale-tracker"    component={() => <Guard plan="elite"><WhaleTracker /></Guard>} />
 
       {/* ── LIQMAP ELITE — requiere plan institucional/elite o superior ──── */}
       <Route path="/whale-alert"     component={() => <Guard plan="elite"><WhaleAlert /></Guard>} />
+      <Route path="/whale-tracker"   component={() => <Guard plan="elite"><WhaleTracker /></Guard>} />
       <Route path="/bolsa"           component={() => <Guard plan="elite"><BolsaValores /></Guard>} />
+      <Route path="/buffett-scanner" component={() => <Guard plan="elite"><BuffettScanner /></Guard>} />
       <Route path="/altcoins-signals" component={() => <Guard plan="elite"><AltcoinsSignals /></Guard>} />
       <Route path="/equities"        component={() => <Guard plan="elite"><Equities /></Guard>} />
       <Route path="/anti-rug"        component={() => <Guard plan="elite"><AntiRug /></Guard>} />

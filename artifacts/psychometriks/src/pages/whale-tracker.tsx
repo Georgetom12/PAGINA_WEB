@@ -1,400 +1,689 @@
 import React, { useState, useEffect, useCallback } from "react";
 import SiteNav from "@/components/site-nav";
 
-interface Wallet {
-  id: number; name: string; address: string; chain: string;
-  tags: string[]; note?: string; created_at: string;
-}
-interface RecentTx {
-  whale_name: string; wallet: string; chain: string;
-  direction: "in" | "out"; token: string; value: number;
-  time: string; hash: string;
-}
-interface NormalTx {
-  hash: string; from: string; to: string; value: string;
-  isError: string; timeStamp: string; functionName?: string;
-}
-interface Erc20Tx {
-  hash: string; from: string; to: string; value: string;
-  tokenName: string; tokenSymbol: string; tokenDecimal: string;
-  timeStamp: string; contractAddress: string;
-}
-interface Portfolio {
-  native_balance: number;
-  tokens: { name: string; symbol: string; address: string; balance: number }[];
+// ─── Wallets conocidas — LookOnChain + Ballenas + Trump Family ───────────────
+// Agrupadas por categoría para mejor UX
+const KNOWN_WALLETS = [
+
+  // ── LOOKONCHAIN SMART MONEY ──────────────────────────────────────────────
+  {
+    id: "whale-short-eth",
+    label: "Whale Short ETH",
+    alias: "0x1be4",
+    address: "0x1be45feF92C4E2538fEcd150757Ed62b7B3757D7",
+    chain: "ETH",
+    color: "#ff4444",
+    category: "lookonchain",
+    note: "Borrow ETH de Aave y vende en Binance — short institucional activo",
+    tags: ["SHORT", "AAVE", "BINANCE"],
+  },
+  {
+    id: "whale-hype",
+    label: "Whale HYPE",
+    alias: "0x6436",
+    address: "0x6436D88D376Ea7FbDe1AB5A8Db7151579Bc90103",
+    chain: "ETH",
+    color: "#e040fb",
+    category: "lookonchain",
+    note: "Retira millones de HYPE de exchanges — acumulación/staking masivo",
+    tags: ["HYPE", "STAKING"],
+  },
+  {
+    id: "pando-hacker",
+    label: "Pando Rings Hacker",
+    alias: "0x303D",
+    address: "0x303D0A175CeEC14DD7B3d4F60CABE6CEc06a3d9F",
+    chain: "ETH",
+    color: "#ff6d00",
+    category: "lookonchain",
+    note: "Trading ETH activo — compra dips y vende rallies",
+    tags: ["TRADER", "ETH"],
+  },
+  {
+    id: "leveraged-eth",
+    label: "Leveraged ETH Whale",
+    alias: "0xc70a",
+    address: "0xc70ad21c69cbf3631637f2796a42e94c42013810",
+    chain: "ETH",
+    color: "#ffd700",
+    category: "lookonchain",
+    note: "Compras apalancadas de ETH — alto riesgo / alto convicción",
+    tags: ["LONG", "APALANCADO", "ETH"],
+  },
+
+  // ── TRUMP FAMILY + WLFI ──────────────────────────────────────────────────
+  {
+    id: "trump-wallet",
+    label: "Donald Trump (linked)",
+    alias: "0x9484",
+    address: "0x94845333028b1204fbe14e1278fd4adde46b22ce",
+    chain: "ETH",
+    color: "#ff6b35",
+    category: "trump",
+    note: "Wallet vinculada por Arkham — holdings WLFI / TRUMP memecoin / ETH",
+    tags: ["TRUMP", "WLFI", "POLÍTICO"],
+  },
+  {
+    id: "wlfi-treasury",
+    label: "WLFI Treasury (Multisig)",
+    alias: "0x5be9",
+    address: "0x5be9a4959308a0d0c7bc0870e319314d8d957dbb",
+    chain: "ETH",
+    color: "#ff9100",
+    category: "trump",
+    note: "Multisig principal de World Liberty Financial — muy trackeable en Etherscan",
+    tags: ["WLFI", "MULTISIG", "DeFi"],
+  },
+  {
+    id: "justin-sun",
+    label: "Justin Sun (TRON/WLFI)",
+    alias: "0x3ddf",
+    address: "0x3ddfa8ec3052539b6c9549f12cea2c295cff5296",
+    chain: "ETH",
+    color: "#ff1744",
+    category: "trump",
+    note: "Inversor grande en WLFI — wallets muy activas y trackeadas en multi-chain",
+    tags: ["TRON", "WLFI", "INVERSOR"],
+  },
+
+  // ── GRANDES BALLENAS CONOCIDAS ───────────────────────────────────────────
+  {
+    id: "vitalik",
+    label: "Vitalik Buterin",
+    alias: "0xd8dA",
+    address: "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+    chain: "ETH",
+    color: "#00e5ff",
+    category: "whales",
+    note: "Co-fundador Ethereum — donaciones públicas frecuentes, muy transparente",
+    tags: ["ETH", "FUNDADOR", "DONACIONES"],
+  },
+  {
+    id: "eth-foundation",
+    label: "Ethereum Foundation",
+    alias: "0xde0B (EF)",
+    address: "0xde0B295669a9FD93d5F28D9Ec85E40f4cb697BAe",
+    chain: "ETH",
+    color: "#536dfe",
+    category: "whales",
+    note: "Treasury principal de Ethereum Foundation — ventas periódicas para operaciones",
+    tags: ["ETH", "TREASURY", "PROTOCOLO"],
+  },
+];
+
+// ─── Categorías para UI ───────────────────────────────────────────────────────
+const CATEGORIES = [
+  { id: "all",         label: "Todas",          color: "#7ab3c8" },
+  { id: "lookonchain", label: "🔍 LookOnChain",  color: "#00e5ff" },
+  { id: "trump",       label: "🇺🇸 Trump/WLFI",  color: "#ff6b35" },
+  { id: "whales",      label: "🐋 Ballenas",     color: "#e040fb" },
+];
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+interface TxRaw {
+  hash: string;
+  from: string;
+  to: string;
+  value: string;        // wei (ETH) o cantidad (ERC-20)
+  timeStamp: string;
+  tokenName?: string;
+  tokenSymbol?: string;
+  tokenDecimal?: string;
+  gas: string;
+  gasPrice: string;
+  isError?: string;
+  contractAddress?: string;
+  input?: string;
 }
 
-const API = "/api/psy-whales";
-const CHAIN_LABEL: Record<string, string> = { eth: "ETH", bsc: "BNB", arb: "ARB", poly: "MATIC", base: "BASE", op: "OP" };
-const CHAIN_COLOR: Record<string, string> = { eth: "#627eea", bsc: "#f0b90b", arb: "#28a0f0", poly: "#8247e5", base: "#0052ff", op: "#ff0420" };
-const EXPLORER: Record<string, string> = { eth: "https://etherscan.io", bsc: "https://bscscan.com", arb: "https://arbiscan.io", poly: "https://polygonscan.com", base: "https://basescan.org", op: "https://optimistic.etherscan.io" };
+interface TxParsed {
+  hash: string;
+  timestamp: number;
+  from: string;
+  to: string;
+  value: number;
+  symbol: string;
+  usdValue?: number;
+  direction: "IN" | "OUT";
+  type: string;         // TRANSFER / SWAP / CONTRACT / etc
+  isError: boolean;
+}
 
-const shortAddr = (a: string) => a ? `${a.slice(0, 6)}…${a.slice(-4)}` : "—";
-const fmtVal = (v: number) => v >= 1e9 ? `${(v / 1e9).toFixed(2)}B` : v >= 1e6 ? `${(v / 1e6).toFixed(2)}M` : v >= 1e3 ? `${(v / 1e3).toFixed(1)}K` : v.toFixed(4);
-const timeAgo = (iso: string) => {
-  const s = (Date.now() - new Date(iso).getTime()) / 1000;
-  if (s < 60) return `${Math.round(s)}s`;
-  if (s < 3600) return `${Math.round(s / 60)}m`;
-  if (s < 86400) return `${Math.round(s / 3600)}h`;
-  return `${Math.round(s / 86400)}d`;
-};
+interface WalletData {
+  address: string;
+  balance: number;       // ETH
+  balanceUsd: number;
+  txCount: number;
+  txs: TxParsed[];
+  lastActivity: number;
+  loading: boolean;
+  error?: string;
+}
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+const API_BASE = "https://api.etherscan.io/api";
+const ETHERSCAN_KEY = (import.meta as Record<string, unknown> & { env?: Record<string, string> }).env?.VITE_ETHERSCAN_API_KEY ?? "";
+
+async function ethFetch(params: Record<string, string>) {
+  const qs = new URLSearchParams({ ...params, apikey: ETHERSCAN_KEY }).toString();
+  const r = await fetch(`${API_BASE}?${qs}`);
+  const j = await r.json();
+  if (j.status !== "1" && j.message !== "No transactions found") throw new Error(j.message ?? "API error");
+  return j.result;
+}
+
+function weiToEth(wei: string) {
+  return parseFloat(wei) / 1e18;
+}
+
+function fmtEth(n: number) {
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
+  if (n >= 1)    return n.toFixed(3);
+  return n.toFixed(6);
+}
+
+function fmtUsd(n: number) {
+  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(2)}M`;
+  if (n >= 1_000)     return `$${(n / 1_000).toFixed(1)}K`;
+  return `$${n.toFixed(2)}`;
+}
+
+function timeAgo(ts: number) {
+  const diff = Date.now() / 1000 - ts;
+  if (diff < 60)      return "hace <1m";
+  if (diff < 3600)    return `hace ${Math.floor(diff / 60)}m`;
+  if (diff < 86400)   return `hace ${Math.floor(diff / 3600)}h`;
+  if (diff < 604800)  return `hace ${Math.floor(diff / 86400)}d`;
+  return new Date(ts * 1000).toLocaleDateString("es-EC");
+}
+
+function parseTxType(tx: TxRaw, myAddr: string): TxParsed {
+  const from = tx.from.toLowerCase();
+  const to   = (tx.to ?? "").toLowerCase();
+  const me   = myAddr.toLowerCase();
+  const direction: "IN" | "OUT" = from === me ? "OUT" : "IN";
+
+  let symbol = "ETH";
+  let value  = weiToEth(tx.value ?? "0");
+
+  if (tx.tokenSymbol) {
+    symbol = tx.tokenSymbol;
+    const dec = parseInt(tx.tokenDecimal ?? "18", 10);
+    value = parseFloat(tx.value ?? "0") / Math.pow(10, dec);
+  }
+
+  // Classify
+  let type = "TRANSFER";
+  if (tx.input && tx.input !== "0x" && tx.input.length > 10) type = "CONTRATO";
+  if (tx.tokenSymbol) type = "TOKEN";
+  if (to.includes("0x000000000000000000000000")) type = "BURN";
+
+  return {
+    hash: tx.hash,
+    timestamp: parseInt(tx.timeStamp, 10),
+    from: tx.from,
+    to: tx.to ?? "",
+    value,
+    symbol,
+    direction,
+    type,
+    isError: tx.isError === "1",
+  };
+}
+
+// ─── Component ───────────────────────────────────────────────────────────────
 export default function WhaleTracker() {
-  const [wallets, setWallets] = useState<Wallet[]>([]);
-  const [summary, setSummary] = useState<RecentTx[]>([]);
-  const [tab, setTab] = useState<"feed" | "wallets" | "agregar">("feed");
-  const [selected, setSelected] = useState<Wallet | null>(null);
-  const [walletTxs, setWalletTxs] = useState<{ normal: NormalTx[]; erc20: Erc20Tx[] } | null>(null);
-  const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
-  const [detailTab, setDetailTab] = useState<"erc20" | "normal" | "portfolio">("erc20");
-  const [loading, setLoading] = useState(true);
-  const [addForm, setAddForm] = useState({ name: "", address: "", chain: "eth", note: "" });
-  const [addMsg, setAddMsg] = useState<{ ok: boolean; text: string } | null>(null);
-  const [adding, setAdding] = useState(false);
+  const [selected,  setSelected]  = useState<string>("all");
+  const [category,  setCategory]  = useState<string>("all");
+  const [wallets,   setWallets]   = useState<Record<string, WalletData>>({});
+  const [ethPrice,  setEthPrice]  = useState(3000);
+  const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
+  const [filter,    setFilter]    = useState<"all"|"IN"|"OUT">("all");
+  const [minValue,  setMinValue]  = useState(0);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [wR, sR] = await Promise.all([
-        fetch(`${API}/wallets`).then(r => r.json()),
-        fetch(`${API}/summary`).then(r => r.json()),
-      ]);
-      setWallets(wR.wallets ?? []);
-      setSummary(sR.recent_txs ?? []);
-    } catch { /* silent */ }
-    setLoading(false);
+  // Fetch ETH price once
+  useEffect(() => {
+    fetch("https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd")
+      .then(r => r.json())
+      .then(d => setEthPrice(d?.ethereum?.usd ?? 3000))
+      .catch(() => {});
   }, []);
 
-  useEffect(() => { load(); }, [load]);
-  useEffect(() => { const id = setInterval(load, 60000); return () => clearInterval(id); }, [load]);
+  const fetchWallet = useCallback(async (addr: string) => {
+    setWallets(prev => ({ ...prev, [addr]: { ...prev[addr], loading: true, error: undefined } as WalletData }));
 
-  const openWallet = async (w: Wallet) => {
-    setSelected(w);
-    setWalletTxs(null);
-    setPortfolio(null);
-    setDetailTab("erc20");
     try {
-      const [txR, portR] = await Promise.all([
-        fetch(`${API}/txs/${w.address}?chain=${w.chain}&limit=50`).then(r => r.json()),
-        fetch(`${API}/portfolio/${w.address}?chain=${w.chain}`).then(r => r.json()),
-      ]);
-      setWalletTxs({ normal: txR.normal ?? [], erc20: txR.erc20 ?? [] });
-      setPortfolio(portR);
-    } catch { /* silent */ }
-  };
+      // 1. ETH Balance
+      const balRaw = await ethFetch({ module: "account", action: "balance", address: addr, tag: "latest" });
+      const balance = weiToEth(balRaw);
 
-  async function removeWallet(id: number) {
-    await fetch(`${API}/wallets/${id}`, { method: "DELETE" });
-    load();
-  }
+      // 2. Normal TXs (last 30)
+      const normalRaw: TxRaw[] = await ethFetch({
+        module: "account", action: "txlist", address: addr,
+        startblock: "0", endblock: "99999999", page: "1", offset: "30", sort: "desc",
+      }).catch(() => []);
 
-  async function addWallet() {
-    setAdding(true); setAddMsg(null);
-    const r = await fetch(`${API}/wallets`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(addForm),
-    });
-    const d = await r.json();
-    if (d.ok) {
-      setAddMsg({ ok: true, text: "✅ Wallet agregada correctamente" });
-      setAddForm({ name: "", address: "", chain: "eth", note: "" });
-      load();
-    } else {
-      setAddMsg({ ok: false, text: d.error ?? "Error" });
+      // 3. ERC-20 Token TXs (last 30)
+      const tokenRaw: TxRaw[] = await ethFetch({
+        module: "account", action: "tokentx", address: addr,
+        startblock: "0", endblock: "99999999", page: "1", offset: "30", sort: "desc",
+      }).catch(() => []);
+
+      // Merge + sort by timestamp desc
+      const allTxs = [
+        ...normalRaw.map(tx => parseTxType(tx, addr)),
+        ...tokenRaw.map(tx => parseTxType(tx, addr)),
+      ]
+        .sort((a, b) => b.timestamp - a.timestamp)
+        .slice(0, 50);
+
+      // Add USD values
+      const txsWithUsd = allTxs.map(tx => ({
+        ...tx,
+        usdValue: tx.symbol === "ETH" ? tx.value * ethPrice :
+                  tx.symbol === "USDC" || tx.symbol === "USDT" || tx.symbol === "DAI" ? tx.value :
+                  undefined,
+      }));
+
+      const lastActivity = txsWithUsd[0]?.timestamp ?? 0;
+      const txCount = normalRaw.length;
+
+      setWallets(prev => ({
+        ...prev,
+        [addr]: {
+          address: addr,
+          balance,
+          balanceUsd: balance * ethPrice,
+          txCount,
+          txs: txsWithUsd,
+          lastActivity,
+          loading: false,
+        },
+      }));
+    } catch (e) {
+      setWallets(prev => ({
+        ...prev,
+        [addr]: {
+          address: addr,
+          balance: 0,
+          balanceUsd: 0,
+          txCount: 0,
+          txs: [],
+          lastActivity: 0,
+          loading: false,
+          error: "Sin API key de Etherscan configurada — agrega VITE_ETHERSCAN_API_KEY",
+        },
+      }));
     }
-    setAdding(false);
-  }
+  }, [ethPrice]);
+
+  const refreshAll = useCallback(() => {
+    setLastRefresh(new Date());
+    KNOWN_WALLETS.forEach(w => fetchWallet(w.address));
+  }, [fetchWallet]);
+
+  useEffect(() => { refreshAll(); }, []);
+  useEffect(() => {
+    const id = setInterval(refreshAll, 120_000); // refresh every 2min
+    return () => clearInterval(id);
+  }, [refreshAll]);
+
+  // ── Active wallets to show ──────────────────────────────────────────────────
+  const activeWallets = KNOWN_WALLETS.filter(w => {
+    if (selected !== "all" && w.id !== selected) return false;
+    if (category !== "all" && w.category !== category) return false;
+    return true;
+  });
+
+  // ── All transactions merged ───────────────────────────────────────────────
+  const walletsForFeed = category === "all" && selected === "all" ? KNOWN_WALLETS : activeWallets;
+  const allTxsMerged = walletsForFeed
+    .flatMap(w => {
+      const data = wallets[w.address];
+      if (!data?.txs) return [];
+      return data.txs.map(tx => ({
+        ...tx,
+        walletLabel: w.label,
+        walletColor: w.color,
+        walletAlias: w.alias,
+      }));
+    })
+    .filter(tx => {
+      if (filter !== "all" && tx.direction !== filter) return false;
+      if (minValue > 0 && (tx.usdValue ?? 0) < minValue * 1000) return false;
+      return true;
+    })
+    .sort((a, b) => b.timestamp - a.timestamp)
+    .slice(0, 100);
 
   return (
-    <div className="min-h-screen bg-[#020408] text-white font-rajdhani">
+    <div className="min-h-screen bg-[#020b12] text-white">
       <SiteNav />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-16">
 
-      <section className="pt-32 pb-8 px-6 md:px-12">
-        <div className="font-space text-[10px] text-[#00e5ff] tracking-[0.4em] uppercase mb-4">On-Chain Intelligence</div>
-        <h1 className="font-bebas text-6xl md:text-8xl leading-none mb-3">
-          PSY <span className="text-[#00e5ff]">WHALE</span> TRACKER
-        </h1>
-        <p className="text-[#7ab3c8] font-space text-sm max-w-2xl leading-relaxed">
-          Seguimiento personalizado de wallets de ballenas conocidas. Monitorea sus movimientos en ETH, BNB, ARB, MATIC, BASE y OP en tiempo real vía Etherscan/BscScan.
-        </p>
-        <div className="flex gap-4 mt-3 text-[11px] font-space text-[#7ab3c8]">
-          <span>● {wallets.length} wallets monitoreadas</span>
-          <span>● Actualización: cada 60s</span>
-          <span>● {summary.length} movimientos recientes</span>
-        </div>
-      </section>
-
-      {/* Tabs */}
-      <div className="px-6 md:px-12 border-b border-[#1a2535] flex">
-        {([
-          { key: "feed", label: `🔴 Feed Live (${summary.length})` },
-          { key: "wallets", label: `🐋 Mis Ballenas (${wallets.length})` },
-          { key: "agregar", label: "＋ Agregar Wallet" },
-        ] as const).map(t => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            className={`px-6 py-4 font-space text-[11px] uppercase tracking-wider transition-colors ${tab === t.key ? "text-[#00e5ff] border-b-2 border-[#00e5ff]" : "text-[#7ab3c8] hover:text-white"}`}
-          >
-            {t.label}
+        {/* ── HEADER ── */}
+        <div className="mb-8">
+          <button onClick={() => window.history.back()}
+            className="font-sharetech text-[8px] tracking-[0.15em] text-[#7ab3c8] hover:text-[#00e5ff] transition-colors mb-4 flex items-center gap-1.5">
+            ← VOLVER
           </button>
-        ))}
-      </div>
-
-      <div className="px-6 md:px-12 py-8 pb-24">
-        {/* FEED */}
-        {tab === "feed" && (
-          loading ? <p className="text-[#7ab3c8] font-space text-sm text-center py-12">Cargando actividad...</p>
-          : wallets.length === 0 ? (
-            <div className="text-center py-16">
-              <p className="text-[#5a6a80] font-space text-sm mb-4">No tienes wallets monitoreadas todavía.</p>
-              <button onClick={() => setTab("agregar")} className="font-space text-[11px] text-[#00e5ff] border border-[#00e5ff44] px-4 py-2">
-                ＋ Agregar primera wallet →
-              </button>
-            </div>
-          ) : summary.length === 0 ? (
-            <p className="text-[#5a6a80] font-space text-sm text-center py-12">Sin actividad reciente detectada</p>
-          ) : (
-            <div className="space-y-2">
-              {summary.map((tx, i) => (
-                <div key={i} className="flex items-center gap-4 border border-[#1a2535] bg-[#060a12] p-4 hover:border-[#00e5ff22] transition-colors">
-                  <div className="flex-shrink-0">
-                    <span style={{ color: CHAIN_COLOR[tx.chain] ?? "#7ab3c8" }} className="font-space text-[10px] font-bold">
-                      {CHAIN_LABEL[tx.chain] ?? tx.chain.toUpperCase()}
-                    </span>
-                  </div>
-                  <div className="flex-shrink-0 w-6">
-                    <span style={{ color: tx.direction === "in" ? "#00e676" : "#ff3c5c" }}>
-                      {tx.direction === "in" ? "▲" : "▼"}
-                    </span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <span className="font-space text-[12px] text-[#00e5ff]">{tx.whale_name}</span>
-                    <span className="font-space text-[12px] text-[#7ab3c8]"> {tx.direction === "in" ? "recibió" : "envió"} </span>
-                    <span className="font-space text-[12px] font-bold">{fmtVal(tx.value)} {tx.token}</span>
-                  </div>
-                  <div className="flex-shrink-0 font-space text-[10px] text-[#5a6a80]">{timeAgo(tx.time)}</div>
-                  {tx.hash && (
-                    <a
-                      href={`${EXPLORER[tx.chain] ?? "https://etherscan.io"}/tx/${tx.hash}`}
-                      target="_blank" rel="noopener noreferrer"
-                      className="flex-shrink-0 font-space text-[10px] text-[#5a6a80] hover:text-[#00e5ff]"
-                      onClick={e => e.stopPropagation()}
-                    >
-                      TX →
-                    </a>
-                  )}
-                </div>
-              ))}
-            </div>
-          )
-        )}
-
-        {/* WALLETS */}
-        {tab === "wallets" && (
-          wallets.length === 0 ? (
-            <div className="text-center py-16">
-              <p className="text-[#5a6a80] font-space text-sm mb-4">Sin wallets guardadas</p>
-              <button onClick={() => setTab("agregar")} className="font-space text-[11px] text-[#00e5ff] border border-[#00e5ff44] px-4 py-2">
-                ＋ Agregar primera wallet →
-              </button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {wallets.map(w => (
-                <div
-                  key={w.id}
-                  className="border border-[#1a2535] bg-[#060a12] hover:border-[#00e5ff44] transition-colors cursor-pointer p-5"
-                  onClick={() => openWallet(w)}
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <div className="font-bebas text-xl">{w.name}</div>
-                      <div className="font-space text-[11px] text-[#7ab3c8] mt-0.5">{shortAddr(w.address)}</div>
-                    </div>
-                    <span
-                      className="font-space text-[10px] font-bold px-2 py-0.5"
-                      style={{ background: `${CHAIN_COLOR[w.chain] ?? "#627eea"}22`, color: CHAIN_COLOR[w.chain] ?? "#627eea" }}
-                    >
-                      {CHAIN_LABEL[w.chain] ?? w.chain.toUpperCase()}
-                    </span>
-                  </div>
-                  {w.note && <p className="font-space text-[11px] text-[#5a6a80] mb-3">{w.note}</p>}
-                  {w.tags?.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mb-3">
-                      {w.tags.map(tag => (
-                        <span key={tag} className="text-[9px] font-space bg-[#00e5ff11] text-[#00e5ff] px-1.5 py-0.5">{tag}</span>
-                      ))}
-                    </div>
-                  )}
-                  <div className="flex items-center justify-between">
-                    <a
-                      href={`${EXPLORER[w.chain] ?? "https://etherscan.io"}/address/${w.address}`}
-                      target="_blank" rel="noopener noreferrer"
-                      className="font-space text-[10px] text-[#5a6a80] hover:text-[#00e5ff]"
-                      onClick={e => e.stopPropagation()}
-                    >
-                      Ver en Explorer →
-                    </a>
-                    <button
-                      onClick={e => { e.stopPropagation(); removeWallet(w.id); }}
-                      className="font-space text-[10px] text-[#5a6a80] hover:text-[#ff3c5c]"
-                    >
-                      Eliminar
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )
-        )}
-
-        {/* AGREGAR */}
-        {tab === "agregar" && (
-          <div className="max-w-md mx-auto space-y-4">
-            <div className="font-space text-[10px] text-[#00e5ff] tracking-[0.3em] uppercase mb-4">Agregar wallet de ballena</div>
-            {[
-              { key: "name", label: "Nombre / Alias *", placeholder: "Ej: Justin Sun, Whale 0x1234" },
-              { key: "address", label: "Dirección Wallet *", placeholder: "0x..." },
-              { key: "note", label: "Nota (opcional)", placeholder: "Ej: Acumula BTC en dips, historial de rug pulls..." },
-            ].map(f => (
-              <div key={f.key}>
-                <label className="font-space text-[11px] text-[#7ab3c8] uppercase tracking-wider block mb-1.5">{f.label}</label>
-                <input
-                  value={(addForm as Record<string, string>)[f.key] ?? ""}
-                  onChange={e => setAddForm(prev => ({ ...prev, [f.key]: e.target.value }))}
-                  placeholder={f.placeholder}
-                  className="w-full bg-[#0a0f1a] border border-[#1a2535] focus:border-[#00e5ff44] outline-none px-3 py-2.5 font-space text-[12px] text-white placeholder:text-[#3a4a5a]"
-                />
-              </div>
-            ))}
-            <div>
-              <label className="font-space text-[11px] text-[#7ab3c8] uppercase tracking-wider block mb-1.5">Chain *</label>
-              <select
-                value={addForm.chain}
-                onChange={e => setAddForm(p => ({ ...p, chain: e.target.value }))}
-                className="w-full bg-[#0a0f1a] border border-[#1a2535] px-3 py-2.5 font-space text-[12px]"
-              >
-                {Object.entries(CHAIN_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-              </select>
-            </div>
-            <button
-              onClick={addWallet}
-              disabled={adding}
-              className="w-full py-3 font-space text-[12px] font-bold tracking-[0.2em] uppercase disabled:opacity-40"
-              style={{ background: "#00e5ff", color: "#020408" }}
-            >
-              {adding ? "Agregando..." : "＋ Agregar Wallet"}
-            </button>
-            {addMsg && (
-              <div className={`border p-3 font-space text-[12px] ${addMsg.ok ? "border-[#00e67644] text-[#00e676]" : "border-[#ff3c5c44] text-[#ff6b6b]"}`}>
-                {addMsg.text}
-              </div>
-            )}
+          <div className="font-sharetech text-[9px] tracking-[0.3em] text-[#7ab3c8] mb-3">
+            PSYCHOMETRIKS · ON-CHAIN INTELLIGENCE · POWERED BY ETHERSCAN
           </div>
-        )}
-      </div>
+          <h1 className="font-bebas text-5xl md:text-7xl leading-none text-white mb-2">
+            WHALE <span className="text-[#00e5ff]">TRACKER</span>
+          </h1>
+          <p className="font-space text-[11px] text-[#7ab3c8] max-w-2xl">
+            Seguimiento en tiempo real de las wallets más mencionadas por <span className="text-[#00e5ff]">@lookonchain</span>.
+            Monitorea qué compran, qué venden y cuándo mueven fondos estas ballenas institucionales.
+          </p>
 
-      {/* Wallet detail modal */}
-      {selected && (
-        <div className="fixed inset-0 bg-black/85 z-50 flex items-center justify-center p-4" onClick={() => setSelected(null)}>
-          <div className="bg-[#060a12] border border-[#1a2535] w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="flex items-start justify-between p-5 border-b border-[#1a2535]">
-              <div>
-                <h2 className="font-bebas text-2xl">{selected.name}</h2>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className="font-space text-[11px] text-[#7ab3c8]">{selected.address}</span>
-                  <span className="font-space text-[10px] font-bold" style={{ color: CHAIN_COLOR[selected.chain] }}>
-                    {CHAIN_LABEL[selected.chain]}
+          {/* Live indicator */}
+          <div className="flex items-center gap-2 mt-3">
+            <div className="w-2 h-2 rounded-full bg-[#00e676] animate-pulse" />
+            <span className="font-sharetech text-[8px] text-[#00e676] tracking-[0.1em]">
+              LIVE — actualización cada 2min
+            </span>
+            {lastRefresh && (
+              <span className="font-sharetech text-[7px] text-[#5a8898]">
+                · última: {lastRefresh.toLocaleTimeString("es-EC")}
+              </span>
+            )}
+            <button onClick={refreshAll}
+              className="ml-3 font-sharetech text-[7px] px-3 py-1 border border-[#0d2030] text-[#7ab3c8] hover:border-[#00e5ff] hover:text-[#00e5ff] transition-all">
+              ↻ REFRESH
+            </button>
+          </div>
+        </div>
+
+        {/* ── CATEGORY FILTERS ── */}
+        <div className="flex flex-wrap gap-2 mb-6">
+          <span className="font-sharetech text-[7px] text-[#5a8898] self-center tracking-[0.1em]">CATEGORÍA:</span>
+          {CATEGORIES.map(c => (
+            <button key={c.id} onClick={() => { setCategory(c.id); setSelected("all"); }}
+              className="font-sharetech text-[7px] px-3 py-1.5 border transition-all"
+              style={{
+                borderColor: category === c.id ? c.color : "#0d2030",
+                color:       category === c.id ? c.color : "#7ab3c8",
+                background:  category === c.id ? `${c.color}12` : "transparent",
+              }}>
+              {c.label}
+            </button>
+          ))}
+          <div className="ml-auto font-sharetech text-[7px] text-[#5a8898] self-center">
+            {activeWallets.length} wallets · {KNOWN_WALLETS.length} total
+          </div>
+        </div>
+
+        {/* ── WALLET CARDS ── */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 mb-6">
+          {(category === "all" ? KNOWN_WALLETS : KNOWN_WALLETS.filter(w => w.category === category)).map(w => {
+            const data = wallets[w.address];
+            const isActive = selected === w.id || selected === "all";
+            return (
+              <div key={w.id}
+                className="border cursor-pointer transition-all p-4"
+                style={{
+                  borderColor: selected === w.id ? w.color : "#0d2030",
+                  background: selected === w.id ? `${w.color}08` : "#040f18",
+                  boxShadow: selected === w.id ? `0 0 20px ${w.color}20` : "none",
+                }}
+                onClick={() => setSelected(selected === w.id ? "all" : w.id)}>
+
+                {/* Label + chain */}
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <div className="font-bebas text-lg leading-none" style={{ color: w.color }}>
+                      {w.label}
+                    </div>
+                    <div className="font-sharetech text-[7px] text-[#5a8898] mt-0.5">
+                      {w.alias} · {w.chain}
+                    </div>
+                  </div>
+                  <span className="font-sharetech text-[6px] px-1.5 py-0.5 border ml-2 shrink-0"
+                    style={{ borderColor: `${w.color}40`, color: w.color, background: `${w.color}10` }}>
+                    {w.category === "lookonchain" ? "LOC" : w.category === "trump" ? "🇺🇸" : "🐋"}
                   </span>
                 </div>
+
+                {/* Balance */}
+                {data?.loading ? (
+                  <div className="font-sharetech text-[8px] text-[#5a8898] animate-pulse">Cargando…</div>
+                ) : data?.error ? (
+                  <div className="font-sharetech text-[7px] text-[#ff4444] leading-relaxed">{data.error}</div>
+                ) : (
+                  <>
+                    <div className="font-bebas text-2xl text-white">
+                      {fmtEth(data?.balance ?? 0)} ETH
+                    </div>
+                    <div className="font-sharetech text-[8px] text-[#5a8898]">
+                      ≈ {fmtUsd(data?.balanceUsd ?? 0)}
+                    </div>
+                    <div className="font-sharetech text-[7px] text-[#3a4a5a] mt-1">
+                      Última tx: {data?.lastActivity ? timeAgo(data.lastActivity) : "─"}
+                    </div>
+                  </>
+                )}
+
+                {/* Tags */}
+                <div className="flex gap-1 mt-2 flex-wrap">
+                  {w.tags.map(t => (
+                    <span key={t} className="font-sharetech text-[5.5px] px-1 py-0.5 border"
+                      style={{ borderColor: `${w.color}40`, color: w.color, background: `${w.color}10` }}>
+                      {t}
+                    </span>
+                  ))}
+                </div>
+
+                {/* Note */}
+                <div className="font-space text-[7px] text-[#5a8898] mt-2 leading-relaxed">
+                  {w.note}
+                </div>
+
+                {/* Address link */}
+                <a href={`https://etherscan.io/address/${w.address}`}
+                  target="_blank" rel="noreferrer"
+                  className="font-sharetech text-[6px] text-[#3a5a6a] hover:text-[#00e5ff] transition-colors mt-2 block"
+                  onClick={e => e.stopPropagation()}>
+                  {w.address.slice(0, 10)}…{w.address.slice(-6)} ↗
+                </a>
               </div>
-              <button onClick={() => setSelected(null)} className="text-[#7ab3c8] text-xl">✕</button>
+            );
+          })}
+        </div>
+
+        {/* ── FILTERS ── */}
+        <div className="flex flex-wrap items-center gap-3 mb-4">
+          <div className="font-sharetech text-[7px] text-[#5a8898] tracking-[0.1em]">FILTROS:</div>
+
+          {(["all", "IN", "OUT"] as const).map(f => (
+            <button key={f} onClick={() => setFilter(f)}
+              className="font-sharetech text-[7px] px-3 py-1.5 border transition-all"
+              style={{
+                borderColor: filter === f ? "#00e5ff" : "#0d2030",
+                color: filter === f ? "#00e5ff" : "#7ab3c8",
+                background: filter === f ? "rgba(0,229,255,.08)" : "transparent",
+              }}>
+              {f === "all" ? "TODAS" : f === "IN" ? "✅ ENTRADAS" : "🔴 SALIDAS"}
+            </button>
+          ))}
+
+          <div className="flex items-center gap-2 ml-3">
+            <span className="font-sharetech text-[7px] text-[#5a8898]">MÍNIMO:</span>
+            <select value={minValue} onChange={e => setMinValue(+e.target.value)}
+              className="font-sharetech text-[7px] bg-[#040f18] border border-[#0d2030] text-[#7ab3c8] px-2 py-1 outline-none">
+              <option value={0}>Cualquier valor</option>
+              <option value={10}>≥ $10K</option>
+              <option value={100}>≥ $100K</option>
+              <option value={500}>≥ $500K</option>
+              <option value={1000}>≥ $1M</option>
+            </select>
+          </div>
+
+          <div className="ml-auto font-sharetech text-[7px] text-[#5a8898]">
+            {allTxsMerged.length} transacciones
+          </div>
+        </div>
+
+        {/* ── TRANSACTIONS FEED ── */}
+        <div className="border border-[#0d2030] bg-[#040f18]">
+
+          {/* Header */}
+          <div className="grid grid-cols-[1fr_1fr_1.5fr_1fr_1fr_1fr] gap-3 px-4 py-2.5 border-b border-[#0d2030] font-sharetech text-[7px] tracking-[0.08em] text-[#5a8898]">
+            <div>WALLET</div>
+            <div>TIEMPO</div>
+            <div>TRANSACCIÓN</div>
+            <div className="text-center">TIPO</div>
+            <div className="text-center">VALOR</div>
+            <div className="text-center">DIRECCIÓN</div>
+          </div>
+
+          {allTxsMerged.length === 0 ? (
+            <div className="p-12 text-center">
+              <div className="font-sharetech text-[9px] text-[#5a8898] animate-pulse tracking-[0.2em]">
+                {Object.values(wallets).some(w => w.loading)
+                  ? "CARGANDO TRANSACCIONES ON-CHAIN…"
+                  : "SIN TRANSACCIONES — CONFIGURA ETHERSCAN_API_KEY EN RAILWAY"}
+              </div>
             </div>
+          ) : (
+            <div className="divide-y divide-[#081520] max-h-[600px] overflow-y-auto">
+              {allTxsMerged.map((tx, i) => {
+                const dirColor = tx.direction === "IN" ? "#00e676" : "#ff4444";
+                const dirIcon  = tx.direction === "IN" ? "↓" : "↑";
+                const usdStr   = tx.usdValue !== undefined ? fmtUsd(tx.usdValue) : "─";
+                const isLarge  = (tx.usdValue ?? 0) >= 100_000;
 
-            {portfolio && (
-              <div className="border-b border-[#1a2535] p-4 bg-[#0a0f1a]">
-                <span className="font-space text-[10px] text-[#5a6a80] mr-3">Balance nativo:</span>
-                <span className="font-space text-[12px] font-bold">{portfolio.native_balance.toFixed(4)} {CHAIN_LABEL[selected.chain]}</span>
-              </div>
-            )}
+                return (
+                  <div key={`${tx.hash}-${i}`}
+                    className="grid grid-cols-[1fr_1fr_1.5fr_1fr_1fr_1fr] gap-3 px-4 py-3 hover:bg-[#060f1a] transition-colors items-center"
+                    style={{ background: isLarge ? `${(tx as typeof tx & { walletColor?: string }).walletColor ?? "#fff"}06` : undefined }}>
 
-            <div className="flex border-b border-[#1a2535]">
-              {(["erc20", "normal", "portfolio"] as const).map(t => (
-                <button
-                  key={t}
-                  onClick={() => setDetailTab(t)}
-                  className={`flex-1 py-3 text-[11px] font-space uppercase tracking-wider ${detailTab === t ? "text-[#00e5ff] border-b-2 border-[#00e5ff] bg-[#00e5ff0a]" : "text-[#7ab3c8]"}`}
-                >
-                  {t === "erc20" ? "Tokens Transfers" : t === "normal" ? "TXs Normales" : "Portfolio"}
-                </button>
+                    {/* Wallet */}
+                    <div>
+                      <div className="font-sharetech text-[8px] font-bold"
+                        style={{ color: (tx as typeof tx & { walletColor?: string }).walletColor }}>
+                        {(tx as typeof tx & { walletLabel?: string }).walletLabel ?? "─"}
+                      </div>
+                      <div className="font-sharetech text-[6px] text-[#5a8898]">
+                        {(tx as typeof tx & { walletAlias?: string }).walletAlias}
+                      </div>
+                    </div>
+
+                    {/* Tiempo */}
+                    <div className="font-sharetech text-[7px] text-[#5a8898]">
+                      {timeAgo(tx.timestamp)}
+                    </div>
+
+                    {/* TX hash + to/from */}
+                    <div>
+                      <a href={`https://etherscan.io/tx/${tx.hash}`}
+                        target="_blank" rel="noreferrer"
+                        className="font-sharetech text-[7px] text-[#3a6a7a] hover:text-[#00e5ff] transition-colors">
+                        {tx.hash.slice(0, 12)}… ↗
+                      </a>
+                      <div className="font-sharetech text-[6px] text-[#3a4a5a] mt-0.5 truncate">
+                        {tx.direction === "OUT"
+                          ? `→ ${tx.to.slice(0, 8)}…${tx.to.slice(-4)}`
+                          : `← ${tx.from.slice(0, 8)}…${tx.from.slice(-4)}`}
+                      </div>
+                    </div>
+
+                    {/* Tipo */}
+                    <div className="text-center">
+                      <span className="font-sharetech text-[6.5px] px-1.5 py-0.5 border border-[#0d2030] text-[#7ab3c8]">
+                        {tx.type}
+                      </span>
+                      {tx.isError && (
+                        <div className="font-sharetech text-[5.5px] text-[#ff4444] mt-0.5">ERROR</div>
+                      )}
+                    </div>
+
+                    {/* Valor */}
+                    <div className="text-center">
+                      <div className="font-space text-[9px] font-bold"
+                        style={{ color: isLarge ? "#ffd700" : "#ffffff" }}>
+                        {fmtEth(tx.value)} {tx.symbol}
+                      </div>
+                      {tx.usdValue !== undefined && (
+                        <div className="font-sharetech text-[6px] text-[#5a8898]">{usdStr}</div>
+                      )}
+                    </div>
+
+                    {/* Dirección */}
+                    <div className="text-center">
+                      <div className="font-bebas text-lg leading-none" style={{ color: dirColor }}>
+                        {dirIcon} {tx.direction}
+                      </div>
+                      {isLarge && (
+                        <div className="font-sharetech text-[5.5px] text-[#ffd700] mt-0.5 animate-pulse">
+                          🐋 GRANDE
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* ── INFO BOX ── */}
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* How it works */}
+          <div className="border border-[#0d2030] bg-[#040f18] p-4">
+            <div className="font-sharetech text-[8px] tracking-[0.15em] text-[#00e5ff] mb-3">
+              📊 CÓMO LEER ESTE TRACKER
+            </div>
+            <div className="space-y-2 font-space text-[9px] text-[#7ab3c8] leading-relaxed">
+              <div>• <span className="text-[#00e676]">↓ ENTRADA</span> — la wallet <strong>recibe</strong> fondos (acumulación posible)</div>
+              <div>• <span className="text-[#ff4444]">↑ SALIDA</span> — la wallet <strong>envía</strong> fondos (distribución o depósito en exchange)</div>
+              <div>• <span className="text-[#ffd700]">🐋 GRANDE</span> — movimiento &gt;$100K — alta relevancia</div>
+              <div>• <span className="text-white">CONTRATO</span> — interacción con DeFi (Aave, Uniswap, etc.)</div>
+              <div>• <span className="text-[#e040fb]">TOKEN</span> — transferencia de ERC-20 (USDT, HYPE, etc.)</div>
+            </div>
+          </div>
+
+          {/* LookOnChain context */}
+          <div className="border border-[#0d2030] bg-[#040f18] p-4">
+            <div className="font-sharetech text-[8px] tracking-[0.15em] text-[#ffd700] mb-3">
+              📋 WALLETS MONITOREADAS ({KNOWN_WALLETS.length} total)
+            </div>
+            <div className="space-y-1 max-h-52 overflow-y-auto pr-1">
+              {KNOWN_WALLETS.map(w => (
+                <div key={w.id} className="flex gap-2 items-start">
+                  <span className="font-sharetech text-[7px] mt-0.5 shrink-0" style={{ color: w.color }}>●</span>
+                  <div>
+                    <span className="font-sharetech text-[7px]" style={{ color: w.color }}>{w.label}</span>
+                    <span className="font-sharetech text-[6px] text-[#3a4a5a] mx-1">
+                      [{w.category === "lookonchain" ? "LOC" : w.category === "trump" ? "TRUMP" : "WHALE"}]
+                    </span>
+                    <span className="font-space text-[7px] text-[#5a8898]">— {w.note}</span>
+                  </div>
+                </div>
               ))}
             </div>
-
-            <div className="p-4">
-              {!walletTxs ? (
-                <p className="text-[#7ab3c8] font-space text-sm text-center py-8">Cargando...</p>
-              ) : (
-                <>
-                  {detailTab === "erc20" && (
-                    walletTxs.erc20.length === 0
-                      ? <p className="text-[#5a6a80] font-space text-sm text-center py-6">Sin transferencias de tokens</p>
-                      : <div className="space-y-2">
-                        {walletTxs.erc20.map((tx, i) => {
-                          const decimals = parseInt(tx.tokenDecimal) || 18;
-                          const value = parseInt(tx.value) / Math.pow(10, decimals);
-                          const isIn = tx.to.toLowerCase() === selected.address.toLowerCase();
-                          return (
-                            <div key={i} className="flex items-center gap-3 text-[11px] font-space border-b border-[#1a2535] py-2.5">
-                              <span style={{ color: isIn ? "#00e676" : "#ff3c5c" }}>{isIn ? "▲" : "▼"}</span>
-                              <span className="flex-1">{fmtVal(value)} <span className="text-[#00e5ff]">{tx.tokenSymbol}</span></span>
-                              <span className="text-[#5a6a80]">{timeAgo(new Date(parseInt(tx.timeStamp) * 1000).toISOString())}</span>
-                              <a href={`${EXPLORER[selected.chain] ?? "https://etherscan.io"}/tx/${tx.hash}`} target="_blank" rel="noopener noreferrer" className="text-[#5a6a80] hover:text-[#00e5ff]">TX→</a>
-                            </div>
-                          );
-                        })}
-                      </div>
-                  )}
-                  {detailTab === "normal" && (
-                    walletTxs.normal.length === 0
-                      ? <p className="text-[#5a6a80] font-space text-sm text-center py-6">Sin transacciones normales</p>
-                      : <div className="space-y-2">
-                        {walletTxs.normal.map((tx, i) => {
-                          const ethVal = parseInt(tx.value) / 1e18;
-                          const isIn = tx.to?.toLowerCase() === selected.address.toLowerCase();
-                          return (
-                            <div key={i} className="flex items-center gap-3 text-[11px] font-space border-b border-[#1a2535] py-2.5">
-                              <span style={{ color: tx.isError === "1" ? "#ff3c5c" : isIn ? "#00e676" : "#ff9d00" }}>
-                                {tx.isError === "1" ? "✕" : isIn ? "▲" : "▼"}
-                              </span>
-                              <span className="flex-1 truncate">{ethVal > 0 ? `${fmtVal(ethVal)} ${CHAIN_LABEL[selected.chain]}` : tx.functionName || "Contract call"}</span>
-                              <span className="text-[#5a6a80]">{timeAgo(new Date(parseInt(tx.timeStamp) * 1000).toISOString())}</span>
-                              <a href={`${EXPLORER[selected.chain] ?? "https://etherscan.io"}/tx/${tx.hash}`} target="_blank" rel="noopener noreferrer" className="text-[#5a6a80] hover:text-[#00e5ff]">TX→</a>
-                            </div>
-                          );
-                        })}
-                      </div>
-                  )}
-                  {detailTab === "portfolio" && portfolio && (
-                    portfolio.tokens.length === 0
-                      ? <p className="text-[#5a6a80] font-space text-sm text-center py-6">Sin tokens ERC-20 detectados en actividad reciente</p>
-                      : <div className="space-y-2">
-                        {portfolio.tokens.map((t, i) => (
-                          <div key={i} className="flex items-center justify-between text-[12px] font-space border-b border-[#1a2535] py-2.5">
-                            <span className="text-[#00e5ff]">{t.symbol}</span>
-                            <span className="text-[#7ab3c8] text-[10px] flex-1 mx-3 truncate">{t.name}</span>
-                            <span>{fmtVal(t.balance)}</span>
-                          </div>
-                        ))}
-                      </div>
-                  )}
-                </>
-              )}
+            <div className="mt-3 pt-3 border-t border-[#0d2030] flex gap-3">
+              <a href="https://x.com/lookonchain" target="_blank" rel="noreferrer"
+                className="font-sharetech text-[7px] text-[#00e5ff] hover:underline">
+                @lookonchain ↗
+              </a>
+              <a href="https://arkham.intelligence" target="_blank" rel="noreferrer"
+                className="font-sharetech text-[7px] text-[#ffd700] hover:underline">
+                Arkham Intel ↗
+              </a>
+              <a href="https://etherscan.io" target="_blank" rel="noreferrer"
+                className="font-sharetech text-[7px] text-[#00e676] hover:underline">
+                Etherscan ↗
+              </a>
             </div>
           </div>
         </div>
-      )}
+
+        <div className="mt-6 font-sharetech text-[7px] text-[#3a4a5a] text-center tracking-[0.1em]">
+          PSYCHOMETRIKS WHALE TRACKER · POWERED BY ETHERSCAN API · SOLO INFORMATIVO
+        </div>
+      </div>
     </div>
   );
 }
