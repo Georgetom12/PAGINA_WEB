@@ -99,6 +99,7 @@ export default defineConfig({
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
     rollupOptions: {
+      external: (id) => id === "@wagmi/core/tempo",
       output: {
         manualChunks(id) {
           if (!id.includes("node_modules")) return undefined;
