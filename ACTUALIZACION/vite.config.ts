@@ -91,6 +91,7 @@ export default defineConfig({
     alias: {
       "@": path.resolve(import.meta.dirname, "src"),
       "@assets": path.resolve(import.meta.dirname, "..", "..", "attached_assets"),
+      "@wagmi/core/tempo": path.resolve(import.meta.dirname, "src/lib/wagmi-tempo-mock.ts"),
     },
     dedupe: ["react", "react-dom"],
   },
@@ -99,7 +100,6 @@ export default defineConfig({
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
     rollupOptions: {
-      external: (id) => id === "@wagmi/core/tempo",
       output: {
         manualChunks(id) {
           if (!id.includes("node_modules")) return undefined;
