@@ -1,65 +1,73 @@
-import { Router, Request, Response } from "express";
-import { createHash, randomBytes } from "crypto";
+/**
+ * PSY PLATFORM — Superadmin Auth
+ * ─────────────────────────────────────────────────────────────────────────────
+ * UNA sola cuenta maestra. Cero hardcoding. Todo desde Railway env vars.
+ *
+ * Variables REQUERIDAS en Railway:
+ *   SUPERADMIN_USER     → nombre de usuario (ej: jamogollon)
+ *   SUPERADMIN_PASSWORD → contraseña maestra
+ *   SESSION_SECRET      → clave para firmar JWT (mínimo 32 chars)
+ *
+ * Ruta: POST /api/auth/superadmin-login
+ *   Body: { username, password }
+ *   Returns: { ok, token, role, plan, username }
+ */
+
+import { Router, type Request, type Response } from "express";
+import { signJwt } from "../lib/jwt";
 
 const router = Router();
 
-// ── Credenciales superadmin (deben coincidir con psy-auth.ts) ───────────────
-const SUPERADMIN_CREDS: Record<string, string> = {
-  "admin":      "MASTER99",
-  "jorge-2026": "JORGE-ADMIN-2026",
-};
+// ── Leer credenciales desde Railway env vars (REQUERIDAS) ───────────────────
+const SA_USER = process.env["SUPERADMIN_USER"];
+const SA_PASS = process.env["SUPERADMIN_PASSWORD"];
 
-// ── JWT simple (sin librería externa) ───────────────────────────────────────
-const JWT_SECRET = process.env["JWT_SECRET"] ?? "psy_jwt_secret_2026";
-
-function base64url(str: string): string {
-  return Buffer.from(str).toString("base64url");
-}
-
-function signJWT(payload: Record<string, unknown>): string {
-  const header  = base64url(JSON.stringify({ alg: "HS256", typ: "JWT" }));
-  const body    = base64url(JSON.stringify({ ...payload, iat: Math.floor(Date.now() / 1000) }));
-  const sig     = createHash("sha256").update(`${header}.${body}.${JWT_SECRET}`).digest("base64url");
-  return `${header}.${body}.${sig}`;
+if (!SA_USER || !SA_PASS) {
+  console.error("[superadmin-auth] FATAL: SUPERADMIN_USER y SUPERADMIN_PASSWORD deben estar en Railway env vars");
 }
 
 // ── POST /api/auth/superadmin-login ─────────────────────────────────────────
-router.post("/auth/superadmin-login", async (req: Request, res: Response) => {
+router.post("/api/auth/superadmin-login", async (req: Request, res: Response) => {
   const { username, password } = req.body as { username?: string; password?: string };
 
   if (!username || !password) {
-    res.status(400).json({ ok: false, error: "Missing credentials" });
+    res.status(400).json({ ok: false, error: "Usuario y contraseña requeridos" });
     return;
   }
 
-  const key = username.toLowerCase().trim();
-  const expected = SUPERADMIN_CREDS[key];
+  // Validar env vars configuradas
+  if (!SA_USER || !SA_PASS) {
+    res.status(503).json({ ok: false, error: "Servidor no configurado. Contacta al admin." });
+    return;
+  }
 
-  if (!expected || password !== expected) {
+  const inputUser = username.toLowerCase().trim();
+  const expectedUser = SA_USER.toLowerCase().trim();
+
+  // Comparación estricta usuario + contraseña
+  if (inputUser !== expectedUser || password !== SA_PASS) {
     res.status(401).json({ ok: false, error: "Credenciales incorrectas" });
     return;
   }
 
-  const token = signJWT({
-    sub:  key,
-    role: "superadmin",
-    plan: "elite",
-    jti:  randomBytes(8).toString("hex"),
-    exp:  Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7, // 7 días
-  });
+  // Emitir JWT con rol superadmin + plan elite (7 días)
+  const token = signJwt(
+    { sub: expectedUser, role: "superadmin", plan: "elite" },
+    7 * 24 * 60 * 60 // 7 días
+  );
 
   res.json({
-    ok:    true,
+    ok:       true,
     token,
-    role:  "superadmin",
-    plan:  "elite",
+    role:     "superadmin",
+    plan:     "elite",
+    username: expectedUser,
   });
 });
 
-// ── POST /api/auth/superadmin-totp ──────────────────────────────────────────
-router.post("/auth/superadmin-totp", async (req: Request, res: Response) => {
-  // Placeholder — TOTP no implementado aún, siempre aprueba
-  res.json({ ok: true, token: signJWT({ role: "superadmin", plan: "elite" }) });
+// ── POST /api/auth/superadmin-totp (placeholder — sin 2FA por ahora) ────────
+router.post("/api/auth/superadmin-totp", (_req: Request, res: Response) => {
+  res.status(400).json({ ok: false, error: "2FA no configurado" });
 });
 
 export default router;

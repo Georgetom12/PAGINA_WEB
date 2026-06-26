@@ -1,70 +1,73 @@
-import { Router, Request, Response } from "express";
-import { createHash, randomBytes } from "crypto";
+/**
+ * PSY PLATFORM — Superadmin Auth
+ * ─────────────────────────────────────────────────────────────────────────────
+ * UNA sola cuenta maestra. Cero hardcoding. Todo desde Railway env vars.
+ *
+ * Variables REQUERIDAS en Railway:
+ *   SUPERADMIN_USER     → nombre de usuario (ej: jamogollon)
+ *   SUPERADMIN_PASSWORD → contraseña maestra
+ *   SESSION_SECRET      → clave para firmar JWT (mínimo 32 chars)
+ *
+ * Ruta: POST /api/auth/superadmin-login
+ *   Body: { username, password }
+ *   Returns: { ok, token, role, plan, username }
+ */
+
+import { Router, type Request, type Response } from "express";
+import { signJwt } from "../lib/jwt";
 
 const router = Router();
 
-const JWT_SECRET = process.env["JWT_SECRET"] ?? process.env["SESSION_SECRET"] ?? "psy_jwt_secret_2026";
+// ── Leer credenciales desde Railway env vars (REQUERIDAS) ───────────────────
+const SA_USER = process.env["SUPERADMIN_USER"];
+const SA_PASS = process.env["SUPERADMIN_PASSWORD"];
 
-function base64url(str: string): string {
-  return Buffer.from(str).toString("base64url");
+if (!SA_USER || !SA_PASS) {
+  console.error("[superadmin-auth] FATAL: SUPERADMIN_USER y SUPERADMIN_PASSWORD deben estar en Railway env vars");
 }
 
-function signJWT(payload: Record<string, unknown>): string {
-  const header = base64url(JSON.stringify({ alg: "HS256", typ: "JWT" }));
-  const body   = base64url(JSON.stringify({ ...payload, iat: Math.floor(Date.now() / 1000) }));
-  const sig    = createHash("sha256").update(`${header}.${body}.${JWT_SECRET}`).digest("base64url");
-  return `${header}.${body}.${sig}`;
-}
-
-// Leer contraseñas desde variables de entorno de Railway
-function getSuperadminCreds(): Record<string, string> {
-  const creds: Record<string, string> = {};
-  const p1 = process.env["SUPERADMIN_PASSWORD"];
-  const p2 = process.env["SUPERADMIN_PASSWORD_2"];
-  // Fallback hardcoded (solo si no hay variables)
-  creds["admin"]      = p1 ?? "MASTER99";
-  creds["jorge-2026"] = p2 ?? p1 ?? "JORGE-ADMIN-2026";
-  creds["psychometriks"] = p1 ?? p2 ?? "MASTER99";
-  return creds;
-}
-
-// POST /api/auth/superadmin-login
-router.post("/auth/superadmin-login", async (req: Request, res: Response) => {
+// ── POST /api/auth/superadmin-login ─────────────────────────────────────────
+router.post("/api/auth/superadmin-login", async (req: Request, res: Response) => {
   const { username, password } = req.body as { username?: string; password?: string };
 
   if (!username || !password) {
-    res.status(400).json({ ok: false, error: "Missing credentials" });
+    res.status(400).json({ ok: false, error: "Usuario y contraseña requeridos" });
     return;
   }
 
-  const key = username.toLowerCase().trim();
-  const creds = getSuperadminCreds();
-  const expected = creds[key];
+  // Validar env vars configuradas
+  if (!SA_USER || !SA_PASS) {
+    res.status(503).json({ ok: false, error: "Servidor no configurado. Contacta al admin." });
+    return;
+  }
 
-  // Verificar contra cualquiera de las contraseñas configuradas
-  const p1 = process.env["SUPERADMIN_PASSWORD"];
-  const p2 = process.env["SUPERADMIN_PASSWORD_2"];
-  const validPasswords = [expected, p1, p2].filter(Boolean);
-  const isValid = validPasswords.includes(password);
+  const inputUser = username.toLowerCase().trim();
+  const expectedUser = SA_USER.toLowerCase().trim();
 
-  if (!isValid) {
+  // Comparación estricta usuario + contraseña
+  if (inputUser !== expectedUser || password !== SA_PASS) {
     res.status(401).json({ ok: false, error: "Credenciales incorrectas" });
     return;
   }
 
-  const token = signJWT({
-    sub:  key,
-    role: "superadmin",
-    plan: "elite",
-    jti:  randomBytes(8).toString("hex"),
-    exp:  Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7,
-  });
+  // Emitir JWT con rol superadmin + plan elite (7 días)
+  const token = signJwt(
+    { sub: expectedUser, role: "superadmin", plan: "elite" },
+    7 * 24 * 60 * 60 // 7 días
+  );
 
-  res.json({ ok: true, token, role: "superadmin", plan: "elite" });
+  res.json({
+    ok:       true,
+    token,
+    role:     "superadmin",
+    plan:     "elite",
+    username: expectedUser,
+  });
 });
 
-router.post("/auth/superadmin-totp", async (_req: Request, res: Response) => {
-  res.json({ ok: true, token: signJWT({ role: "superadmin", plan: "elite" }) });
+// ── POST /api/auth/superadmin-totp (placeholder — sin 2FA por ahora) ────────
+router.post("/api/auth/superadmin-totp", (_req: Request, res: Response) => {
+  res.status(400).json({ ok: false, error: "2FA no configurado" });
 });
 
 export default router;
