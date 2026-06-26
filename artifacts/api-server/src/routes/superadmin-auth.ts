@@ -27,7 +27,7 @@ if (!SA_USER || !SA_PASS) {
 }
 
 // ── POST /api/auth/superadmin-login ─────────────────────────────────────────
-router.post("/api/auth/superadmin-login", async (req: Request, res: Response) => {
+router.post("/auth/superadmin-login", async (req: Request, res: Response) => {
   const { username, password } = req.body as { username?: string; password?: string };
 
   if (!username || !password) {
@@ -66,7 +66,7 @@ router.post("/api/auth/superadmin-login", async (req: Request, res: Response) =>
 });
 
 // ── POST /api/auth/superadmin-totp (placeholder — sin 2FA por ahora) ────────
-router.post("/api/auth/superadmin-totp", (_req: Request, res: Response) => {
+router.post("/auth/superadmin-totp", (_req: Request, res: Response) => {
   res.status(400).json({ ok: false, error: "2FA no configurado" });
 });
 
