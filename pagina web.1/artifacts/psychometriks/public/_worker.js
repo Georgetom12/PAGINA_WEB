@@ -98,17 +98,115 @@ function corsHeaders(requestOrigin) {
   };
 }
 
+
+// ── JWT helpers (HS256 puro en Cloudflare Workers) ─────────────────────────
+async function makeJwt(payload, secret) {
+  const enc = new TextEncoder();
+  const header = btoa(JSON.stringify({ alg: "HS256", typ: "JWT" }))
+    .replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+  const body = btoa(JSON.stringify(payload))
+    .replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+  const key = await crypto.subtle.importKey(
+    "raw", enc.encode(secret),
+    { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, enc.encode(`${header}.${body}`));
+  const b64sig = btoa(String.fromCharCode(...new Uint8Array(sig)))
+    .replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+  return `${header}.${body}.${b64sig}`;
+}
+
+async function verifyJwt(token, secret) {
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) return null;
+    const enc = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      "raw", enc.encode(secret),
+      { name: "HMAC", hash: "SHA-256" }, false, ["verify"]
+    );
+    const sigBytes = Uint8Array.from(atob(parts[2].replace(/-/g,"+").replace(/_/g,"/")), c => c.charCodeAt(0));
+    const valid = await crypto.subtle.verify("HMAC", key, sigBytes, enc.encode(`${parts[0]}.${parts[1]}`));
+    if (!valid) return null;
+    const payload = JSON.parse(atob(parts[1].replace(/-/g,"+").replace(/_/g,"/")));
+    if (payload.exp && Date.now() / 1000 > payload.exp) return null;
+    return payload;
+  } catch { return null; }
+}
+
+// ── Superadmin Auth — manejado 100% en Cloudflare Worker ───────────────────
+// Las credenciales NUNCA tocan Railway. Se validan aqui con tiempo constante.
+async function timingSafeEqual(a, b) {
+  if (a.length !== b.length) return false;
+  const enc = new TextEncoder();
+  const keyA = await crypto.subtle.importKey("raw", enc.encode(a), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const keyB = await crypto.subtle.importKey("raw", enc.encode(b), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const sigA = await crypto.subtle.sign("HMAC", keyA, enc.encode("psy_compare"));
+  const sigB = await crypto.subtle.sign("HMAC", keyB, enc.encode("psy_compare"));
+  const arrA = new Uint8Array(sigA);
+  const arrB = new Uint8Array(sigB);
+  let diff = 0;
+  for (let i = 0; i < arrA.length; i++) diff |= arrA[i] ^ arrB[i];
+  return diff === 0;
+}
+
+async function handleSuperadminLogin(request, env, origin) {
+  const cors = corsHeaders(origin);
+
+  if (request.method === "OPTIONS") {
+    return new Response(null, { status: 204, headers: { ...cors, "Access-Control-Max-Age": "86400" } });
+  }
+
+  if (request.method !== "POST") {
+    return Response.json({ ok: false, error: "Method not allowed" }, { status: 405, headers: cors });
+  }
+
+  let body;
+  try { body = await request.json(); }
+  catch { return Response.json({ ok: false, error: "JSON invalido" }, { status: 400, headers: cors }); }
+
+  const { username, password } = body ?? {};
+  if (!username || !password) {
+    return Response.json({ ok: false, error: "Usuario y contrasena requeridos" }, { status: 400, headers: cors });
+  }
+
+  const SA_USER = (env.SUPERADMIN_USER ?? "").toLowerCase().trim();
+  const SA_PWD  = env.SUPERADMIN_PASSWORD ?? "";
+  const JWT_SECRET = env.SESSION_SECRET ?? env.JWT_SECRET ?? "psy_fallback_2026";
+
+  if (!SA_USER || !SA_PWD) {
+    return Response.json({ ok: false, error: "Servidor no configurado" }, { status: 503, headers: cors });
+  }
+
+  const inputUser = username.toLowerCase().trim();
+  const userOk = await timingSafeEqual(inputUser, SA_USER);
+  const passOk = await timingSafeEqual(password, SA_PWD);
+
+  if (!userOk || !passOk) {
+    await new Promise(r => setTimeout(r, 500 + Math.random() * 300));
+    return Response.json({ ok: false, error: "Credenciales incorrectas" }, { status: 401, headers: cors });
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+  const token = await makeJwt({
+    sub: SA_USER, role: "superadmin", plan: "elite",
+    iat: now, exp: now + 7 * 24 * 60 * 60,
+  }, JWT_SECRET);
+
+  return Response.json({
+    ok: true, token, role: "superadmin", plan: "elite", username: SA_USER,
+  }, { status: 200, headers: cors });
+}
+
 export default {
   async fetch(request, env) {
     const url    = new URL(request.url);
     const path   = url.pathname;
     const origin = request.headers.get("origin") ?? "";
 
-    // ── Redirect www → non-www ───────────────────────────────────────────────
-    if (url.hostname.startsWith("www.")) {
-      const nonWww = new URL(request.url);
-      nonWww.hostname = nonWww.hostname.replace(/^www\./, "");
-      return Response.redirect(nonWww.toString(), 301);
+    // ── Superadmin Auth — 100% en Worker, nunca toca Railway ────────────────
+    if (path === "/api/auth/superadmin-login") {
+      return handleSuperadminLogin(request, env, origin);
     }
 
     // ── PSY BRAIN preflight ─────────────────────────────────────────────────
@@ -896,19 +994,6 @@ export default {
       }
       return Response.json({ ok: true, data: pumps }, {
         headers: { "Cache-Control": "public, max-age=120", ...corsHeaders(origin) }
-      });
-    }
-
-    // ── OPTIONS preflight para /api/auth/* ──────────────────────────────────
-    if (request.method === "OPTIONS" && path.startsWith("/api/auth/")) {
-      return new Response(null, {
-        status: 204,
-        headers: {
-          "Access-Control-Allow-Origin": origin || "*",
-          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization, X-PSY-Sig, X-PSY-Ts",
-          "Access-Control-Max-Age": "86400",
-        },
       });
     }
 
