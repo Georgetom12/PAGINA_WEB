@@ -104,6 +104,13 @@ export default {
     const path   = url.pathname;
     const origin = request.headers.get("origin") ?? "";
 
+    // ── Redirect www → non-www ───────────────────────────────────────────────
+    if (url.hostname.startsWith("www.")) {
+      const nonWww = new URL(request.url);
+      nonWww.hostname = nonWww.hostname.replace(/^www\./, "");
+      return Response.redirect(nonWww.toString(), 301);
+    }
+
     // ── PSY BRAIN preflight ─────────────────────────────────────────────────
     if (path === "/api/psy-oracle/brain" && request.method === "OPTIONS") {
       return new Response(null, {
