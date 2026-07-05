@@ -24,6 +24,7 @@ import membersRouter from "./members";
 import botXRouter from "./bot-x";
 import exchangeRouter from "./exchange";
 import altcoinSignalsRouter from "./altcoin-signals";
+import psyWhalesRouter from "./psy-whales";
 import freeAuthRouter from "./free-auth";
 
 const router: IRouter = Router();
@@ -53,6 +54,7 @@ router.use(membersRouter);
 router.use(botXRouter);
 router.use(exchangeRouter);
 router.use(altcoinSignalsRouter);
+router.use(psyWhalesRouter);
 router.use(freeAuthRouter);
 
 export default router;
