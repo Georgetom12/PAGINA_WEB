@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
+import { shieldWrite } from "@/lib/secure-storage";
+
+const SUPERADMIN_USERNAMES = new Set(["jorge-2026", "admin"]);
 
 type LoginTab = "login" | "register" | "forgot";
 
@@ -11,17 +14,24 @@ export default function Login() {
     return p === "register" ? "register" : "login";
   });
 
+  // Login
   const [user, setUser]   = useState("");
   const [pass, setPass]   = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // R3 — TOTP 2FA step para superadmin
+  const [totpStep, setTotpStep]   = useState(false);
+  const [totpCode, setTotpCode]   = useState("");
+
+  // Register
   const [rUser, setRUser]   = useState("");
   const [rEmail, setREmail] = useState("");
   const [rPass, setRPass]   = useState("");
   const [rMsg, setRMsg]     = useState("");
   const [rOk, setROk]       = useState(false);
 
+  // Forgot
   const [fEmail, setFEmail] = useState("");
   const [fMsg, setFMsg]     = useState("");
   const [fOk, setFOk]       = useState(false);
@@ -39,34 +49,70 @@ export default function Login() {
     }
     setLoading(true);
     setError("");
-    await new Promise(r => setTimeout(r, 300));
+    await new Promise(r => setTimeout(r, 350));
 
     const key = user.toLowerCase().trim();
 
-    // ── 1. Intentar superadmin-login primero (el backend valida si es el master) ──
-    try {
-      const saRes = await fetch("/api/auth/superadmin-login", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: key, password: pass }),
-      });
-      const saData = await saRes.json() as {
-        ok: boolean; token?: string; role?: string; plan?: string; error?: string;
-      };
-      if (saRes.ok && saData.ok && saData.token) {
-        localStorage.setItem("psyko_auth", JSON.stringify({
-          user: key, role: saData.role ?? "superadmin", plan: saData.plan ?? "elite",
-          token: saData.token, ts: Date.now(),
-        }));
-        window.location.replace(redirectTarget ?? "/dashboard");
-        return;
-      }
-      // Si el backend dice 401 (credenciales wrongas para superadmin) pero el user
-      // podría ser un member — continuamos. Si fue 200 con ok:false, también continuamos.
-    } catch { /* red caída — intentamos member */ }
+    if (SUPERADMIN_USERNAMES.has(key)) {
+      // Try JWT route first (Railway v2+)
+      let jwtOk = false;
+      try {
+        const saRes = await fetch("/api/auth/superadmin-login", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: key, password: pass }),
+        });
+        if (saRes.ok) {
+          const saData = await saRes.json() as {
+            ok: boolean; needsTotp?: boolean;
+            token?: string; role?: string; plan?: string;
+          };
+          if (!saData.ok && saData.needsTotp) {
+            setLoading(false);
+            setTotpStep(true);
+            return;
+          }
+          if (saData.ok && saData.token) {
+            localStorage.setItem("psyko_auth", JSON.stringify({
+              user: key, role: saData.role ?? "superadmin", plan: saData.plan ?? "elite",
+              token: saData.token, ts: Date.now(),
+            }));
+            window.location.replace(redirectTarget ?? "/dashboard");
+            jwtOk = true;
+            return;
+          }
+        } else if (saRes.status !== 404) {
+          // Non-404 error (e.g. 401 wrong password) → stop here
+          setError("Credenciales incorrectas");
+          setLoading(false);
+          return;
+        }
+      } catch { /* network error → try legacy below */ }
 
-    // ── 2. Intentar member-login ──────────────────────────────────────────────
+      if (!jwtOk) {
+        // Legacy fallback: Railway running old code without /superadmin-login route.
+        // Build backward-compat base64 token and verify against any admin endpoint.
+        const legacyToken = btoa(`SUPERADMIN:${key}:${pass}`);
+        try {
+          const verRes = await fetch("/api/admin/members", {
+            headers: { "X-PSY-Token": legacyToken },
+          });
+          if (verRes.ok) {
+            localStorage.setItem("psyko_auth", JSON.stringify({
+              user: key, role: "superadmin", plan: "elite",
+              token: legacyToken, ts: Date.now(),
+            }));
+            window.location.replace(redirectTarget ?? "/dashboard");
+            return;
+          }
+        } catch { /* ignore */ }
+        setError("Credenciales incorrectas");
+        setLoading(false);
+      }
+      return;
+    }
+
     try {
       const res = await fetch("/api/auth/member-login", {
         method: "POST",
@@ -90,7 +136,7 @@ export default function Login() {
         }
       } else if (res.status === 401) {
         const body = await res.json().catch(() => ({})) as { error?: string };
-        setError(body.error ?? "Credenciales incorrectas o cuenta inactiva");
+        setError(body.error ?? "Credenciales incorrectas");
         setLoading(false);
         return;
       }
@@ -100,7 +146,6 @@ export default function Login() {
       return;
     }
 
-    // ── 3. Intentar operator-login ────────────────────────────────────────────
     try {
       const res = await fetch("/api/auth/operator-login", {
         method: "POST",
@@ -145,6 +190,42 @@ export default function Login() {
       if (d.ok) { setROk(true); setRMsg(d.message ?? "Cuenta creada. Revisá tu correo."); }
       else setRMsg(d.error ?? "Error al crear la cuenta");
     } catch { setRMsg("No se pudo conectar al servidor"); }
+    setLoading(false);
+  };
+
+  // R3 — Envía código TOTP 2FA para superadmin
+  const handleTotpVerify = async () => {
+    if (!totpCode.trim() || totpCode.length < 6) {
+      setError("Ingresá el código de 6 dígitos de tu app autenticadora");
+      return;
+    }
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/auth/superadmin-totp-verify", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: user.toLowerCase().trim(), password: pass, totpCode: totpCode.trim() }),
+      });
+      if (res.ok) {
+        const data = await res.json() as { ok: boolean; token?: string; role?: string; plan?: string; error?: string };
+        if (data.ok && data.token) {
+          localStorage.setItem("psyko_auth", shieldWrite(JSON.stringify({
+            user: user.toLowerCase().trim(), role: data.role, plan: data.plan,
+            token: data.token, ts: Date.now(),
+          })));
+          setLocation(redirectTarget ?? "/dashboard");
+          return;
+        }
+        setError(data.error ?? "Código incorrecto");
+      } else {
+        const body = await res.json().catch(() => ({})) as { error?: string };
+        setError(body.error ?? "Código incorrecto o expirado");
+      }
+    } catch {
+      setError("No se pudo conectar al servidor");
+    }
     setLoading(false);
   };
 
@@ -223,11 +304,11 @@ export default function Login() {
         </div>
 
         {/* ── LOGIN ── */}
-        {tab === "login" && (
+        {tab === "login" && !totpStep && (
           <div className="p-8">
             <div className="mb-4">
               <label className="font-sharetech text-[0.65rem] text-[#7a9aaa] tracking-[0.12em] mb-1.5 block">USUARIO O CORREO ELECTRÓNICO</label>
-              <input type="text" value={user}
+              <input data-testid="input-username" type="text" value={user}
                 onChange={e => { setUser(e.target.value); setError(""); }}
                 onKeyDown={e => e.key === "Enter" && handleLogin()}
                 placeholder="usuario o correo@ejemplo.com" autoComplete="username"
@@ -237,7 +318,7 @@ export default function Login() {
             </div>
             <div className="mb-6">
               <label className="font-sharetech text-[0.65rem] text-[#7a9aaa] tracking-[0.12em] mb-1.5 block">CONTRASEÑA</label>
-              <input type="password" value={pass}
+              <input data-testid="input-password" type="password" value={pass}
                 onChange={e => { setPass(e.target.value); setError(""); }}
                 onKeyDown={e => e.key === "Enter" && handleLogin()}
                 placeholder="••••••••••••••" autoComplete="current-password"
@@ -245,7 +326,7 @@ export default function Login() {
                 onFocus={e => (e.target.style.borderColor = "#00e5ff")}
                 onBlur={e => (e.target.style.borderColor = "#243040")} />
             </div>
-            <button onClick={handleLogin} disabled={loading}
+            <button data-testid="button-login" onClick={handleLogin} disabled={loading}
               className="w-full p-3 rounded font-orbitron text-[0.8rem] font-bold tracking-[0.2em] transition-all mt-2 border"
               style={{
                 background: loading ? "rgba(0,229,255,0.05)" : "linear-gradient(135deg, rgba(0,229,255,0.15), rgba(0,230,118,0.1))",
@@ -254,7 +335,8 @@ export default function Login() {
               }}>
               {loading ? "VERIFICANDO..." : "⬡ ACCEDER AL SISTEMA"}
             </button>
-            <div className="font-sharetech text-[0.7rem] text-center mt-3 min-h-[18px] tracking-[0.05em]"
+            <div data-testid="text-login-error"
+              className="font-sharetech text-[0.7rem] text-center mt-3 min-h-[18px] tracking-[0.05em]"
               style={{ color: "#ff1744" }}>
               {error}
             </div>
@@ -262,6 +344,45 @@ export default function Login() {
               <button onClick={() => setTab("forgot")}
                 className="font-sharetech text-[0.6rem] text-[#7a9aaa] hover:text-[#00e5ff] transition-colors">
                 ¿Olvidaste tu contraseña?
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── TOTP 2FA STEP (R3 — superadmin) ── */}
+        {tab === "login" && totpStep && (
+          <div className="p-8">
+            <div className="text-center mb-6">
+              <div className="text-3xl mb-3">🔐</div>
+              <div className="font-orbitron text-sm text-[#00e5ff] tracking-[0.15em] mb-2">VERIFICACIÓN 2FA</div>
+              <p className="font-sharetech text-[0.68rem] text-[#7a9aaa] leading-relaxed">
+                Ingresá el código de 6 dígitos de tu app autenticadora (Google Authenticator, Authy, etc.)
+              </p>
+            </div>
+            <div className="mb-6">
+              <label className="font-sharetech text-[0.65rem] text-[#7a9aaa] tracking-[0.12em] mb-1.5 block">CÓDIGO 2FA</label>
+              <input type="text" value={totpCode} inputMode="numeric" maxLength={6}
+                onChange={e => { setTotpCode(e.target.value.replace(/\D/g, "")); setError(""); }}
+                onKeyDown={e => e.key === "Enter" && handleTotpVerify()}
+                placeholder="123456" autoComplete="one-time-code"
+                className={inputCls + " text-center text-xl tracking-[0.4em]"}
+                onFocus={e => (e.target.style.borderColor = "#00e5ff")}
+                onBlur={e => (e.target.style.borderColor = "#243040")} />
+            </div>
+            <button onClick={handleTotpVerify} disabled={loading}
+              className="w-full p-3 rounded font-orbitron text-[0.8rem] font-bold tracking-[0.2em] transition-all border"
+              style={{
+                background: loading ? "rgba(0,229,255,0.05)" : "linear-gradient(135deg,rgba(0,229,255,0.15),rgba(0,230,118,0.1))",
+                borderColor: "#00e5ff", color: "#00e5ff",
+                opacity: loading ? 0.7 : 1, cursor: loading ? "not-allowed" : "pointer",
+              }}>
+              {loading ? "VERIFICANDO..." : "✓ CONFIRMAR CÓDIGO"}
+            </button>
+            <div className="font-sharetech text-[0.7rem] text-center mt-3 min-h-[18px]" style={{ color: "#ff1744" }}>{error}</div>
+            <div className="mt-3 text-center">
+              <button onClick={() => { setTotpStep(false); setTotpCode(""); setError(""); }}
+                className="font-sharetech text-[0.6rem] text-[#7a9aaa] hover:text-[#00e5ff] transition-colors">
+                ← Volver al inicio de sesión
               </button>
             </div>
           </div>
@@ -290,6 +411,7 @@ export default function Login() {
                     className={inputCls}
                     onFocus={e => (e.target.style.borderColor = "#00e5ff")}
                     onBlur={e => (e.target.style.borderColor = "#243040")} />
+                  <div className="font-sharetech text-[0.55rem] text-[#2a3a4a] mt-1">3-30 caracteres · letras, números, _ y -</div>
                 </div>
                 <div className="mb-3">
                   <label className="font-sharetech text-[0.65rem] text-[#7a9aaa] tracking-[0.12em] mb-1.5 block">CORREO ELECTRÓNICO</label>
@@ -381,3 +503,5 @@ export default function Login() {
     </div>
   );
 }
+
+// force-rebuild-2026
