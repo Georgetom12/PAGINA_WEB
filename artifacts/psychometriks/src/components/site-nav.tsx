@@ -55,7 +55,6 @@ const TOOLS_LINKS = [
   { href: "/leaderboard",       icon: "🏆", label: "Leaderboard",              desc: "Historial de señales",               plan: "educacion" },
   { href: "/boveda",            icon: "🔐", label: "Bóveda Personal",          desc: "Seeds, claves, TOTP · Cifrado local", plan: "basico"   },
   { href: "/strategies",        icon: "📋", label: "Marketplace Estrategias",  desc: "Estrategias verificadas · Backtest · Setup",  plan: "elite" },
-  { href: "/psy-brain",         icon: "🧠", label: "PSY BRAIN",               desc: "Analista IA institucional · Claude Sonnet 4 · 9 análisis", plan: "elite" },
 ];
 
 const NAV_LINKS = [
