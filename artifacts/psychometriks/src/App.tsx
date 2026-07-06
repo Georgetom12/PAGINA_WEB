@@ -43,6 +43,8 @@ import MarketHours from "@/pages/market-hours";
 import WhaleAlert from "@/pages/whale-alert";
 import BuffettScanner from "@/pages/buffett-scanner";
 import WhaleTracker from "@/pages/whale-tracker";
+import IntelligentAiTrading from "@/pages/ia-trading";
+import IaSignalsConfirmadas from "@/pages/ia-signals";
 
 import Challenge from "@/pages/challenge";
 import Affiliate from "@/pages/affiliate";
@@ -193,6 +195,8 @@ function Router() {
       {/* ── LIQMAP ELITE — requiere plan institucional/elite o superior ──── */}
       <Route path="/whale-alert"     component={() => <Guard plan="elite"><WhaleAlert /></Guard>} />
       <Route path="/whale-tracker"   component={() => <Guard plan="elite"><WhaleTracker /></Guard>} />
+      <Route path="/ia-trading"      component={() => <Guard plan="elite"><IntelligentAiTrading /></Guard>} />
+      <Route path="/ia-signals"      component={() => <Guard plan="elite"><IaSignalsConfirmadas /></Guard>} />
       <Route path="/buffett-scanner" component={() => <Guard plan="elite"><BuffettScanner /></Guard>} />
       <Route path="/bolsa"           component={() => <Guard plan="elite"><BolsaValores /></Guard>} />
       <Route path="/altcoins-signals" component={() => <Guard plan="elite"><AltcoinsSignals /></Guard>} />

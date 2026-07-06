@@ -609,18 +609,26 @@ export default function Equities() {
         .eq-wrap{background:var(--eq-bg);min-height:100vh;padding:14px;font-family:'Rajdhani',sans-serif;color:var(--eq-white);}
         .eq-wrap::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,255,.018) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,.018) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
         .eq-inner{max-width:1800px;margin:0 auto;position:relative;z-index:1;}
-        .eq-topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:var(--eq-panel);border:1px solid var(--eq-border2);border-radius:6px;margin-bottom:14px;position:relative;overflow:hidden;}
+        .eq-topbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:10px 20px;background:var(--eq-panel);border:1px solid var(--eq-border2);border-radius:6px;margin-bottom:14px;position:relative;overflow:visible;row-gap:10px;}
         .eq-topbar::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--eq-gold),var(--eq-orange),var(--eq-green),var(--eq-cyan),var(--eq-gold));background-size:200% 100%;animation:eqFlow 4s linear infinite;}
         @keyframes eqFlow{0%{background-position:0%}100%{background-position:200%}}
         .eq-logo{font-family:'Orbitron',monospace;font-size:1rem;font-weight:900;color:var(--eq-gold);letter-spacing:.2em;text-shadow:0 0 20px rgba(255,215,0,.4);}
         .eq-module{font-family:monospace;font-size:.62rem;color:var(--eq-gray);letter-spacing:.15em;border-left:1px solid var(--eq-border2);padding-left:16px;}
-        .eq-tb-right{display:flex;align-items:center;gap:12px;}
-        .eq-clock{font-family:monospace;font-size:.75rem;color:var(--eq-cyan);}
-        .eq-mkt{font-family:monospace;font-size:.6rem;padding:3px 10px;border-radius:3px;letter-spacing:.12em;}
+        .eq-tb-right{display:flex;align-items:center;gap:12px;min-width:0;width:100%;}
+        .eq-nav-scroll{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;flex:1;min-width:0;padding-bottom:2px;}
+        .eq-nav-scroll::-webkit-scrollbar{height:4px;}
+        .eq-nav-scroll::-webkit-scrollbar-thumb{background:var(--eq-border2);border-radius:2px;}
+        .eq-nav-btn{flex-shrink:0;}
+        @media (max-width:768px){
+          .eq-topbar{justify-content:flex-start;}
+          .eq-tb-right{order:3;justify-content:space-between;}
+        }
+        .eq-clock{font-family:monospace;font-size:.75rem;color:var(--eq-cyan);flex-shrink:0;}
+        .eq-mkt{font-family:monospace;font-size:.6rem;padding:3px 10px;border-radius:3px;letter-spacing:.12em;flex-shrink:0;}
         .status-open{background:rgba(0,230,118,.12);border:1px solid var(--eq-green);color:var(--eq-green);}
         .status-pre{background:rgba(255,171,0,.1);border:1px solid var(--eq-amber);color:var(--eq-amber);}
         .status-closed{background:rgba(255,23,68,.1);border:1px solid var(--eq-red);color:var(--eq-red);}
-        .eq-nav-btn{font-family:monospace;font-size:.62rem;padding:5px 12px;border-radius:3px;border:1px solid var(--eq-border2);background:transparent;color:var(--eq-gray);cursor:pointer;transition:all .2s;letter-spacing:.1em;}
+        .eq-nav-btn{font-family:monospace;font-size:.62rem;padding:5px 12px;border-radius:3px;border:1px solid var(--eq-border2);background:transparent;color:var(--eq-gray);cursor:pointer;transition:all .2s;letter-spacing:.1em;white-space:nowrap;}
         .eq-nav-btn:hover,.eq-nav-btn.active{border-color:var(--eq-gold);color:var(--eq-gold);background:rgba(255,215,0,.08);}
         .eq-ticker-wrap{background:var(--eq-bg3);border:1px solid var(--eq-border);border-radius:4px;margin-bottom:14px;overflow:hidden;height:36px;display:flex;align-items:center;}
         .eq-ticker-label{font-family:'Orbitron',monospace;font-size:.55rem;font-weight:700;color:var(--eq-gold);letter-spacing:.15em;padding:0 14px;border-right:1px solid var(--eq-border2);white-space:nowrap;flex-shrink:0;}
@@ -858,7 +866,7 @@ export default function Equities() {
               <div className="eq-module">EQUITIES COMMAND CENTER v2.0</div>
             </div>
             <div className="eq-tb-right">
-              <div style={{ display:"flex", gap:6 }}>
+              <div className="eq-nav-scroll">
                 {(["overview","sectors","confluence","buffett","insiders","dividends","financials"] as Section[]).map((s, i) => (
                   <button key={s} className={`eq-nav-btn${section === s ? " active" : ""}`} onClick={() => setSection(s)}>
                     {["OVERVIEW","SECTORES","CONFLUENCIA","🔬 BUFFETT","🕵️ INSIDERS","💰 DIVIDENDOS","📊 FINANCIALS"][i]}
