@@ -83,6 +83,7 @@ interface Gem {
   buyVolume: number; buyCount: number; sellCount: number;
   ageMinutes: number; dexUrl: string; isBoosted: boolean;
   rugScore?: number; rugRisks?: number; rugLoading?: boolean;
+  whaleBuyVolume?: number; whaleBuyCount?: number; source?: "dex" | "cmc";
 }
 
 interface TgPsySignal {
@@ -1827,6 +1828,11 @@ function GemHunterTab({isEliteUser}:{isEliteUser:boolean}) {
                 {gem.isBoosted && (
                   <div className="absolute top-2 right-2 font-sharetech text-[7px] px-1.5 py-0.5 text-[#e040fb] border border-[#e040fb35] bg-[#0a0018] animate-pulse">
                     ⚡ BOOST
+                  </div>
+                )}
+                {!!gem.whaleBuyCount && gem.whaleBuyCount > 0 && (
+                  <div className="absolute top-2 left-2 font-sharetech text-[7px] px-1.5 py-0.5 text-[#00e5ff] border border-[#00e5ff35] bg-[#00131a]">
+                    🐋 {gem.whaleBuyCount} COMPRA{gem.whaleBuyCount > 1 ? "S" : ""} BALLENA
                   </div>
                 )}
                 <div className="h-[2px]" style={{background:`linear-gradient(90deg,transparent,#e040fb,transparent)`}}/>
