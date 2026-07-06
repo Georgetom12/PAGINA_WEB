@@ -25,6 +25,8 @@ import botXRouter from "./bot-x";
 import exchangeRouter from "./exchange";
 import altcoinSignalsRouter from "./altcoin-signals";
 import psyWhalesRouter from "./psy-whales";
+import iaTradingProxyRouter from "./ia-trading-proxy";
+import iaSignalsRouter from "./ia-signals";
 import freeAuthRouter from "./free-auth";
 
 const router: IRouter = Router();
@@ -55,6 +57,8 @@ router.use(botXRouter);
 router.use(exchangeRouter);
 router.use(altcoinSignalsRouter);
 router.use(psyWhalesRouter);
+router.use("/api", iaTradingProxyRouter);
+router.use("/api", iaSignalsRouter);
 router.use(freeAuthRouter);
 
 export default router;
