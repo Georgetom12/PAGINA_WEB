@@ -1,3 +1,4 @@
+// build-refresh: 2026-07-05T23-14 — forzar rebuild sin cache stale
 import { Router, type IRouter } from "express";
 import healthRouter from "./health";
 import chatRouter from "./chat";
