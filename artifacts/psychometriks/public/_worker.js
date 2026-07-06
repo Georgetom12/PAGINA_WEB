@@ -40,21 +40,13 @@ async function buildSignedRequest(target, originalRequest, env) {
 }
 
 // ── CAPA SERVCLI — Validación de token en PSY BRAIN ───────────────────────
-// Verifica que el request viene de un usuario autenticado en la plataforma.
-// No hace verificación contra DB (sin latencia extra) — valida formato y presencia.
-// SUPERADMIN: base64("SUPERADMIN:user:pass") · OPERATOR: base64("OPERATOR:user:pass")
-// Member: cualquier token almacenado en psyko_auth (verificado estructuralmente).
-function isValidPsyToken(token) {
+// Verifica el JWT real (firma HMAC-SHA256 + expiración), usando el mismo
+// SESSION_SECRET que firma los tokens en Railway y en el login del Worker.
+async function isValidPsyToken(token, env) {
   if (!token || typeof token !== "string") return false;
-  if (token.length < 10 || token.length > 1024) return false;
-  try {
-    // Verifica que sea Base64 decodificable y tenga contenido coherente
-    const decoded = atob(token);
-    if (decoded.length < 5) return false;
-    // Acepta cualquier token que tenga al menos un ":" (formato user:data)
-    // Esto cubre SUPERADMIN:, OPERATOR:, y los tokens de miembros
-    return decoded.includes(":") || decoded.length > 20;
-  } catch { return false; }
+  const JWT_SECRET = env.SESSION_SECRET ?? env.JWT_SECRET ?? "psy_fallback_2026";
+  const payload = await verifyJwt(token, JWT_SECRET);
+  return payload !== null;
 }
 
 // ── PSY BRAIN IA — Prompt system ───────────────────────────────────────────
@@ -224,7 +216,7 @@ export default {
     if (path === "/api/psy-oracle/brain" && request.method === "POST") {
       // ── Auth check: el token debe existir y tener formato válido ──────────
       const psyToken = request.headers.get("x-psy-token");
-      if (!isValidPsyToken(psyToken)) {
+      if (!(await isValidPsyToken(psyToken, env))) {
         return new Response(
           JSON.stringify({ error: "Autenticación requerida — inicia sesión en psychometriks.trade" }),
           {
