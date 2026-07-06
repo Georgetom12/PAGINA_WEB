@@ -39,6 +39,8 @@ import psyLaunchRouter from "./psy-launch";
 import psyWhalesRouter from "./psy-whales";
 import altcoinSignalsRouter from "./altcoin-signals";
 import whitelistRouter from "./whitelist";
+import iaTradingProxyRouter from "./ia-trading-proxy";
+import iaSignalsRouter from "./ia-signals";
 
 const router: IRouter = Router();
 
@@ -82,5 +84,7 @@ router.use(psyLaunchRouter);
 router.use(psyWhalesRouter);
 router.use(altcoinSignalsRouter);
 router.use(whitelistRouter);
+router.use(iaTradingProxyRouter);
+router.use(iaSignalsRouter);
 
 export default router;
