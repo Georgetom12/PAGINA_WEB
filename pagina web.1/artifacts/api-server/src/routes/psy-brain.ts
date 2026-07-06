@@ -37,7 +37,7 @@ router.post("/psy-brain/analyze", async (req: Request, res: Response) => {
   try {
     const client = new Anthropic({ apiKey });
     const stream = client.messages.stream({
-      model: "claude-sonnet-4-20250514",
+      model: "claude-sonnet-5",
       max_tokens: 2000,
       system: PSY_BRAIN_SYSTEM,
       messages: [{ role: "user", content: prompt }],

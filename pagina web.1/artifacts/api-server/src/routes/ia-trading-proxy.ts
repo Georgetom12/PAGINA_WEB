@@ -27,7 +27,7 @@ if (!IA_TRADING_URL || !IA_TRADING_SECRET) {
 
 async function requireElite(req: Request, res: Response): Promise<boolean> {
   const auth = await validateToken(req.headers["x-psy-token"] as string | undefined);
-  const allowed = auth.role === "superadmin" || auth.plan === "elite";
+  const allowed = auth.role === "superadmin" || auth.role === "operator" || auth.plan === "elite";
   if (!allowed) {
     res.status(403).json({ ok: false, error: "Requiere plan Elite" });
     return false;
