@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00e5ff"/>
+      <stop offset="100%" stop-color="#e040fb"/>
+    </linearGradient>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#020b12"/>
+      <stop offset="100%" stop-color="#040f1e"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <rect x="1" y="1" width="510" height="510" rx="95" fill="none" stroke="url(#g)" stroke-width="2" opacity="0.4"/>
+  <!-- P letter -->
+  <rect x="88" y="140" width="22" height="232" rx="4" fill="url(#g)"/>
+  <rect x="88" y="140" width="120" height="22" rx="4" fill="url(#g)"/>
+  <rect x="88" y="230" width="100" height="22" rx="4" fill="url(#g)"/>
+  <rect x="196" y="140" width="22" height="112" rx="4" fill="url(#g)"/>
+  <!-- S letter -->
+  <rect x="236" y="140" width="110" height="22" rx="4" fill="url(#g)"/>
+  <rect x="236" y="140" width="22" height="112" rx="4" fill="url(#g)"/>
+  <rect x="236" y="230" width="110" height="22" rx="4" fill="url(#g)"/>
+  <rect x="324" y="230" width="22" height="114" rx="4" fill="url(#g)"/>
+  <rect x="236" y="350" width="110" height="22" rx="4" fill="url(#g)"/>
+  <!-- Y letter -->
+  <rect x="374" y="140" width="22" height="110" rx="4" fill="url(#g)" transform="rotate(30 374 140)" transform-origin="374 140"/>
+  <rect x="424" y="140" width="22" height="110" rx="4" fill="url(#g)" transform="rotate(-30 446 140)" transform-origin="446 140"/>
+  <rect x="400" y="250" width="22" height="122" rx="4" fill="url(#g)"/>
+</svg>
