@@ -15,7 +15,7 @@ interface PsyBrainRequest {
   prompt: string;
 }
 
-router.post("/api/psy-brain/analyze", async (req: Request, res: Response) => {
+router.post("/psy-brain/analyze", async (req: Request, res: Response) => {
   const apiKey = process.env["ANTHROPIC_API_KEY"];
   if (!apiKey) {
     res.status(503).json({ error: "API key no configurada" });
