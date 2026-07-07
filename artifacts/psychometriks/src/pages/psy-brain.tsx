@@ -242,7 +242,7 @@ export default function PsyBrain() {
   const [score, setScore] = useState(0);
   const [clock, setClock] = useState("");
   const [history, setHistory] = useState<{ asset: string; type: string; ts: string }[]>([]);
-  const [livePrices, setLivePrices] = useState<Record<string, { price: number | null; changePct: number | null }>>({});
+  const [livePrices, setLivePrices] = useState<Record<string, { price: number | null; changePct: number | null; marketCap?: number | null }>>({});
   const [liveMacroCtx, setLiveMacroCtx] = useState<string>("");
   const messagesRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -256,7 +256,7 @@ export default function PsyBrain() {
         const r = await fetch("/api/psy-brain/live-data");
         const d = await r.json() as {
           ok: boolean;
-          equities: Record<string, { price: number | null; changePct: number | null }>;
+          equities: Record<string, { price: number | null; changePct: number | null; marketCap: number | null }>;
           indices: Record<string, { price: number | null; changePct: number | null }>;
           macro: Record<string, { price: number | null; changePct: number | null }>;
           crypto: Record<string, { price: number | null; changePct: number | null }>;
@@ -280,11 +280,22 @@ export default function PsyBrain() {
     return () => { cancelled = true; clearInterval(iv); };
   }, []);
 
-  // Combina un activo estático con su precio en vivo (si ya llegó)
+  // Combina un activo estático con su precio/mcap en vivo (si ya llegó)
+  const fmtMcap = (n: number): string => {
+    if (n >= 1e12) return `${(n / 1e12).toFixed(2)}T`;
+    if (n >= 1e9) return `${(n / 1e9).toFixed(2)}B`;
+    if (n >= 1e6) return `${(n / 1e6).toFixed(2)}M`;
+    return String(n);
+  };
   const withLive = useCallback((asset: AssetItem): AssetItem => {
     const live = livePrices[asset.sym];
     if (!live || live.price == null) return asset;
-    return { ...asset, px: live.price, pct: live.changePct ?? asset.pct };
+    return {
+      ...asset,
+      px: live.price,
+      pct: live.changePct ?? asset.pct,
+      mcap: live.marketCap != null ? fmtMcap(live.marketCap) : asset.mcap,
+    };
   }, [livePrices]);
 
   useEffect(() => {
