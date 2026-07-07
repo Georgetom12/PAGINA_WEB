@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { shieldWrite } from "@/lib/secure-storage";
 
-const SUPERADMIN_USERNAMES = new Set(["jorge-2026", "admin"]);
+const SUPERADMIN_USERNAMES = new Set(["jorge-2026", "admin", "jamogollon"]);
 
 type LoginTab = "login" | "register" | "forgot";
 
