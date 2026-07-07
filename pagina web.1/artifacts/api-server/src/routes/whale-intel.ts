@@ -59,6 +59,7 @@ export interface WhaleTrader {
   pnlSource?: "mtm" | "est";
   entryPrice?: number;
   tpPrice?: number;
+  tp2Price?: number;
   slPrice?: number;
   walletLabel?: string;
 }
@@ -348,15 +349,26 @@ async function fetchPriceChanges(): Promise<Record<string, number>> {
   return changes;
 }
 
-// ─── Estima entrada / TP / SL a partir del precio actual y funding ────────────
+// ─── Estima entrada / TP / SL con extensiones de Fibonacci reales ────────────
+// (antes usaba un % fijo 6%/3% — ahora usa 1.272/1.618 sobre el swing
+// implícito por volatilidad de funding, igual que el resto de la plataforma)
 function estimateLevels(markPx: number, isLong: boolean, fundingAbs: number) {
   const drift = Math.min(0.06, fundingAbs * 100 * 48);
   const offset = isLong ? -(drift + 0.02) : (drift + 0.02);
   const entry = markPx * (1 + offset);
+
+  // "Swing" implícito: qué tan lejos se movió el precio para generar este
+  // funding — se usa como base del rango para las extensiones Fibonacci
+  const swing = Math.max(entry * 0.015, Math.abs(entry - markPx) * 2);
+  const fibE127 = isLong ? entry + swing * 0.272 : entry - swing * 0.272;
+  const fibE161 = isLong ? entry + swing * 0.618 : entry - swing * 0.618;
+  const fibSL   = isLong ? entry - swing * 0.382 : entry + swing * 0.382;
+
   return {
     entryPrice: Math.round(entry * 100) / 100,
-    tpPrice:    Math.round((isLong ? entry * 1.06 : entry * 0.94) * 100) / 100,
-    slPrice:    Math.round((isLong ? entry * 0.97 : entry * 1.03) * 100) / 100,
+    tpPrice:    Math.round(fibE127 * 100) / 100,   // TP1 ≈ extensión 1.272
+    tp2Price:   Math.round(fibE161 * 100) / 100,   // TP2 ≈ extensión 1.618
+    slPrice:    Math.round(fibSL * 100) / 100,
   };
 }
 
