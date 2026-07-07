@@ -322,4 +322,96 @@ router.get("/oracle/superinvestors", async (_req, res) => {
   }
 });
 
+// ── PSY LISTING RADAR — reemplaza al tab de Degate ─────────────────────────
+// Combina: nuevos listados de CoinMarketCap + si ya tienen futuros abiertos
+// en Coinglass (señal de dinero institucional temprano) + Max Pain semanal
+// de BTC/ETH (Coinglass). Cacheado 1h — no vale la pena pedir esto seguido.
+const CG_BASE = "https://open-api-v4.coinglass.com";
+
+async function cgFetch(path: string): Promise<unknown | null> {
+  const key = process.env["COINGLASS_API_KEY"];
+  if (!key) return null;
+  try {
+    const r = await fetch(`${CG_BASE}${path}`, {
+      headers: { "CG-API-KEY": key, "Accept": "application/json" },
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!r.ok) return { __error: true, status: r.status };
+    return await r.json();
+  } catch { return null; }
+}
+
+router.get("/oracle/listing-radar", async (_req, res) => {
+  const cacheKey = "listing_radar";
+  const cached = cache[cacheKey];
+  if (cached && Date.now() - cached.ts < 60 * 60_000) { res.json(cached.data); return; }
+
+  try {
+    // 1) Nuevos listados de CMC (últimos, ordenados por fecha de alta)
+    const cmcKey = process.env["COINMARKETCAP_API_KEY"];
+    let newListings: Array<{ symbol: string; name: string; marketCap: number; price: number; changePct24h: number; dateAdded: string }> = [];
+    if (cmcKey) {
+      const r = await fetch(
+        "https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest?limit=15&sort=date_added&sort_dir=desc&convert=USD",
+        { headers: { "X-CMC_PRO_API_KEY": cmcKey }, signal: AbortSignal.timeout(10000) },
+      );
+      if (r.ok) {
+        const d = await r.json() as { data?: Array<Record<string, unknown>> };
+        newListings = (d.data ?? []).map(t => {
+          const quote = (t["quote"] as Record<string, Record<string, number>>)?.["USD"] ?? {};
+          return {
+            symbol: String(t["symbol"] ?? "?"),
+            name: String(t["name"] ?? "Unknown"),
+            marketCap: quote["market_cap"] ?? 0,
+            price: quote["price"] ?? 0,
+            changePct24h: quote["percent_change_24h"] ?? 0,
+            dateAdded: String(t["date_added"] ?? ""),
+          };
+        });
+      }
+    }
+
+    // 2) De esos, ¿cuáles ya tienen mercado de futuros abierto? (Coinglass)
+    let futuresSymbols = new Set<string>();
+    const coinsMarkets = await cgFetch("/api/futures/coins-markets");
+    let coinglassUpgradeNeeded = false;
+    if (coinsMarkets && typeof coinsMarkets === "object" && "__error" in (coinsMarkets as object)) {
+      coinglassUpgradeNeeded = true;
+    } else if (Array.isArray((coinsMarkets as { data?: unknown[] })?.data)) {
+      const rows = (coinsMarkets as { data: Array<{ symbol?: string }> }).data;
+      futuresSymbols = new Set(rows.map(r => (r.symbol ?? "").toUpperCase()));
+    }
+
+    const radar = newListings.map(c => ({
+      ...c,
+      tieneFuturos: futuresSymbols.has(c.symbol.toUpperCase()),
+    }));
+
+    // 3) Max Pain semanal BTC/ETH (Coinglass)
+    let maxPain: Array<{ symbol: string; price: number | null }> = [];
+    const mpBtc = await cgFetch("/api/option/max-pain?symbol=BTC");
+    const mpEth = await cgFetch("/api/option/max-pain?symbol=ETH");
+    for (const [sym, mp] of [["BTC", mpBtc], ["ETH", mpEth]] as const) {
+      if (mp && typeof mp === "object" && !("__error" in (mp as object))) {
+        const rows = (mp as { data?: Array<{ maxPainPrice?: number }> }).data;
+        maxPain.push({ symbol: sym, price: rows?.[0]?.maxPainPrice ?? null });
+      } else {
+        maxPain.push({ symbol: sym, price: null });
+      }
+    }
+
+    const payload = {
+      ok: true,
+      newListings: radar,
+      maxPain,
+      coinglassUpgradeNeeded,
+      fetchedAt: new Date().toISOString(),
+    };
+    cache[cacheKey] = { data: payload, ts: Date.now() };
+    res.json(payload);
+  } catch (err) {
+    res.status(502).json({ ok: false, error: String(err) });
+  }
+});
+
 export default router;
