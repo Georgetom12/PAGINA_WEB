@@ -290,6 +290,8 @@ export default function Equities() {
   const [liveInsiderTx, setLiveInsiderTx] = useState<InsiderTx[]>([]);
   const [liveInsiderIsReal, setLiveInsiderIsReal] = useState(false);
   const [liveInstData, setLiveInstData] = useState<{ ok: boolean; data?: unknown; error?: string; requiresUpgrade?: boolean } | null>(null);
+  const [liveDividends, setLiveDividends] = useState<Record<string, { annualDividend: number; yield: number } | null>>({});
+  const [liveDivLoaded, setLiveDivLoaded] = useState(false);
   const chartRef  = useRef<HTMLCanvasElement>(null);
   const chartInst = useRef<Chart | null>(null);
   // Buffett Scanner (real API data)
@@ -393,6 +395,25 @@ export default function Equities() {
 
     return () => { cancelled = true; };
   }, [section, insiderStock]);
+
+  // Dividendos — trae el lote completo una sola vez (cacheado 12h del lado
+  // del servidor), no cada vez que se re-renderiza.
+  useEffect(() => {
+    if (section !== "dividends" || liveDivLoaded) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const symbols = STOCKS.map(s => s.sym).join(",");
+        const r = await fetch(`/api/proxy/fmp/dividends-batch?symbols=${encodeURIComponent(symbols)}`);
+        const d = await r.json() as { ok: boolean; data?: Record<string, { annualDividend: number; yield: number } | null> };
+        if (!cancelled && d.ok && d.data) {
+          setLiveDividends(d.data);
+          setLiveDivLoaded(true);
+        }
+      } catch { /* se queda con los valores estáticos de referencia */ }
+    })();
+    return () => { cancelled = true; };
+  }, [section, liveDivLoaded]);
 
   // Chart render
   const renderChart = useCallback((s: Stock) => {
@@ -1991,7 +2012,14 @@ export default function Equities() {
 
           {/* ══ DIVIDENDOS ══ */}
           {section === "dividends" && (() => {
-            const divPayers = liveStocks.filter(s => s.div > 0).sort((a,b) => b.yield - a.yield);
+            // Fusiona yield/dividendo en vivo (si ya cargó) sobre liveStocks
+            const divStocks: Stock[] = liveStocks.map(s => {
+              const live = liveDividends[s.sym];
+              if (live === undefined) return s; // aún no cargó — usa referencia estática
+              if (live === null) return { ...s, div: 0, yield: 0 }; // FMP confirmó: no paga dividendo
+              return { ...s, div: live.annualDividend, yield: live.yield };
+            });
+            const divPayers = divStocks.filter(s => s.div > 0).sort((a,b) => b.yield - a.yield);
             const avgYield  = divPayers.reduce((a,s) => a+s.yield, 0) / (divPayers.length||1);
             const topYield  = Math.max(...divPayers.map(s=>s.yield));
             const aristocrats = divPayers.filter(s => aristocrat(s.sym));
@@ -2003,6 +2031,13 @@ export default function Equities() {
             return (
               <>
                 <div className="eq-sec-title">💰 DIVIDENDOS — INCOME INVESTING & ARISTOCRATS</div>
+                <div style={{ fontFamily:"monospace", fontSize:".6rem", marginBottom:10 }}>
+                  {liveDivLoaded ? (
+                    <span style={{ color:"var(--eq-green)" }}>● DATOS REALES — FMP (últimos 12 meses)</span>
+                  ) : (
+                    <span style={{ color:"var(--eq-amber)" }}>⟳ Cargando dividendos reales de FMP...</span>
+                  )}
+                </div>
 
                 <div className="div-overview-cards">
                   <div className="div-ov-card">
