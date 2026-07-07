@@ -6,7 +6,7 @@ import telegramRouter from "./telegram";
 import signalsRouter from "./signals";
 import channelsRouter from "./channels";
 import marketRouter from "./market";
-import operatorsRouter from "./operators";
+// operatorsRouter eliminado — un único superadmin (jamogollon vía env vars)
 import botStatusRouter from "./bot-status";
 import testInterpretRouter from "./test-interpret";
 import psyAutopsyRouter from "./psy-autopsy";
@@ -51,7 +51,7 @@ router.use(telegramRouter);
 router.use(signalsRouter);
 router.use(channelsRouter);
 router.use(marketRouter);
-router.use(operatorsRouter);
+// router.use(operatorsRouter); — eliminado, un único superadmin
 router.use(botStatusRouter);
 router.use(testInterpretRouter);
 router.use(psyAutopsyRouter);
