@@ -148,29 +148,7 @@ export default function Login() {
       return;
     }
 
-    try {
-      const res = await fetch("/api/auth/operator-login", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: key, password: pass }),
-      });
-      if (res.ok) {
-        const data = await res.json() as {
-          ok: boolean; role: string; username: string;
-          displayName?: string; token: string;
-        };
-        if (data.ok && data.role === "operator") {
-          localStorage.setItem("psyko_auth", JSON.stringify({
-            user: data.username, displayName: data.displayName ?? data.username,
-            role: "operator", token: data.token, ts: Date.now(),
-          }));
-          window.location.replace("/realtime");
-          return;
-        }
-      }
-    } catch { /* no operator */ }
-
+    // Rol "operator" eliminado — un único superadmin (jamogollon).
     setError(memberErrorMsg ?? "ACCESO DENEGADO — Credenciales incorrectas o cuenta inactiva");
     setLoading(false);
   };
@@ -506,4 +484,5 @@ export default function Login() {
   );
 }
 // force-rebuild-2026
+
 
