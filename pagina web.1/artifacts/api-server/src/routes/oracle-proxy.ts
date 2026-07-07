@@ -14,10 +14,14 @@ const ORACLE_FEEDS_URL =
   "https://psychometriks-oracle-feeds-production.up.railway.app";
 
 const PROXY_PREFIXES = [
-  "/api/buffett",
-  "/api/proxy/fmp",
+  // NOTA: /api/buffett, /api/proxy/fmp y /api/scan se sacaron de esta lista
+  // porque YA existen implementados localmente (buffett.ts, market-proxy.ts,
+  // scan.ts) — se estaban reenviando en silencio al servicio externo de
+  // Oracle Feeds ANTES de llegar a esas rutas locales, así que ningún fix
+  // de hoy (Financials, Insiders, Dividendos, Buffett auto-scan) se estaba
+  // aplicando de verdad. Solo queda /api/proxy/polygon, que no tiene
+  // implementación local.
   "/api/proxy/polygon",
-  "/api/scan",
 ];
 
 async function forwardRequest(req: Request, res: Response): Promise<void> {
