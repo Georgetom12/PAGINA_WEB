@@ -14,7 +14,7 @@ function cSet<T>(k: string, d: T, ms: number) {
 
 // ── FMP (mismo patrón ya probado en buffett.ts) ─────────────────────────────
 const FMP_BASE = "https://financialmodelingprep.com/stable";
-async function fmpQuote(symbol: string): Promise<{ price: number; changePct: number } | null> {
+async function fmpQuote(symbol: string): Promise<{ price: number; changePct: number; marketCap: number | null } | null> {
   const key = process.env["FMP_API_KEY"];
   if (!key) return null;
   try {
@@ -22,10 +22,10 @@ async function fmpQuote(symbol: string): Promise<{ price: number; changePct: num
       signal: AbortSignal.timeout(8000),
     });
     if (!r.ok) return null;
-    const d = await r.json() as Array<{ price?: number; changePercentage?: number }>;
+    const d = await r.json() as Array<{ price?: number; changePercentage?: number; marketCap?: number }>;
     const q = Array.isArray(d) ? d[0] : null;
     if (!q || typeof q.price !== "number") return null;
-    return { price: q.price, changePct: q.changePercentage ?? 0 };
+    return { price: q.price, changePct: q.changePercentage ?? 0, marketCap: q.marketCap ?? null };
   } catch { return null; }
 }
 
@@ -74,9 +74,13 @@ router.get("/psy-brain/live-data", async (_req: Request, res: Response) => {
       fmpTreasury(),
     ]);
 
-    const equities: Record<string, { price: number | null; changePct: number | null }> = {};
+    const equities: Record<string, { price: number | null; changePct: number | null; marketCap: number | null }> = {};
     EQUITY_SYMS.forEach((s, i) => {
-      equities[s] = { price: equityResults[i]?.price ?? null, changePct: equityResults[i]?.changePct ?? null };
+      equities[s] = {
+        price: equityResults[i]?.price ?? null,
+        changePct: equityResults[i]?.changePct ?? null,
+        marketCap: equityResults[i]?.marketCap ?? null,
+      };
     });
 
     const indices: Record<string, { price: number | null; changePct: number | null }> = {};
