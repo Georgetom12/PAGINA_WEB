@@ -1846,7 +1846,11 @@ function GemHunterTab({isEliteUser}:{isEliteUser:boolean}) {
                 )}
                 {!!gem.whaleBuyCount && gem.whaleBuyCount > 0 && (
                   <div className="absolute top-2 left-2 font-sharetech text-[7px] px-1.5 py-0.5 text-[#00e5ff] border border-[#00e5ff35] bg-[#00131a]">
-                    🐋 {gem.whaleBuyCount} COMPRA{gem.whaleBuyCount > 1 ? "S" : ""} BALLENA
+                    🐋 {gem.whaleBuyCount} COMPRA{gem.whaleBuyCount > 1 ? "S" : ""} BALLENA · ${
+                      (gem.whaleBuyVolume ?? 0) >= 1_000_000
+                        ? `${((gem.whaleBuyVolume ?? 0) / 1_000_000).toFixed(2)}M`
+                        : `${((gem.whaleBuyVolume ?? 0) / 1_000).toFixed(0)}K`
+                    }
                   </div>
                 )}
                 <div className="h-[2px]" style={{background:`linear-gradient(90deg,transparent,#e040fb,transparent)`}}/>
@@ -1876,11 +1880,12 @@ function GemHunterTab({isEliteUser}:{isEliteUser:boolean}) {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-1.5 mb-3">
+                  <div className="grid grid-cols-4 gap-1.5 mb-3">
                     {[
                       {label:"BUY VOL",  value:fmt(gem.buyVolume),                       color:"#00e676"},
                       {label:"LIQUIDITY",value:fmt(gem.liquidity),                       color:"#00e5ff"},
                       {label:"MKT CAP",  value:gem.marketCap?fmt(gem.marketCap):"N/D",  color:"#ffd700"},
+                      {label:"🐋 VOL BALLENA", value:gem.whaleBuyVolume?fmt(gem.whaleBuyVolume):"—", color:"#e040fb"},
                     ].map(s=>(
                       <div key={s.label} className="bg-[#040d18] border border-[#0d1a2a] p-2.5 text-center">
                         <div className="font-sharetech text-[7px] text-[#5a8898] tracking-[0.08em] mb-1">{s.label}</div>
