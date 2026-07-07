@@ -113,6 +113,8 @@ export default function Login() {
       return;
     }
 
+    let memberErrorMsg: string | null = null;
+
     try {
       const res = await fetch("/api/auth/member-login", {
         method: "POST",
@@ -135,10 +137,10 @@ export default function Login() {
           return;
         }
       } else if (res.status === 401) {
+        // No es cuenta "member" (o clave incorrecta) — guardamos el mensaje
+        // pero seguimos probando operator-login antes de rendirnos.
         const body = await res.json().catch(() => ({})) as { error?: string };
-        setError(body.error ?? "Credenciales incorrectas");
-        setLoading(false);
-        return;
+        memberErrorMsg = body.error ?? null;
       }
     } catch {
       setError("No se pudo conectar al servidor. Verifica tu conexión.");
@@ -169,7 +171,7 @@ export default function Login() {
       }
     } catch { /* no operator */ }
 
-    setError("ACCESO DENEGADO — Credenciales incorrectas o cuenta inactiva");
+    setError(memberErrorMsg ?? "ACCESO DENEGADO — Credenciales incorrectas o cuenta inactiva");
     setLoading(false);
   };
 
