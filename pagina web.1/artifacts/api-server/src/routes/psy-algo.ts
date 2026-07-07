@@ -520,12 +520,59 @@ async function genSignal(a: typeof ASSETS[number]) {
 }
 
 // ─── GET /api/psy-algo/signals ─────────────────────────────────────────────────
+// ── IA Trading (motor interno) — cruce de confirmación ─────────────────────
+const IA_TRADING_URL = process.env["IA_TRADING_URL"];
+const IA_TRADING_SECRET = process.env["IA_TRADING_INTERNAL_SECRET"];
+
+async function consultarIaTrading(symbol: string): Promise<{
+  direccion: string; confianza: number; accion: string; dictamen: string; patron: string;
+} | null> {
+  if (!IA_TRADING_URL || !IA_TRADING_SECRET) return null;
+  try {
+    const r = await fetch(`${IA_TRADING_URL}/api/analizar`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Internal-Secret": IA_TRADING_SECRET },
+      body: JSON.stringify({ symbol: `${symbol}USDT` }),
+      signal: AbortSignal.timeout(20000),
+    });
+    if (!r.ok) return null;
+    const data = await r.json() as {
+      dictamen?: { direccion: string; confianza: number; accion: string; dictamen: string };
+      nucleo?: { fractal_pro_patron?: string; fractal_tipo?: string };
+    };
+    if (!data.dictamen) return null;
+    return {
+      direccion: data.dictamen.direccion,
+      confianza: data.dictamen.confianza,
+      accion: data.dictamen.accion,
+      dictamen: data.dictamen.dictamen,
+      patron: data.nucleo?.fractal_pro_patron !== "NINGUNO" ? (data.nucleo?.fractal_pro_patron ?? "") : (data.nucleo?.fractal_tipo ?? ""),
+    };
+  } catch { return null; }
+}
+
+// ─── GET /api/psy-algo/signals ─────────────────────────────────────────────────
 router.get("/psy-algo/signals", async (_req: Request, res: Response) => {
-  const cached = cGet<unknown[]>("psy_algo_v2");
+  const cached = cGet<unknown[]>("psy_algo_v3");
   if (cached) { res.json({ ok: true, signals: cached }); return; }
   try {
-    const signals = await Promise.all(ASSETS.map(genSignal));
-    cSet("psy_algo_v2", signals, 5 * 60_000);
+    const signals = await Promise.all(ASSETS.map(genSignal)) as Array<Record<string, unknown> & { symbol: string; direction: string }>;
+
+    // Cruce con el motor IA Trading (en paralelo, sin bloquear si el motor
+    // no responde — las señales clásicas siguen mostrándose igual)
+    const iaResults = await Promise.all(signals.map(s => consultarIaTrading(s.symbol)));
+    signals.forEach((s, i) => {
+      const ia = iaResults[i];
+      if (!ia) { s["iaConfirmado"] = null; return; }
+      const direccionIa = ia.direccion === "ALCISTA" ? "LONG" : ia.direccion === "BAJISTA" ? "SHORT" : "NEUTRAL";
+      s["iaConfianza"] = ia.confianza;
+      s["iaDictamen"]  = ia.dictamen;
+      s["iaPatron"]    = ia.patron;
+      s["iaAccion"]    = ia.accion;
+      s["iaConfirmado"] = direccionIa === s.direction && ia.accion !== "EVITAR";
+    });
+
+    cSet("psy_algo_v3", signals, 5 * 60_000);
     res.json({ ok: true, signals });
   } catch (err) { logger.error({ err }, "psy-algo error"); res.json({ ok: false, signals: [], error: String(err) }); }
 });
