@@ -436,26 +436,26 @@ function TotpSection({ storedSecret, onSave }: { storedSecret: string; onSave: (
 
 // ─── Recovery Section ─────────────────────────────────────────────────────────
 function RecoverySection({ recoveryKey }: { recoveryKey: string }) {
-  const [method, setMethod] = useState<"telegram"|"email"|"whatsapp">("telegram");
-  const [chatId, setChatId] = useState("");
-  const [sending, setSending] = useState(false);
-  const [result, setResult] = useState<string>("");
+  const [copied, setCopied] = useState(false);
 
-  async function send() {
-    setSending(true); setResult("");
-    try {
-      const r = await fetch(`${API_BASE}/api/vault/send-recovery`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ recoveryKey, method, chatId: chatId || undefined }),
-      });
-      const d = await r.json() as { ok: boolean; error?: string };
-      if (d.ok) setResult("✅ Clave enviada correctamente");
-      else setResult(`⚠️ ${d.error ?? "Error al enviar"}`);
-    } catch {
-      setResult("⚠️ Error de conexión");
-    }
-    setSending(false);
+  function copyToClipboard() {
+    navigator.clipboard.writeText(recoveryKey).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    });
+  }
+
+  function downloadAsFile() {
+    const blob = new Blob(
+      [`PSYCHOMETRIKS — CLAVE DE RECUPERACIÓN DE BÓVEDA\n\n${recoveryKey}\n\nGuarda este archivo en un lugar seguro y offline. Nunca lo compartas con nadie.`],
+      { type: "text/plain" },
+    );
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "psychometriks-recovery-key.txt";
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   return (
@@ -464,64 +464,32 @@ function RecoverySection({ recoveryKey }: { recoveryKey: string }) {
         <div className="font-bebas text-xl text-[#ffd700] mb-2">⚠️ CLAVE DE RECUPERACIÓN</div>
         <div className="font-space text-[10px] text-[#8a9ab0] leading-relaxed">
           Esta clave es la única forma de recuperar tu bóveda si olvidas el PIN.
-          Guárdala en un lugar seguro fuera de tu dispositivo.
-          PSYCHOMETRIKS no puede recuperar claves perdidas.
+          Guárdala en un lugar seguro <strong>fuera de tu dispositivo</strong> (papel,
+          gestor de contraseñas, USB cifrado). PSYCHOMETRIKS no puede recuperar
+          claves perdidas — y por tu seguridad, <strong>esta clave nunca sale de tu
+          navegador</strong>: no la enviamos ni la guardamos en ningún servidor.
         </div>
       </div>
 
       <MaskedField label="CLAVE DE RECUPERACIÓN" value={recoveryKey} />
 
       <div className="border border-[#1a2535] bg-[#060a0f] p-4">
-        <div className="font-space text-[9px] text-[#7ab3c8] tracking-[0.2em] mb-4">ENVIAR CLAVE A</div>
-        <div className="flex gap-2 mb-4">
-          {([
-            { id: "telegram", label: "TELEGRAM", icon: "✈" },
-            { id: "email",    label: "EMAIL",    icon: "✉" },
-            { id: "whatsapp", label: "WHATSAPP", icon: "💬" },
-          ] as const).map(m => (
-            <button key={m.id} onClick={() => { setMethod(m.id); setResult(""); }}
-              className="flex-1 py-2 border font-space text-[10px] tracking-[0.1em] transition-all"
-              style={{
-                borderColor: method === m.id ? "#00e5ff" : "#1a2535",
-                color:       method === m.id ? "#00e5ff" : "#4a6070",
-                background:  method === m.id ? "#00e5ff08" : "transparent",
-              }}>
-              {m.icon} {m.label}
-            </button>
-          ))}
-        </div>
-
-        {method === "telegram" && (
-          <div className="space-y-3">
-            <input value={chatId} onChange={e => setChatId(e.target.value)} placeholder="Tu Chat ID de Telegram (ej: 123456789)"
-              className="w-full bg-[#020408] border border-[#1a2535] text-white font-space text-[11px] px-3 py-2 focus:outline-none focus:border-[#00e5ff44]" />
-            <div className="font-space text-[9px] text-[#5a8898]">
-              Para obtener tu Chat ID: abre @userinfobot en Telegram y envía cualquier mensaje.
-            </div>
-          </div>
-        )}
-
-        {(method === "email" || method === "whatsapp") && (
-          <div className="border border-[#1a2535] p-3 text-center">
-            <div className="font-bebas text-xl text-[#7ab3c8] mb-1">PRÓXIMAMENTE</div>
-            <div className="font-space text-[9px] text-[#5a8898]">
-              {method === "email" ? "Integración con email en desarrollo" : "Integración con WhatsApp Business API en desarrollo"}
-            </div>
-          </div>
-        )}
-
-        {method === "telegram" && (
-          <button onClick={send} disabled={sending}
-            className="w-full mt-3 py-3 border border-[#00e5ff44] bg-[#00e5ff08] text-[#00e5ff] font-space text-[11px] tracking-[0.2em] hover:bg-[#00e5ff15] transition-all disabled:opacity-50">
-            {sending ? "ENVIANDO..." : "ENVIAR CLAVE DE RECUPERACIÓN"}
+        <div className="font-space text-[9px] text-[#7ab3c8] tracking-[0.2em] mb-4">GUARDAR CLAVE (100% LOCAL)</div>
+        <div className="flex gap-2">
+          <button onClick={copyToClipboard}
+            className="flex-1 py-3 border border-[#00e5ff44] bg-[#00e5ff08] text-[#00e5ff] font-space text-[11px] tracking-[0.15em] hover:bg-[#00e5ff15] transition-all">
+            {copied ? "✅ COPIADA" : "📋 COPIAR"}
           </button>
-        )}
-
-        {result && (
-          <div className={`mt-3 font-space text-[10px] text-center ${result.startsWith("✅") ? "text-[#00e676]" : "text-[#ff6d00]"}`}>
-            {result}
-          </div>
-        )}
+          <button onClick={downloadAsFile}
+            className="flex-1 py-3 border border-[#00e676] bg-[#00e67608] text-[#00e676] font-space text-[11px] tracking-[0.15em] hover:bg-[#00e67615] transition-all">
+            ⬇ DESCARGAR .TXT
+          </button>
+        </div>
+        <div className="font-space text-[9px] text-[#5a8898] mt-3 leading-relaxed">
+          Copia o descarga tu clave ahora — no la vamos a mostrar de nuevo por defecto.
+          Todo esto ocurre dentro de tu navegador; nada se transmite a nuestros
+          servidores ni a terceros (ni Telegram, ni email, ni WhatsApp).
+        </div>
       </div>
     </div>
   );
@@ -1273,3 +1241,4 @@ function SeedReveal({ seed }: { seed: string }) {
     </div>
   );
 }
+
