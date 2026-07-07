@@ -85,6 +85,7 @@ export interface Gem {
   whaleBuyVolume?: number;
   whaleBuyCount?: number;
   source?: "dex" | "cmc";
+  detectedCount?: number; // veces que apareció en distintos pools/redes/fuentes
 }
 
 const EXCHANGE_ADDRS: Record<string, string> = {
@@ -918,11 +919,14 @@ router.get("/whale-intel/gems", async (req: Request, res: Response) => {
     );
     const rawPools = perNetwork.flat();
 
-    // Paso 2: dedupe por token, filtro base de liquidez/volumen
+    // Paso 2: dedupe por token — cuenta cuántas veces aparece (distintos pools/
+    // quotes/listas trending+nuevos) en vez de descartarlo en silencio
     const bestByToken = new Map<string, typeof rawPools[number]>();
+    const countByToken = new Map<string, number>();
     for (const p of rawPools) {
       const vol = parseFloat(p.attrs.volume_usd?.h24 ?? "0");
       const key = `${p.chain}:${p.baseAddr.toLowerCase()}`;
+      countByToken.set(key, (countByToken.get(key) ?? 0) + 1);
       const existing = bestByToken.get(key);
       if (!existing || vol > parseFloat(existing.attrs.volume_usd?.h24 ?? "0")) {
         bestByToken.set(key, p);
@@ -952,6 +956,7 @@ router.get("/whale-intel/gems", async (req: Request, res: Response) => {
       const sells = p.attrs.transactions?.h24?.sells ?? 0;
       const buyRatio = buys / Math.max(1, buys + sells);
       const ageMin = p.attrs.pool_created_at ? (now - new Date(p.attrs.pool_created_at).getTime()) / 60_000 : 0;
+      const network = GEM_NETWORKS[p.chain]!;
       return {
         address: p.baseAddr,
         symbol: p.baseSymbol.slice(0, 12),
@@ -967,11 +972,12 @@ router.get("/whale-intel/gems", async (req: Request, res: Response) => {
         buyCount: buys,
         sellCount: sells,
         ageMinutes: ageMin,
-        dexUrl: `https://www.geckoterminal.com/${GEM_NETWORKS[p.chain]}/pools/${p.attrs.address}`,
+        dexUrl: `https://dexscreener.com/${network}/${p.attrs.address}`,
         isBoosted: false,
         whaleBuyVolume: whaleData[i]?.whaleVol ?? 0,
         whaleBuyCount: whaleData[i]?.whaleCount ?? 0,
         source: "dex" as const,
+        detectedCount: countByToken.get(`${p.chain}:${p.baseAddr.toLowerCase()}`) ?? 1,
       };
     });
 
@@ -987,7 +993,12 @@ router.get("/whale-intel/gems", async (req: Request, res: Response) => {
     // Paso 5: agregar nuevos listings de CMC como fuente extra
     const cmcGems = await fetchCmcNewGems();
 
-    const final = [...gems, ...cmcGems]
+    // Dedup final cruzado (DEX + CMC pueden detectar el mismo token) — se
+    // prioriza la versión DEX (tiene datos de ballena reales)
+    const vistos = new Set(gems.map(g => g.symbol.toUpperCase()));
+    const cmcSinRepetir = cmcGems.filter(g => !vistos.has(g.symbol.toUpperCase()));
+
+    const final = [...gems, ...cmcSinRepetir]
       .sort((a, b) => (b.whaleBuyVolume ?? 0) - (a.whaleBuyVolume ?? 0) || b.buyVolume - a.buyVolume)
       .slice(0, 40);
 
