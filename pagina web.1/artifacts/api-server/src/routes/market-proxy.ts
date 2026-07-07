@@ -4,6 +4,46 @@ import { eq } from "drizzle-orm";
 
 const router = Router();
 
+// ─── FMP — Income Statement (usado por Equities Command Center → Financials) ──
+// NOTA: este endpoint faltaba por completo — el frontend lo llamaba pero
+// no existía ninguna ruta, por eso "Financials" nunca cargó nada real.
+router.get("/proxy/fmp/income-statement", async (req: Request, res: Response) => {
+  const key = process.env["FMP_API_KEY"];
+  if (!key) { res.status(503).json({ ok: false, error: "FMP_API_KEY no configurado" }); return; }
+
+  const symbol = String(req.query["symbol"] ?? "").toUpperCase().trim();
+  const period = req.query["period"] === "quarter" ? "quarter" : "annual";
+  const limit  = Math.min(parseInt(String(req.query["limit"] ?? "5")) || 5, 20);
+  if (!symbol) { res.status(400).json({ ok: false, error: "symbol requerido" }); return; }
+
+  try {
+    const url = `https://financialmodelingprep.com/stable/income-statement?symbol=${encodeURIComponent(symbol)}&period=${period}&limit=${limit}&apikey=${key}`;
+    const r = await fetch(url, { signal: AbortSignal.timeout(10000) });
+    if (!r.ok) { res.json({ ok: false, error: `FMP respondió ${r.status}` }); return; }
+    const data = await r.json() as Array<Record<string, unknown>>;
+    if (!Array.isArray(data) || data.length === 0) { res.json({ ok: false, error: "Sin datos disponibles para este símbolo" }); return; }
+
+    // Orden cronológico ascendente (el más viejo primero) — así el frontend
+    // puede calcular CAGR/YoY comparando el último contra el anterior.
+    const sorted = [...data].reverse().map(d => ({
+      date: d["date"] ?? "",
+      fiscalYear: String(d["fiscalYear"] ?? d["calendarYear"] ?? ""),
+      period: d["period"] ?? period,
+      revenue: Number(d["revenue"] ?? 0),
+      grossProfit: Number(d["grossProfit"] ?? 0),
+      operatingIncome: Number(d["operatingIncome"] ?? 0),
+      netIncome: Number(d["netIncome"] ?? 0),
+      ebitda: Number(d["ebitda"] ?? 0),
+      eps: Number(d["eps"] ?? 0),
+      epsDiluted: Number(d["epsDiluted"] ?? d["eps"] ?? 0),
+      researchAndDevelopmentExpenses: Number(d["researchAndDevelopmentExpenses"] ?? 0),
+    }));
+    res.json({ ok: true, data: sorted });
+  } catch (err) {
+    res.json({ ok: false, error: String(err) });
+  }
+});
+
 // ─── Trusted origins (internal traffic — always allowed) ─────────────────────
 const TRUSTED_ORIGINS = [
   "https://psychometriks.trade",
