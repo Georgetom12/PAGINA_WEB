@@ -1566,6 +1566,7 @@ export default function Equities() {
                             <th onClick={() => thR("de")} style={{ cursor:"pointer", color: bSortReal==="de"?"var(--eq-gold)":undefined }}>D/E {bSortReal==="de"?(bSortRealDesc?"▼":"▲"):""}</th>
                             <th onClick={() => thR("upside")} style={{ cursor:"pointer", color: bSortReal==="upside"?"var(--eq-gold)":undefined }}>UPSIDE {bSortReal==="upside"?(bSortRealDesc?"▼":"▲"):""}</th>
                             <th>ZONA</th>
+                            <th>ACTUALIZADO</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -1611,10 +1612,20 @@ export default function Equities() {
                                   <td style={{ fontFamily:"monospace", fontSize:".58rem", color:"var(--eq-amber)", maxWidth:130, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
                                     {r.valuation?.zone ?? "—"}
                                   </td>
+                                  <td style={{ fontFamily:"monospace", fontSize:".58rem" }}>
+                                    {(() => {
+                                      if (!r.analyzed_at) return <span style={{ color:"var(--eq-gray)" }}>—</span>;
+                                      const ageMs = Date.now() - new Date(r.analyzed_at).getTime();
+                                      const ageH = ageMs / 3_600_000;
+                                      const color = ageH < 24 ? "var(--eq-green)" : ageH < 24 * 7 ? "var(--eq-amber)" : "var(--eq-red)";
+                                      const label = ageH < 1 ? "hace <1h" : ageH < 24 ? `hace ${Math.floor(ageH)}h` : `hace ${Math.floor(ageH / 24)}d`;
+                                      return <span style={{ color }}>{label}</span>;
+                                    })()}
+                                  </td>
                                 </tr>
                                 {isExp && (
                                   <tr style={{ background:"rgba(0,229,255,.03)" }}>
-                                    <td colSpan={9} style={{ padding:"10px 16px" }}>
+                                    <td colSpan={10} style={{ padding:"10px 16px" }}>
                                       {/* ─── 9 CRITERIOS BUFFETT ─── */}
                                       <div style={{ fontFamily:"monospace", fontSize:".58rem", color:"#00e5ff", marginBottom:5, fontWeight:700 }}>📋 9 CRITERIOS BUFFETT</div>
                                       <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(155px,1fr))", gap:5, marginBottom:10 }}>
