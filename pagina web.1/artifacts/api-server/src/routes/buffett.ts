@@ -687,48 +687,65 @@ router.get("/buffett/results", async (req: Request, res: Response) => {
 });
 
 // POST /api/buffett/scan
+// ── Lógica del scan, reusable desde el endpoint manual y el auto-scheduler ──
+async function runScanCycle(): Promise<void> {
+  if (scanning) return;
+  if (!(process.env.DATABASE_PUBLIC_URL ?? process.env.BUFFETT_DATABASE_URL)) return;
+  if (!process.env.FMP_API_KEY) return;
+
+  scanning = true;
+  try {
+    let state: Record<string,unknown> = await loadState() ?? {
+      last_index: 0, last_run: null, calls_today: 0,
+      total_analyzed: 0, total_passed: 0, cycle: 1, universe_size: UNIVERSE.length,
+    };
+    const today = new Date().toISOString().slice(0, 10);
+    if (state.last_run !== today) { state.calls_today = 0; state.last_run = today; }
+    state.universe_size = UNIVERSE.length;
+
+    const maxToday = Math.floor((MAX_CALLS - Number(state.calls_today ?? 0)) / CALLS_PER);
+    let analyzed   = 0;
+
+    while (analyzed < maxToday && Number(state.calls_today) < MAX_CALLS) {
+      const idx    = Number(state.last_index ?? 0) % UNIVERSE.length;
+      const ticker = UNIVERSE[idx];
+      try {
+        const result = await analyzeOne(ticker);
+        state.calls_today     = Number(state.calls_today) + CALLS_PER;
+        state.total_analyzed  = Number(state.total_analyzed ?? 0) + 1;
+        analyzed++;
+        if (result) {
+          await saveResult(result as Record<string,unknown>);
+          if (result.score >= 60) state.total_passed = Number(state.total_passed ?? 0) + 1;
+        }
+      } catch { /* skip ticker */ }
+      state.last_index = (idx + 1) % UNIVERSE.length;
+      if (Number(state.last_index) === 0) state.cycle = Number(state.cycle ?? 1) + 1;
+      await saveState(state);
+      await new Promise(r => setTimeout(r, 400));
+    }
+  } catch (e) { console.error("Buffett scan error:", e); }
+  finally     { scanning = false; }
+}
+
+// ── Auto-scheduler — corre solo, una vez al día, sin que nadie tenga que
+// entrar a apretar el botón. Como Railway mantiene el proceso corriendo
+// 24/7, un setInterval alcanza (no hace falta un cron externo).
+const AUTO_SCAN_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24h
+setTimeout(() => {
+  runScanCycle().catch(e => console.error("Buffett auto-scan (inicial) error:", e));
+  setInterval(() => {
+    runScanCycle().catch(e => console.error("Buffett auto-scan error:", e));
+  }, AUTO_SCAN_INTERVAL_MS);
+}, 60_000); // espera 60s tras arrancar el server antes del primer auto-scan
+
 router.post("/buffett/scan", async (req: Request, res: Response) => {
   if (scanning)                     { res.json({ ok: false, error: "Scan ya en curso" }); return; }
   if (!(process.env.DATABASE_PUBLIC_URL ?? process.env.BUFFETT_DATABASE_URL)) { res.json({ ok: false, error: "DATABASE_PUBLIC_URL no configurado" }); return; }
   if (!process.env.FMP_API_KEY)    { res.json({ ok: false, error: "FMP_API_KEY no configurado" }); return; }
 
   res.json({ ok: true, message: "Scan iniciado en background", universe: UNIVERSE.length });
-  scanning = true;
-
-  (async () => {
-    try {
-      let state: Record<string,unknown> = await loadState() ?? {
-        last_index: 0, last_run: null, calls_today: 0,
-        total_analyzed: 0, total_passed: 0, cycle: 1, universe_size: UNIVERSE.length,
-      };
-      const today = new Date().toISOString().slice(0, 10);
-      if (state.last_run !== today) { state.calls_today = 0; state.last_run = today; }
-      state.universe_size = UNIVERSE.length;
-
-      const maxToday = Math.floor((MAX_CALLS - Number(state.calls_today ?? 0)) / CALLS_PER);
-      let analyzed   = 0;
-
-      while (analyzed < maxToday && Number(state.calls_today) < MAX_CALLS) {
-        const idx    = Number(state.last_index ?? 0) % UNIVERSE.length;
-        const ticker = UNIVERSE[idx];
-        try {
-          const result = await analyzeOne(ticker);
-          state.calls_today     = Number(state.calls_today) + CALLS_PER;
-          state.total_analyzed  = Number(state.total_analyzed ?? 0) + 1;
-          analyzed++;
-          if (result) {
-            await saveResult(result as Record<string,unknown>);
-            if (result.score >= 60) state.total_passed = Number(state.total_passed ?? 0) + 1;
-          }
-        } catch { /* skip ticker */ }
-        state.last_index = (idx + 1) % UNIVERSE.length;
-        if (Number(state.last_index) === 0) state.cycle = Number(state.cycle ?? 1) + 1;
-        await saveState(state);
-        await new Promise(r => setTimeout(r, 400));
-      }
-    } catch (e) { console.error("Buffett scan error:", e); }
-    finally     { scanning = false; }
-  })();
+  runScanCycle().catch(e => console.error("Buffett scan (manual) error:", e));
 });
 
 // POST /api/buffett/snapshot — guardar snapshot actual
