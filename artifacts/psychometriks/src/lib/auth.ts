@@ -100,7 +100,7 @@ export function getRank(plan: string): number {
 }
 
 export function isAdmin(auth: AuthSession | null): boolean {
-  return auth?.role === "superadmin" || auth?.role === "operator";
+  return auth?.role === "superadmin";
 }
 
 export function hasAccess(auth: AuthSession | null, required: PlanLevel): boolean {
