@@ -76,83 +76,44 @@ const YF_HEADERS = {
   "Referer": "https://finance.yahoo.com/",
 };
 
-// Try query2 first (more reliable from Railway), fall back to query1
+// ── FMP (reemplaza el scraping de Yahoo Finance — no oficial, poco confiable) ──
+const FMP_BASE = "https://financialmodelingprep.com/stable";
 async function fetchSymbol(symbol: string) {
-  const enc = encodeURIComponent(symbol);
-  const path = `v8/finance/chart/${enc}?interval=1d&range=5d&includePrePost=false`;
-  const urls = [
-    `https://query2.finance.yahoo.com/${path}`,
-    `https://query1.finance.yahoo.com/${path}`,
-  ];
-  let lastErr: unknown;
-  for (const url of urls) {
-    try {
-      const r = await fetch(url, { headers: YF_HEADERS, signal: AbortSignal.timeout(8000) });
-      if (!r.ok) { lastErr = new Error(`HTTP ${r.status}`); continue; }
-      const d = await r.json() as { chart?: { result?: { meta?: V8Meta }[] } };
-      const meta = d?.chart?.result?.[0]?.meta ?? {};
-      const price = meta.regularMarketPrice ?? 0;
-      if (price === 0) { lastErr = new Error("zero price"); continue; }
-      const prevClose = meta.chartPreviousClose ?? meta.previousClose ?? price;
-      const change = price - prevClose;
-      const changePct = prevClose > 0 ? (change / prevClose) * 100 : 0;
-      const name = ALL_NAMES[symbol] ?? meta.shortName ?? meta.longName ?? symbol;
-      return { symbol, name, price, change, changePct,
-        volume: meta.regularMarketVolume ?? 0, marketCap: meta.marketCap,
-        high: meta.regularMarketDayHigh, low: meta.regularMarketDayLow,
-        high52w: meta.fiftyTwoWeekHigh, low52w: meta.fiftyTwoWeekLow,
-        pe: meta.trailingPE, currency: meta.currency ?? "USD", live: true };
-    } catch (e) { lastErr = e; }
-  }
-  throw lastErr ?? new Error("All Yahoo Finance endpoints failed");
+  const key = process.env["FMP_API_KEY"];
+  if (!key) return null;
+  try {
+    const r = await fetch(`${FMP_BASE}/quote?symbol=${encodeURIComponent(symbol)}&apikey=${key}`, {
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!r.ok) return null;
+    const d = await r.json() as Array<{
+      price?: number; change?: number; changePercentage?: number;
+      volume?: number; marketCap?: number; dayHigh?: number; dayLow?: number;
+      yearHigh?: number; yearLow?: number; name?: string;
+    }>;
+    const q = Array.isArray(d) ? d[0] : null;
+    if (!q || typeof q.price !== "number" || q.price === 0) return null;
+    return {
+      symbol,
+      name: ALL_NAMES[symbol] ?? q.name ?? symbol,
+      price: q.price,
+      change: q.change ?? 0,
+      changePct: q.changePercentage ?? 0,
+      volume: q.volume ?? 0,
+      marketCap: q.marketCap,
+      high: q.dayHigh, low: q.dayLow,
+      high52w: q.yearHigh, low52w: q.yearLow,
+      currency: "USD",
+      live: true,
+    };
+  } catch { return null; }
 }
 
-// ── Simulated fallback data (realistic prices, seeded) ───────────────────────
-const SIM_PRICES: Record<string, { price: number; pe?: number }> = {
-  AAPL: { price: 207.84, pe: 33.2 }, MSFT: { price: 420.51, pe: 36.8 },
-  AMZN: { price: 197.12, pe: 45.1 }, GOOGL: { price: 165.34, pe: 20.9 },
-  META:  { price: 572.14, pe: 28.4 }, NVDA: { price: 921.50, pe: 55.3 },
-  TSLA:  { price: 276.88, pe: 62.7 }, NFLX: { price: 640.20, pe: 42.1 },
-  AMD:   { price: 145.30, pe: 50.2 }, INTC: { price: 21.18, pe: 18.4 },
-  CRM:   { price: 312.40, pe: 55.8 }, ORCL: { price: 180.60, pe: 30.1 },
-  ADBE:  { price: 380.20, pe: 32.5 }, PYPL: { price: 68.44, pe: 17.2 },
-  SQ:    { price: 62.30, pe: 22.1 }, UBER: { price: 74.80, pe: 38.9 },
-  COIN:  { price: 198.40, pe: 30.2 }, JPM: { price: 242.10, pe: 12.4 },
-  GS:    { price: 561.20, pe: 14.8 }, MS: { price: 112.80, pe: 16.2 },
-  BAC:   { price: 42.30, pe: 13.1 }, WFC: { price: 72.60, pe: 12.8 },
-  SPY:   { price: 562.40 }, QQQ: { price: 472.80 },
-  DIA:   { price: 420.10 }, IWM: { price: 201.30 },
-  "EURUSD=X": { price: 1.1315 }, "GBPUSD=X": { price: 1.3290 },
-  "USDJPY=X": { price: 143.82 }, "USDCHF=X": { price: 0.8271 },
-  "AUDUSD=X": { price: 0.6388 }, "USDCAD=X": { price: 1.3840 },
-  "NZDUSD=X": { price: 0.5921 }, "EURGBP=X": { price: 0.8512 },
-  "EURJPY=X": { price: 162.74 }, "GBPJPY=X": { price: 191.14 },
-  "GC=F":  { price: 3312.40 }, "SI=F": { price: 32.84 },
-  "CL=F":  { price: 58.62 },   "BZ=F": { price: 61.34 },
-  "NG=F":  { price: 3.42 },    "HG=F": { price: 4.88 },
-  "PL=F":  { price: 982.40 },  "KC=F": { price: 312.80 },
-  "ZW=F":  { price: 548.60 },  "ZC=F": { price: 448.20 },
-};
+// NOTA: se eliminó el simulador de precios — antes, si Yahoo/FMP fallaba
+// para un símbolo, se inventaba un precio pseudo-aleatorio sin avisar.
+// Ahora simplemente se omite ese símbolo de la respuesta.
 
-function simQuote(symbol: string) {
-  const base = SIM_PRICES[symbol] ?? { price: 100 };
-  const seed = symbol.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
-  const variation = (((seed * 9301 + 49297) % 233280) / 233280) * 0.06 - 0.03;
-  const price = base.price * (1 + variation);
-  const dayChange = base.price * ((((Date.now() / 60000) * seed) % 200) / 10000 - 0.01);
-  const changePct = (dayChange / price) * 100;
-  const name = ALL_NAMES[symbol] ?? symbol;
-  return {
-    symbol, name, price, change: dayChange, changePct,
-    volume: Math.floor(seed * 4821000 % 50000000 + 1000000),
-    pe: base.pe, currency: symbol.endsWith("=X") ? "FX" : "USD",
-    high: price * 1.012, low: price * 0.988,
-    high52w: price * 1.35, low52w: price * 0.65,
-    live: false,
-  };
-}
-
-type AnyQuote = ReturnType<typeof simQuote> | Awaited<ReturnType<typeof fetchSymbol>>;
+type AnyQuote = NonNullable<Awaited<ReturnType<typeof fetchSymbol>>>;
 async function getQuotes(symbols: string[]): Promise<AnyQuote[]> {
   const cacheKey = symbols.join(",");
   const hit = cache.get(cacheKey);
@@ -162,10 +123,9 @@ async function getQuotes(symbols: string[]): Promise<AnyQuote[]> {
     symbols.map(s => fetchSymbol(s))
   );
 
-  const quotes: AnyQuote[] = results.map((r, i) => {
-    if (r.status === "fulfilled") return r.value;
-    return simQuote(symbols[i]!);
-  });
+  const quotes: AnyQuote[] = results
+    .map(r => (r.status === "fulfilled" ? r.value : null))
+    .filter((q): q is AnyQuote => q !== null);
 
   cache.set(cacheKey, { data: quotes, ts: Date.now() });
   return quotes;
@@ -255,9 +215,9 @@ router.get("/market/equities", async (_req: Request, res: Response) => {
   const hit = cache.get("equities");
   if (hit && Date.now() - hit.ts < TTL) { res.json(hit.data); return; }
   const results = await Promise.allSettled(EQUITIES_SYMBOLS.map(s => fetchSymbol(s)));
-  const data = results.map((r, i) =>
-    r.status === "fulfilled" ? r.value : simQuote(EQUITIES_SYMBOLS[i]!)
-  );
+  const data = results
+    .map(r => (r.status === "fulfilled" ? r.value : null))
+    .filter((q): q is NonNullable<typeof q> => q !== null);
   const payload = { data, ts: Date.now() };
   cache.set("equities", { data: payload, ts: Date.now() });
   res.json(payload);
