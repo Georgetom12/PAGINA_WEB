@@ -84,6 +84,7 @@ interface Gem {
   ageMinutes: number; dexUrl: string; isBoosted: boolean;
   rugScore?: number; rugRisks?: number; rugLoading?: boolean;
   whaleBuyVolume?: number; whaleBuyCount?: number; source?: "dex" | "cmc";
+  detectedCount?: number;
 }
 
 interface TgPsySignal {
@@ -1851,6 +1852,11 @@ function GemHunterTab({isEliteUser}:{isEliteUser:boolean}) {
                         ? `${((gem.whaleBuyVolume ?? 0) / 1_000_000).toFixed(2)}M`
                         : `${((gem.whaleBuyVolume ?? 0) / 1_000).toFixed(0)}K`
                     }
+                  </div>
+                )}
+                {(gem.detectedCount ?? 1) > 1 && (
+                  <div className="absolute top-9 left-2 font-sharetech text-[7px] px-1.5 py-0.5 text-[#ffd700] border border-[#ffd70035] bg-[#1a1400]">
+                    🔁 DETECTADA {gem.detectedCount}× — pools/redes distintos
                   </div>
                 )}
                 <div className="h-[2px]" style={{background:`linear-gradient(90deg,transparent,#e040fb,transparent)`}}/>
