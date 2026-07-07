@@ -591,13 +591,22 @@ async function dydxMarket(mkt: string) {
 
 async function gmxMarket(sym: string) {
   try {
-    const r = await fetch("https://arbitrum-api.gmxinfra.io/markets", { signal: AbortSignal.timeout(8000) });
-    const d = await r.json() as { markets?: { indexToken?: { symbol?: string }; longOpenInterestUsd?: string; shortOpenInterestUsd?: string }[] };
+    const r = await fetch("https://arbitrum-api.gmxinfra.io/markets/info", { signal: AbortSignal.timeout(8000) });
+    if (!r.ok) return null;
+    const d = await r.json() as {
+      markets?: Array<{
+        indexToken?: { symbol?: string };
+        longOpenInterestUsd?: string;
+        shortOpenInterestUsd?: string;
+        marketTokenAddress?: string;
+      }>;
+    };
     const m = d.markets?.find(x => x.indexToken?.symbol?.toUpperCase() === sym.toUpperCase());
     if (!m) return null;
     const lOI = parseFloat(m.longOpenInterestUsd ?? "0") / 1e30, sOI = parseFloat(m.shortOpenInterestUsd ?? "0") / 1e30;
     const tot = lOI + sOI;
-    return { exchange: "GMX v2", oi: tot, longPct: tot > 0 ? (lOI/tot*100) : 50, shortPct: tot > 0 ? (sOI/tot*100) : 50 };
+    if (tot === 0) return null;
+    return { exchange: "GMX v2", oi: tot, longPct: (lOI/tot*100), shortPct: (sOI/tot*100) };
   } catch { return null; }
 }
 
