@@ -2538,328 +2538,122 @@ function OracleFeedsTab() {
   );
 }
 
-// ─── DEGATE TAB ───────────────────────────────────────────────────────────────
-function DeGateTab() {
-  const [tickers, setTickers] = useState<DgTicker[]>([]);
+// ─── PSY LISTING RADAR TAB ──────────────────────────────────────────────────
+interface RadarCoin {
+  symbol: string; name: string; marketCap: number; price: number;
+  changePct24h: number; dateAdded: string; tieneFuturos: boolean;
+}
+interface MaxPainEntry { symbol: string; price: number | null; }
+
+function ListingRadarTab() {
+  const [coins, setCoins] = useState<RadarCoin[]>([]);
+  const [maxPain, setMaxPain] = useState<MaxPainEntry[]>([]);
+  const [cgUpgradeNeeded, setCgUpgradeNeeded] = useState(false);
+  const [fetchedAt, setFetchedAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [selected, setSelected] = useState("");
-  const [depth, setDepth] = useState<DgDepth | null>(null);
-  const [trades, setTrades] = useState<DgTrade[]>([]);
-  const [sortBy, setSortBy] = useState<"volume" | "pump">("volume");
-  const [pumps, setPumps] = useState<Record<string, DgPump>>({});
-  const [depthLoading, setDepthLoading] = useState(false);
-  const [lastRefresh, setLastRefresh] = useState(0);
 
-  const s = { fontFamily: "'Share Tech Mono', monospace" } as const;
-  const so = { fontFamily: "'Orbitron', monospace" } as const;
-
-  const fmtVol = (v?: string) => { const n = parseFloat(v ?? "0"); if (!n) return "—"; if (n >= 1e6) return `Ξ${(n / 1e6).toFixed(2)}M`; if (n >= 1e3) return `Ξ${(n / 1e3).toFixed(1)}K`; return `Ξ${n.toFixed(4)}`; };
-  const fmtPct = (v?: string) => { const n = parseFloat(v ?? "0"); return `${n >= 0 ? "+" : ""}${n.toFixed(2)}%`; };
-  const fmtCmcPct = (v?: number) => { if (v === undefined || v === null) return "—"; return `${v >= 0 ? "+" : ""}${v.toFixed(2)}%`; };
-  const pctColor = (v?: number) => { if (v === undefined) return "#3d6480"; if (v >= 15) return "#00ff88"; if (v >= 5) return "#50e890"; if (v > 0) return "#8ac8a0"; if (v > -5) return "#ff9080"; return "#ff4060"; };
-  const pumpBadge = (sym: string) => { const p = pumps[sym]; if (!p) return ""; if (p.h1 >= 5) return "🚀"; if (p.h24 >= 15) return "💥"; if (p.d7 >= 30) return "⚡"; if (p.h24 <= -15) return "🔻"; return ""; };
-  const fmtPrice = (v?: string) => { if (!v || parseFloat(v) === 0) return "—"; const n = parseFloat(v); if (n >= 1) return `Ξ${n.toFixed(4)}`; if (n >= 0.0001) return `Ξ${n.toFixed(6)}`; return `Ξ${n.toFixed(8)}`; };
-  const calcSpread = (t: DgTicker) => { const b = parseFloat(t.bidPrice ?? "0"), a = parseFloat(t.askPrice ?? "0"); if (!b || !a) return "—"; return `${(((a - b) / b) * 100).toFixed(3)}%`; };
-  const isWhaleTicker = (t: DgTicker) => parseFloat(t.volume ?? "0") > 0.5;
-
-  const loadTickers = useCallback(async () => {
-    try {
-      const d = await fetch("/api/proxy/degate/tickers").then(r => r.json());
-      const list: any[] = d?.data?.list ?? [];
-      const mapped: DgTicker[] = list.map((p: any) => ({
-        symbol:              `${p.base_token?.symbol ?? "?"}-${p.quote_token?.symbol ?? "ETH"}`,
-        lastPrice:           p.price ?? "0",
-        priceChangePercent:  p.percent ?? "0",
-        priceChange:         "0",
-        volume:              p.amount ?? "0",
-        quoteVolume:         "0",
-        highPrice:           "0",
-        lowPrice:            "0",
-        bidPrice:            "0",
-        askPrice:            "0",
-        base_token_id:       p.base_token?.token_id ?? 0,
-        quote_token_id:      p.quote_token?.token_id ?? 0,
-        pair_id:             p.pair_id ?? 0,
-      }));
-      const withPrice = mapped.filter(t => parseFloat(t.lastPrice) > 0);
-      const result = withPrice.length > 0 ? withPrice : mapped;
-      if (result.length > 0) {
-        setTickers(result);
-        setSelected(prev => prev || result[0].symbol);
-        setLastRefresh(Date.now());
-        setError("");
-      }
-    } catch (e) { setError(String(e)); }
-    setLoading(false);
-  }, []);
-
-  const loadDepth = useCallback(async (symbol: string) => {
-    setDepthLoading(true);
-    try {
-      const d = await fetch(`/api/proxy/degate/depth?symbol=${encodeURIComponent(symbol)}&size=10`).then(r => r.json());
-      if (d?.data?.asks || d?.data?.bids) setDepth(d.data as DgDepth);
-      else setDepth(null);
-    } catch {}
-    setDepthLoading(false);
-  }, []);
-
-  const loadTrades = useCallback(async (symbol: string) => {
-    try {
-      const d = await fetch(`/api/proxy/degate/trades?symbol=${encodeURIComponent(symbol)}&limit=40`).then(r => r.json()) as { ok?: boolean; trades?: DgTrade[] };
-      setTrades(d.trades ?? []);
-    } catch {}
-  }, []);
-
-  const loadPumps = useCallback(async () => {
-    try {
-      const d = await fetch("/api/proxy/degate/pumps").then(r => r.json()) as { ok?: boolean; data?: Record<string, DgPump> };
-      if (d.ok && d.data) setPumps(d.data);
-    } catch {}
-  }, []);
-
-  useEffect(() => { loadTickers(); const t = setInterval(loadTickers, 60_000); return () => clearInterval(t); }, [loadTickers]);
-  useEffect(() => { loadPumps(); const t = setInterval(loadPumps, 120_000); return () => clearInterval(t); }, [loadPumps]);
   useEffect(() => {
-    if (!selected) return;
-    loadDepth(selected);
-    loadTrades(selected);
-    const t = setInterval(() => { loadDepth(selected); loadTrades(selected); }, 12_000);
-    return () => clearInterval(t);
-  }, [selected, loadDepth, loadTrades]);
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch("/api/oracle/listing-radar");
+        const d = await r.json() as {
+          ok: boolean; newListings?: RadarCoin[]; maxPain?: MaxPainEntry[];
+          coinglassUpgradeNeeded?: boolean; fetchedAt?: string; error?: string;
+        };
+        if (cancelled) return;
+        if (!d.ok) { setError(d.error ?? "Error al cargar"); setLoading(false); return; }
+        setCoins(d.newListings ?? []);
+        setMaxPain(d.maxPain ?? []);
+        setCgUpgradeNeeded(!!d.coinglassUpgradeNeeded);
+        setFetchedAt(d.fetchedAt ?? null);
+      } catch { setError("Error de conexión"); }
+      setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
-  const sorted = [...tickers].sort((a, b) => {
-    if (sortBy === "volume") return parseFloat(b.quoteVolume ?? b.volume ?? "0") - parseFloat(a.quoteVolume ?? a.volume ?? "0");
-    const aBase = a.symbol.split("-")[0]; const bBase = b.symbol.split("-")[0];
-    return (pumps[bBase]?.h24 ?? 0) - (pumps[aBase]?.h24 ?? 0);
-  });
-
-  const selectedTicker = tickers.find(t => t.symbol === selected);
-  const whaleTrades = trades.filter(t => parseFloat(t.quoteQty ?? "0") > 50000);
-  const secs = Math.floor((Date.now() - lastRefresh) / 1000);
+  const fmt = (n: number): string => {
+    if (n >= 1e9) return `$${(n/1e9).toFixed(2)}B`;
+    if (n >= 1e6) return `$${(n/1e6).toFixed(2)}M`;
+    if (n >= 1e3) return `$${(n/1e3).toFixed(1)}K`;
+    return `$${n.toFixed(2)}`;
+  };
 
   return (
-    <div>
-      {/* Header */}
-      <div style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 38, height: 38, border: "1px solid rgba(0,229,255,0.3)", background: "rgba(0,229,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center", ...so, fontSize: 18, color: "#00e5ff" }}>⬡</div>
-          <div>
-            <div style={{ ...so, fontSize: 13, color: "#00e5ff", letterSpacing: 2, fontWeight: 700 }}>DEGATE DEX ON-CHAIN</div>
-            <div style={{ ...s, fontSize: 9, color: "#3d6480", marginTop: 1 }}>ZK-Rollup · Ethereum · Zero Fees · Non-Custodial · Órdenes 100% On-Chain</div>
+    <div style={{ fontFamily: "'Share Tech Mono', monospace" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 8 }}>
+        <div>
+          <div style={{ fontSize: 13, color: "#00e5ff", letterSpacing: 2, fontWeight: 700 }}>🎯 PSY LISTING RADAR</div>
+          <div style={{ fontSize: 9, color: "#5a8898", marginTop: 2 }}>
+            Nuevos listados (CoinMarketCap) + ¿ya tienen futuros? (Coinglass) + Max Pain semanal
           </div>
         </div>
-        <div style={{ marginLeft: "auto", display: "flex", gap: 6, alignItems: "center" }}>
-          {lastRefresh > 0 && <div style={{ ...s, fontSize: 8, color: "#2a5060" }}>↻ {secs < 60 ? `${secs}s` : `${Math.floor(secs / 60)}m`} ago</div>}
-          {(["volume", "pump"] as const).map(k => (
-            <button key={k} onClick={() => setSortBy(k)} style={{ ...s, fontSize: 8, padding: "4px 10px", background: sortBy === k ? "rgba(0,229,255,0.1)" : "transparent", border: `1px solid ${sortBy === k ? "#00e5ff" : "#1a3040"}`, color: sortBy === k ? "#00e5ff" : "#3d6480", cursor: "pointer", letterSpacing: 1 }}>
-              {k === "volume" ? "VOL ↓" : "PUMP 🚀"}
-            </button>
-          ))}
-        </div>
+        {fetchedAt && (
+          <div style={{ fontSize: 8, color: "#00e676", border: "1px solid rgba(0,230,118,.25)", background: "rgba(0,230,118,.06)", padding: "4px 10px" }}>
+            ● ACTUALIZADO: {new Date(fetchedAt).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })}
+          </div>
+        )}
       </div>
 
-      {/* Error banner */}
-      {error && (
-        <div style={{ ...s, fontSize: 10, color: "#ff6060", background: "rgba(255,64,96,0.06)", border: "1px solid rgba(255,64,96,0.2)", borderLeft: "3px solid #ff4060", padding: "10px 14px", marginBottom: 12, lineHeight: 1.6 }}>
-          ⚠ Error conectando con DeGate: {error}
-          <div style={{ fontSize: 9, color: "#3d6480", marginTop: 3 }}>DeGate puede tener mantenimiento. Reintentando cada 60s automáticamente.</div>
+      {/* MAX PAIN */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 18 }}>
+        {maxPain.map(mp => (
+          <div key={mp.symbol} style={{ border: "1px solid rgba(224,64,251,0.2)", background: "rgba(224,64,251,0.04)", padding: 14 }}>
+            <div style={{ fontSize: 8, color: "#e040fb", letterSpacing: 1.5 }}>MAX PAIN — {mp.symbol} (opciones, semanal)</div>
+            <div style={{ fontSize: 20, color: "#fff", fontWeight: 700, marginTop: 4 }}>
+              {mp.price != null ? `$${mp.price.toLocaleString()}` : cgUpgradeNeeded ? "Requiere upgrade Coinglass" : "Sin datos"}
+            </div>
+            <div style={{ fontSize: 8, color: "#5a8898", marginTop: 4 }}>
+              Precio donde vencen las opciones causando más "dolor" a los tenedores — suele actuar como imán.
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {loading && <div style={{ textAlign: "center", padding: 30, color: "#5a8898", fontSize: 11 }}>Cargando radar...</div>}
+      {error && <div style={{ padding: 14, border: "1px solid rgba(255,23,68,.3)", color: "#ff1744", fontSize: 11, marginBottom: 14 }}>{error}</div>}
+
+      {cgUpgradeNeeded && !loading && (
+        <div style={{ padding: 10, border: "1px solid rgba(255,214,0,.3)", background: "rgba(255,214,0,.05)", color: "#ffd600", fontSize: 9, marginBottom: 14 }}>
+          ⚠ El cruce con Coinglass (¿ya tiene futuros?) requiere un plan superior — mostrando solo los datos de CoinMarketCap por ahora.
         </div>
       )}
 
-      {loading ? (
-        <div style={{ ...s, fontSize: 11, color: "#3d6480", textAlign: "center", padding: "80px 0" }}>
-          <div style={{ fontSize: 24, marginBottom: 12 }}>⬡</div>
-          Conectando con DeGate API on-chain...
-        </div>
-      ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 370px", gap: 12 }}>
-
-          {/* ─ LEFT: Gems Table ─ */}
-          <div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-              <div style={{ ...so, fontSize: 10, color: "#00e5ff", letterSpacing: 1.5 }}>💎 GEMAS DEGATE — {sorted.length} pares on-chain</div>
-              <div style={{ ...s, fontSize: 8, color: "#2a5060" }}>Haz clic en un par para ver el order book</div>
+      <div style={{ fontSize: 9, color: "#5a8898", letterSpacing: 1, marginBottom: 10 }}>ÚLTIMOS LISTADOS · TOP 15</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        {coins.map((c, i) => (
+          <div key={c.symbol + i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", border: "1px solid #0d1a2a", background: "#040d18" }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 13, color: "#fff", fontWeight: 700 }}>{c.symbol}</span>
+                <span style={{ fontSize: 9, color: "#5a8898" }}>{c.name}</span>
+                {c.tieneFuturos && (
+                  <span style={{ fontSize: 7, color: "#00e5ff", border: "1px solid rgba(0,229,255,.35)", padding: "1px 6px" }}>
+                    📈 YA TIENE FUTUROS
+                  </span>
+                )}
+              </div>
+              <div style={{ fontSize: 8, color: "#3a5060", marginTop: 2 }}>
+                Listado: {new Date(c.dateAdded).toLocaleDateString("es-MX", { day: "2-digit", month: "short" })}
+              </div>
             </div>
-            <div style={{ border: "1px solid #0d2030", overflow: "hidden" }}>
-              {/* Header */}
-              <div style={{ display: "grid", gridTemplateColumns: "22px 1fr 80px 46px 50px 50px 76px 52px 20px", padding: "6px 10px", background: "#040f18", borderBottom: "1px solid #0d2030" }}>
-                {["#", "PAR", "PRECIO", "1H%", "24H%", "7D%", "VOL 24H", "SPREAD", ""].map((h, i) => (
-                  <div key={i} style={{ ...s, fontSize: 8, color: i >= 3 && i <= 5 ? "#00b8cc" : "#2a5060", textAlign: i >= 2 ? "right" : "left" }}>{h}</div>
-                ))}
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontSize: 11, color: "#00e676" }}>{fmt(c.marketCap)}</div>
+              <div style={{ fontSize: 9, color: c.changePct24h >= 0 ? "#00e676" : "#ff1744" }}>
+                {c.changePct24h >= 0 ? "+" : ""}{c.changePct24h.toFixed(1)}%
               </div>
-              {/* Rows */}
-              {sorted.slice(0, 25).map((t, i) => {
-                const isSel = t.symbol === selected;
-                const whale = isWhaleTicker(t);
-                const base = t.symbol.split("-")[0];
-                const pump = pumps[base];
-                const badge = pumpBadge(base);
-                return (
-                  <div key={t.symbol} onClick={() => setSelected(t.symbol)} style={{ display: "grid", gridTemplateColumns: "22px 1fr 80px 46px 50px 50px 76px 52px 20px", padding: "5px 10px", borderBottom: "1px solid #0a1820", cursor: "pointer", background: isSel ? "rgba(0,229,255,0.05)" : i % 2 === 0 ? "#040f18" : "transparent", borderLeft: isSel ? "2px solid #00e5ff" : "2px solid transparent", transition: "background 0.15s" }}>
-                    <div style={{ ...s, fontSize: 8, color: "#1a4050" }}>{i + 1}</div>
-                    <div style={{ ...s, fontSize: 9, color: isSel ? "#00e5ff" : "#9ab8c8", fontWeight: isSel ? 700 : 400 }}>{badge ? <span style={{ marginRight: 3 }}>{badge}</span> : null}{t.symbol}</div>
-                    <div style={{ ...s, fontSize: 9, color: "#c8dde8", textAlign: "right" }}>{fmtPrice(t.lastPrice)}</div>
-                    <div style={{ ...s, fontSize: 9, color: pctColor(pump?.h1), textAlign: "right", fontWeight: pump?.h1 ? 700 : 400 }}>{fmtCmcPct(pump?.h1)}</div>
-                    <div style={{ ...s, fontSize: 9, color: pctColor(pump?.h24), textAlign: "right", fontWeight: pump?.h24 ? 700 : 400 }}>{fmtCmcPct(pump?.h24)}</div>
-                    <div style={{ ...s, fontSize: 9, color: pctColor(pump?.d7), textAlign: "right", fontWeight: pump?.d7 ? 700 : 400 }}>{fmtCmcPct(pump?.d7)}</div>
-                    <div style={{ ...s, fontSize: 9, color: "#6a9ab0", textAlign: "right" }}>{fmtVol(t.quoteVolume ?? t.volume)}</div>
-                    <div style={{ ...s, fontSize: 8, color: "#2a5060", textAlign: "right" }}>{calcSpread(t)}</div>
-                    <div style={{ textAlign: "right", fontSize: 10, lineHeight: 1 }}>{whale ? "🐋" : ""}</div>
-                  </div>
-                );
-              })}
-              {sorted.length === 0 && !error && (
-                <div style={{ ...s, fontSize: 10, color: "#2a5060", textAlign: "center", padding: "40px 0" }}>Sin pares disponibles — API puede estar en mantenimiento</div>
-              )}
-            </div>
-            {/* Stats bar */}
-            {sorted.length > 0 && (
-              <div style={{ display: "flex", gap: 16, marginTop: 8, padding: "8px 10px", background: "#040f18", border: "1px solid #0d2030", flexWrap: "wrap" }}>
-                {[
-                  { l: "Pares totales", v: `${sorted.length}` },
-                  { l: "Whales (>$50K vol)", v: `${sorted.filter(isWhaleTicker).length}` },
-                  { l: "🚀 Pump 24h (>5%)", v: `${sorted.filter(t => (pumps[t.symbol.split("-")[0]]?.h24 ?? 0) > 5).length}` },
-                  { l: "🔻 Dump 24h (<-5%)", v: `${sorted.filter(t => (pumps[t.symbol.split("-")[0]]?.h24 ?? 0) < -5).length}` },
-                  { l: "Mayor volumen", v: sorted[0]?.symbol ?? "—" },
-                ].map(m => (
-                  <div key={m.l}>
-                    <div style={{ ...s, fontSize: 7, color: "#2a5060" }}>{m.l}</div>
-                    <div style={{ ...s, fontSize: 10, color: "#00e5ff", fontWeight: 700 }}>{m.v}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* ─ RIGHT: Order Book + Whale Trades ─ */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-
-            {/* Selected pair info */}
-            {selectedTicker && (
-              <div style={{ background: "#040f18", border: "1px solid #0d2030", borderTop: "2px solid #00e5ff", padding: "12px 14px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                  <div style={{ ...so, fontSize: 12, color: "#00e5ff", fontWeight: 700 }}>{selectedTicker.symbol}</div>
-                  {isWhaleTicker(selectedTicker) && (
-                    <div style={{ ...s, fontSize: 8, color: "#00e5ff", border: "1px solid rgba(0,229,255,0.25)", padding: "2px 8px", background: "rgba(0,229,255,0.05)" }}>🐋 WHALE VOL</div>
-                  )}
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
-                  {[
-                    { l: "PRECIO", v: fmtPrice(selectedTicker.lastPrice), c: "#c8dde8" },
-                    { l: "24H (DeGate)", v: fmtPct(selectedTicker.priceChangePercent), c: parseFloat(selectedTicker.priceChangePercent ?? "0") >= 0 ? "#00ff88" : "#ff4060" },
-                    { l: "VOL 24H", v: fmtVol(selectedTicker.quoteVolume ?? selectedTicker.volume), c: "#7ab3c8" },
-                    { l: "BID", v: fmtPrice(selectedTicker.bidPrice), c: "#00ff88" },
-                    { l: "ASK", v: fmtPrice(selectedTicker.askPrice), c: "#ff4060" },
-                    { l: "SPREAD", v: calcSpread(selectedTicker), c: "#ffd600" },
-                  ].map(m => (
-                    <div key={m.l} style={{ textAlign: "center", padding: "6px 4px", background: "#020b12", border: "1px solid #0a1820" }}>
-                      <div style={{ ...s, fontSize: 7, color: "#2a5060", marginBottom: 2 }}>{m.l}</div>
-                      <div style={{ ...s, fontSize: 10, color: m.c, fontWeight: 700 }}>{m.v}</div>
-                    </div>
-                  ))}
-                </div>
-                {(() => { const base = selectedTicker.symbol.split("-")[0]; const pump = pumps[base]; if (!pump) return null; return (
-                  <div style={{ marginTop: 6 }}>
-                    <div style={{ ...s, fontSize: 7, color: "#00b8cc", letterSpacing: 1, marginBottom: 4 }}>📡 CMC MARKET DATA</div>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
-                      {[
-                        { l: "1H %", v: fmtCmcPct(pump.h1), c: pctColor(pump.h1) },
-                        { l: "24H %", v: fmtCmcPct(pump.h24), c: pctColor(pump.h24) },
-                        { l: "7D %", v: fmtCmcPct(pump.d7), c: pctColor(pump.d7) },
-                      ].map(m => (
-                        <div key={m.l} style={{ textAlign: "center", padding: "6px 4px", background: "#020b12", border: `1px solid ${Math.abs(pump.h24) > 5 ? "rgba(0,184,204,0.2)" : "#0a1820"}` }}>
-                          <div style={{ ...s, fontSize: 7, color: "#2a5060", marginBottom: 2 }}>{m.l}</div>
-                          <div style={{ ...s, fontSize: 11, color: m.c, fontWeight: 700 }}>{m.v}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ); })()}
-                <div style={{ marginTop: 8, display: "flex", gap: 6 }}>
-                  <a href={`https://app.degate.com/trade/${selectedTicker.symbol.replace("-", "_")}`} target="_blank" rel="noopener noreferrer" style={{ ...s, fontSize: 8, color: "#00e5ff", border: "1px solid rgba(0,229,255,0.25)", padding: "4px 10px", background: "rgba(0,229,255,0.04)", textDecoration: "none", display: "inline-block" }}>⬡ OPERAR EN DEGATE ↗</a>
-                  <div style={{ ...s, fontSize: 8, color: "#2a5060", padding: "4px 0" }}>Zero fees · Non-custodial</div>
-                </div>
-              </div>
-            )}
-
-            {/* Order Book */}
-            <div style={{ background: "#040f18", border: "1px solid #0d2030", padding: "10px 12px", flex: 1 }}>
-              <div style={{ ...so, fontSize: 9, color: "#3d6480", letterSpacing: 1.5, marginBottom: 8 }}>
-                📖 ORDER BOOK ON-CHAIN — {selected}
-              </div>
-              {depthLoading ? (
-                <div style={{ ...s, fontSize: 9, color: "#2a5060", textAlign: "center", padding: "20px 0" }}>Cargando order book...</div>
-              ) : depth ? (
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 6px 1fr", gap: 4 }}>
-                  {/* Bids */}
-                  <div>
-                    <div style={{ ...s, fontSize: 8, color: "#00ff88", textAlign: "center", marginBottom: 5, letterSpacing: 1 }}>🟢 BID (COMPRA)</div>
-                    {(depth.bids ?? []).slice(0, 9).map(([price, qty], i) => {
-                      const usd = parseFloat(price) * parseFloat(qty);
-                      const isW = usd > 50000;
-                      return (
-                        <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "3px 6px 3px 4px", background: isW ? "rgba(0,255,136,0.05)" : "transparent", borderLeft: isW ? "2px solid rgba(0,255,136,0.4)" : "2px solid transparent", marginBottom: 1 }}>
-                          <span style={{ ...s, fontSize: 9, color: "#00ff88" }}>{parseFloat(price).toFixed(4)}</span>
-                          <span style={{ ...s, fontSize: 8, color: "#2a5060" }}>{parseFloat(qty).toFixed(3)}{isW && " 🐋"}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <div style={{ background: "#0d2030" }} />
-                  {/* Asks */}
-                  <div>
-                    <div style={{ ...s, fontSize: 8, color: "#ff4060", textAlign: "center", marginBottom: 5, letterSpacing: 1 }}>🔴 ASK (VENTA)</div>
-                    {(depth.asks ?? []).slice(0, 9).map(([price, qty], i) => {
-                      const usd = parseFloat(price) * parseFloat(qty);
-                      const isW = usd > 50000;
-                      return (
-                        <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "3px 4px 3px 6px", background: isW ? "rgba(255,64,96,0.05)" : "transparent", borderRight: isW ? "2px solid rgba(255,64,96,0.4)" : "2px solid transparent", marginBottom: 1 }}>
-                          <span style={{ ...s, fontSize: 9, color: "#ff4060" }}>{parseFloat(price).toFixed(4)}</span>
-                          <span style={{ ...s, fontSize: 8, color: "#2a5060" }}>{parseFloat(qty).toFixed(3)}{isW && " 🐋"}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ) : (
-                <div style={{ ...s, fontSize: 9, color: "#1a3040", textAlign: "center", padding: "30px 0" }}>Sin datos de order book para {selected}</div>
-              )}
-            </div>
-
-            {/* Whale Trades */}
-            <div style={{ background: "#040f18", border: "1px solid #0d2030", padding: "10px 12px" }}>
-              <div style={{ ...so, fontSize: 9, color: "#ffd600", letterSpacing: 1.5, marginBottom: 8 }}>
-                🐋 WHALE TRADES &gt;$50K — {whaleTrades.length} detectados
-              </div>
-              {whaleTrades.length === 0 ? (
-                <div style={{ ...s, fontSize: 9, color: "#1a3040", textAlign: "center", padding: "12px 0" }}>
-                  Sin trades whale en {selected} — umbral: $50,000
-                </div>
-              ) : (
-                whaleTrades.slice(0, 6).map((t, i) => {
-                  const isBuy = !t.isBuyerMaker;
-                  const usd = parseFloat(t.quoteQty ?? "0");
-                  const ts = new Date(t.time).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-                  return (
-                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 0", borderBottom: "1px solid #0a1820" }}>
-                      <div style={{ ...s, fontSize: 8, color: isBuy ? "#00ff88" : "#ff4060", fontWeight: 700, flexShrink: 0, minWidth: 40 }}>{isBuy ? "▲ BUY" : "▼ SELL"}</div>
-                      <div style={{ ...s, fontSize: 9, color: "#8ab0c8" }}>{fmtPrice(t.price)}</div>
-                      <div style={{ ...s, fontSize: 8, color: "#3d6480" }}>{ts}</div>
-                      <div style={{ ...s, fontSize: 10, color: "#ffd600", fontWeight: 700, marginLeft: "auto" }}>{fmtVol(t.quoteQty)} 🐋</div>
-                    </div>
-                  );
-                })
-              )}
             </div>
           </div>
-        </div>
-      )}
+        ))}
+        {!loading && coins.length === 0 && !error && (
+          <div style={{ textAlign: "center", padding: 24, color: "#5a8898", fontSize: 10 }}>Sin nuevos listados por ahora.</div>
+        )}
+      </div>
 
-      {/* Footer */}
-      <div style={{ fontFamily: "'Share Tech Mono', monospace", fontSize: 8, color: "#1a3040", marginTop: 14, textAlign: "right", lineHeight: 1.7 }}>
-        DEGATE · ZK-Rollup DEX en Ethereum · API pública sin autenticación · Datos actualizados cada 12-60s<br />
-        Las órdenes grandes en DeGate son movimiento institucional on-chain verificable en Ethereum.
+      <div style={{ fontSize: 8, color: "#1a3040", marginTop: 14, textAlign: "right", lineHeight: 1.7 }}>
+        FUENTES: CoinMarketCap (listados) · Coinglass (futuros + max pain) · Actualizado cada 1h
       </div>
     </div>
   );
@@ -2867,7 +2661,7 @@ function DeGateTab() {
 
 // ─── MAIN CONTENT ─────────────────────────────────────────────────────────────
 function WhaleIntelContent() {
-  const [tab, setTab] = useState<"signals"|"feeds"|"copy"|"gems"|"exchanges"|"squeeze"|"twitter"|"oracle"|"degate">("signals");
+  const [tab, setTab] = useState<"signals"|"feeds"|"copy"|"gems"|"exchanges"|"squeeze"|"twitter"|"oracle"|"radar">("signals");
   const auth = getAuth();
   const elite = isElite(auth);
 
@@ -2880,7 +2674,7 @@ function WhaleIntelContent() {
     {key:"gems",      label:"💎 GEM HUNTER",        icon:"💎", elite:true},
     {key:"exchanges", label:"📡 EXCHANGE SIGNALS",  icon:"📡"},
     {key:"squeeze",   label:"💥 SHORT SQUEEZE",     icon:"💥"},
-    {key:"degate",    label:"⬡ DEGATE ON-CHAIN",   icon:"⬡"},
+    {key:"radar",     label:"🎯 LISTING RADAR",    icon:"🎯"},
   ] as const;
 
   return (
@@ -2920,7 +2714,7 @@ function WhaleIntelContent() {
         {tab === "gems"      && <GemHunterTab isEliteUser={elite} />}
         {tab === "exchanges" && <ExchangeSignalsTab />}
         {tab === "squeeze"   && <ShortSqueezeTab />}
-        {tab === "degate"    && <DeGateTab />}
+        {tab === "radar"      && <ListingRadarTab />}
 
       </div>
     </div>
