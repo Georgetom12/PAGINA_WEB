@@ -945,6 +945,7 @@ interface AlgoSignal {
   openInterest: { total: number; change24h: string };
   fibonacci: { swingHigh: string; swingLow: string; fib382: string; fib500: string; fib618: string; fib786: string; fib1272: string; };
   patterns: AlgoPattern[]; macroTargets: MacroTarget[]; inds: string[]; updatedAt: number;
+  iaConfirmado?: boolean | null; iaConfianza?: number; iaDictamen?: string; iaPatron?: string; iaAccion?: string;
 }
 interface ExchangeAlgoSignal {
   symbol: string; name: string; icon: string; color: string;
@@ -1074,6 +1075,19 @@ function PsySignalsTab() {
                       <div className="h-full rounded-full transition-all duration-700" style={{ width: `${s.score}%`, background: `linear-gradient(90deg,#ff4444,#ffd700 50%,#00e676)` }} />
                     </div>
                   </div>
+
+                  {/* Confirmación IA Trading */}
+                  {s.iaConfirmado === true && (
+                    <div className="mb-3 px-3 py-2 border" style={{ borderColor: "#00e5ff44", background: "#00e5ff0c" }}>
+                      <div className="font-sharetech text-[7px] text-[#00e5ff] tracking-[0.1em] mb-1">🦄 CONFIRMADO POR IA TRADING · {s.iaConfianza?.toFixed(0)}%</div>
+                      {s.iaDictamen && <div className="font-space text-[9px] text-[#b0bec5] leading-relaxed">{s.iaDictamen}</div>}
+                    </div>
+                  )}
+                  {s.iaConfirmado === false && (
+                    <div className="mb-3 px-3 py-2 border" style={{ borderColor: "#ffd70044", background: "#ffd7000c" }}>
+                      <div className="font-sharetech text-[7px] text-[#ffd700] tracking-[0.1em]">⚠ IA TRADING DISCREPA — precaución, señales en desacuerdo</div>
+                    </div>
+                  )}
 
                   {/* Price */}
                   <div className="font-bebas text-3xl text-white mb-3">${s.currentPrice}</div>
