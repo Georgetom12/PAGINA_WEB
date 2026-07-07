@@ -287,6 +287,9 @@ export default function Equities() {
   const [bSortCol, setBSortCol]         = useState<"score"|"pe"|"roe"|"de"|"eg">("score");
   const [divCalcAmt, setDivCalcAmt]     = useState(10000);
   const [insiderStock, setInsiderStock] = useState("BRK.B");
+  const [liveInsiderTx, setLiveInsiderTx] = useState<InsiderTx[]>([]);
+  const [liveInsiderIsReal, setLiveInsiderIsReal] = useState(false);
+  const [liveInstData, setLiveInstData] = useState<{ ok: boolean; data?: unknown; error?: string; requiresUpgrade?: boolean } | null>(null);
   const chartRef  = useRef<HTMLCanvasElement>(null);
   const chartInst = useRef<Chart | null>(null);
   // Buffett Scanner (real API data)
@@ -358,6 +361,38 @@ export default function Equities() {
     const id = setInterval(load, 90000);
     return () => clearInterval(id);
   }, []);
+
+  // Insiders — datos reales de FMP (Form 4 + institucional), solo cuando el
+  // tab está abierto y cuando cambia la empresa seleccionada.
+  useEffect(() => {
+    if (section !== "insiders") return;
+    let cancelled = false;
+    setLiveInsiderTx([]);
+    setLiveInsiderIsReal(false);
+    setLiveInstData(null);
+
+    (async () => {
+      try {
+        const r = await fetch(`/api/proxy/fmp/insider-trading?symbol=${insiderStock}&limit=20`);
+        const d = await r.json() as { ok: boolean; data?: InsiderTx[]; error?: string };
+        if (cancelled) return;
+        if (d.ok && d.data?.length) {
+          setLiveInsiderTx(d.data);
+          setLiveInsiderIsReal(true);
+        }
+      } catch { /* se queda con el fallback estático */ }
+    })();
+
+    (async () => {
+      try {
+        const r = await fetch(`/api/proxy/fmp/institutional-ownership?symbol=${insiderStock}`);
+        const d = await r.json() as { ok: boolean; data?: unknown; error?: string; requiresUpgrade?: boolean };
+        if (!cancelled) setLiveInstData(d);
+      } catch { /* deja liveInstData en null → usa fallback */ }
+    })();
+
+    return () => { cancelled = true; };
+  }, [section, insiderStock]);
 
   // Chart render
   const renderChart = useCallback((s: Stock) => {
@@ -1782,7 +1817,7 @@ export default function Equities() {
 
           {/* ══ INSIDERS ══ */}
           {section === "insiders" && (() => {
-            const txList = INSIDER_DATA[insiderStock] ?? INSIDER_DEFAULT;
+            const txList = liveInsiderIsReal && liveInsiderTx.length ? liveInsiderTx : (INSIDER_DATA[insiderStock] ?? INSIDER_DEFAULT);
             const totalBuyVal  = txList.filter(t => t.type==="BUY") .reduce((a, t) => a + t.shares * (t.price || liveStocks.find(s=>s.sym===insiderStock)?.price || 100), 0);
             const totalSellVal = txList.filter(t => t.type==="SELL").reduce((a, t) => a + t.shares * (t.price || liveStocks.find(s=>s.sym===insiderStock)?.price || 100), 0);
             const total = totalBuyVal + totalSellVal || 1;
@@ -1812,8 +1847,11 @@ export default function Equities() {
                     Datos públicos de formularios SEC Form 4 — Transacciones de insiders (ejecutivos, directivos, accionistas &gt;10%)
                   </div>
                   <div style={{ marginLeft:"auto", fontFamily:"monospace", fontSize:".6rem", color:"var(--eq-gray)" }}>
-                    Últimos 90 días &nbsp;|&nbsp;
-                    <span style={{ color:"var(--eq-amber)" }}>⚠ Conectar FMP en /admin/apis para datos en tiempo real</span>
+                    {liveInsiderIsReal ? (
+                      <span style={{ color:"var(--eq-green)" }}>● DATOS REALES — FMP Form 4</span>
+                    ) : (
+                      <span style={{ color:"var(--eq-amber)" }}>⚠ Sin datos en vivo para {insiderStock} — mostrando referencia estática</span>
+                    )}
                   </div>
                 </div>
 
@@ -1907,6 +1945,11 @@ export default function Equities() {
                     <div className="bp-body">
                       <div style={{ fontFamily:"monospace", fontSize:".6rem", color:"var(--eq-gray)", marginBottom:10 }}>
                         Top 5 fondos institucionales por % de tenencia
+                        {liveInstData?.requiresUpgrade && (
+                          <div style={{ marginTop:6, color:"var(--eq-amber)" }}>
+                            ⚠ Tu plan de FMP no incluye datos 13F/institucionales en vivo — mostrando referencia estática. Requiere upgrade de plan FMP para conectar esto en tiempo real.
+                          </div>
+                        )}
                       </div>
                       {instHoldings.map((inst, i) => (
                         <div key={i} className="ins-inst-row">
