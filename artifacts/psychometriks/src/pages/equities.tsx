@@ -315,6 +315,7 @@ export default function Equities() {
   const [fmpLoading,   setFmpLoading]   = useState(false);
   const [fmpError,     setFmpError]     = useState<string | null>(null);
   const [fmpChartType, setFmpChartType] = useState<"revenue"|"income"|"eps"|"margins">("revenue");
+  const [fmpPeriod, setFmpPeriod] = useState<"annual"|"quarter">("annual");
   const fmpChartRef  = useRef<HTMLCanvasElement>(null);
   const fmpChartInst = useRef<Chart | null>(null);
 
@@ -527,13 +528,14 @@ export default function Equities() {
     ];
   };
 
-  const fetchFmp = useCallback(async (sym: string) => {
+  const fetchFmp = useCallback(async (sym: string, period: "annual"|"quarter" = fmpPeriod) => {
     setFmpSymbol(sym);
     setFmpLoading(true);
     setFmpError(null);
     setFmpData(null);
     try {
-      const r = await fetch(`/api/proxy/fmp/income-statement?symbol=${sym}&period=annual&limit=5`);
+      const limit = period === "quarter" ? 8 : 5;
+      const r = await fetch(`/api/proxy/fmp/income-statement?symbol=${sym}&period=${period}&limit=${limit}`);
       const json = await r.json() as { ok: boolean; data?: FmpEntry[]; error?: string };
       if (!json.ok || !json.data?.length) {
         setFmpError(json.error ?? "Sin datos disponibles");
@@ -545,7 +547,7 @@ export default function Equities() {
     } finally {
       setFmpLoading(false);
     }
-  }, []);
+  }, [fmpPeriod]);
 
   const renderFmpChart = useCallback((data: FmpEntry[], cType: string) => {
     const canvas = fmpChartRef.current;
@@ -2196,13 +2198,34 @@ export default function Equities() {
                       {fmpStock && <div style={{ width:42, height:42, borderRadius:"50%", background:fmpStock.bg, color:fmpStock.color, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"'Orbitron',monospace", fontSize:".7rem", fontWeight:900 }}>{fmpSymbol.substring(0,2)}</div>}
                       <div>
                         <div style={{ fontFamily:"'Orbitron',monospace", fontSize:"1.1rem", fontWeight:900, color:"var(--eq-white)" }}>{fmpSymbol}</div>
-                        <div style={{ fontFamily:"monospace", fontSize:".65rem", color:"var(--eq-gray)" }}>{fmpStock?.name ?? fmpSymbol} · Income Statement Anual (FY)</div>
+                        <div style={{ fontFamily:"monospace", fontSize:".65rem", color:"var(--eq-gray)" }}>{fmpStock?.name ?? fmpSymbol} · Income Statement {fmpPeriod === "annual" ? "Anual (FY)" : "Trimestral (Q)"}</div>
                       </div>
                       <div style={{ marginLeft:"auto", display:"flex", gap:10, alignItems:"center" }}>
+                        <div style={{ display:"flex", border:"1px solid var(--eq-border2)", borderRadius:3, overflow:"hidden" }}>
+                          <button onClick={() => { setFmpPeriod("annual"); fetchFmp(fmpSymbol!, "annual"); }}
+                            style={{ padding:"4px 10px", fontFamily:"monospace", fontSize:".58rem", border:"none", cursor:"pointer",
+                              background: fmpPeriod === "annual" ? "var(--eq-cyan)" : "transparent",
+                              color: fmpPeriod === "annual" ? "#000" : "var(--eq-gray)" }}>ANUAL</button>
+                          <button onClick={() => { setFmpPeriod("quarter"); fetchFmp(fmpSymbol!, "quarter"); }}
+                            style={{ padding:"4px 10px", fontFamily:"monospace", fontSize:".58rem", border:"none", cursor:"pointer",
+                              background: fmpPeriod === "quarter" ? "var(--eq-cyan)" : "transparent",
+                              color: fmpPeriod === "quarter" ? "#000" : "var(--eq-gray)" }}>TRIMESTRAL</button>
+                        </div>
                         {sorted && <div style={{ fontFamily:"monospace", fontSize:".58rem", color:"var(--eq-green)", background:"rgba(0,230,118,.08)", border:"1px solid rgba(0,230,118,.25)", padding:"3px 10px", borderRadius:3 }}>● FMP CONECTADO</div>}
                         <button onClick={() => { setFmpSymbol(null); setFmpData(null); setFmpError(null); }} className="eq-nav-btn">← CAMBIAR</button>
                       </div>
                     </div>
+
+                    {/* Nota: los datos ANUALES solo llegan hasta el último año fiscal
+                        ya cerrado y reportado (ej. en 2026, el último disponible es
+                        FY2025 — las empresas tardan meses en reportar tras cerrar el
+                        año). Para ver algo más reciente, usa TRIMESTRAL. */}
+                    {fmpPeriod === "annual" && (
+                      <div style={{ fontFamily:"monospace", fontSize:".58rem", color:"var(--eq-gray)", marginBottom:10 }}>
+                        ℹ Los reportes anuales solo incluyen años fiscales ya cerrados —
+                        para datos más recientes del año en curso, usa el botón TRIMESTRAL.
+                      </div>
+                    )}
 
                     {/* Loading */}
                     {fmpLoading && (
