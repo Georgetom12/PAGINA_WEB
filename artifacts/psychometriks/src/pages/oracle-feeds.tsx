@@ -12,6 +12,11 @@ interface FG          { value: string; value_classification: string; timestamp: 
 interface DLProtocol  { name: string; tvl: number; category: string; chain: string; logo: string | null; change_1d: number | null; change_7d: number | null }
 interface DLTvl       { date: number; tvl: number }
 interface DLData      { protocols: DLProtocol[]; tvlHistory: DLTvl[]; totalTvl: number }
+interface SIHolding    { nameOfIssuer: string; cusip: string; value: number; shares: number }
+interface SuperInvestor {
+  cik: string; name: string; fund: string; ok: boolean;
+  periodOfReport: string | null; filedAt: string | null; holdings: SIHolding[];
+}
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 const C = {
@@ -67,9 +72,10 @@ export default function OracleFeeds() {
   const [treasuries, setTreasuries] = useState<Treasury[]>([]);
   const [fg,         setFg]         = useState<FG[]>([]);
   const [defillama,  setDefillama]  = useState<DLData | null>(null);
+  const [superInvestors, setSuperInvestors] = useState<SuperInvestor[]>([]);
   const [newsExt,    setNewsExt]    = useState<NewsItem[]>([]);
   const [status,     setStatus]     = useState<Record<string, string>>({});
-  const [activeTab,  setActiveTab]  = useState<"whales"|"news"|"newsext"|"miners"|"treasury"|"defi">("whales");
+  const [activeTab,  setActiveTab]  = useState<"whales"|"news"|"newsext"|"miners"|"treasury"|"defi"|"superinvestors">("whales");
   const [lastUp,     setLastUp]     = useState(Date.now());
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -112,6 +118,16 @@ export default function OracleFeeds() {
     return () => { if (tickRef.current) clearInterval(tickRef.current); };
   }, [loadAll]);
 
+  // Superinversores (13F) — cambia trimestralmente, no hace falta refrescar
+  // cada 60s como el resto; se pide una sola vez al entrar a la página.
+  useEffect(() => {
+    fetch$("/api/oracle/superinvestors")
+      .then((d: { ok: boolean; investors?: SuperInvestor[] }) => {
+        if (d.ok && d.investors) setSuperInvestors(d.investors);
+      })
+      .catch(() => {});
+  }, [fetch$]);
+
   const s  = { fontFamily: "'Share Tech Mono', monospace" } as const;
   const so = { fontFamily: "'Orbitron', monospace" } as const;
   const rb = { fontFamily: "'Rajdhani', sans-serif" } as const;
@@ -127,6 +143,7 @@ export default function OracleFeeds() {
     { key:"defi",    icon:"💧", label:"DEFI TVL",        count: defillama?.protocols.length },
     { key:"miners",  icon:"⛏",  label:"MINEROS BTC",    count: miners.length  },
     { key:"treasury",icon:"🏛", label:"BTC TREASURIES",  count: treasuries.length },
+    { key:"superinvestors", icon:"🧠", label:"SUPERINVERSORES", count: superInvestors.length },
   ];
 
   return (
@@ -449,6 +466,56 @@ export default function OracleFeeds() {
                   {treasuries.length === 0 && (
                     <div style={{ ...s, fontSize:10, color:C.text3, padding:24, textAlign:"center" }}>Cargando tesoros...</div>
                   )}
+                </div>
+              </div>
+            )}
+
+            {/* SUPERINVERSORES (13F) */}
+            {activeTab === "superinvestors" && (
+              <div style={{ padding:18 }}>
+                <div style={{ ...s, fontSize:9, color:C.text3, marginBottom:4 }}>
+                  MOVIMIENTOS 13F REAL — SEC EDGAR (data.sec.gov) · Fuente oficial, gratis, sin terceros
+                </div>
+                <div style={{ ...s, fontSize:8, color:C.text3, marginBottom:14, opacity:0.7 }}>
+                  ⚠ Los 13F son trimestrales — se reportan ~45 días después del cierre de cada trimestre, no es data al segundo.
+                </div>
+                {superInvestors.length === 0 && (
+                  <div style={{ ...s, fontSize:10, color:C.text3, padding:24, textAlign:"center" }}>Cargando 13F de SEC EDGAR...</div>
+                )}
+                <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+                  {superInvestors.map((inv, i) => (
+                    <div key={inv.cik} style={{ border:`1px solid ${C.border}`, animation:"fadeIn 0.3s ease both", animationDelay:`${i*40}ms` }}>
+                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 14px", background:C.bg3, borderBottom:`1px solid ${C.border}` }}>
+                        <div>
+                          <div style={{ ...rb, fontSize:14, color:C.text, fontWeight:700 }}>{inv.name}</div>
+                          <div style={{ ...s, fontSize:9, color:C.text3 }}>{inv.fund}</div>
+                        </div>
+                        <div style={{ textAlign:"right" }}>
+                          {inv.ok ? (
+                            <>
+                              <div style={{ ...s, fontSize:8, color:C.text3 }}>Período reportado</div>
+                              <div style={{ ...so, fontSize:11, color:C.cyan }}>{inv.periodOfReport ?? "—"}</div>
+                            </>
+                          ) : (
+                            <div style={{ ...s, fontSize:9, color:C.red }}>⚠ Sin datos disponibles</div>
+                          )}
+                        </div>
+                      </div>
+                      {inv.holdings?.length > 0 && (
+                        <div style={{ padding:"6px 0" }}>
+                          {inv.holdings.slice(0, 8).map((h, j) => (
+                            <div key={j} className="of-row" style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"7px 14px", transition:"background 0.2s" }}>
+                              <div style={{ ...rb, fontSize:11, color:C.text }}>{h.nameOfIssuer}</div>
+                              <div style={{ display:"flex", gap:14, alignItems:"center" }}>
+                                <div style={{ ...s, fontSize:9, color:C.text3 }}>{h.shares.toLocaleString()} acciones</div>
+                                <div style={{ ...so, fontSize:11, color:C.gold, minWidth:80, textAlign:"right" }}>{fmtUSD(h.value * 1000)}</div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
