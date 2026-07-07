@@ -293,4 +293,95 @@ router.get("/proxy/signals/altcoins", async (req: Request, res: Response) => {
   await proxyFetch(`http://localhost:${port}/api/altcoin-signals`, res, req);
 });
 
+// ─── FMP — Insider Trading (Form 4) ─────────────────────────────────────────
+router.get("/proxy/fmp/insider-trading", async (req: Request, res: Response) => {
+  const key = process.env["FMP_API_KEY"];
+  if (!key) { res.json({ ok: false, error: "FMP_API_KEY no configurado" }); return; }
+  const symbol = String(req.query["symbol"] ?? "").toUpperCase().trim();
+  const limit  = Math.min(parseInt(String(req.query["limit"] ?? "20")) || 20, 100);
+  if (!symbol) { res.status(400).json({ ok: false, error: "symbol requerido" }); return; }
+
+  try {
+    const url = `https://financialmodelingprep.com/stable/insider-trading/search?symbol=${encodeURIComponent(symbol)}&page=0&limit=${limit}&apikey=${key}`;
+    const r = await fetch(url, { signal: AbortSignal.timeout(10000) });
+    if (r.status === 401 || r.status === 402 || r.status === 403) {
+      res.json({ ok: false, error: "Tu plan de FMP no incluye insider trading — requiere upgrade" });
+      return;
+    }
+    if (!r.ok) { res.json({ ok: false, error: `FMP respondió ${r.status}` }); return; }
+    const data = await r.json() as Array<Record<string, unknown>>;
+    if (!Array.isArray(data)) { res.json({ ok: false, error: "Respuesta inesperada de FMP" }); return; }
+    res.json({
+      ok: true,
+      data: data.map(d => ({
+        date: d["transactionDate"] ?? d["filingDate"] ?? "",
+        name: d["reportingName"] ?? "—",
+        title: d["typeOfOwner"] ?? "—",
+        type: String(d["transactionType"] ?? "").toUpperCase().includes("P") ? "BUY"
+              : String(d["transactionType"] ?? "").toUpperCase().includes("S") ? "SELL" : "OTRO",
+        shares: Number(d["securitiesTransacted"] ?? 0),
+        price: Number(d["price"] ?? 0),
+      })),
+    });
+  } catch (err) { res.json({ ok: false, error: String(err) }); }
+});
+
+// ─── FMP — Dividendos ────────────────────────────────────────────────────────
+router.get("/proxy/fmp/dividends", async (req: Request, res: Response) => {
+  const key = process.env["FMP_API_KEY"];
+  if (!key) { res.json({ ok: false, error: "FMP_API_KEY no configurado" }); return; }
+  const symbol = String(req.query["symbol"] ?? "").toUpperCase().trim();
+  if (!symbol) { res.status(400).json({ ok: false, error: "symbol requerido" }); return; }
+
+  try {
+    const url = `https://financialmodelingprep.com/stable/dividends?symbol=${encodeURIComponent(symbol)}&limit=12&apikey=${key}`;
+    const r = await fetch(url, { signal: AbortSignal.timeout(10000) });
+    if (!r.ok) { res.json({ ok: false, error: `FMP respondió ${r.status}` }); return; }
+    const data = await r.json() as Array<{ date?: string; dividend?: number; adjDividend?: number; yield?: number; frequency?: string }>;
+    if (!Array.isArray(data) || data.length === 0) { res.json({ ok: true, data: null }); return; }
+
+    // Suma los pagos de los últimos 12 meses para estimar el dividendo anual real
+    const oneYearAgo = Date.now() - 365 * 24 * 60 * 60 * 1000;
+    const last12mo = data.filter(d => d.date && new Date(d.date).getTime() >= oneYearAgo);
+    const annualDividend = last12mo.reduce((sum, d) => sum + (d.adjDividend ?? d.dividend ?? 0), 0);
+
+    res.json({
+      ok: true,
+      data: {
+        annualDividend: +annualDividend.toFixed(4),
+        frequency: data[0]?.frequency ?? "—",
+        lastPaymentDate: data[0]?.date ?? null,
+        history: data.slice(0, 8).map(d => ({ date: d.date, amount: d.adjDividend ?? d.dividend ?? 0 })),
+      },
+    });
+  } catch (err) { res.json({ ok: false, error: String(err) }); }
+});
+
+// ─── FMP — Institutional Ownership (13F) ────────────────────────────────────
+// NOTA: este dataset suele requerir un plan de pago de FMP (no el gratuito de
+// 250 llamadas/día) — si tu key no lo incluye, esto devuelve ok:false con un
+// mensaje claro en vez de fallar en silencio o mostrar datos falsos.
+router.get("/proxy/fmp/institutional-ownership", async (req: Request, res: Response) => {
+  const key = process.env["FMP_API_KEY"];
+  if (!key) { res.json({ ok: false, error: "FMP_API_KEY no configurado" }); return; }
+  const symbol = String(req.query["symbol"] ?? "").toUpperCase().trim();
+  if (!symbol) { res.status(400).json({ ok: false, error: "symbol requerido" }); return; }
+
+  const now = new Date();
+  const year = now.getFullYear();
+  const quarter = Math.max(1, Math.floor((now.getMonth()) / 3)); // trimestre ya cerrado
+
+  try {
+    const url = `https://financialmodelingprep.com/stable/institutional-ownership/symbol-positions-summary?symbol=${encodeURIComponent(symbol)}&year=${year}&quarter=${quarter}&apikey=${key}`;
+    const r = await fetch(url, { signal: AbortSignal.timeout(10000) });
+    if (r.status === 401 || r.status === 402 || r.status === 403) {
+      res.json({ ok: false, error: "Requiere upgrade de plan FMP — el dataset 13F/institucional no está en el plan gratuito", requiresUpgrade: true });
+      return;
+    }
+    if (!r.ok) { res.json({ ok: false, error: `FMP respondió ${r.status}` }); return; }
+    const data = await r.json();
+    res.json({ ok: true, data });
+  } catch (err) { res.json({ ok: false, error: String(err) }); }
+});
+
 export default router;
