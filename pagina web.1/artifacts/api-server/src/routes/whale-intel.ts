@@ -768,6 +768,21 @@ const GEM_NETWORKS: Record<string, string> = {
 };
 const WHALE_TRADE_USD = 2_000; // una compra individual >= esto cuenta como "ballena"
 
+// Stablecoins y "pilares" (BTC, ETH, majors) — nunca son gemas, se excluyen
+// aunque aparezcan trending/nuevos (a veces GeckoTerminal los muestra en
+// pools recién creados de versiones wrapped/bridged).
+const EXCLUDED_SYMBOLS = new Set([
+  "USDT","USDC","DAI","BUSD","TUSD","USDD","FDUSD","USDE","PYUSD","GUSD","USDP",
+  "FRAX","LUSD","SUSD","CUSD","USTC","EURC","EURT","XUSD","USD1",
+  "WBTC","BTC","BTCB","CBBTC","TBTC","RENBTC",
+  "WETH","ETH","STETH","WSTETH","RETH","CBETH","METH",
+  "WBNB","BNB","WSOL","SOL","WMATIC","MATIC","WAVAX","AVAX",
+  "WFTM","FTM","WCRO","CRO","XRP","ADA","DOT","LTC","BCH","DOGE",
+]);
+function esPilarOStable(symbol: string): boolean {
+  return EXCLUDED_SYMBOLS.has(symbol.toUpperCase().trim());
+}
+
 async function gtFetch(path: string): Promise<any> {
   try {
     const r = await fetch(`https://api.geckoterminal.com/api/v2${path}`, {
@@ -841,7 +856,7 @@ async function fetchCmcNewGems(): Promise<Gem[]> {
     const data = await r.json() as { data?: Array<any> };
     const now = Date.now();
     return (data.data ?? [])
-      .filter(t => (t.quote?.USD?.market_cap ?? 0) < 50_000_000)
+      .filter(t => (t.quote?.USD?.market_cap ?? 0) < 50_000_000 && !esPilarOStable(t.symbol ?? ""))
       .map(t => ({
         address: `cmc-${t.id}`,
         symbol: (t.symbol ?? "?").slice(0, 12),
@@ -915,6 +930,7 @@ router.get("/whale-intel/gems", async (req: Request, res: Response) => {
     }
 
     const candidatos = Array.from(bestByToken.values()).filter(p => {
+      if (esPilarOStable(p.baseSymbol)) return false; // nunca gemas
       const vol24 = parseFloat(p.attrs.volume_usd?.h24 ?? "0");
       const liq = parseFloat(p.attrs.reserve_in_usd ?? "0");
       return vol24 > 5_000 && liq > 1_000;
