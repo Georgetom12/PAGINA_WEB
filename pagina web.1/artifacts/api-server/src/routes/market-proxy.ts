@@ -4,6 +4,16 @@ import { eq } from "drizzle-orm";
 
 const router = Router();
 
+// ── Cache simple (evita re-consultar FMP en cada apertura del tab) ─────────
+const _cache = new Map<string, { data: unknown; exp: number }>();
+function cGet<T>(k: string): T | null {
+  const e = _cache.get(k);
+  return e && Date.now() < e.exp ? (e.data as T) : null;
+}
+function cSet<T>(k: string, d: T, ms: number) {
+  _cache.set(k, { data: d, exp: Date.now() + ms });
+}
+
 // ─── FMP — Income Statement (usado por Equities Command Center → Financials) ──
 // NOTA: este endpoint faltaba por completo — el frontend lo llamaba pero
 // no existía ninguna ruta, por eso "Financials" nunca cargó nada real.
@@ -381,6 +391,50 @@ router.get("/proxy/fmp/institutional-ownership", async (req: Request, res: Respo
     if (!r.ok) { res.json({ ok: false, error: `FMP respondió ${r.status}` }); return; }
     const data = await r.json();
     res.json({ ok: true, data });
+  } catch (err) { res.json({ ok: false, error: String(err) }); }
+});
+
+// ─── FMP — Dividendos por LOTE (para las tarjetas resumen del tab Dividendos) ─
+// Cacheado 12h — los dividendos no cambian seguido, no vale la pena re-pedir
+// 20 símbolos cada vez que alguien abre el tab.
+router.get("/proxy/fmp/dividends-batch", async (req: Request, res: Response) => {
+  const key = process.env["FMP_API_KEY"];
+  if (!key) { res.json({ ok: false, error: "FMP_API_KEY no configurado" }); return; }
+
+  const symbolsParam = String(req.query["symbols"] ?? "");
+  const symbols = symbolsParam.split(",").map(s => s.trim().toUpperCase()).filter(Boolean).slice(0, 30);
+  if (!symbols.length) { res.status(400).json({ ok: false, error: "symbols requerido (separados por coma)" }); return; }
+
+  const cacheKey = `divbatch_${symbols.join(",")}`;
+  const cached = cGet<Record<string, { annualDividend: number; yield: number } | null>>(cacheKey);
+  if (cached) { res.json({ ok: true, data: cached, cached: true }); return; }
+
+  try {
+    const results = await Promise.allSettled(symbols.map(async (sym) => {
+      const [divRes, quoteRes] = await Promise.all([
+        fetch(`https://financialmodelingprep.com/stable/dividends?symbol=${sym}&limit=12&apikey=${key}`, { signal: AbortSignal.timeout(8000) }),
+        fetch(`https://financialmodelingprep.com/stable/quote?symbol=${sym}&apikey=${key}`, { signal: AbortSignal.timeout(8000) }),
+      ]);
+      const divData = divRes.ok ? await divRes.json() as Array<{ date?: string; dividend?: number; adjDividend?: number }> : [];
+      const quoteData = quoteRes.ok ? await quoteRes.json() as Array<{ price?: number }> : [];
+      const price = quoteData[0]?.price ?? 0;
+
+      if (!Array.isArray(divData) || divData.length === 0 || price <= 0) return [sym, null] as const;
+
+      const oneYearAgo = Date.now() - 365 * 24 * 60 * 60 * 1000;
+      const last12mo = divData.filter(d => d.date && new Date(d.date).getTime() >= oneYearAgo);
+      const annualDividend = last12mo.reduce((sum, d) => sum + (d.adjDividend ?? d.dividend ?? 0), 0);
+      if (annualDividend <= 0) return [sym, null] as const;
+
+      return [sym, { annualDividend: +annualDividend.toFixed(4), yield: +((annualDividend / price) * 100).toFixed(2) }] as const;
+    }));
+
+    const out: Record<string, { annualDividend: number; yield: number } | null> = {};
+    for (const r of results) {
+      if (r.status === "fulfilled") out[r.value[0]] = r.value[1];
+    }
+    cSet(cacheKey, out, 12 * 60 * 60_000);
+    res.json({ ok: true, data: out, cached: false });
   } catch (err) { res.json({ ok: false, error: String(err) }); }
 });
 
