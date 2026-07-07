@@ -71,7 +71,7 @@ const ANALYSIS_TYPES = [
   { key:"riesgo",      label:"RIESGO",      desc:"VaR · Hedges" },
 ];
 
-function buildPrompt(asset: AssetItem, type: string): string {
+function buildPrompt(asset: AssetItem, type: string, liveMacroCtx: string, fetchedAt?: string): string {
   const up = asset.pct >= 0;
   const context = `ACTIVO: ${asset.sym} — ${asset.name}
 PRECIO ACTUAL: $${typeof asset.px === "number" ? asset.px.toFixed(2) : asset.px} (${up ? "+" : ""}${asset.pct.toFixed(2)}% hoy)
@@ -79,14 +79,10 @@ SECTOR: ${asset.sector}
 MARKET CAP: ${asset.mcap || "N/A"}
 P/E: ${asset.pe ?? "N/A"}x | BETA: ${asset.beta ?? "N/A"} | RSI(14): ${asset.rsi ?? "N/A"}
 SHORT INTEREST: ${asset.si} | IV: ${asset.iv}
+(Nota: P/E, Beta, RSI, Short Interest e IV son valores de referencia, no en vivo — tenlo en cuenta y no los cites como precisos al segundo)
 
-CONTEXTO MACRO HOY:
-- SPX: 5,214 (+0.35%) | VIX: 14.82 (-6%)
-- DXY: 104.23 (+0.33%) — Dólar fuerte
-- US10Y: 4.35% — Tasas elevadas
-- Gold: $2,334 | WTI: $78.45
-- BTC: $67,420 (+1.23%)
-- Fed: Sin cambios hasta junio — 3 recortes esperados en 2024`;
+CONTEXTO MACRO EN VIVO${fetchedAt ? ` (actualizado ${new Date(fetchedAt).toLocaleTimeString("es")})` : ""}:
+${liveMacroCtx || "Datos macro en vivo no disponibles en este momento — no asumas valores, indícalo en el análisis."}`;
 
   const prompts: Record<string, string> = {
     completo: `Eres PSY BRAIN, el analista institucional de PSYCHOMETRIKS. Produce un análisis profesional completo en español sobre ${asset.sym}.
@@ -246,8 +242,50 @@ export default function PsyBrain() {
   const [score, setScore] = useState(0);
   const [clock, setClock] = useState("");
   const [history, setHistory] = useState<{ asset: string; type: string; ts: string }[]>([]);
+  const [livePrices, setLivePrices] = useState<Record<string, { price: number | null; changePct: number | null }>>({});
+  const [liveMacroCtx, setLiveMacroCtx] = useState<string>("");
   const messagesRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+
+  // Precios en vivo (reemplaza los valores fijos de ASSETS) — FMP para
+  // acciones/índices/macro, Binance para cripto. Se refresca cada 60s.
+  useEffect(() => {
+    let cancelled = false;
+    async function loadLive() {
+      try {
+        const r = await fetch("/api/psy-brain/live-data");
+        const d = await r.json() as {
+          ok: boolean;
+          equities: Record<string, { price: number | null; changePct: number | null }>;
+          indices: Record<string, { price: number | null; changePct: number | null }>;
+          macro: Record<string, { price: number | null; changePct: number | null }>;
+          crypto: Record<string, { price: number | null; changePct: number | null }>;
+        };
+        if (cancelled || !d.ok) return;
+        setLivePrices({ ...d.equities, ...d.indices, ...d.macro, ...d.crypto });
+
+        const m = d.macro;
+        const fmtM = (v: number | null, suf = "") => (v == null ? "N/D" : `${v.toFixed(2)}${suf}`);
+        setLiveMacroCtx(
+          `- SPX: ${fmtM(d.indices["SPX"]?.price ?? null)} (${fmtM(d.indices["SPX"]?.changePct ?? null, "%")}) | VIX: ${fmtM(d.indices["VIX"]?.price ?? null)} (${fmtM(d.indices["VIX"]?.changePct ?? null, "%")})\n` +
+          `- DXY: ${fmtM(m["DXY"]?.price ?? null)} (${fmtM(m["DXY"]?.changePct ?? null, "%")})\n` +
+          `- US10Y: ${fmtM(m["US10Y"]?.price ?? null, "%")} | US2Y: ${fmtM(m["US2Y"]?.price ?? null, "%")}\n` +
+          `- Gold: $${fmtM(m["XAU"]?.price ?? null)} | WTI: $${fmtM(m["WTI"]?.price ?? null)}\n` +
+          `- BTC: $${fmtM(d.crypto["BTC"]?.price ?? null)} (${fmtM(d.crypto["BTC"]?.changePct ?? null, "%")})`
+        );
+      } catch { /* deja los valores previos / fallback */ }
+    }
+    loadLive();
+    const iv = setInterval(loadLive, 60_000);
+    return () => { cancelled = true; clearInterval(iv); };
+  }, []);
+
+  // Combina un activo estático con su precio en vivo (si ya llegó)
+  const withLive = useCallback((asset: AssetItem): AssetItem => {
+    const live = livePrices[asset.sym];
+    if (!live || live.price == null) return asset;
+    return { ...asset, px: live.price, pct: live.changePct ?? asset.pct };
+  }, [livePrices]);
 
   useEffect(() => {
     const iv = setInterval(() => {
@@ -260,11 +298,13 @@ export default function PsyBrain() {
     return () => clearInterval(iv);
   }, []);
 
-  const filteredAssets = (ASSETS[currentGroup] || []).filter(a =>
-    assetSearch === "" ||
-    a.sym.includes(assetSearch.toUpperCase()) ||
-    a.name.toLowerCase().includes(assetSearch.toLowerCase())
-  );
+  const filteredAssets = (ASSETS[currentGroup] || [])
+    .map(withLive)
+    .filter(a =>
+      assetSearch === "" ||
+      a.sym.includes(assetSearch.toUpperCase()) ||
+      a.name.toLowerCase().includes(assetSearch.toLowerCase())
+    );
 
   const selectAsset = useCallback((asset: AssetItem) => {
     setCurrentAsset(asset);
@@ -302,7 +342,7 @@ export default function PsyBrain() {
     abortRef.current = new AbortController();
 
     try {
-      const prompt = buildPrompt(asset, type);
+      const prompt = buildPrompt(asset, type, liveMacroCtx);
       const resp = await fetch("/api/psy-brain/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -491,7 +531,7 @@ export default function PsyBrain() {
                 {["BTC", "NVDA", "SPX", "XAU"].map(sym => {
                   const asset = Object.values(ASSETS).flat().find(a => a.sym === sym);
                   return asset ? (
-                    <button key={sym} onClick={() => { setCurrentGroup(sym === "BTC" ? "crypto" : sym === "SPX" ? "indices" : sym === "XAU" ? "macro" : "equities"); selectAsset(asset); }}
+                    <button key={sym} onClick={() => { setCurrentGroup(sym === "BTC" ? "crypto" : sym === "SPX" ? "indices" : sym === "XAU" ? "macro" : "equities"); selectAsset(withLive(asset)); }}
                       style={{ padding: "8px 16px", background: "rgba(34,212,245,.06)", border: "1px solid rgba(34,212,245,.2)", color: "#22d4f5", fontSize: "0.7rem", letterSpacing: "0.1em", cursor: "pointer", transition: "all .2s" }}>
                       {sym}
                     </button>
