@@ -80,6 +80,10 @@ export interface Gem {
   ageMinutes: number;
   dexUrl: string;
   isBoosted: boolean;
+  // Whale tracking (trades on-chain reales, no solo volumen agregado)
+  whaleBuyVolume?: number;
+  whaleBuyCount?: number;
+  source?: "dex" | "cmc";
 }
 
 const EXCHANGE_ADDRS: Record<string, string> = {
@@ -744,106 +748,225 @@ router.get("/whale-intel/trader-history/:id", async (req: Request, res: Response
   }
 });
 
+// ── GEM SCOUT — GeckoTerminal (trending + nuevos pools) + trades on-chain ───
+// reales para detectar compras grandes (ballenas) + CMC nuevos listings +
+// filtro de seguridad RugCheck (Solana) / GoPlus (EVM).
+const GEM_NETWORKS: Record<string, string> = {
+  solana: "solana", eth: "eth", bsc: "bsc", base: "base", arbitrum: "arbitrum",
+};
+const WHALE_TRADE_USD = 2_000; // una compra individual >= esto cuenta como "ballena"
+
+async function gtFetch(path: string): Promise<any> {
+  try {
+    const r = await fetch(`https://api.geckoterminal.com/api/v2${path}`, {
+      headers: { Accept: "application/json;version=20230302" },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!r.ok) return null;
+    return await r.json();
+  } catch { return null; }
+}
+
+interface GtPoolAttrs {
+  address: string; name: string;
+  base_token_price_usd?: string;
+  pool_created_at?: string;
+  fdv_usd?: string; market_cap_usd?: string; reserve_in_usd?: string;
+  price_change_percentage?: { h1?: string; h24?: string };
+  volume_usd?: { h1?: string; h24?: string };
+  transactions?: { h1?: { buys?: number; sells?: number }; h24?: { buys?: number; sells?: number } };
+}
+
+async function fetchPoolsFor(chainKey: string, network: string): Promise<Array<{ chain: string; attrs: GtPoolAttrs; baseAddr: string; baseSymbol: string; baseName: string }>> {
+  const out: Array<{ chain: string; attrs: GtPoolAttrs; baseAddr: string; baseSymbol: string; baseName: string }> = [];
+  for (const kind of ["trending_pools", "new_pools"]) {
+    const data = await gtFetch(`/networks/${network}/${kind}?include=base_token`);
+    if (!data?.data) continue;
+    const tokenMap = new Map<string, { symbol: string; name: string; address: string }>();
+    for (const inc of data.included ?? []) {
+      if (inc.type === "token") {
+        tokenMap.set(inc.id, {
+          symbol: inc.attributes?.symbol ?? "?",
+          name: inc.attributes?.name ?? "Unknown",
+          address: inc.attributes?.address ?? "",
+        });
+      }
+    }
+    for (const p of data.data as Array<{ id: string; attributes: GtPoolAttrs; relationships?: any }>) {
+      const baseTokenRef = p.relationships?.base_token?.data?.id;
+      const tok = baseTokenRef ? tokenMap.get(baseTokenRef) : null;
+      if (!tok?.address) continue;
+      out.push({ chain: chainKey, attrs: p.attributes, baseAddr: tok.address, baseSymbol: tok.symbol, baseName: tok.name });
+    }
+  }
+  return out;
+}
+
+async function fetchWhaleTrades(network: string, poolAddress: string): Promise<{ whaleVol: number; whaleCount: number }> {
+  const data = await gtFetch(`/networks/${network}/pools/${poolAddress}/trades`);
+  const trades = data?.data as Array<{ attributes?: { kind?: string; volume_in_usd?: string } }> | undefined;
+  if (!trades) return { whaleVol: 0, whaleCount: 0 };
+  let whaleVol = 0, whaleCount = 0;
+  for (const t of trades) {
+    const vol = parseFloat(t.attributes?.volume_in_usd ?? "0");
+    if (t.attributes?.kind === "buy" && vol >= WHALE_TRADE_USD) {
+      whaleVol += vol;
+      whaleCount++;
+    }
+  }
+  return { whaleVol, whaleCount };
+}
+
+async function fetchCmcNewGems(): Promise<Gem[]> {
+  const key = process.env["COINMARKETCAP_API_KEY"];
+  if (!key) return [];
+  try {
+    const r = await fetch(
+      "https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest?limit=20&sort=date_added&sort_dir=desc&convert=USD",
+      { headers: { "X-CMC_PRO_API_KEY": key }, signal: AbortSignal.timeout(8000) },
+    );
+    if (!r.ok) return [];
+    const data = await r.json() as { data?: Array<any> };
+    const now = Date.now();
+    return (data.data ?? [])
+      .filter(t => (t.quote?.USD?.market_cap ?? 0) < 50_000_000)
+      .map(t => ({
+        address: `cmc-${t.id}`,
+        symbol: (t.symbol ?? "?").slice(0, 12),
+        name: (t.name ?? "Unknown").slice(0, 30),
+        chain: "cmc",
+        price: t.quote?.USD?.price ?? 0,
+        priceChange1h: t.quote?.USD?.percent_change_1h ?? 0,
+        priceChange24h: t.quote?.USD?.percent_change_24h ?? 0,
+        volume24h: t.quote?.USD?.volume_24h ?? 0,
+        liquidity: 0,
+        marketCap: t.quote?.USD?.market_cap ?? 0,
+        buyVolume: 0,
+        buyCount: 0,
+        sellCount: 0,
+        ageMinutes: t.date_added ? (now - new Date(t.date_added).getTime()) / 60_000 : 0,
+        dexUrl: `https://coinmarketcap.com/currencies/${String(t.slug ?? t.name ?? "").toLowerCase()}/`,
+        isBoosted: false,
+        whaleBuyVolume: 0,
+        whaleBuyCount: 0,
+        source: "cmc" as const,
+      }));
+  } catch { return []; }
+}
+
+async function safetyOk(chain: string, address: string): Promise<boolean> {
+  try {
+    if (chain === "solana") {
+      const r = await fetch(`https://api.rugcheck.xyz/v1/tokens/${address}/report/summary`, { signal: AbortSignal.timeout(6000) });
+      if (!r.ok) return true; // sin datos → no bloquear, solo lo dejamos pasar sin garantía
+      const d = await r.json() as { score_normalised?: number };
+      return (d.score_normalised ?? 0) < 60; // >=60 = riesgo alto
+    }
+    const chainIdMap: Record<string, string> = { eth: "1", bsc: "56", base: "8453", arbitrum: "42161" };
+    const cid = chainIdMap[chain];
+    if (!cid) return true;
+    const r = await fetch(`https://api.gopluslabs.io/api/v1/token_security/${cid}?contract_addresses=${address}`, { signal: AbortSignal.timeout(6000) });
+    if (!r.ok) return true;
+    const d = await r.json() as { result?: Record<string, any> };
+    const info = d.result?.[address.toLowerCase()];
+    if (!info) return true;
+    if (info.is_honeypot === "1") return false;
+    if (info.is_blacklisted === "1") return false;
+    if (info.is_mintable === "1" && info.owner_address && info.owner_address !== "0x0000000000000000000000000000000000000000") return false;
+    return true;
+  } catch { return true; }
+}
+
 // GET /api/whale-intel/gems
 router.get("/whale-intel/gems", async (req: Request, res: Response) => {
-  const cached = cGet<Gem[]>("whale_gems");
+  const cached = cGet<Gem[]>("whale_gems_v2");
   if (cached) { res.json({ ok: true, gems: cached }); return; }
 
   try {
-    // Step 1: Get latest token profiles (freshest tokens with social presence)
-    const [profilesRes, boostsRes] = await Promise.all([
-      fetch("https://api.dexscreener.com/token-profiles/latest/v1", { signal: AbortSignal.timeout(8000) }),
-      fetch("https://api.dexscreener.com/token-boosts/latest/v1", { signal: AbortSignal.timeout(8000) }),
-    ]);
-
-    const profiles = await profilesRes.json() as Array<{ tokenAddress: string; chainId: string; url?: string }>;
-    const boosts = await boostsRes.json() as Array<{ tokenAddress: string; chainId: string; amount?: number }>;
-
-    const boostedSet = new Set((boosts as Array<{ tokenAddress: string }>).map(b => b.tokenAddress.toLowerCase()));
-
-    // Step 2: Collect unique token addresses (SOL + ETH only, max 30 for batch)
-    const profileAddrs = profiles
-      .filter(p => p.chainId === "solana" || p.chainId === "ethereum")
-      .map(p => p.tokenAddress)
-      .slice(0, 28);
-
-    const boostAddrs = (boosts as Array<{ tokenAddress: string; chainId: string }>)
-      .filter(b => b.chainId === "solana" || b.chainId === "ethereum")
-      .map(b => b.tokenAddress)
-      .slice(0, 28);
-
-    const allAddrs = [...new Set([...profileAddrs, ...boostAddrs])].slice(0, 30);
-    if (allAddrs.length === 0) { res.json({ ok: true, gems: [] }); return; }
-
-    // Step 3: Batch fetch pair data
-    const pairsRes = await fetch(
-      `https://api.dexscreener.com/latest/dex/tokens/${allAddrs.join(",")}`,
-      { signal: AbortSignal.timeout(12000) },
-    );
-    const pairsData = await pairsRes.json() as { pairs: unknown[] };
-
-    type RawPair = {
-      pairAddress: string;
-      baseToken: { address: string; symbol: string; name: string };
-      chainId: string; priceUsd: string;
-      priceChange?: { h1?: number; h24?: number };
-      volume?: { h24?: number };
-      liquidity?: { usd?: number };
-      fdv?: number; marketCap?: number;
-      txns?: { h24?: { buys?: number; sells?: number } };
-      pairCreatedAt?: number; url?: string;
-    };
-
     const now = Date.now();
-    const pairs = (pairsData.pairs ?? []) as RawPair[];
 
-    // Deduplicate pairs by baseToken address (keep highest volume)
-    const bestByToken = new Map<string, RawPair>();
-    for (const p of pairs) {
-      const addr = p.baseToken?.address?.toLowerCase() ?? "";
-      const vol = p.volume?.h24 ?? 0;
-      if (!bestByToken.has(addr) || vol > (bestByToken.get(addr)?.volume?.h24 ?? 0)) {
-        bestByToken.set(addr, p);
+    // Paso 1: pools trending + nuevos en 5 redes (GeckoTerminal, gratis, sin key)
+    const perNetwork = await Promise.all(
+      Object.entries(GEM_NETWORKS).map(([chainKey, network]) => fetchPoolsFor(chainKey, network)),
+    );
+    const rawPools = perNetwork.flat();
+
+    // Paso 2: dedupe por token, filtro base de liquidez/volumen
+    const bestByToken = new Map<string, typeof rawPools[number]>();
+    for (const p of rawPools) {
+      const vol = parseFloat(p.attrs.volume_usd?.h24 ?? "0");
+      const key = `${p.chain}:${p.baseAddr.toLowerCase()}`;
+      const existing = bestByToken.get(key);
+      if (!existing || vol > parseFloat(existing.attrs.volume_usd?.h24 ?? "0")) {
+        bestByToken.set(key, p);
       }
     }
 
-    const gems: Gem[] = Array.from(bestByToken.values())
-      .filter(p => {
-        const vol24 = p.volume?.h24 ?? 0;
-        const liq = p.liquidity?.usd ?? 0;
-        return vol24 > 5_000 && liq > 1_000;
-      })
-      .map(p => {
-        const buys = p.txns?.h24?.buys ?? 0;
-        const sells = p.txns?.h24?.sells ?? 0;
-        const buyRatio = buys / Math.max(1, buys + sells);
-        const vol24 = p.volume?.h24 ?? 0;
-        const ageMin = p.pairCreatedAt ? (now - p.pairCreatedAt) / 60_000 : 0;
-        return {
-          address: p.baseToken.address,
-          symbol: (p.baseToken.symbol ?? "?").slice(0, 12),
-          name: (p.baseToken.name ?? "Unknown").slice(0, 30),
-          chain: p.chainId,
-          price: parseFloat(p.priceUsd ?? "0"),
-          priceChange1h: p.priceChange?.h1 ?? 0,
-          priceChange24h: p.priceChange?.h24 ?? 0,
-          volume24h: vol24,
-          liquidity: p.liquidity?.usd ?? 0,
-          marketCap: p.marketCap ?? p.fdv ?? 0,
-          buyVolume: vol24 * buyRatio,
-          buyCount: buys,
-          sellCount: sells,
-          ageMinutes: ageMin,
-          dexUrl: p.url ?? `https://dexscreener.com/${p.chainId}/${p.pairAddress}`,
-          isBoosted: boostedSet.has(p.baseToken.address.toLowerCase()),
-        };
-      })
-      .sort((a, b) => b.buyVolume - a.buyVolume)
+    const candidatos = Array.from(bestByToken.values()).filter(p => {
+      const vol24 = parseFloat(p.attrs.volume_usd?.h24 ?? "0");
+      const liq = parseFloat(p.attrs.reserve_in_usd ?? "0");
+      return vol24 > 5_000 && liq > 1_000;
+    });
+
+    // Paso 3: de los candidatos, tomamos los top 18 por volumen para consultar
+    // sus trades reales on-chain (respeta rate limit de GeckoTerminal: 30/min)
+    const top = candidatos
+      .sort((a, b) => parseFloat(b.attrs.volume_usd?.h24 ?? "0") - parseFloat(a.attrs.volume_usd?.h24 ?? "0"))
+      .slice(0, 18);
+
+    const whaleData = await Promise.all(
+      top.map(p => fetchWhaleTrades(GEM_NETWORKS[p.chain]!, p.attrs.address)),
+    );
+
+    let gems: Gem[] = top.map((p, i) => {
+      const vol24 = parseFloat(p.attrs.volume_usd?.h24 ?? "0");
+      const buys = p.attrs.transactions?.h24?.buys ?? 0;
+      const sells = p.attrs.transactions?.h24?.sells ?? 0;
+      const buyRatio = buys / Math.max(1, buys + sells);
+      const ageMin = p.attrs.pool_created_at ? (now - new Date(p.attrs.pool_created_at).getTime()) / 60_000 : 0;
+      return {
+        address: p.baseAddr,
+        symbol: p.baseSymbol.slice(0, 12),
+        name: p.baseName.slice(0, 30),
+        chain: p.chain,
+        price: parseFloat(p.attrs.base_token_price_usd ?? "0"),
+        priceChange1h: parseFloat(p.attrs.price_change_percentage?.h1 ?? "0"),
+        priceChange24h: parseFloat(p.attrs.price_change_percentage?.h24 ?? "0"),
+        volume24h: vol24,
+        liquidity: parseFloat(p.attrs.reserve_in_usd ?? "0"),
+        marketCap: parseFloat(p.attrs.market_cap_usd ?? p.attrs.fdv_usd ?? "0"),
+        buyVolume: vol24 * buyRatio,
+        buyCount: buys,
+        sellCount: sells,
+        ageMinutes: ageMin,
+        dexUrl: `https://www.geckoterminal.com/${GEM_NETWORKS[p.chain]}/pools/${p.attrs.address}`,
+        isBoosted: false,
+        whaleBuyVolume: whaleData[i]?.whaleVol ?? 0,
+        whaleBuyCount: whaleData[i]?.whaleCount ?? 0,
+        source: "dex" as const,
+      };
+    });
+
+    // Paso 4: filtro de seguridad — solo en los que de verdad tienen actividad
+    // de ballena (para no gastar rate limit de RugCheck/GoPlus en todo el resto)
+    const candidatosSeguridad = gems.filter(g => (g.whaleBuyCount ?? 0) > 0).slice(0, 15);
+    const seguros = await Promise.all(candidatosSeguridad.map(g => safetyOk(g.chain, g.address)));
+    const bloqueados = new Set(
+      candidatosSeguridad.filter((_, i) => !seguros[i]).map(g => `${g.chain}:${g.address.toLowerCase()}`),
+    );
+    gems = gems.filter(g => !bloqueados.has(`${g.chain}:${g.address.toLowerCase()}`));
+
+    // Paso 5: agregar nuevos listings de CMC como fuente extra
+    const cmcGems = await fetchCmcNewGems();
+
+    const final = [...gems, ...cmcGems]
+      .sort((a, b) => (b.whaleBuyVolume ?? 0) - (a.whaleBuyVolume ?? 0) || b.buyVolume - a.buyVolume)
       .slice(0, 40);
 
-    cSet("whale_gems", gems, 60_000);
-    res.json({ ok: true, gems });
+    cSet("whale_gems_v2", final, 60_000);
+    res.json({ ok: true, gems: final });
   } catch (err) {
+    logger.error({ err }, "whale-intel gems error");
     res.status(502).json({ ok: false, error: String(err) });
   }
 });
