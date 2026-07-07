@@ -217,4 +217,109 @@ router.get("/oracle/whale-dashboard", async (_req, res) => {
   }
 });
 
+// ── SUPERINVERSORES — 13F real vía SEC EDGAR (oficial, gratis, sin key) ────
+// Nota: los 13F son trimestrales (se filtran ~45 días después del cierre de
+// cada trimestre) — no es data "en vivo" al segundo, es lo que reportan
+// legalmente los fondos grandes. Aun así, es información real y verificable,
+// directo de la fuente oficial (sec.gov), sin depender de terceros de pago.
+const SEC_USER_AGENT = "PSYCHOMETRIKS contacto@psychometriks.trade";
+
+const SUPERINVESTORS = [
+  { cik: "0001067983", name: "Warren Buffett", fund: "Berkshire Hathaway" },
+  { cik: "0001336528", name: "Bill Ackman",    fund: "Pershing Square Capital" },
+  { cik: "0001649339", name: "Michael Burry",  fund: "Scion Asset Management" },
+  { cik: "0001061768", name: "David Tepper",   fund: "Appaloosa Management" },
+  { cik: "0001040273", name: "Dan Loeb",       fund: "Third Point LLC" },
+  { cik: "0001350694", name: "Ray Dalio",      fund: "Bridgewater Associates" },
+  { cik: "0001656456", name: "Cathie Wood",    fund: "ARK Investment Management" },
+];
+
+interface Holding {
+  nameOfIssuer: string;
+  cusip: string;
+  value: number;   // en miles de USD, como reporta el 13F
+  shares: number;
+}
+
+async function fetchLatest13F(cik: string): Promise<{
+  periodOfReport: string | null;
+  filedAt: string | null;
+  holdings: Holding[];
+} | null> {
+  try {
+    const subRes = await fetch(`https://data.sec.gov/submissions/CIK${cik}.json`, {
+      headers: { "User-Agent": SEC_USER_AGENT },
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!subRes.ok) return null;
+    const sub = await subRes.json() as {
+      filings?: { recent?: { form?: string[]; accessionNumber?: string[]; filingDate?: string[]; reportDate?: string[]; primaryDocument?: string[] } };
+    };
+    const recent = sub.filings?.recent;
+    if (!recent?.form) return null;
+
+    const idx = recent.form.findIndex(f => f === "13F-HR");
+    if (idx === -1) return null;
+
+    const accession = recent.accessionNumber![idx]!.replace(/-/g, "");
+    const filedAt = recent.filingDate![idx] ?? null;
+    const periodOfReport = recent.reportDate?.[idx] ?? null;
+    const cikNoPad = String(parseInt(cik, 10));
+
+    // Listar los documentos de esa presentación para hallar la tabla de holdings (XML)
+    const idxRes = await fetch(`https://www.sec.gov/Archives/edgar/data/${cikNoPad}/${accession}/index.json`, {
+      headers: { "User-Agent": SEC_USER_AGENT },
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!idxRes.ok) return null;
+    const idxData = await idxRes.json() as { directory?: { item?: Array<{ name: string }> } };
+    const items = idxData.directory?.item ?? [];
+    const infoTableFile = items.find(it => /infotable/i.test(it.name) && it.name.endsWith(".xml"))
+      ?? items.find(it => it.name.endsWith(".xml") && !/primary_doc/i.test(it.name));
+    if (!infoTableFile) return { periodOfReport, filedAt, holdings: [] };
+
+    const xmlRes = await fetch(`https://www.sec.gov/Archives/edgar/data/${cikNoPad}/${accession}/${infoTableFile.name}`, {
+      headers: { "User-Agent": SEC_USER_AGENT },
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!xmlRes.ok) return { periodOfReport, filedAt, holdings: [] };
+    const xml = await xmlRes.text();
+    const parsed = await parseStringPromise(xml, { explicitArray: false, ignoreAttrs: true, tagNameProcessors: [(n) => n.replace(/^.*:/, "")] });
+
+    const table = parsed?.informationTable?.infoTable;
+    const rows: Array<Record<string, unknown>> = Array.isArray(table) ? table : table ? [table] : [];
+
+    const holdings: Holding[] = rows.map(r => ({
+      nameOfIssuer: String(r["nameOfIssuer"] ?? "—"),
+      cusip: String(r["cusip"] ?? "—"),
+      value: Number(r["value"] ?? 0),
+      shares: Number((r["shrsOrPrnAmt"] as Record<string, unknown>)?.["sshPrnamt"] ?? 0),
+    }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 15);
+
+    return { periodOfReport, filedAt, holdings };
+  } catch { return null; }
+}
+
+router.get("/oracle/superinvestors", async (_req, res) => {
+  const cacheKey = "superinvestors";
+  const cached = cache[cacheKey];
+  if (cached && Date.now() - cached.ts < 12 * 60 * 60_000) { res.json(cached.data); return; }
+
+  try {
+    const results = await Promise.all(
+      SUPERINVESTORS.map(async (inv) => {
+        const data = await fetchLatest13F(inv.cik);
+        return { ...inv, ...data, ok: data !== null };
+      }),
+    );
+    const payload = { ok: true, investors: results, fetchedAt: new Date().toISOString(), fuente: "SEC EDGAR (data.sec.gov) — filings 13F-HR oficiales" };
+    cache[cacheKey] = { data: payload, ts: Date.now() };
+    res.json(payload);
+  } catch (err) {
+    res.status(502).json({ ok: false, error: String(err), investors: [] });
+  }
+});
+
 export default router;
