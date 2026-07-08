@@ -2588,7 +2588,7 @@ function ListingRadarTab() {
         <div>
           <div style={{ fontSize: 13, color: "#00e5ff", letterSpacing: 2, fontWeight: 700 }}>🎯 PSY LISTING RADAR</div>
           <div style={{ fontSize: 9, color: "#5a8898", marginTop: 2 }}>
-            Nuevos listados (CoinMarketCap) + ¿ya tienen futuros? (Coinglass) + Max Pain semanal
+            Nuevos listados (CoinMarketCap) + ¿ya tienen futuros? (Coinglass) + Funding Rate Extremo (Binance)
           </div>
         </div>
         {fetchedAt && (
