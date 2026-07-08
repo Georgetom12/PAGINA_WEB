@@ -438,4 +438,42 @@ router.get("/proxy/fmp/dividends-batch", async (req: Request, res: Response) => 
   } catch (err) { res.json({ ok: false, error: String(err) }); }
 });
 
+// ─── NewsAPI — noticias en vivo (usado por Oracle Feeds dentro de Whale Intel) ─
+// NOTA: este endpoint no existía — el frontend lo llamaba pero nunca hubo
+// ruta que lo atendiera, por eso el fetch fallaba en silencio.
+router.get("/proxy/news", async (req: Request, res: Response) => {
+  const key = process.env["NEWS_API_KEY"];
+  if (!key) { res.json({ ok: false, error: "NEWS_API_KEY no configurado", articles: [] }); return; }
+
+  const q = String(req.query["q"] ?? "bitcoin crypto ethereum blockchain");
+  const pageSize = Math.min(parseInt(String(req.query["pageSize"] ?? "20")) || 20, 100);
+  const lang = String(req.query["lang"] ?? "en");
+
+  try {
+    const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(q)}&pageSize=${pageSize}&language=${lang}&sortBy=publishedAt&apiKey=${key}`;
+    const r = await fetch(url, { signal: AbortSignal.timeout(10000) });
+    if (!r.ok) { res.json({ ok: false, error: `NewsAPI respondió ${r.status}`, articles: [] }); return; }
+    const d = await r.json() as {
+      status: string;
+      articles?: Array<{ title?: string; url?: string; publishedAt?: string; source?: { name?: string } }>;
+    };
+    if (d.status !== "ok") { res.json({ ok: false, error: "NewsAPI status no-ok", articles: [] }); return; }
+
+    const articles = (d.articles ?? [])
+      // Solo artículos con URL real (absoluta) — evita el bug de antes donde
+      // links inválidos mandaban a una página inexistente del router.
+      .filter(a => a.title && a.url && /^https?:\/\//i.test(a.url))
+      .map(a => ({
+        title: a.title!,
+        url: a.url!,
+        publishedAt: a.publishedAt ?? new Date().toISOString(),
+        source: a.source?.name ?? "—",
+      }));
+
+    res.json({ ok: true, articles });
+  } catch (err) {
+    res.json({ ok: false, error: String(err), articles: [] });
+  }
+});
+
 export default router;
