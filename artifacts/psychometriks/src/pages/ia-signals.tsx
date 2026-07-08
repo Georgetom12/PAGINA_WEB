@@ -123,6 +123,9 @@ interface WhaleSignal {
   iaConfianza?: number;
   iaDictamen?: string;
   iaPatron?: string;
+  // PSY TRIPLE CONFIRM
+  confirmaciones?: number;
+  detalles?: string[];
 }
 
 function PriceRow({ coin }: { coin: typeof TOP50_ALTCOINS[0] }) {
@@ -254,7 +257,10 @@ export default function IaSignalsConfirmadas() {
         <div className="flex flex-col items-center justify-center min-h-screen px-6 text-center">
           <div className="mb-6 text-5xl">🪙</div>
           <div className="font-space text-[9px] text-[#ffd700] tracking-[0.3em] uppercase mb-3">ACCESO RESTRINGIDO</div>
-          <h1 className="font-bebas text-5xl text-white mb-4">SEÑALES CONFIRMADAS<br /><span className="text-[#ffd700]">PLAN ELITE</span></h1>
+          <h1 className="font-bebas text-5xl text-white mb-4">PSY TRIPLE CONFIRM<br /><span className="text-[#ffd700]">PLAN ELITE</span></h1>
+          <p className="font-space text-[11px] text-[#7ab3c8] max-w-2xl mx-auto mb-2">
+            Cada señal se valida contra <span className="text-[#00e5ff]">3 fuentes independientes</span>: análisis técnico (RSI/MACD/estructura), el motor de IA Trading (multi-timeframe), y el funding rate real de los exchanges. Ordenadas por cuántas de las 3 coinciden — no exigimos que las 3 estén perfectas, así ves el panorama completo.
+          </p>
           <p className="font-space text-sm text-[#7ab3c8] max-w-md mb-8 leading-relaxed">
             Señales técnicas confirmadas por doble análisis (indicadores clásicos + IA multi-timeframe)
             son exclusivas del plan Elite.
@@ -435,6 +441,20 @@ export default function IaSignalsConfirmadas() {
                           )}
                         </div>
                       </div>
+
+                      {typeof sig.confirmaciones === "number" && (
+                        <div className="mb-2.5 px-3 py-2.5" style={{ background: "#040d18", border: "1px solid #0d2030" }}>
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <span className="font-bebas text-lg" style={{ color: sig.confirmaciones >= 3 ? "#00e676" : sig.confirmaciones === 2 ? "#ffd700" : "#7ab3c8" }}>
+                              {sig.confirmaciones}/3 CONFIRMACIONES
+                            </span>
+                            {sig.confirmaciones >= 3 && <span className="font-space text-[9px] text-[#00e676] font-bold">⭐ MÁXIMA CONVICCIÓN</span>}
+                          </div>
+                          {sig.detalles?.map((d, i) => (
+                            <div key={i} className="font-space text-[10px] text-[#8a9ab0] leading-relaxed">· {d}</div>
+                          ))}
+                        </div>
+                      )}
 
                       {sig.iaDictamen && (
                         <div className="mb-2.5 px-3 py-2 text-[11px] leading-relaxed text-[#b0bec5]"
