@@ -595,15 +595,27 @@ async function gmxMarket(sym: string) {
     if (!r.ok) return null;
     const d = await r.json() as {
       markets?: Array<{
-        indexToken?: { symbol?: string };
-        longOpenInterestUsd?: string;
-        shortOpenInterestUsd?: string;
-        marketTokenAddress?: string;
+        name?: string;               // ej: "BTC/USD [WBTC.b-USDC]"
+        openInterestLong?: string;   // uint, escala 1e30
+        openInterestShort?: string;
+        isListed?: boolean;
       }>;
     };
-    const m = d.markets?.find(x => x.indexToken?.symbol?.toUpperCase() === sym.toUpperCase());
-    if (!m) return null;
-    const lOI = parseFloat(m.longOpenInterestUsd ?? "0") / 1e30, sOI = parseFloat(m.shortOpenInterestUsd ?? "0") / 1e30;
+    if (!d.markets) return null;
+
+    // El símbolo va al inicio de "name" (ej. "BTC/USD [...]" → "BTC").
+    // Puede haber varios mercados (pools distintos) para la misma moneda —
+    // se suman todos para tener el OI total real.
+    const matching = d.markets.filter(x =>
+      x.isListed !== false && x.name?.toUpperCase().startsWith(`${sym.toUpperCase()}/USD`)
+    );
+    if (matching.length === 0) return null;
+
+    let lOI = 0, sOI = 0;
+    for (const m of matching) {
+      lOI += parseFloat(m.openInterestLong ?? "0") / 1e30;
+      sOI += parseFloat(m.openInterestShort ?? "0") / 1e30;
+    }
     const tot = lOI + sOI;
     if (tot === 0) return null;
     return { exchange: "GMX v2", oi: tot, longPct: (lOI/tot*100), shortPct: (sOI/tot*100) };
