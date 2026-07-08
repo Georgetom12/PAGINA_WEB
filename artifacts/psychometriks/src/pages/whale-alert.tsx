@@ -1139,6 +1139,8 @@ interface SqueezeCandidate {
 function TelegramLinkBox() {
   const auth = getAuth();
   const [chatId, setChatId] = useState("");
+  const [phone, setPhone] = useState("");
+  const [tgUsername, setTgUsername] = useState("");
   const [msg, setMsg] = useState("");
   const [linked, setLinked] = useState(() => localStorage.getItem("psy_tg_linked") === "1");
 
@@ -1150,7 +1152,7 @@ function TelegramLinkBox() {
     try {
       const r = await fetch("/api/member/telegram-link", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: auth.user, chatId: chatId.trim() }),
+        body: JSON.stringify({ username: auth.user, chatId: chatId.trim(), phone: phone.trim() || undefined, telegramUsername: tgUsername.trim() || undefined }),
       });
       const d = await r.json() as { ok: boolean; error?: string };
       if (d.ok) { setMsg("✅ Vinculado — revisa tu Telegram, te llegaron los links de los 3 canales"); localStorage.setItem("psy_tg_linked", "1"); setLinked(true); }
@@ -1164,11 +1166,18 @@ function TelegramLinkBox() {
       <div className="font-space text-[10px] text-[#7ab3c8] mb-3">
         Te unimos automáticamente a los 3 canales de señales (BTC/ETH, Altcoins, PRO). Si tu plan Elite termina, se te remueve solo — no hace falta que hagas nada.
       </div>
-      <div className="flex gap-2 flex-wrap">
-        <input value={chatId} onChange={e=>setChatId(e.target.value)} placeholder="Tu chat_id de Telegram (pregúntale a @userinfobot)"
-          className="flex-1 min-w-[200px] bg-[#0a0f16] border border-[#00e5ff30] text-white font-space text-[11px] px-3 py-2 focus:outline-none" />
-        <button onClick={link} className="px-4 py-2 border border-[#00e5ff] text-[#00e5ff] font-space text-[10px] tracking-wide hover:bg-[#00e5ff15]">VINCULAR</button>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-2">
+        <input value={chatId} onChange={e=>setChatId(e.target.value)} placeholder="Chat ID (pregúntale a @userinfobot)"
+          className="bg-[#0a0f16] border border-[#00e5ff30] text-white font-space text-[11px] px-3 py-2 focus:outline-none" />
+        <input value={tgUsername} onChange={e=>setTgUsername(e.target.value)} placeholder="Usuario de Telegram (@usuario, opcional)"
+          className="bg-[#0a0f16] border border-[#00e5ff30] text-white font-space text-[11px] px-3 py-2 focus:outline-none" />
+        <input value={phone} onChange={e=>setPhone(e.target.value)} placeholder="Teléfono (opcional)"
+          className="bg-[#0a0f16] border border-[#00e5ff30] text-white font-space text-[11px] px-3 py-2 focus:outline-none" />
       </div>
+      <div className="font-space text-[9px] text-[#5a7080] mb-2">
+        El teléfono y usuario quedan guardados junto a tu suscripción, para tener un registro claro de a quién se le dio o quitó acceso.
+      </div>
+      <button onClick={link} className="px-4 py-2 border border-[#00e5ff] text-[#00e5ff] font-space text-[10px] tracking-wide hover:bg-[#00e5ff15]">VINCULAR</button>
       {msg && <div className="font-space text-[10px] text-[#ffd700] mt-2">{msg}</div>}
     </div>
   );
