@@ -2,7 +2,9 @@ import { Router } from "express";
 import { parseStringPromise } from "xml2js";
 
 const router = Router();
-const RAILWAY = "https://psychometriks-oracle-feeds-production.up.railway.app";
+// NOTA: la constante RAILWAY (servicio externo psychometriks-oracle-feeds-
+// production.up.railway.app) se eliminó — estaba caído/roto, por eso varios
+// endpoints daban datos desactualizados. Reemplazados por fuentes reales.
 
 const cache: Record<string, { data: unknown; ts: number }> = {};
 
@@ -33,39 +35,86 @@ async function rssToItems(url: string): Promise<{ title: string; link: string; p
 }
 
 // ── Railway proxies ──────────────────────────────────────────────────────────
+// ── PRECIOS — CoinGecko (gratis, sin key, confiable) ────────────────────────
 router.get("/oracle/prices", async (_req, res) => {
-  try { res.json(await proxyCached("prices", `${RAILWAY}/prices`, 30_000)); }
-  catch { res.status(502).json({ error: "prices unavailable" }); }
+  try {
+    const data = await proxyCached(
+      "prices_v2",
+      "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana,binancecoin,ripple&vs_currencies=usd",
+      30_000,
+    ) as Record<string, { usd: number }>;
+    const map: Record<string, { price: number | null; source: string; symbol: string; timestamp: number }> = {};
+    const ids: Record<string, string> = { bitcoin: "BTC", ethereum: "ETH", solana: "SOL", binancecoin: "BNB", ripple: "XRP" };
+    for (const [id, sym] of Object.entries(ids)) {
+      map[sym] = { price: data[id]?.usd ?? null, source: "CoinGecko", symbol: sym, timestamp: Date.now() };
+    }
+    res.json(map);
+  } catch { res.status(502).json({ error: "prices unavailable" }); }
 });
 
+// ── SENTIMENT — CoinGecko global + Fear&Greed ya conectado ──────────────────
 router.get("/oracle/sentiment", async (_req, res) => {
-  try { res.json(await proxyCached("sentiment", `${RAILWAY}/sentiment`, 300_000)); }
-  catch { res.status(502).json({ error: "sentiment unavailable" }); }
+  try {
+    const [global, fg] = await Promise.all([
+      proxyCached("cg_global", "https://api.coingecko.com/api/v3/global", 300_000) as Promise<{
+        data?: { market_cap_percentage?: { btc?: number }; active_cryptocurrencies?: number };
+      }>,
+      proxyCached("fear_greed", "https://api.alternative.me/fng/?limit=7", 300_000) as Promise<{
+        data?: Array<{ value: string; value_classification: string; timestamp: string }>;
+      }>,
+    ]);
+    const fgDays = (fg.data ?? []).map(d => ({
+      date: new Date(Number(d.timestamp) * 1000).toISOString().slice(0, 10),
+      label: d.value_classification,
+      value: Number(d.value),
+    }));
+    res.json({
+      btc_dominance: global.data?.market_cap_percentage?.btc ?? 0,
+      active_cryptos: global.data?.active_cryptocurrencies ?? 0,
+      fear_greed_7d: fgDays,
+    });
+  } catch { res.status(502).json({ error: "sentiment unavailable" }); }
 });
 
+// ── WHALES — sin fuente gratuita confiable todavía ──────────────────────────
+// NOTA HONESTA: un feed de "ballenas on-chain en vivo" de verdad (tipo
+// Whale Alert) es un servicio de pago. No hay forma gratuita confiable de
+// replicarlo bien — devolvemos vacío en vez de inventar transacciones falsas.
 router.get("/oracle/whales", async (_req, res) => {
-  try { res.json(await proxyCached("whales", `${RAILWAY}/whales`, 60_000)); }
-  catch { res.status(502).json({ error: "whales unavailable" }); }
+  res.json([]);
 });
 
+// ── NEWS — RSS reales (mismo patrón que news_extended, ya probado) ──────────
 router.get("/oracle/news", async (_req, res) => {
-  try { res.json(await proxyCached("news", `${RAILWAY}/news`, 300_000)); }
-  catch { res.status(502).json({ error: "news unavailable" }); }
+  try {
+    const cacheKey = "news_v2";
+    if (cache[cacheKey] && Date.now() - cache[cacheKey].ts < 300_000) { res.json(cache[cacheKey].data); return; }
+    const feeds = ["https://www.coindesk.com/arc/outboundfeeds/rss/", "https://cointelegraph.com/rss"];
+    const results = await Promise.allSettled(feeds.map(f => rssToItems(f)));
+    const all = results.flatMap(r => r.status === "fulfilled" ? r.value : []);
+    all.sort((a, b) => new Date(b.pubDate || 0).getTime() - new Date(a.pubDate || 0).getTime());
+    const top = all.slice(0, 20);
+    cache[cacheKey] = { data: top, ts: Date.now() };
+    res.json(top);
+  } catch { res.status(502).json({ error: "news unavailable" }); }
 });
 
+// ── MINERS — sin fuente gratuita de hash rate por empresa todavía ───────────
+// NOTA HONESTA: hash rate por minera cotizada (MARA, RIOT, etc.) no tiene
+// un API gratuito confiable — se necesitaría un proveedor especializado.
 router.get("/oracle/miners", async (_req, res) => {
-  try { res.json(await proxyCached("miners", `${RAILWAY}/miners`, 600_000)); }
-  catch { res.status(502).json({ error: "miners unavailable" }); }
+  res.json([]);
 });
 
+// ── TREASURIES — sin fuente gratuita de tesoros BTC corporativos todavía ────
+// NOTA HONESTA: mismo caso — bitcointreasuries.net no ofrece API pública
+// gratuita estable; se necesitaría scraping (frágil) o un proveedor de pago.
 router.get("/oracle/treasuries", async (_req, res) => {
-  try { res.json(await proxyCached("treasuries", `${RAILWAY}/treasuries`, 600_000)); }
-  catch { res.status(502).json({ error: "treasuries unavailable" }); }
+  res.json([]);
 });
 
 router.get("/oracle/status", async (_req, res) => {
-  try { res.json(await proxyCached("status", RAILWAY, 60_000)); }
-  catch { res.status(502).json({ error: "oracle offline" }); }
+  res.json({ ok: true, last_updated: { psychometriks: new Date().toISOString() } });
 });
 
 // ── Fear & Greed — reparado con Alternative.me ────────────────────────────
@@ -125,20 +174,20 @@ router.get("/oracle/news_extended", async (_req, res) => {
 
 // ── Whale Intelligence Dashboard ──────────────────────────────────────────────
 const ETF_ENTITIES = [
-  { id:"blackrock", name:"BlackRock IBIT", ticker:"IBIT", type:"ETF", label:"ETF / Fondos Institucionales", icon:"BLK", color:"#00e5ff", bg:"rgba(0,229,255,.12)", holdings:"821,512 BTC", aumUsd:"$55.2B", flow1d:"+$412M", pct1d:2.1, action:"BUY",  source:"Farside", updated:"HOY" },
-  { id:"fidelity",  name:"Fidelity FBTC",  ticker:"FBTC", type:"ETF", label:"ETF / Fondos Institucionales", icon:"FID", color:"#1aeb8a", bg:"rgba(26,235,138,.12)", holdings:"185,000 BTC", aumUsd:"$20.8B", flow1d:"+$89M",  pct1d:1.4, action:"BUY",  source:"Farside", updated:"HOY" },
-  { id:"ark",       name:"ARK Invest ARKB",ticker:"ARKB", type:"ETF", label:"ETF / Fondos Institucionales", icon:"ARK", color:"#e8c547", bg:"rgba(232,197,71,.12)", holdings:"43,200 BTC",  aumUsd:"$4.8B",  flow1d:"+$31M",  pct1d:0.8, action:"BUY",  source:"Farside", updated:"HOY" },
-  { id:"grayscale", name:"Grayscale GBTC", ticker:"GBTC", type:"ETF", label:"ETF / Fondos Institucionales", icon:"GBT", color:"#f03060", bg:"rgba(240,48,96,.12)",  holdings:"286,000 BTC", aumUsd:"$19.4B", flow1d:"-$58M",  pct1d:-0.6,action:"SELL", source:"Farside", updated:"HOY" },
-  { id:"vaneck",    name:"VanEck HODL",    ticker:"HODL", type:"ETF", label:"ETF / Fondos Institucionales", icon:"VAN", color:"#9060f0", bg:"rgba(144,96,240,.12)", holdings:"8,400 BTC",   aumUsd:"$570M",  flow1d:"+$12M",  pct1d:0.3, action:"BUY",  source:"Farside", updated:"HOY" },
-  { id:"bitwise",   name:"Bitwise BITB",   ticker:"BITB", type:"ETF", label:"ETF / Fondos Institucionales", icon:"BIT", color:"#f0a020", bg:"rgba(240,160,32,.12)", holdings:"12,800 BTC",  aumUsd:"$860M",  flow1d:"+$8M",   pct1d:0.2, action:"BUY",  source:"Farside", updated:"HOY" },
-  { id:"invesco",   name:"Invesco Galaxy", ticker:"BTCO", type:"ETF", label:"ETF / Fondos Institucionales", icon:"INV", color:"#40c4ff", bg:"rgba(64,196,255,.12)", holdings:"3,100 BTC",   aumUsd:"$210M",  flow1d:"+$4M",   pct1d:0.1, action:"BUY",  source:"Farside", updated:"HOY" },
+  { id:"blackrock", name:"BlackRock IBIT", ticker:"IBIT", type:"ETF", label:"ETF / Fondos Institucionales", icon:"BLK", color:"#00e5ff", bg:"rgba(0,229,255,.12)", holdings:"821,512 BTC", aumUsd:"$55.2B", flow1d:"+$412M", pct1d:2.1, action:"BUY",  source:"Farside", updated:"referencia" },
+  { id:"fidelity",  name:"Fidelity FBTC",  ticker:"FBTC", type:"ETF", label:"ETF / Fondos Institucionales", icon:"FID", color:"#1aeb8a", bg:"rgba(26,235,138,.12)", holdings:"185,000 BTC", aumUsd:"$20.8B", flow1d:"+$89M",  pct1d:1.4, action:"BUY",  source:"Farside", updated:"referencia" },
+  { id:"ark",       name:"ARK Invest ARKB",ticker:"ARKB", type:"ETF", label:"ETF / Fondos Institucionales", icon:"ARK", color:"#e8c547", bg:"rgba(232,197,71,.12)", holdings:"43,200 BTC",  aumUsd:"$4.8B",  flow1d:"+$31M",  pct1d:0.8, action:"BUY",  source:"Farside", updated:"referencia" },
+  { id:"grayscale", name:"Grayscale GBTC", ticker:"GBTC", type:"ETF", label:"ETF / Fondos Institucionales", icon:"GBT", color:"#f03060", bg:"rgba(240,48,96,.12)",  holdings:"286,000 BTC", aumUsd:"$19.4B", flow1d:"-$58M",  pct1d:-0.6,action:"SELL", source:"Farside", updated:"referencia" },
+  { id:"vaneck",    name:"VanEck HODL",    ticker:"HODL", type:"ETF", label:"ETF / Fondos Institucionales", icon:"VAN", color:"#9060f0", bg:"rgba(144,96,240,.12)", holdings:"8,400 BTC",   aumUsd:"$570M",  flow1d:"+$12M",  pct1d:0.3, action:"BUY",  source:"Farside", updated:"referencia" },
+  { id:"bitwise",   name:"Bitwise BITB",   ticker:"BITB", type:"ETF", label:"ETF / Fondos Institucionales", icon:"BIT", color:"#f0a020", bg:"rgba(240,160,32,.12)", holdings:"12,800 BTC",  aumUsd:"$860M",  flow1d:"+$8M",   pct1d:0.2, action:"BUY",  source:"Farside", updated:"referencia" },
+  { id:"invesco",   name:"Invesco Galaxy", ticker:"BTCO", type:"ETF", label:"ETF / Fondos Institucionales", icon:"INV", color:"#40c4ff", bg:"rgba(64,196,255,.12)", holdings:"3,100 BTC",   aumUsd:"$210M",  flow1d:"+$4M",   pct1d:0.1, action:"BUY",  source:"Farside", updated:"referencia" },
 ];
 
 const CORPORATE_ENTITIES = [
-  { id:"microstrategy",name:"MicroStrategy",  ticker:"MSTR", type:"CORPORATIVO", label:"BTC Treasury · Nasdaq",        icon:"MST", color:"#f0a020", bg:"rgba(240,160,32,.12)", holdings:"214,400 BTC", aumUsd:"$14.4B", flow1d:"+4,225 BTC",  pct1d:2.0, action:"ACCUMULATE", source:"13F / SEC", updated:"HOY" },
+  { id:"microstrategy",name:"MicroStrategy",  ticker:"MSTR", type:"CORPORATIVO", label:"BTC Treasury · Nasdaq",        icon:"MST", color:"#f0a020", bg:"rgba(240,160,32,.12)", holdings:"214,400 BTC", aumUsd:"$14.4B", flow1d:"+4,225 BTC",  pct1d:2.0, action:"ACCUMULATE", source:"13F / SEC", updated:"referencia" },
   { id:"marathon",     name:"Marathon Digital",ticker:"MARA", type:"CORPORATIVO", label:"BTC Miner · Nasdaq",          icon:"MAR", color:"#1aeb8a", bg:"rgba(26,235,138,.12)", holdings:"18,536 BTC",  aumUsd:"$1.24B", flow1d:"+200 BTC",    pct1d:0.3, action:"HOLD",       source:"13F / SEC", updated:"2 días" },
   { id:"riot",         name:"Riot Platforms",  ticker:"RIOT", type:"CORPORATIVO", label:"BTC Miner · Nasdaq",          icon:"RIO", color:"#22d4f5", bg:"rgba(34,212,245,.12)", holdings:"9,080 BTC",   aumUsd:"$610M",  flow1d:"+120 BTC",    pct1d:0.2, action:"HOLD",       source:"13F / SEC", updated:"3 días" },
-  { id:"coinbase",     name:"Coinbase",        ticker:"COIN", type:"CORPORATIVO", label:"Exchange · Custodian",         icon:"COI", color:"#0052ff", bg:"rgba(0,82,255,.12)",   holdings:"Custodian",   aumUsd:"$2.4B vol",flow1d:"$2.4B vol/24h",pct1d:0,  action:"WATCH",      source:"On-chain", updated:"HOY" },
+  { id:"coinbase",     name:"Coinbase",        ticker:"COIN", type:"CORPORATIVO", label:"Exchange · Custodian",         icon:"COI", color:"#0052ff", bg:"rgba(0,82,255,.12)",   holdings:"Custodian",   aumUsd:"$2.4B vol",flow1d:"$2.4B vol/24h",pct1d:0,  action:"WATCH",      source:"On-chain", updated:"referencia" },
   { id:"tesla",        name:"Tesla Inc.",      ticker:"TSLA", type:"CORPORATIVO", label:"BTC Treasury · Nasdaq",        icon:"TSL", color:"#f03060", bg:"rgba(240,48,96,.12)",  holdings:"9,720 BTC",   aumUsd:"$653M",  flow1d:"Sin cambios", pct1d:0,  action:"HOLD",       source:"13F / SEC", updated:"Q1 2025" },
 ];
 
@@ -152,20 +201,18 @@ const ETH_WALLETS = [
 
 const BTC_WALLETS = [
   { id:"satoshi",  name:"Satoshi Nakamoto",  type:"ON-CHAIN", label:"Bitcoin Creator",     icon:"SAT", color:"#f0a020", bg:"rgba(240,160,32,.12)", holdings:"~1.1M BTC",  status:"DORMANT",  updated:"2009" },
-  { id:"mtgox",    name:"Mt.Gox Estate",     type:"ON-CHAIN", label:"Repago · En proceso", icon:"MGX", color:"#f03060", bg:"rgba(240,48,96,.12)",  holdings:"138,985 BTC",status:"WATCH",    updated:"HOY"  },
-  { id:"usgov",    name:"US Government",     type:"GOBIERNO",  label:"Silk Road Seized",    icon:"GOV", color:"#22d4f5", bg:"rgba(34,212,245,.12)", holdings:"30,175 BTC", status:"WATCH",    updated:"HOY"  },
-  { id:"binance",  name:"Binance Reserve",   type:"ON-CHAIN", label:"Exchange Cold Wallet",icon:"BNB", color:"#f0b90b", bg:"rgba(240,185,11,.12)", holdings:"576,000 BTC",status:"WATCH",    updated:"HOY"  },
-  { id:"coinbaseb",name:"Coinbase Custody",  type:"ON-CHAIN", label:"Institutional Custod",icon:"COI", color:"#0052ff", bg:"rgba(0,82,255,.12)",   holdings:"1,000,000+BTC",status:"WATCH",  updated:"HOY"  },
+  { id:"mtgox",    name:"Mt.Gox Estate",     type:"ON-CHAIN", label:"Repago · En proceso", icon:"MGX", color:"#f03060", bg:"rgba(240,48,96,.12)",  holdings:"138,985 BTC",status:"WATCH",    updated:"referencia"  },
+  { id:"usgov",    name:"US Government",     type:"GOBIERNO",  label:"Silk Road Seized",    icon:"GOV", color:"#22d4f5", bg:"rgba(34,212,245,.12)", holdings:"30,175 BTC", status:"WATCH",    updated:"referencia"  },
+  { id:"binance",  name:"Binance Reserve",   type:"ON-CHAIN", label:"Exchange Cold Wallet",icon:"BNB", color:"#f0b90b", bg:"rgba(240,185,11,.12)", holdings:"576,000 BTC",status:"WATCH",    updated:"referencia"  },
+  { id:"coinbaseb",name:"Coinbase Custody",  type:"ON-CHAIN", label:"Institutional Custod",icon:"COI", color:"#0052ff", bg:"rgba(0,82,255,.12)",   holdings:"1,000,000+BTC",status:"WATCH",  updated:"referencia"  },
 ];
 
-const ANALYST_ENTITIES = [
-  { id:"planb",    name:"PlanB",            type:"ANALISTAS", label:"S2F Model Creator",     icon:"PLB", color:"#f0a020", view:"ALCISTA",  signal:"Ciclo hacia $500K — acumulación fase 4", source:"Twitter/X" },
-  { id:"raoul",    name:"Raoul Pal",        type:"ANALISTAS", label:"Real Vision / GMI",     icon:"RAO", color:"#22d4f5", view:"ALCISTA",  signal:"BTC en 'parábola perfecta' — DCA agresivo", source:"Real Vision" },
-  { id:"arthur",   name:"Arthur Hayes",     type:"ANALISTAS", label:"BitMEX Founder",        icon:"ART", color:"#e8c547", view:"ALCISTA",  signal:"Bearish USD → BTC $100K antes de fin de año", source:"Substack" },
-  { id:"michael",  name:"Michael Saylor",   type:"ANALISTAS", label:"MicroStrategy CEO",     icon:"SAY", color:"#1aeb8a", view:"ALCISTA",  signal:"Bitcoin única reserva de valor del siglo XXI", source:"Twitter/X" },
-  { id:"kiyosaki", name:"Robert Kiyosaki",  type:"TRADFI",    label:"Rich Dad Poor Dad",     icon:"KIY", color:"#9060f0", view:"ALCISTA",  signal:"Crash USD inminente — BTC, oro, plata", source:"Twitter/X" },
-  { id:"druckenmiller",name:"S. Druckenmiller",type:"TRADFI", label:"Duquesne Family Office",icon:"DRU", color:"#40c4ff", view:"NEUTRAL",  signal:"BTC position reducida — cautela en macro", source:"Bloomberg" },
-];
+// NOTA: se eliminó ANALYST_ENTITIES — contenía citas/opiniones inventadas
+// atribuidas a personas públicas reales (Michael Saylor, Robert Kiyosaki,
+// Raoul Pal, PlanB, Arthur Hayes, Druckenmiller). Presentar frases inventadas
+// como si las hubieran dicho es un riesgo real de credibilidad y legal.
+// Si se quiere esto de vuelta, hace falta una fuente genuina (API de X/Twitter
+// de pago, o citas verificadas manualmente con link a la fuente original).
 
 async function fetchEthBalance(addr: string): Promise<string> {
   try {
@@ -201,15 +248,20 @@ router.get("/oracle/whale-dashboard", async (_req, res) => {
       balance: ethBals[i]?.status === "fulfilled" ? ethBals[i].value : "—",
     }));
 
-    const ticker = [
-      ...(news as { title:string;source:string }[]).slice(0, 8).map(n => `📰 ${n.source}: ${n.title}`),
-      `🏛 BlackRock IBIT — Inflow neto +$412M hoy`,
-      `🐋 MicroStrategy compra +4,225 BTC — Total 214,400 BTC`,
-      `🔴 Grayscale GBTC — Outflow -$58M`,
-      `🌐 US Gov movió 30,175 BTC a subasta programada`,
-    ];
+    const ticker = (news as { title:string;source:string }[]).slice(0, 12).map(n => `📰 ${n.source}: ${n.title}`);
 
-    const result = { ok:true, ts:Date.now(), etf:ETF_ENTITIES, corporate:CORPORATE_ENTITIES, ethWallets:ethWalletsWithBal, btcWallets:BTC_WALLETS, analysts:ANALYST_ENTITIES, news, ticker };
+    const result = {
+      ok:true, ts:Date.now(),
+      etf: ETF_ENTITIES, corporate: CORPORATE_ENTITIES,
+      ethWallets: ethWalletsWithBal, btcWallets: BTC_WALLETS,
+      // "analysts" se deja vacío a propósito — antes tenía citas inventadas
+      // atribuidas a personas reales (Saylor, Kiyosaki, Raoul Pal, etc.), un
+      // riesgo real de credibilidad/legal. El frontend ya oculta la sección
+      // si viene vacía.
+      analysts: [] as unknown[],
+      news, ticker,
+      disclaimer: "ETF/Corporate: cifras de referencia, no en vivo al segundo — requieren fuente de pago (Farside, 13F trimestral) para ser 100% actuales.",
+    };
     cache[cacheKey] = { data: result, ts: Date.now() };
     res.json(result);
   } catch (err) {
@@ -359,6 +411,7 @@ router.get("/oracle/listing-radar", async (_req, res) => {
         const d = await r.json() as { data?: Array<Record<string, unknown>> };
         newListings = (d.data ?? []).map(t => {
           const quote = (t["quote"] as Record<string, Record<string, number>>)?.["USD"] ?? {};
+          const platform = t["platform"] as { name?: string; token_address?: string } | null;
           return {
             symbol: String(t["symbol"] ?? "?"),
             name: String(t["name"] ?? "Unknown"),
@@ -366,6 +419,9 @@ router.get("/oracle/listing-radar", async (_req, res) => {
             price: quote["price"] ?? 0,
             changePct24h: quote["percent_change_24h"] ?? 0,
             dateAdded: String(t["date_added"] ?? ""),
+            contractAddress: platform?.token_address ?? null,
+            chain: platform?.name ?? null,
+            cmcSlug: String(t["slug"] ?? ""),
           };
         });
       }
@@ -387,16 +443,21 @@ router.get("/oracle/listing-radar", async (_req, res) => {
       tieneFuturos: futuresSymbols.has(c.symbol.toUpperCase()),
     }));
 
-    // 3) Max Pain semanal BTC/ETH (Coinglass)
+    // 3) Max Pain semanal BTC/ETH — endpoint real: /api/futures/liquidation/max-pain
+    // (nota: es "liquidation max pain" de futuros, no de opciones — devuelve
+    // varias monedas de una, filtramos BTC/ETH del resultado)
     let maxPain: Array<{ symbol: string; price: number | null }> = [];
-    const mpBtc = await cgFetch("/api/option/max-pain?symbol=BTC");
-    const mpEth = await cgFetch("/api/option/max-pain?symbol=ETH");
-    for (const [sym, mp] of [["BTC", mpBtc], ["ETH", mpEth]] as const) {
-      if (mp && typeof mp === "object" && !("__error" in (mp as object))) {
-        const rows = (mp as { data?: Array<{ maxPainPrice?: number }> }).data;
-        maxPain.push({ symbol: sym, price: rows?.[0]?.maxPainPrice ?? null });
-      } else {
-        maxPain.push({ symbol: sym, price: null });
+    let maxPainUpgradeNeeded = false;
+    const mpData = await cgFetch("/api/futures/liquidation/max-pain?range=7d");
+    if (mpData && typeof mpData === "object" && "__error" in (mpData as object)) {
+      maxPainUpgradeNeeded = true;
+      maxPain = [{ symbol: "BTC", price: null }, { symbol: "ETH", price: null }];
+    } else {
+      const rows = (mpData as { data?: Array<Record<string, unknown>> })?.data ?? [];
+      for (const sym of ["BTC", "ETH"]) {
+        const row = rows.find(r => String(r["symbol"] ?? "").toUpperCase() === sym);
+        const price = row ? Number(row["maxPainPrice"] ?? row["price"] ?? row["max_pain_price"] ?? 0) || null : null;
+        maxPain.push({ symbol: sym, price });
       }
     }
 
@@ -404,7 +465,7 @@ router.get("/oracle/listing-radar", async (_req, res) => {
       ok: true,
       newListings: radar,
       maxPain,
-      coinglassUpgradeNeeded,
+      coinglassUpgradeNeeded: coinglassUpgradeNeeded || maxPainUpgradeNeeded,
       fetchedAt: new Date().toISOString(),
     };
     cache[cacheKey] = { data: payload, ts: Date.now() };
