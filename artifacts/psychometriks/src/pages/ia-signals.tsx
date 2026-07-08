@@ -200,7 +200,7 @@ export default function IaSignalsConfirmadas() {
   const [sigError, setSigError] = useState("");
   const [cachedAt, setCachedAt] = useState<string>("");
   const [filter, setFilter] = useState<"ALL" | "LONG" | "SHORT">("ALL");
-  const [tab, setTab] = useState<"signals" | "scanner" | "hyperliquid">("signals");
+  const [tab, setTab] = useState<"signals">("signals");
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const ws1Ref = useRef<WebSocket | null>(null);
 
@@ -320,20 +320,6 @@ export default function IaSignalsConfirmadas() {
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="flex gap-0">
-          {[
-            { key: "signals", label: "🔔 Señales Activas" },
-            { key: "scanner", label: "📡 Scanner Precios" },
-            { key: "hyperliquid", label: "⚡ Hyperliquid OI" },
-          ].map(t => (
-            <button key={t.key}
-              onClick={() => setTab(t.key as typeof tab)}
-              className={`font-space text-[10px] tracking-[0.1em] uppercase px-6 py-3 border-b-2 transition-all ${tab === t.key ? "text-[#ffd700] border-[#ffd700]" : "text-[#7ab3c8] border-transparent hover:text-white"}`}>
-              {t.label}
-            </button>
-          ))}
-        </div>
       </div>
 
       <div className="px-6 md:px-10 py-6">
@@ -605,101 +591,6 @@ export default function IaSignalsConfirmadas() {
         )}
 
         {/* === SCANNER TAB === */}
-        {tab === "scanner" && (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {/* Price list */}
-            <div className="xl:col-span-1 bg-[#060a0f] border border-[#1a2535] overflow-hidden">
-              <div className="px-4 py-3 border-b border-[#1a2535] flex items-center justify-between">
-                <div className="font-space text-[10px] text-[#00e5ff] tracking-[0.2em] uppercase">Precios Live · Top 50</div>
-                <div className="w-1.5 h-1.5 bg-[#00e676] rounded-full animate-pulse" />
-              </div>
-              <div className="max-h-[500px] overflow-y-auto">
-                {TOP50_ALTCOINS.slice(0, 30).map(coin => (
-                  <PriceRow key={coin.symbol} coin={coin} />
-                ))}
-              </div>
-            </div>
-
-            {/* Charts */}
-            <div className="xl:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {TOP50_ALTCOINS.slice(0, 8).map(coin => (
-                <div key={coin.symbol} className="bg-[#060a0f] border border-[#1a2535] p-3">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span style={{ color: coin.color }}>{coin.icon}</span>
-                    <span className="font-space text-[10px] text-white">{coin.name}</span>
-                    {prices[coin.symbol] && (
-                      <span className={`ml-auto font-space text-[9px] font-bold ${prices[coin.symbol].change >= 0 ? "text-[#00e676]" : "text-[#ff1744]"}`}>
-                        {prices[coin.symbol].change >= 0 ? "+" : ""}{prices[coin.symbol].change.toFixed(2)}%
-                      </span>
-                    )}
-                  </div>
-                  <TradingViewMiniChart symbol={coin.symbol} />
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* === HYPERLIQUID TAB === */}
-        {tab === "hyperliquid" && (
-          <div>
-            <div className="mb-6 flex items-center gap-3">
-              <div className="w-1.5 h-1.5 bg-[#00e676] rounded-full animate-pulse" />
-              <div className="font-space text-[10px] text-[#7ab3c8] tracking-widest">
-                Datos de Open Interest y posiciones institucionales en Hyperliquid. Actualización cada 90 segundos.
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
-              {TOP50_ALTCOINS.slice(0, 18).map((coin, i) => {
-                const longs = 45 + (i * 7 % 30);
-                const shorts = 100 - longs;
-                const oi = (5 + i * 2.3).toFixed(1);
-                const bias = longs > 55 ? "ALCISTA" : longs < 45 ? "BAJISTA" : "NEUTRAL";
-                const biasColor = bias === "ALCISTA" ? "#00e676" : bias === "BAJISTA" ? "#ff1744" : "#ffd700";
-                return (
-                  <div key={coin.symbol} className="bg-[#060a0f] border border-[#1a2535] p-4 hover:border-opacity-60 transition-all">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <span style={{ color: coin.color, fontSize: 18 }}>{coin.icon}</span>
-                        <div>
-                          <div className="font-space text-[11px] text-white">{coin.name}</div>
-                          <div className="font-space text-[8px] text-[#7ab3c8]">Hyperliquid Perps</div>
-                        </div>
-                      </div>
-                      <span className="font-space text-[9px] font-bold px-2 py-0.5 tracking-[0.1em]"
-                        style={{ background: `${biasColor}15`, border: `1px solid ${biasColor}33`, color: biasColor }}>
-                        {bias}
-                      </span>
-                    </div>
-
-                    <div className="text-[10px] font-space text-[#7ab3c8] mb-2 flex justify-between">
-                      <span>LONGS <strong className="text-[#00e676]">{longs}%</strong></span>
-                      <span>OI <strong className="text-white">${oi}M</strong></span>
-                      <span>SHORTS <strong className="text-[#ff1744]">{shorts}%</strong></span>
-                    </div>
-
-                    <div className="h-1.5 bg-[#0d1520] rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-[#00e676] to-[#ff1744] rounded-full"
-                        style={{ background: `linear-gradient(90deg, #00e676 ${longs}%, #ff1744 ${longs}%)` }} />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Disclaimer */}
-            <div className="border border-[#ffd70020] bg-[#ffd70008] p-4 rounded">
-              <div className="font-space text-[9px] text-[#ffd700] tracking-[0.15em] uppercase mb-1">⚠ Integración Hyperliquid — Bot Python</div>
-              <div className="font-space text-[10px] text-[#7ab3c8] leading-relaxed">
-                Los datos de Hyperliquid se actualizan desde el bot Python WHALE INTEL v3.1 conectado en el servidor.
-                Para alertas en tiempo real en Telegram, asegurate de estar suscrito al canal privado Elite.
-                Los datos de Open Interest y posiciones son referenciales y actualizados cada 90 segundos.
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Footer disclaimer */}
         <div className="mt-8 border-t border-[#0d1520] pt-6">
           <p className="font-space text-[9px] text-[#5a8898] leading-relaxed">
