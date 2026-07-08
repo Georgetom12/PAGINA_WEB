@@ -12,21 +12,32 @@ function cSet<T>(k: string, d: T, ms: number) {
   _cache.set(k, { data: d, exp: Date.now() + ms });
 }
 
-// ── FMP (mismo patrón ya probado en buffett.ts) ─────────────────────────────
+// ── FMP ──────────────────────────────────────────────────────────────────
+// NOTA: /stable/quote devuelve 402 en el plan FMP gratuito (ya diagnosticado
+// antes). /api/v3/quote/{symbol} sí funciona en el plan free — es el mismo
+// endpoint que usa motor_psy/motor/macro_engine.py.
 const FMP_BASE = "https://financialmodelingprep.com/stable";
+const FMP_V3   = "https://financialmodelingprep.com/api/v3";
 async function fmpQuote(symbol: string): Promise<{ price: number; changePct: number; marketCap: number | null } | null> {
   const key = process.env["FMP_API_KEY"];
   if (!key) return null;
   try {
-    const r = await fetch(`${FMP_BASE}/quote?symbol=${encodeURIComponent(symbol)}&apikey=${key}`, {
+    const r = await fetch(`${FMP_V3}/quote/${encodeURIComponent(symbol)}?apikey=${key}`, {
       signal: AbortSignal.timeout(8000),
     });
-    if (!r.ok) return null;
-    const d = await r.json() as Array<{ price?: number; changePercentage?: number; marketCap?: number }>;
+    if (!r.ok) {
+      const body = await r.text().catch(() => "");
+      console.warn(`[psy-brain-live] FMP quote ${symbol} HTTP ${r.status}: ${body.slice(0, 200)}`);
+      return null;
+    }
+    const d = await r.json() as Array<{ price?: number; changesPercentage?: number; marketCap?: number }>;
     const q = Array.isArray(d) ? d[0] : null;
     if (!q || typeof q.price !== "number") return null;
-    return { price: q.price, changePct: q.changePercentage ?? 0, marketCap: q.marketCap ?? null };
-  } catch { return null; }
+    return { price: q.price, changePct: q.changesPercentage ?? 0, marketCap: q.marketCap ?? null };
+  } catch (e) {
+    console.warn(`[psy-brain-live] FMP quote ${symbol} excepción:`, e);
+    return null;
+  }
 }
 
 async function fmpTreasury(): Promise<{ y10: number | null; y2: number | null }> {
@@ -34,7 +45,12 @@ async function fmpTreasury(): Promise<{ y10: number | null; y2: number | null }>
   if (!key) return { y10: null, y2: null };
   try {
     const r = await fetch(`${FMP_BASE}/treasury-rates?apikey=${key}`, { signal: AbortSignal.timeout(8000) });
-    if (!r.ok) return { y10: null, y2: null };
+    if (!r.ok) {
+      const body = await r.text().catch(() => "");
+      console.warn(`[psy-brain-live] FMP treasury HTTP ${r.status}: ${body.slice(0, 200)} `
+        + `(nota: /stable puede dar 402 en plan free; US10Y/US2Y quedarán en null)`);
+      return { y10: null, y2: null };
+    }
     const d = await r.json() as Array<{ year10?: number; year2?: number }>;
     const latest = d[0];
     return { y10: latest?.year10 ?? null, y2: latest?.year2 ?? null };

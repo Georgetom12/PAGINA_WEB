@@ -70,6 +70,11 @@ export interface AltcoinSignal {
   entry: string; tp1: string; tp2: string; tp3: string; sl: string; rr: string;
   rsi1h: number; rsi4h: number;
   rsiDiv: "BULLISH_DIV" | "BEARISH_DIV" | "NONE";
+  divConfianza?: number;
+  divVolConfirma?: boolean;
+  divEmaConfirma?: boolean;
+  divVelaConfirma?: boolean;
+  divDesc?: string;
   stochK: number; stochD: number;
   macdHistogram: number; macdCross: boolean; macdDir: "BULLISH" | "BEARISH" | "NEUTRAL";
   volumeSpike: number;
@@ -228,6 +233,91 @@ function swingPoints(candles: OHLCV[], lb = 5) {
     if (candles[i]!.low  <= Math.min(...w.map(c => c.low)))  lows.push({ i, price: candles[i]!.low });
   }
   return { highs, lows };
+}
+
+interface DivergenciaResult {
+  tipo: "DIV_ALCISTA" | "DIV_BAJISTA" | "NONE";
+  confianza: number;         // 0-100
+  volConfirma: boolean;
+  emaConfirma: boolean;
+  velaConfirma: boolean;
+  desc: string;
+}
+
+// Divergencia precio/volumen/EMA — no solo RSI:
+//  1. Toma los últimos 2 swings (highs para bajista, lows para alcista)
+//  2. Compara volumen relativo de cada swing (vs su propia media de 20 velas previas)
+//  3. Compara pendiente de EMA9 entre ambos swings (momentum más débil?)
+//  4. Confirma con vela de rechazo (mecha > 1.5x cuerpo) en el swing actual
+function detectarDivergencia(candles: OHLCV[], lb = 5): DivergenciaResult {
+  const none: DivergenciaResult = { tipo: "NONE", confianza: 0, volConfirma: false, emaConfirma: false, velaConfirma: false, desc: "" };
+  if (candles.length < lb * 4 + 10) return none;
+
+  const closes = candles.map(c => c.close);
+  const e9 = ema(closes, 9);
+
+  const volRel = (i: number): number => {
+    const lo = Math.max(0, i - 20);
+    const win = candles.slice(lo, i);
+    const avg = win.length ? win.reduce((a, c) => a + c.volume, 0) / win.length : candles[i]!.volume;
+    return avg > 0 ? candles[i]!.volume / avg : 1;
+  };
+  const slopeAt = (i: number, periodos = 3): number => {
+    const j = Math.max(0, i - periodos);
+    const prev = e9[j] ?? e9[i] ?? 0;
+    return prev !== 0 ? (e9[i]! - prev) / prev * 100 : 0;
+  };
+  const velaRechazo = (i: number): boolean => {
+    const c = candles[i]!;
+    const rango = c.high - c.low;
+    if (rango <= 0) return false;
+    const cuerpo = Math.abs(c.close - c.open);
+    const mechaSup = c.high - Math.max(c.open, c.close);
+    const mechaInf = Math.min(c.open, c.close) - c.low;
+    return mechaSup > cuerpo * 1.5 || mechaInf > cuerpo * 1.5;
+  };
+
+  const { highs, lows } = swingPoints(candles, lb);
+
+  // ── Bajista: precio HH, volumen/momentum LH ──
+  if (highs.length >= 2) {
+    const prev = highs[highs.length - 2]!, curr = highs[highs.length - 1]!;
+    if (curr.price > prev.price) {
+      const volDebil = volRel(curr.i) < volRel(prev.i);
+      const emaDebil = slopeAt(curr.i) < slopeAt(prev.i);
+      if (volDebil || emaDebil) {
+        const velaConf = velaRechazo(curr.i);
+        const conf = Math.min(100, 30 + (volDebil ? 25 : 0) + (emaDebil ? 25 : 0) + (velaConf ? 10 : 0));
+        return {
+          tipo: "DIV_BAJISTA", confianza: conf, volConfirma: volDebil, emaConfirma: emaDebil, velaConfirma: velaConf,
+          desc: `Nuevo máximo ${curr.price.toFixed(2)} vs ${prev.price.toFixed(2)} previo, con `
+              + `${volDebil ? "volumen" : ""}${volDebil && emaDebil ? " y " : ""}${emaDebil ? "momentum EMA9" : ""} más débil`
+              + `${velaConf ? " + rechazo en vela" : ""}`,
+        };
+      }
+    }
+  }
+
+  // ── Alcista: precio LL, volumen/momentum HL ──
+  if (lows.length >= 2) {
+    const prev = lows[lows.length - 2]!, curr = lows[lows.length - 1]!;
+    if (curr.price < prev.price) {
+      const volDebil = volRel(curr.i) < volRel(prev.i);
+      const emaDebil = slopeAt(curr.i) > slopeAt(prev.i); // menos negativa = perdiendo fuerza bajista
+      if (volDebil || emaDebil) {
+        const velaConf = velaRechazo(curr.i);
+        const conf = Math.min(100, 30 + (volDebil ? 25 : 0) + (emaDebil ? 25 : 0) + (velaConf ? 10 : 0));
+        return {
+          tipo: "DIV_ALCISTA", confianza: conf, volConfirma: volDebil, emaConfirma: emaDebil, velaConfirma: velaConf,
+          desc: `Nuevo mínimo ${curr.price.toFixed(2)} vs ${prev.price.toFixed(2)} previo, con `
+              + `${volDebil ? "volumen" : ""}${volDebil && emaDebil ? " y " : ""}${emaDebil ? "momentum EMA9" : ""} más débil`
+              + `${velaConf ? " + rechazo en vela" : ""}`,
+        };
+      }
+    }
+  }
+
+  return none;
 }
 
 function structureTrend(candles: OHLCV[]): "BULLISH" | "BEARISH" | "NEUTRAL" {
@@ -456,10 +546,13 @@ async function genSignal(a: typeof ASSETS[number]): Promise<AltcoinSignal | null
     const rsi1h  = +(rArr1h.at(-1) ?? 50).toFixed(1);
     const rsi4h  = +(rArr4h.at(-1) ?? 50).toFixed(1);
     const rsiPrev = rArr1h.at(-9) ?? rsi1h;
-    const pxPrev  = cl1h.at(-9) ?? price;
+    // Divergencia completa: swings + volumen + EMA9, con RSI como confirmación extra
+    const divergencia = detectarDivergencia(c1h.slice(-80), 5);
+    const rsiConfirma = (divergencia.tipo === "DIV_ALCISTA" && rsi1h > rsiPrev) ||
+                        (divergencia.tipo === "DIV_BAJISTA" && rsi1h < rsiPrev);
     const rsiDiv: "BULLISH_DIV" | "BEARISH_DIV" | "NONE" =
-      (price < pxPrev && rsi1h > rsiPrev) ? "BULLISH_DIV" :
-      (price > pxPrev && rsi1h < rsiPrev) ? "BEARISH_DIV" : "NONE";
+      divergencia.tipo === "DIV_ALCISTA" ? "BULLISH_DIV" :
+      divergencia.tipo === "DIV_BAJISTA" ? "BEARISH_DIV" : "NONE";
 
     const stoch = stochRsi(cl1h);
 
@@ -512,8 +605,16 @@ async function genSignal(a: typeof ASSETS[number]): Promise<AltcoinSignal | null
     if (rsi4h < 45 && rsi4h > 25) { bullPts += 1; inds.push(`RSI 4H ${rsi4h} — momentum alcista`); }
     if (rsi4h > 55 && rsi4h < 75) { bearPts += 1; inds.push(`RSI 4H ${rsi4h} — momentum bajista`); }
 
-    if (rsiDiv === "BULLISH_DIV") { bullPts += 3; inds.push("Divergencia ALCISTA RSI — precio baja, RSI sube ▲"); }
-    if (rsiDiv === "BEARISH_DIV") { bearPts += 3; inds.push("Divergencia BAJISTA RSI — precio sube, RSI baja ▼"); }
+    if (rsiDiv === "BULLISH_DIV") {
+      bullPts += 2 + (divergencia.confianza / 100) * 2; // hasta +4 si viene muy confirmada
+      const badges = [divergencia.volConfirma && "volumen", divergencia.emaConfirma && "EMA9", rsiConfirma && "RSI", divergencia.velaConfirma && "vela"].filter(Boolean).join("+");
+      inds.push(`Divergencia ALCISTA (${divergencia.confianza.toFixed(0)}% conf, confirmada por ${badges || "precio"}) ▲`);
+    }
+    if (rsiDiv === "BEARISH_DIV") {
+      bearPts += 2 + (divergencia.confianza / 100) * 2;
+      const badges = [divergencia.volConfirma && "volumen", divergencia.emaConfirma && "EMA9", rsiConfirma && "RSI", divergencia.velaConfirma && "vela"].filter(Boolean).join("+");
+      inds.push(`Divergencia BAJISTA (${divergencia.confianza.toFixed(0)}% conf, confirmada por ${badges || "precio"}) ▼`);
+    }
 
     if (stoch.k < 15)      { bullPts += 2; inds.push(`StochRSI K=${stoch.k} — HIPERSOBREVENTA ▲`); }
     else if (stoch.k < 25) { bullPts += 1; inds.push(`StochRSI K=${stoch.k} — sobreventa ▲`); }
@@ -606,6 +707,11 @@ async function genSignal(a: typeof ASSETS[number]): Promise<AltcoinSignal | null
       entry: fmt(entry), tp1: fmt(tp1), tp2: fmt(tp2), tp3: fmt(tp3), sl: fmt(sl),
       rr: `1:${rrNum.toFixed(2)}`,
       rsi1h, rsi4h, rsiDiv,
+      divConfianza: divergencia.confianza,
+      divVolConfirma: divergencia.volConfirma,
+      divEmaConfirma: divergencia.emaConfirma,
+      divVelaConfirma: divergencia.velaConfirma,
+      divDesc: divergencia.desc,
       stochK: stoch.k, stochD: stoch.d,
       macdHistogram: +mH.toFixed(8), macdCross, macdDir,
       volumeSpike: volSpike, cvdTrend: cvd,
