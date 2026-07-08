@@ -458,9 +458,84 @@ function WhaleFeedsTab() {
   );
   const intent = calcIntent(alerts);
 
+  // ── Resumen de mercado: compras vs ventas, liquidaciones destacadas ──────
+  const buys = alerts.filter(a => a.type === "whale_buy");
+  const sells = alerts.filter(a => a.type === "whale_sell");
+  const liqs = alerts.filter(a => a.type === "liquidation");
+  const buyUsd = buys.reduce((s,a)=>s+a.usd, 0);
+  const sellUsd = sells.reduce((s,a)=>s+a.usd, 0);
+  const liqUsd = liqs.reduce((s,a)=>s+a.usd, 0);
+  const totalFlow = buyUsd + sellUsd || 1;
+  const buyPct = Math.round((buyUsd / totalFlow) * 100);
+  const fmtUsdShort = (n: number) => n >= 1e6 ? `$${(n/1e6).toFixed(2)}M` : n >= 1e3 ? `$${(n/1e3).toFixed(0)}K` : `$${n.toFixed(0)}`;
+  const marketLean = buyPct >= 60 ? "COMPRADORES DOMINAN" : buyPct <= 40 ? "VENDEDORES DOMINAN" : "MERCADO DIVIDIDO";
+  const leanColor = buyPct >= 60 ? "#00e676" : buyPct <= 40 ? "#ff1744" : "#ffd700";
+
   return (
     <div>
       <IntentScoreBar score={intent} total={alerts.length} />
+
+      {/* Resumen Longs vs Shorts — hacia dónde tira el mercado */}
+      <div className="border border-[#0d2030] bg-[#040f18] p-5 mb-4">
+        <div className="font-sharetech text-[11px] tracking-[0.2em] text-[#7ab3c8] mb-3">📊 RESUMEN — ¿HACIA DÓNDE TIRA EL MERCADO?</div>
+        <div className="flex items-center gap-2 mb-3">
+          <div className="flex-1 h-6 rounded-full overflow-hidden flex border border-[#0d2030]">
+            <div style={{ width: `${buyPct}%`, background: "#00e676" }} className="flex items-center justify-center">
+              {buyPct > 15 && <span className="font-sharetech text-[9px] text-black font-bold">{buyPct}%</span>}
+            </div>
+            <div style={{ width: `${100-buyPct}%`, background: "#ff1744" }} className="flex items-center justify-center">
+              {(100-buyPct) > 15 && <span className="font-sharetech text-[9px] text-black font-bold">{100-buyPct}%</span>}
+            </div>
+          </div>
+        </div>
+        <div className="font-bebas text-2xl mb-3" style={{ color: leanColor }}>{marketLean}</div>
+        <div className="grid grid-cols-3 gap-3">
+          <div className="text-center">
+            <div className="font-sharetech text-[10px] text-[#00e676] mb-1">🐋 COMPRAS BALLENA</div>
+            <div className="font-bebas text-xl text-white">{buys.length}</div>
+            <div className="font-space text-[10px] text-[#7ab3c8]">{fmtUsdShort(buyUsd)}</div>
+          </div>
+          <div className="text-center">
+            <div className="font-sharetech text-[10px] text-[#ff1744] mb-1">🔴 VENTAS BALLENA</div>
+            <div className="font-bebas text-xl text-white">{sells.length}</div>
+            <div className="font-space text-[10px] text-[#7ab3c8]">{fmtUsdShort(sellUsd)}</div>
+          </div>
+          <div className="text-center">
+            <div className="font-sharetech text-[10px] text-[#ffd700] mb-1">💥 LIQUIDACIONES</div>
+            <div className="font-bebas text-xl text-white">{liqs.length}</div>
+            <div className="font-space text-[10px] text-[#7ab3c8]">{fmtUsdShort(liqUsd)}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Liquidaciones destacadas + qué significan */}
+      {liqs.length > 0 && (
+        <div className="border border-[#ffd70030] bg-[#1a1400] p-5 mb-4">
+          <div className="font-bebas text-xl text-[#ffd700] mb-2">💥 LIQUIDACIONES RECIENTES — QUÉ SIGNIFICAN</div>
+          <div className="font-space text-[11px] text-[#dceaf5] leading-relaxed mb-4">
+            Una liquidación pasa cuando un trader apalancado no puede sostener su posición y el exchange se la cierra a la fuerza. Muchas liquidaciones seguidas en la misma dirección generan una <span className="text-white font-bold">cascada</span> — cada cierre forzado empuja el precio más en esa dirección, liquidando al siguiente. Por eso son una señal de <span className="text-[#ffd700] font-bold">movimiento brusco reciente</span>, no solo un dato aislado.
+          </div>
+          <div className="space-y-2">
+            {liqs.slice(0, 5).map((l, i) => (
+              <div key={l.id ?? i} className="flex items-center justify-between border-l-2 border-[#ffd700] pl-3 py-1.5">
+                <div className="font-space text-[11px] text-white">{l.coin} · {fmtUsdShort(l.usd)}</div>
+                <div className="font-sharetech text-[9px] text-[#7ab3c8]">{new Date(l.ts).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Explicación técnica de lo que está pasando */}
+      <div className="border border-[#00e5ff30] bg-[#001520] p-5 mb-4">
+        <div className="font-bebas text-xl text-[#00e5ff] mb-2">🔎 LECTURA TÉCNICA DEL MOMENTO</div>
+        <div className="font-space text-[12px] text-[#dceaf5] leading-relaxed">
+          {buyPct >= 65 && "Las ballenas están acumulando con fuerza — más compras que ventas en volumen. Si esto se sostiene, suele preceder subidas de precio, aunque hay que vigilar si el precio sube demasiado rápido (riesgo de sobrecompra)."}
+          {buyPct <= 35 && "Las ballenas están distribuyendo (vendiendo) más de lo que compran — señal de presión bajista. Si coincide con liquidaciones de longs, puede acelerar la caída en cascada."}
+          {buyPct > 35 && buyPct < 65 && "El mercado está parejo entre compradores y vendedores — sin una dirección dominante clara todavía. En momentos así conviene esperar confirmación antes de tomar una posición grande."}
+          {liqs.length >= 3 && " Con varias liquidaciones recientes, hay volatilidad activa — el precio se movió lo suficientemente rápido como para forzar cierres, así que hay que esperar posible continuación o un rebote brusco en la dirección contraria."}
+        </div>
+      </div>
       <div className="flex flex-wrap gap-2 mb-4">
         <div className="flex gap-1.5 flex-wrap">
           {TYPES.map(t=>(
@@ -1280,21 +1355,57 @@ function ExchangeSignalsTab() {
 
   return (
     <div>
-      {/* Info banner */}
+      {/* Explicación grande — qué es esto y qué significa cada dato */}
+      <div className="border border-[#00e5ff30] bg-[#001520] p-6 mb-6">
+        <div className="font-bebas text-3xl md:text-4xl text-[#00e5ff] leading-none mb-2">
+          ⚡ SEÑALES TÉCNICAS DEX
+        </div>
+        <div className="font-space text-[13px] md:text-sm text-[#dceaf5] leading-relaxed mb-5">
+          Esto analiza el <span className="text-[#00e5ff] font-bold">funding rate</span> (la tasa que se pagan entre sí los longs y shorts cada 8 horas) en <span className="text-[#00e5ff] font-bold">dYdX v4</span> y <span className="text-[#ffd700] font-bold">GMX v2</span> — dos exchanges descentralizados. Cuando el funding se dispara muy positivo o muy negativo, significa que un lado (longs o shorts) está pagando caro por mantener su posición — eso indica <span className="text-white font-bold">sobreapalancamiento</span>, y suele preceder movimientos bruscos cuando ese lado se ve forzado a cerrar.
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="border-l-2 border-[#00e5ff] pl-4">
+            <div className="font-bebas text-lg text-[#00e5ff] mb-1">FUNDING RATE</div>
+            <div className="font-space text-[12px] text-[#b0c4d4] leading-relaxed">
+              La tasa que se cobran longs/shorts entre sí cada 8h. <span className="text-[#00e676]">Positivo</span> = los longs le pagan a los shorts (hay más gente apostando a que sube). <span className="text-[#ff1744]">Negativo</span> = los shorts pagan (más gente apostando a que baja).
+            </div>
+          </div>
+          <div className="border-l-2 border-[#ffd700] pl-4">
+            <div className="font-bebas text-lg text-[#ffd700] mb-1">FUNDING APR</div>
+            <div className="font-space text-[12px] text-[#b0c4d4] leading-relaxed">
+              El mismo funding rate pero proyectado a un año completo (anualizado). Sirve para comparar qué tan "caro" es sostener la posición — un APR arriba de ±20-30% ya se considera una posición sobrecargada.
+            </div>
+          </div>
+          <div className="border-l-2 border-[#e040fb] pl-4">
+            <div className="font-bebas text-lg text-[#e040fb] mb-1">OI TOTAL DEX</div>
+            <div className="font-space text-[12px] text-[#b0c4d4] leading-relaxed">
+              Open Interest — el valor total en dólares de todas las posiciones abiertas (longs + shorts) en ese activo, sumando ambos exchanges. Más OI = más dinero "en juego", más movimiento si se liquida.
+            </div>
+          </div>
+          <div className="border-l-2 border-[#00e676] pl-4">
+            <div className="font-bebas text-lg text-[#00e676] mb-1">EL SESGO (BIAS)</div>
+            <div className="font-space text-[12px] text-[#b0c4d4] leading-relaxed">
+              "Shorts pagando" = riesgo de <span className="text-white font-bold">short squeeze</span> (si sube el precio, los shorts se liquidan en cascada, empujando aún más para arriba). "Longs pagando" = posición sobrecargada al alza, riesgo de corrección si cae el precio.
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="border border-[#00e5ff20] bg-[#001520] p-3 mb-5 flex items-center gap-3">
         <div className="w-2 h-2 rounded-full bg-[#00e5ff] animate-pulse flex-shrink-0" />
-        <span className="font-space text-[8px] text-[#7ab3c8]">Señales técnicas de DEX (funding rate + entrada/TP/SL) — <span className="text-[#00e5ff]">dYdX v4</span> (Cosmos) + <span className="text-[#ffd700]">GMX v2</span> (Arbitrum). Para historial de traders y ranking por eficiencia (3 meses), ver tab <span className="text-[#e040fb] font-bold">🐋 WHALE TRACKER</span>.</span>
+        <span className="font-space text-[12px] text-[#7ab3c8]">Datos en vivo — <span className="text-[#00e5ff]">dYdX v4</span> (Cosmos) + <span className="text-[#ffd700]">GMX v2</span> (Arbitrum). Para historial de traders y ranking por eficiencia (3 meses), ver tab <span className="text-[#e040fb] font-bold">🐋 WHALE TRACKER</span>.</span>
       </div>
 
       {loading ? (
         <div className="p-16 text-center">
           <div className="font-sharetech text-[10px] text-[#00e5ff] animate-pulse tracking-[0.25em] mb-3">CONECTANDO CON DEX…</div>
-          <div className="font-space text-[8px] text-[#3a5a6a]">dYdX v4 · GMX v2 · Funding Rate · Open Interest</div>
+          <div className="font-space text-[12px] text-[#3a5a6a]">dYdX v4 · GMX v2 · Funding Rate · Open Interest</div>
         </div>
       ) : error ? (
         <div className="p-10 text-center border border-[#ff174430]">
-          <div className="font-bebas text-xl text-[#ff1744] mb-2">ERROR DE CONEXIÓN DEX</div>
-          <div className="font-space text-[8px] text-[#7ab3c8]">{error}</div>
+          <div className="font-bebas text-2xl text-[#ff1744] mb-2">ERROR DE CONEXIÓN DEX</div>
+          <div className="font-space text-[12px] text-[#7ab3c8]">{error}</div>
         </div>
       ) : (
         <div className="space-y-4">
@@ -1312,20 +1423,20 @@ function ExchangeSignalsTab() {
                       <span className="font-bebas text-4xl leading-none" style={{ color: s.color }}>{s.icon}</span>
                       <div>
                         <div className="font-bebas text-2xl text-white tracking-wider leading-none">{s.symbol}</div>
-                        <div className="font-sharetech text-[7px] text-[#5a8898]">{s.name}</div>
+                        <div className="font-sharetech text-[11px] text-[#5a8898]">{s.name}</div>
                       </div>
                     </div>
                     <div className="text-right">
                       <span className="font-bebas text-lg px-4 py-1 text-black tracking-wider block mb-1" style={{ background: sigColor, boxShadow: `0 0 14px ${sigColor}50` }}>
                         {s.signal === "LONG" ? "▲ LONG BIAS" : s.signal === "SHORT" ? "▼ SHORT BIAS" : "— NEUTRO"}
                       </span>
-                      <span className="font-sharetech text-[6px] text-[#5a8898]">DEX INTEL</span>
+                      <span className="font-sharetech text-[10px] text-[#5a8898]">DEX INTEL</span>
                     </div>
                   </div>
 
                   {/* Bias explanation */}
                   <div className="border border-[#0d2030] bg-[#030c14] p-2.5 mb-4">
-                    <div className="font-space text-[8px] text-[#7ab3c8] leading-relaxed">{s.bias}</div>
+                    <div className="font-space text-[12px] text-[#7ab3c8] leading-relaxed">{s.bias}</div>
                   </div>
 
                   {/* Funding + OI */}
@@ -1336,8 +1447,8 @@ function ExchangeSignalsTab() {
                       { label: "OI TOTAL DEX", value: fmtOI(s.totalOI), color: "#00e5ff" },
                     ].map(item => (
                       <div key={item.label} className="bg-[#040d18] border border-[#0d1a2a] p-2.5 text-center">
-                        <div className="font-sharetech text-[6px] text-[#5a8898] mb-1">{item.label}</div>
-                        <div className="font-space text-[9px] font-bold" style={{ color: item.color }}>{item.value}</div>
+                        <div className="font-sharetech text-[10px] text-[#5a8898] mb-1">{item.label}</div>
+                        <div className="font-space text-[13px] font-bold" style={{ color: item.color }}>{item.value}</div>
                       </div>
                     ))}
                   </div>
@@ -1347,8 +1458,8 @@ function ExchangeSignalsTab() {
                     {/* dYdX */}
                     <div className="border border-[#00e5ff20] bg-[#00151a] p-3">
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="font-sharetech text-[6px] px-2 py-0.5 border border-[#00e5ff30] text-[#00e5ff]">dYdX v4</span>
-                        <span className="font-sharetech text-[7px] text-[#5a8898]">Cosmos · Descentralizado</span>
+                        <span className="font-sharetech text-[10px] px-2 py-0.5 border border-[#00e5ff30] text-[#00e5ff]">dYdX v4</span>
+                        <span className="font-sharetech text-[11px] text-[#5a8898]">Cosmos · Descentralizado</span>
                       </div>
                       {s.dydx ? (
                         <div className="grid grid-cols-2 gap-1.5">
@@ -1359,19 +1470,19 @@ function ExchangeSignalsTab() {
                             { label: "FUNDING APR", value: (s.dydx.fundingAnnual??0).toFixed(2) + "%", color: (s.dydx.fundingRate??0) < 0 ? "#00e676" : "#ff6b6b" },
                           ].map(item => (
                             <div key={item.label} className="bg-[#020b12] p-1.5">
-                              <div className="font-sharetech text-[5px] text-[#3a5a6a] mb-0.5">{item.label}</div>
-                              <div className="font-space text-[8px]" style={{ color: item.color }}>{item.value}</div>
+                              <div className="font-sharetech text-[13px] text-[#3a5a6a] mb-0.5">{item.label}</div>
+                              <div className="font-space text-[12px]" style={{ color: item.color }}>{item.value}</div>
                             </div>
                           ))}
                         </div>
-                      ) : <div className="font-sharetech text-[7px] text-[#3a5a6a] py-3 text-center">Sin datos disponibles</div>}
+                      ) : <div className="font-sharetech text-[11px] text-[#3a5a6a] py-3 text-center">Sin datos disponibles</div>}
                     </div>
 
                     {/* GMX */}
                     <div className="border border-[#ffd70020] bg-[#0a0a00] p-3">
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="font-sharetech text-[6px] px-2 py-0.5 border border-[#ffd70030] text-[#ffd700]">GMX v2</span>
-                        <span className="font-sharetech text-[7px] text-[#5a8898]">Arbitrum · Pools sintéticos</span>
+                        <span className="font-sharetech text-[10px] px-2 py-0.5 border border-[#ffd70030] text-[#ffd700]">GMX v2</span>
+                        <span className="font-sharetech text-[11px] text-[#5a8898]">Arbitrum · Pools sintéticos</span>
                       </div>
                       {s.gmx ? (
                         <div>
@@ -1381,16 +1492,16 @@ function ExchangeSignalsTab() {
                               { label: "TIPO", value: "Sin funding fix", color: "#7ab3c8" },
                             ].map(item => (
                               <div key={item.label} className="bg-[#020b12] p-1.5">
-                                <div className="font-sharetech text-[5px] text-[#3a5a6a] mb-0.5">{item.label}</div>
-                                <div className="font-space text-[8px]" style={{ color: item.color }}>{item.value}</div>
+                                <div className="font-sharetech text-[13px] text-[#3a5a6a] mb-0.5">{item.label}</div>
+                                <div className="font-space text-[12px]" style={{ color: item.color }}>{item.value}</div>
                               </div>
                             ))}
                           </div>
                           {/* Long/Short bar */}
                           <div className="mt-2">
                             <div className="flex justify-between mb-1">
-                              <span className="font-sharetech text-[6px] text-[#00e676]">LONG {(s.gmx.longPct??0).toFixed(1)}%</span>
-                              <span className="font-sharetech text-[6px] text-[#ff1744]">SHORT {(s.gmx.shortPct??0).toFixed(1)}%</span>
+                              <span className="font-sharetech text-[10px] text-[#00e676]">LONG {(s.gmx.longPct??0).toFixed(1)}%</span>
+                              <span className="font-sharetech text-[10px] text-[#ff1744]">SHORT {(s.gmx.shortPct??0).toFixed(1)}%</span>
                             </div>
                             <div className="h-2 bg-[#0a1520] rounded-full overflow-hidden flex">
                               <div style={{ width: `${s.gmx.longPct}%`, background: "#00e676" }} />
@@ -1398,11 +1509,11 @@ function ExchangeSignalsTab() {
                             </div>
                           </div>
                         </div>
-                      ) : <div className="font-sharetech text-[7px] text-[#3a5a6a] py-3 text-center">Sin datos disponibles</div>}
+                      ) : <div className="font-sharetech text-[11px] text-[#3a5a6a] py-3 text-center">Sin datos disponibles</div>}
                     </div>
                   </div>
 
-                  <div className="mt-3 text-right font-sharetech text-[6px] text-[#2a4a5a]">
+                  <div className="mt-3 text-right font-sharetech text-[10px] text-[#2a4a5a]">
                     Actualizado {new Date(s.updatedAt).toLocaleTimeString("es")} · Actualización 3min
                   </div>
                 </div>
@@ -1412,7 +1523,7 @@ function ExchangeSignalsTab() {
         </div>
       )}
 
-      <div className="mt-5 font-space text-[8px] text-[#5a8898] text-center">
+      <div className="mt-5 font-space text-[12px] text-[#5a8898] text-center">
         <span className="text-[#00e5ff]">● DEX INTELLIGENCE</span> — dYdX v4 + GMX v2 · Funding Rate · Open Interest · Para Hyperliquid/OKX/BitMEX, ver tab 🐋 WHALE TRACKER · 3min
       </div>
     </div>
@@ -2694,12 +2805,12 @@ function WhaleIntelContent() {
 
   const TABS = [
     {key:"signals",   label:"🤖 SEÑALES PSY",      icon:"🤖"},
+    {key:"exchanges", label:"⚡ SEÑALES TÉCNICAS DEX",  icon:"⚡"},
     {key:"feeds",     label:"🐋 WHALE TRACKER (historial)",   icon:"🐋"},
+    {key:"copy",      label:"📊 OI FLOW",           icon:"📊"},
     {key:"oracle",    label:"🔮 ORACLE FEEDS",      icon:"🔮"},
     {key:"twitter",   label:"𝕏 TWITTER INTEL",     icon:"𝕏"},
-    {key:"copy",      label:"📊 OI FLOW",           icon:"📊"},
     {key:"gems",      label:"💎 GEM HUNTER",        icon:"💎", elite:true},
-    {key:"exchanges", label:"⚡ SEÑALES TÉCNICAS DEX",  icon:"⚡"},
     {key:"squeeze",   label:"💥 SHORT SQUEEZE",     icon:"💥"},
     {key:"radar",     label:"🎯 LISTING RADAR",    icon:"🎯"},
   ] as const;
