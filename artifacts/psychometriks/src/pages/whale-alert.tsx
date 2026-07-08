@@ -1283,7 +1283,7 @@ function ExchangeSignalsTab() {
       {/* Info banner */}
       <div className="border border-[#00e5ff20] bg-[#001520] p-3 mb-5 flex items-center gap-3">
         <div className="w-2 h-2 rounded-full bg-[#00e5ff] animate-pulse flex-shrink-0" />
-        <span className="font-space text-[8px] text-[#7ab3c8]">Señales algorítmicas de DEX — <span className="text-[#00e5ff]">dYdX v4</span> (Cosmos) + <span className="text-[#ffd700]">GMX v2</span> (Arbitrum). Hyperliquid disponible en tab OI/FUNDING.</span>
+        <span className="font-space text-[8px] text-[#7ab3c8]">Señales técnicas de DEX (funding rate + entrada/TP/SL) — <span className="text-[#00e5ff]">dYdX v4</span> (Cosmos) + <span className="text-[#ffd700]">GMX v2</span> (Arbitrum). Para historial de traders y ranking por eficiencia (3 meses), ver tab <span className="text-[#e040fb] font-bold">🐋 WHALE TRACKER</span>.</span>
       </div>
 
       {loading ? (
@@ -1413,7 +1413,7 @@ function ExchangeSignalsTab() {
       )}
 
       <div className="mt-5 font-space text-[8px] text-[#5a8898] text-center">
-        <span className="text-[#00e5ff]">● DEX INTELLIGENCE</span> — dYdX v4 + GMX v2 · Funding Rate · Open Interest · Sin Hyperliquid (ver tab OI/FUNDING) · 3min
+        <span className="text-[#00e5ff]">● DEX INTELLIGENCE</span> — dYdX v4 + GMX v2 · Funding Rate · Open Interest · Para Hyperliquid/OKX/BitMEX, ver tab 🐋 WHALE TRACKER · 3min
       </div>
     </div>
   );
@@ -2542,6 +2542,7 @@ function OracleFeedsTab() {
 interface RadarCoin {
   symbol: string; name: string; marketCap: number; price: number;
   changePct24h: number; dateAdded: string; tieneFuturos: boolean;
+  contractAddress: string | null; chain: string | null; cmcSlug: string;
 }
 interface MaxPainEntry { symbol: string; price: number | null; }
 
@@ -2638,6 +2639,24 @@ function ListingRadarTab() {
               <div style={{ fontSize: 8, color: "#3a5060", marginTop: 2 }}>
                 Listado: {new Date(c.dateAdded).toLocaleDateString("es-MX", { day: "2-digit", month: "short" })}
               </div>
+              {c.contractAddress ? (
+                <a
+                  href={`https://dexscreener.com/search?q=${c.contractAddress}`}
+                  target="_blank" rel="noopener noreferrer"
+                  style={{ fontSize: 8, color: "#00e5ff", marginTop: 2, display: "block", textDecoration: "none" }}
+                  title={c.contractAddress}
+                >
+                  📄 {c.chain ?? "Contrato"}: {c.contractAddress.slice(0, 6)}...{c.contractAddress.slice(-4)}
+                </a>
+              ) : (
+                <a
+                  href={`https://coinmarketcap.com/currencies/${c.cmcSlug}/`}
+                  target="_blank" rel="noopener noreferrer"
+                  style={{ fontSize: 8, color: "#5a8898", marginTop: 2, display: "block", textDecoration: "none" }}
+                >
+                  🔗 Ver en CoinMarketCap (moneda nativa, sin contrato)
+                </a>
+              )}
             </div>
             <div style={{ textAlign: "right" }}>
               <div style={{ fontSize: 11, color: "#00e676" }}>{fmt(c.marketCap)}</div>
@@ -2667,12 +2686,12 @@ function WhaleIntelContent() {
 
   const TABS = [
     {key:"signals",   label:"🤖 SEÑALES PSY",      icon:"🤖"},
-    {key:"feeds",     label:"🐋 WHALE FEEDS",       icon:"🐋"},
+    {key:"feeds",     label:"🐋 WHALE TRACKER (historial)",   icon:"🐋"},
     {key:"oracle",    label:"🔮 ORACLE FEEDS",      icon:"🔮"},
     {key:"twitter",   label:"𝕏 TWITTER INTEL",     icon:"𝕏"},
     {key:"copy",      label:"📊 OI FLOW",           icon:"📊"},
     {key:"gems",      label:"💎 GEM HUNTER",        icon:"💎", elite:true},
-    {key:"exchanges", label:"📡 EXCHANGE SIGNALS",  icon:"📡"},
+    {key:"exchanges", label:"⚡ SEÑALES TÉCNICAS DEX",  icon:"⚡"},
     {key:"squeeze",   label:"💥 SHORT SQUEEZE",     icon:"💥"},
     {key:"radar",     label:"🎯 LISTING RADAR",    icon:"🎯"},
   ] as const;
