@@ -3,6 +3,7 @@ import { db, members } from "@workspace/db";
 import { eq, or } from "drizzle-orm";
 import { hashPassword, verifyPassword, validateToken } from "../lib/psy-auth";
 import { signJwt } from "../lib/jwt";
+import { syncChannelAccessForMember } from "./telegram-channels";
 
 const IS_PROD = process.env["NODE_ENV"] === "production";
 
@@ -187,6 +188,11 @@ router.patch("/admin/members/:id", async (req: Request, res: Response) => {
   };
 
   try {
+    // Necesitamos el estado ANTES de actualizar, para saber si cruzó el
+    // umbral de Elite (para arriba o para abajo) y sincronizar Telegram.
+    const [before] = await db.select().from(members).where(eq(members.id, id)).limit(1);
+    const eraElite = before?.plan === "elite" && before?.active;
+
     const updates: Record<string, unknown> = { updatedAt: new Date() };
     if (active !== undefined) updates["active"] = active;
     if (plan) updates["plan"] = plan;
@@ -198,6 +204,14 @@ router.patch("/admin/members/:id", async (req: Request, res: Response) => {
       updates["passwordHash"] = await hashPassword(password);
     }
     await db.update(members).set(updates).where(eq(members.id, id));
+
+    const nuevoPlan = plan ?? before?.plan;
+    const nuevoActive = active ?? before?.active;
+    const esEliteAhora = nuevoPlan === "elite" && !!nuevoActive;
+    if (esEliteAhora !== eraElite) {
+      syncChannelAccessForMember(id, esEliteAhora).catch(() => {});
+    }
+
     res.json({ ok: true });
   } catch (err) {
     req.log.error({ err }, "member update error");
