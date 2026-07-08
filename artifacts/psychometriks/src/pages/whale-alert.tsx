@@ -2712,20 +2712,30 @@ function ListingRadarTab() {
       {/* FUNDING RATE EXTREMO — reemplaza a Max Pain (requería Coinglass de pago) */}
       <div style={{ marginBottom: 18 }}>
         <div style={{ fontSize: 9, color: "#e040fb", letterSpacing: 1.5, marginBottom: 8 }}>
-          🌡 FUNDING RATE EXTREMO — posiciones más "sobrecargadas" ahora (Binance Futures)
+          🌡 FUNDING RATE EXTREMO — posiciones más "sobrecargadas" ahora (OKX + Gate.io + Hyperliquid)
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          {fundingExtremes.slice(0, 6).map(fe => (
-            <div key={fe.symbol} style={{ border: "1px solid rgba(224,64,251,0.2)", background: "rgba(224,64,251,0.04)", padding: 12 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                <span style={{ fontSize: 13, color: "#fff", fontWeight: 700 }}>{fe.symbol}</span>
-                <span style={{ fontSize: 11, color: fe.fundingRate > 0 ? "#00e676" : "#ff1744" }}>
-                  {fe.fundingApr >= 0 ? "+" : ""}{fe.fundingApr.toFixed(1)}% APR
-                </span>
+          {fundingExtremes.slice(0, 6).map(fe => {
+            const esNegativo = fe.fundingRate < 0;
+            const interpretacion = esNegativo
+              ? "BAJISTA a corto, pero riesgo de rebote fuerte"
+              : "ALCISTA a corto, pero riesgo de corrección";
+            const porque = esNegativo
+              ? "Los shorts están pagando caro por mantener su apuesta a la baja. Eso significa que hay MÁS gente apostando a que baja de lo que el mercado \"necesita\" — si el precio sube aunque sea un poco, esos shorts se ven forzados a cerrar comprando, lo que empuja el precio más arriba todavía (short squeeze)."
+              : "Los longs están pagando caro por mantener su apuesta al alza. Hay MÁS gente apostando a que sube de lo que el mercado \"necesita\" — si el precio cae un poco, esos longs se liquidan vendiendo, lo que empuja el precio más abajo (long squeeze / corrección).";
+            return (
+              <div key={fe.symbol} style={{ border: "1px solid rgba(224,64,251,0.2)", background: "rgba(224,64,251,0.04)", padding: 12 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                  <span style={{ fontSize: 13, color: "#fff", fontWeight: 700 }}>{fe.symbol}</span>
+                  <span style={{ fontSize: 11, color: fe.fundingRate > 0 ? "#00e676" : "#ff1744" }}>
+                    {fe.fundingApr >= 0 ? "+" : ""}{fe.fundingApr.toFixed(1)}% APR
+                  </span>
+                </div>
+                <div style={{ fontSize: 9, color: esNegativo ? "#ff6b6b" : "#00e676", marginTop: 4, fontWeight: 700 }}>{interpretacion}</div>
+                <div style={{ fontSize: 8, color: "#5a8898", marginTop: 3, lineHeight: 1.5 }}>{porque}</div>
               </div>
-              <div style={{ fontSize: 8, color: "#5a8898", marginTop: 4 }}>{fe.bias}</div>
-            </div>
-          ))}
+            );
+          })}
           {fundingExtremes.length === 0 && !loading && (
             <div style={{ fontSize: 9, color: "#5a8898", gridColumn: "1 / -1", textAlign: "center", padding: 10 }}>Sin datos por ahora.</div>
           )}
