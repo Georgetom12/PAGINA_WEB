@@ -2544,12 +2544,12 @@ interface RadarCoin {
   changePct24h: number; dateAdded: string; tieneFuturos: boolean;
   contractAddress: string | null; chain: string | null; cmcSlug: string;
 }
-interface MaxPainEntry { symbol: string; price: number | null; }
+interface FundingExtreme { symbol: string; fundingRate: number; fundingApr: number; bias: string; }
 
 function ListingRadarTab() {
   const [coins, setCoins] = useState<RadarCoin[]>([]);
-  const [maxPain, setMaxPain] = useState<MaxPainEntry[]>([]);
-  const [cgUpgradeNeeded, setCgUpgradeNeeded] = useState(false);
+  const [fundingExtremes, setFundingExtremes] = useState<FundingExtreme[]>([]);
+  const [futuresCheckUpgradeNeeded, setFuturesCheckUpgradeNeeded] = useState(false);
   const [fetchedAt, setFetchedAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -2560,14 +2560,14 @@ function ListingRadarTab() {
       try {
         const r = await fetch("/api/oracle/listing-radar");
         const d = await r.json() as {
-          ok: boolean; newListings?: RadarCoin[]; maxPain?: MaxPainEntry[];
-          coinglassUpgradeNeeded?: boolean; fetchedAt?: string; error?: string;
+          ok: boolean; newListings?: RadarCoin[]; fundingExtremes?: FundingExtreme[];
+          futuresCheckUpgradeNeeded?: boolean; fetchedAt?: string; error?: string;
         };
         if (cancelled) return;
         if (!d.ok) { setError(d.error ?? "Error al cargar"); setLoading(false); return; }
         setCoins(d.newListings ?? []);
-        setMaxPain(d.maxPain ?? []);
-        setCgUpgradeNeeded(!!d.coinglassUpgradeNeeded);
+        setFundingExtremes(d.fundingExtremes ?? []);
+        setFuturesCheckUpgradeNeeded(!!d.futuresCheckUpgradeNeeded);
         setFetchedAt(d.fetchedAt ?? null);
       } catch { setError("Error de conexión"); }
       setLoading(false);
@@ -2598,25 +2598,33 @@ function ListingRadarTab() {
         )}
       </div>
 
-      {/* MAX PAIN */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 18 }}>
-        {maxPain.map(mp => (
-          <div key={mp.symbol} style={{ border: "1px solid rgba(224,64,251,0.2)", background: "rgba(224,64,251,0.04)", padding: 14 }}>
-            <div style={{ fontSize: 8, color: "#e040fb", letterSpacing: 1.5 }}>MAX PAIN — {mp.symbol} (opciones, semanal)</div>
-            <div style={{ fontSize: 20, color: "#fff", fontWeight: 700, marginTop: 4 }}>
-              {mp.price != null ? `$${mp.price.toLocaleString()}` : cgUpgradeNeeded ? "Requiere upgrade Coinglass" : "Sin datos"}
+      {/* FUNDING RATE EXTREMO — reemplaza a Max Pain (requería Coinglass de pago) */}
+      <div style={{ marginBottom: 18 }}>
+        <div style={{ fontSize: 9, color: "#e040fb", letterSpacing: 1.5, marginBottom: 8 }}>
+          🌡 FUNDING RATE EXTREMO — posiciones más "sobrecargadas" ahora (Binance Futures)
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          {fundingExtremes.slice(0, 6).map(fe => (
+            <div key={fe.symbol} style={{ border: "1px solid rgba(224,64,251,0.2)", background: "rgba(224,64,251,0.04)", padding: 12 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                <span style={{ fontSize: 13, color: "#fff", fontWeight: 700 }}>{fe.symbol}</span>
+                <span style={{ fontSize: 11, color: fe.fundingRate > 0 ? "#00e676" : "#ff1744" }}>
+                  {fe.fundingApr >= 0 ? "+" : ""}{fe.fundingApr.toFixed(1)}% APR
+                </span>
+              </div>
+              <div style={{ fontSize: 8, color: "#5a8898", marginTop: 4 }}>{fe.bias}</div>
             </div>
-            <div style={{ fontSize: 8, color: "#5a8898", marginTop: 4 }}>
-              Precio donde vencen las opciones causando más "dolor" a los tenedores — suele actuar como imán.
-            </div>
-          </div>
-        ))}
+          ))}
+          {fundingExtremes.length === 0 && !loading && (
+            <div style={{ fontSize: 9, color: "#5a8898", gridColumn: "1 / -1", textAlign: "center", padding: 10 }}>Sin datos por ahora.</div>
+          )}
+        </div>
       </div>
 
       {loading && <div style={{ textAlign: "center", padding: 30, color: "#5a8898", fontSize: 11 }}>Cargando radar...</div>}
       {error && <div style={{ padding: 14, border: "1px solid rgba(255,23,68,.3)", color: "#ff1744", fontSize: 11, marginBottom: 14 }}>{error}</div>}
 
-      {cgUpgradeNeeded && !loading && (
+      {futuresCheckUpgradeNeeded && !loading && (
         <div style={{ padding: 10, border: "1px solid rgba(255,214,0,.3)", background: "rgba(255,214,0,.05)", color: "#ffd600", fontSize: 9, marginBottom: 14 }}>
           ⚠ El cruce con Coinglass (¿ya tiene futuros?) requiere un plan superior — mostrando solo los datos de CoinMarketCap por ahora.
         </div>
