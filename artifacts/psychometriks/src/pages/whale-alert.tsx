@@ -1136,6 +1136,44 @@ interface SqueezeCandidate {
 }
 
 // ─── PSY SIGNALS TAB — PSY ALGO v2 ────────────────────────────────────────────
+function TelegramLinkBox() {
+  const auth = getAuth();
+  const [chatId, setChatId] = useState("");
+  const [msg, setMsg] = useState("");
+  const [linked, setLinked] = useState(() => localStorage.getItem("psy_tg_linked") === "1");
+
+  if (!isElite(auth) || linked) return null;
+
+  async function link() {
+    if (!chatId.trim() || !auth?.user) return;
+    setMsg("Vinculando...");
+    try {
+      const r = await fetch("/api/member/telegram-link", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: auth.user, chatId: chatId.trim() }),
+      });
+      const d = await r.json() as { ok: boolean; error?: string };
+      if (d.ok) { setMsg("✅ Vinculado — revisa tu Telegram, te llegaron los links de los 3 canales"); localStorage.setItem("psy_tg_linked", "1"); setLinked(true); }
+      else setMsg(`⚠ ${d.error}`);
+    } catch { setMsg("⚠ Error de conexión"); }
+  }
+
+  return (
+    <div className="border border-[#00e5ff30] bg-[#001520] p-4 mb-5">
+      <div className="font-bebas text-lg text-[#00e5ff] mb-1">📲 VINCULA TU TELEGRAM (Elite)</div>
+      <div className="font-space text-[10px] text-[#7ab3c8] mb-3">
+        Te unimos automáticamente a los 3 canales de señales (BTC/ETH, Altcoins, PRO). Si tu plan Elite termina, se te remueve solo — no hace falta que hagas nada.
+      </div>
+      <div className="flex gap-2 flex-wrap">
+        <input value={chatId} onChange={e=>setChatId(e.target.value)} placeholder="Tu chat_id de Telegram (pregúntale a @userinfobot)"
+          className="flex-1 min-w-[200px] bg-[#0a0f16] border border-[#00e5ff30] text-white font-space text-[11px] px-3 py-2 focus:outline-none" />
+        <button onClick={link} className="px-4 py-2 border border-[#00e5ff] text-[#00e5ff] font-space text-[10px] tracking-wide hover:bg-[#00e5ff15]">VINCULAR</button>
+      </div>
+      {msg && <div className="font-space text-[10px] text-[#ffd700] mt-2">{msg}</div>}
+    </div>
+  );
+}
+
 function PsySignalsTab() {
   const [signals, setSignals] = useState<AlgoSignal[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1158,6 +1196,7 @@ function PsySignalsTab() {
 
   return (
     <div>
+      <TelegramLinkBox />
       {/* Header stats */}
       <div className="grid grid-cols-4 gap-3 mb-5">
         {[
