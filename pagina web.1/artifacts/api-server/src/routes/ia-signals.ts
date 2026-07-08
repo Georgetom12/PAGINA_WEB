@@ -94,6 +94,9 @@ export interface AltcoinSignal {
   iaConfianza?: number;
   iaDictamen?: string;
   iaPatron?: string;
+  // PSY TRIPLE CONFIRM — cuántas de las 3 señales independientes coinciden
+  confirmaciones?: number;
+  detalles?: string[];
 }
 
 // ─── ASSETS (TOP 50) ──────────────────────────────────────────────────────────
@@ -629,10 +632,11 @@ async function genSignal(a: typeof ASSETS[number]): Promise<AltcoinSignal | null
 
 // ─── ROUTE ────────────────────────────────────────────────────────────────────
 router.get("/ia-signals", async (_req: Request, res: Response) => {
-  const cached = cGet<{ signals: AltcoinSignal[]; cachedAt: string }>("ia_signals_v1");
+  const cached = cGet<{ signals: AltcoinSignal[]; cachedAt: string }>("psy_triple_confirm_v1");
   if (cached) { res.json(cached); return; }
 
   try {
+    // Paso 1: señal técnica clásica para las 50 monedas (rápido, todo local)
     const candidatas: AltcoinSignal[] = [];
     const assets = [...ASSETS];
     for (let i = 0; i < assets.length; i += 8) {
@@ -641,33 +645,61 @@ router.get("/ia-signals", async (_req: Request, res: Response) => {
       results.forEach(r => { if (r.status === "fulfilled" && r.value) candidatas.push(r.value); });
     }
 
-    const confirmadas: AltcoinSignal[] = [];
-    for (let i = 0; i < candidatas.length; i += 4) {
-      const batch = candidatas.slice(i, i + 4);
-      const veredictos = await Promise.allSettled(batch.map(s => consultarIaTrading(s.symbol)));
+    // Paso 2: nos quedamos solo con los 10 candidatos MÁS FUERTES por score
+    // técnico — antes se consultaba el motor de IA para las 50 monedas, lo
+    // cual era lentísimo (y probablemente colgaba la respuesta). Con 10 nada
+    // más, el motor responde rápido y el usuario sí ve resultado.
+    const top10 = candidatas.sort((a, b) => b.score - a.score).slice(0, 10);
 
-      veredictos.forEach((v, idx) => {
-        if (v.status !== "fulfilled" || !v.value) return;
-        const ia = v.value;
-        const coincide =
-          (batch[idx].direction === "LONG" && ia.direccion === "ALCISTA") ||
-          (batch[idx].direction === "SHORT" && ia.direccion === "BAJISTA");
+    // Paso 3: cruce #2 — motor de IA Trading (multi-timeframe)
+    const veredictosIa = await Promise.all(top10.map(s => consultarIaTrading(s.symbol)));
 
-        if (coincide && ia.accion !== "EVITAR") {
-          confirmadas.push({
-            ...batch[idx],
-            iaConfianza: ia.confianza,
-            iaDictamen: ia.dictamen,
-            iaPatron: ia.patron,
-          });
-        }
-      });
-    }
+    // Paso 4: cruce #3 — funding rate (proxy interno ya probado: OKX+Gate.io+HL)
+    let fundingBySymbol = new Map<string, number>();
+    try {
+      const port = process.env["PORT"] ?? "8080";
+      const r = await fetch(`http://localhost:${port}/api/proxy/okx/funding-rates`, { signal: AbortSignal.timeout(8000) });
+      if (r.ok) {
+        const d = await r.json() as { data?: Array<{ base: string; rate: number }> };
+        for (const f of d.data ?? []) fundingBySymbol.set(f.base.toUpperCase(), f.rate);
+      }
+    } catch { /* si falla, ese cruce simplemente no suma puntos */ }
 
-    confirmadas.sort((a, b) => (b.iaConfianza ?? 0) - (a.iaConfianza ?? 0));
+    // Paso 5: arma cada señal con las 3 confirmaciones y cuántas coinciden
+    const enriquecidas = top10.map((s, i) => {
+      const ia = veredictosIa[i];
+      const baseSymbol = s.symbol.replace(/USDT$/i, "");
+      const fundingRate = fundingBySymbol.get(baseSymbol.toUpperCase());
 
-    const resp = { signals: confirmadas, cachedAt: new Date().toISOString() };
-    cSet("ia_signals_v1", resp, 10 * 60_000);
+      let confirmaciones = 1; // la técnica ya cuenta como confirmación #1
+      const detalles: string[] = [`Técnico (${s.strength}): ${s.direction}`];
+
+      if (ia) {
+        const iaDireccion = ia.direccion === "ALCISTA" ? "LONG" : ia.direccion === "BAJISTA" ? "SHORT" : "NEUTRAL";
+        const iaCoincide = iaDireccion === s.direction && ia.accion !== "EVITAR";
+        if (iaCoincide) { confirmaciones++; detalles.push(`IA Trading (${ia.confianza.toFixed(0)}%): ${ia.dictamen}`); }
+        else detalles.push(`IA Trading discrepa: ${ia.direccion}`);
+      } else {
+        detalles.push("IA Trading: sin respuesta");
+      }
+
+      if (fundingRate !== undefined) {
+        // Funding negativo + LONG = shorts sobrecargados, contexto favorable a LONG (y viceversa)
+        const fundingFavorece = (s.direction === "LONG" && fundingRate < 0) || (s.direction === "SHORT" && fundingRate > 0);
+        if (fundingFavorece) { confirmaciones++; detalles.push(`Funding rate (${(fundingRate*100).toFixed(4)}%) favorece la dirección`); }
+        else detalles.push(`Funding rate (${(fundingRate*100).toFixed(4)}%) no confirma`);
+      }
+
+      return { ...s, iaConfianza: ia?.confianza, iaDictamen: ia?.dictamen, iaPatron: ia?.patron, confirmaciones, detalles };
+    });
+
+    // Muestra TODO ordenado por nivel de confirmación — no exige unanimidad,
+    // así el usuario ve el panorama completo (2/3, 3/3, etc.) en vez de una
+    // lista vacía cuando el motor no coincide exacto.
+    const ordenadas = enriquecidas.sort((a, b) => b.confirmaciones - a.confirmaciones || b.score - a.score);
+
+    const resp = { signals: ordenadas, cachedAt: new Date().toISOString(), nombre: "PSY TRIPLE CONFIRM" };
+    cSet("psy_triple_confirm_v1", resp, 15 * 60_000);
     res.json(resp);
   } catch (err) {
     logger.error({ err }, "ia-signals error");
