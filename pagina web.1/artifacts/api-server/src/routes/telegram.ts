@@ -1,6 +1,7 @@
 import { Router, type Request, type Response } from "express";
 import { db, signals, channels, channelBots } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
+import { recordCopyTradeResponse } from "./copy-trade-notify";
 
 const router = Router();
 
@@ -208,6 +209,27 @@ router.post("/telegram/webhook", async (req: Request, res: Response) => {
   res.json({ ok: true });
   try {
     const update = req.body as TelegramUpdate;
+
+    // ── Botones Sí/No de PSY Copy Trade ────────────────────────────────────
+    if (update.callback_query?.data?.startsWith("ct_")) {
+      const cq = update.callback_query;
+      const chatId = String(cq.message?.chat.id ?? "");
+      const msgId = String(cq.message?.message_id ?? "");
+      const respuesta = cq.data === "ct_yes" ? "si" : "no";
+      if (chatId && msgId) await recordCopyTradeResponse(chatId, msgId, respuesta);
+
+      // Responder al callback (evita el "reloj cargando" en el botón) +
+      // avisarle al usuario que su respuesta quedó registrada
+      const token = process.env["TELEGRAM_BOT_TOKEN"] ?? "";
+      if (token) {
+        await fetch(`https://api.telegram.org/bot${token}/answerCallbackQuery`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ callback_query_id: cq.id, text: respuesta === "si" ? "✅ Registrado — la tomaste" : "Registrado — no la tomaste" }),
+        }).catch(() => {});
+      }
+      return;
+    }
+
     const msg    = update.channel_post ?? update.message;
     if (!msg?.text) return;
 
@@ -357,6 +379,11 @@ interface TelegramUpdate {
   update_id: number;
   channel_post?: TelegramMessage;
   message?: TelegramMessage;
+  callback_query?: {
+    id: string;
+    data?: string;
+    message?: { message_id: number; chat: { id: number } };
+  };
 }
 interface TelegramMessage {
   message_id: number;
