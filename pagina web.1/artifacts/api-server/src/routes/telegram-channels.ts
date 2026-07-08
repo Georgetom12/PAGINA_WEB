@@ -2,6 +2,7 @@ import { Router, type Request, type Response } from "express";
 import { pool, db, members } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { logger } from "../lib/logger";
+import { validateToken } from "../lib/psy-auth";
 
 const router = Router();
 
@@ -15,15 +16,37 @@ export const CHANNELS = {
 let schemaReady: Promise<void> | null = null;
 async function ensureSchema(): Promise<void> {
   if (!schemaReady) {
-    schemaReady = pool.query(`
-      CREATE TABLE IF NOT EXISTS member_telegram_links (
-        id SERIAL PRIMARY KEY,
-        member_id INTEGER NOT NULL,
-        chat_id TEXT NOT NULL,
-        created_at BIGINT NOT NULL,
-        UNIQUE(member_id)
-      );
-    `).then(() => undefined);
+    schemaReady = (async () => {
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS member_telegram_links (
+          id SERIAL PRIMARY KEY,
+          member_id INTEGER NOT NULL,
+          chat_id TEXT NOT NULL,
+          phone TEXT,
+          telegram_username TEXT,
+          created_at BIGINT NOT NULL,
+          UNIQUE(member_id)
+        );
+      `);
+      // Por si la tabla ya existía de antes (sin estas columnas)
+      await pool.query(`ALTER TABLE member_telegram_links ADD COLUMN IF NOT EXISTS phone TEXT;`);
+      await pool.query(`ALTER TABLE member_telegram_links ADD COLUMN IF NOT EXISTS telegram_username TEXT;`);
+
+      // Registro permanente de cada vez que se expulsa a alguien — para
+      // tener trazabilidad de qué número/usuario se baneó y cuándo.
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS telegram_ban_log (
+          id SERIAL PRIMARY KEY,
+          member_id INTEGER,
+          chat_id TEXT NOT NULL,
+          phone TEXT,
+          telegram_username TEXT,
+          channel_label TEXT,
+          motivo TEXT,
+          banned_at BIGINT NOT NULL
+        );
+      `);
+    })();
   }
   return schemaReady;
 }
@@ -65,11 +88,23 @@ export async function grantAllChannels(chatId: string): Promise<void> {
 }
 
 // ── Revoca acceso: expulsa (kick) de los 3 canales sin ban permanente,
-// para que pueda volver a entrar si reactiva Elite más adelante ───────────
-export async function revokeAllChannels(chatId: string): Promise<void> {
+// para que pueda volver a entrar si reactiva Elite más adelante — y deja
+// un registro permanente de qué número/usuario se expulsó y cuándo ────────
+export async function revokeAllChannels(
+  chatId: string,
+  info?: { memberId?: number; phone?: string | null; telegramUsername?: string | null; motivo?: string },
+): Promise<void> {
+  await ensureSchema();
   for (const ch of Object.values(CHANNELS)) {
     await tgCall("banChatMember", { chat_id: ch.id, user_id: chatId });
     await tgCall("unbanChatMember", { chat_id: ch.id, user_id: chatId, only_if_banned: true });
+    try {
+      await pool.query(
+        `INSERT INTO telegram_ban_log (member_id, chat_id, phone, telegram_username, channel_label, motivo, banned_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+        [info?.memberId ?? null, chatId, info?.phone ?? null, info?.telegramUsername ?? null, ch.label, info?.motivo ?? "Plan Elite finalizado", Date.now()],
+      );
+    } catch (err) { logger.error({ err }, "telegram_ban_log insert error"); }
   }
   await tgCall("sendMessage", {
     chat_id: chatId,
@@ -80,7 +115,9 @@ export async function revokeAllChannels(chatId: string): Promise<void> {
 // ── POST /api/member/telegram-link — el usuario registra su chat_id ────────
 router.post("/member/telegram-link", async (req: Request, res: Response) => {
   await ensureSchema();
-  const { username, chatId } = req.body as { username?: string; chatId?: string };
+  const { username, chatId, phone, telegramUsername } = req.body as {
+    username?: string; chatId?: string; phone?: string; telegramUsername?: string;
+  };
   if (!username?.trim() || !chatId?.trim()) { res.status(400).json({ ok: false, error: "username y chatId requeridos" }); return; }
 
   try {
@@ -88,10 +125,10 @@ router.post("/member/telegram-link", async (req: Request, res: Response) => {
     if (!m) { res.status(404).json({ ok: false, error: "Usuario no encontrado" }); return; }
 
     await pool.query(
-      `INSERT INTO member_telegram_links (member_id, chat_id, created_at)
-       VALUES ($1, $2, $3)
-       ON CONFLICT (member_id) DO UPDATE SET chat_id = $2`,
-      [m.id, chatId.trim(), Date.now()],
+      `INSERT INTO member_telegram_links (member_id, chat_id, phone, telegram_username, created_at)
+       VALUES ($1, $2, $3, $4, $5)
+       ON CONFLICT (member_id) DO UPDATE SET chat_id = $2, phone = COALESCE($3, member_telegram_links.phone), telegram_username = COALESCE($4, member_telegram_links.telegram_username)`,
+      [m.id, chatId.trim(), phone?.trim() ?? null, telegramUsername?.trim() ?? null, Date.now()],
     );
 
     // Si ya es Elite, le manda los links ahora mismo
@@ -108,13 +145,26 @@ router.post("/member/telegram-link", async (req: Request, res: Response) => {
 export async function syncChannelAccessForMember(memberId: number, isEliteNow: boolean): Promise<void> {
   await ensureSchema();
   try {
-    const r = await pool.query(`SELECT chat_id FROM member_telegram_links WHERE member_id = $1`, [memberId]);
-    const chatId = (r.rows[0] as { chat_id?: string } | undefined)?.chat_id;
-    if (!chatId) return; // el usuario nunca vinculó su Telegram, no hay nada que hacer
+    const r = await pool.query(`SELECT chat_id, phone, telegram_username FROM member_telegram_links WHERE member_id = $1`, [memberId]);
+    const row = r.rows[0] as { chat_id?: string; phone?: string; telegram_username?: string } | undefined;
+    if (!row?.chat_id) return; // el usuario nunca vinculó su Telegram, no hay nada que hacer
 
-    if (isEliteNow) await grantAllChannels(chatId);
-    else await revokeAllChannels(chatId);
+    if (isEliteNow) await grantAllChannels(row.chat_id);
+    else await revokeAllChannels(row.chat_id, { memberId, phone: row.phone, telegramUsername: row.telegram_username });
   } catch (err) { logger.error({ err, memberId }, "syncChannelAccessForMember error"); }
 }
+
+// ── GET /api/admin/telegram-ban-log — historial de expulsiones (solo admin) ─
+router.get("/admin/telegram-ban-log", async (req: Request, res: Response) => {
+  const auth = await validateToken(req.headers["x-psy-token"] as string | undefined);
+  if (auth.role !== "superadmin") { res.status(403).json({ ok: false, error: "Acceso denegado" }); return; }
+  await ensureSchema();
+  try {
+    const r = await pool.query(`SELECT * FROM telegram_ban_log ORDER BY banned_at DESC LIMIT 100`);
+    res.json({ ok: true, log: r.rows });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: String(err) });
+  }
+});
 
 export default router;
