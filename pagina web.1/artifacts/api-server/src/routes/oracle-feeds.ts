@@ -443,29 +443,34 @@ router.get("/oracle/listing-radar", async (_req, res) => {
       tieneFuturos: futuresSymbols.has(c.symbol.toUpperCase()),
     }));
 
-    // 3) Max Pain semanal BTC/ETH — endpoint real: /api/futures/liquidation/max-pain
-    // (nota: es "liquidation max pain" de futuros, no de opciones — devuelve
-    // varias monedas de una, filtramos BTC/ETH del resultado)
-    let maxPain: Array<{ symbol: string; price: number | null }> = [];
-    let maxPainUpgradeNeeded = false;
-    const mpData = await cgFetch("/api/futures/liquidation/max-pain?range=7d");
-    if (mpData && typeof mpData === "object" && "__error" in (mpData as object)) {
-      maxPainUpgradeNeeded = true;
-      maxPain = [{ symbol: "BTC", price: null }, { symbol: "ETH", price: null }];
-    } else {
-      const rows = (mpData as { data?: Array<Record<string, unknown>> })?.data ?? [];
-      for (const sym of ["BTC", "ETH"]) {
-        const row = rows.find(r => String(r["symbol"] ?? "").toUpperCase() === sym);
-        const price = row ? Number(row["maxPainPrice"] ?? row["price"] ?? row["max_pain_price"] ?? 0) || null : null;
-        maxPain.push({ symbol: sym, price });
+    // 3) FUNDING RATE EXTREMO — reemplaza a Max Pain (requería plan de pago
+    // de Coinglass). Usa Binance Futures (gratis, sin key): detecta qué
+    // monedas tienen el funding más desbalanceado — long/short "sobrecargado",
+    // el mismo concepto de contrarian-signal que Max Pain, pero gratis.
+    let fundingExtremes: Array<{ symbol: string; fundingRate: number; fundingApr: number; bias: string }> = [];
+    try {
+      const r = await fetch("https://fapi.binance.com/fapi/v1/premiumIndex", { signal: AbortSignal.timeout(10000) });
+      if (r.ok) {
+        const rows = await r.json() as Array<{ symbol: string; lastFundingRate: string }>;
+        const usdtPerp = rows.filter(x => x.symbol.endsWith("USDT"));
+        const withRate = usdtPerp.map(x => {
+          const fr = parseFloat(x.lastFundingRate);
+          return {
+            symbol: x.symbol.replace("USDT", ""),
+            fundingRate: fr,
+            fundingApr: fr * 3 * 365 * 100, // funding cada 8h → APR aprox
+            bias: fr > 0 ? "Longs pagando — posición sobrecargada" : fr < 0 ? "Shorts pagando — presión short squeeze" : "Balanceado",
+          };
+        });
+        fundingExtremes = withRate.sort((a, b) => Math.abs(b.fundingRate) - Math.abs(a.fundingRate)).slice(0, 8);
       }
-    }
+    } catch { /* deja fundingExtremes vacío */ }
 
     const payload = {
       ok: true,
       newListings: radar,
-      maxPain,
-      coinglassUpgradeNeeded: coinglassUpgradeNeeded || maxPainUpgradeNeeded,
+      fundingExtremes,
+      futuresCheckUpgradeNeeded: coinglassUpgradeNeeded,
       fetchedAt: new Date().toISOString(),
     };
     cache[cacheKey] = { data: payload, ts: Date.now() };
