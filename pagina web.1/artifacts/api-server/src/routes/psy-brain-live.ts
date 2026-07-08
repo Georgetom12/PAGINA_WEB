@@ -13,16 +13,16 @@ function cSet<T>(k: string, d: T, ms: number) {
 }
 
 // ── FMP ──────────────────────────────────────────────────────────────────
-// NOTA: /stable/quote devuelve 402 en el plan FMP gratuito (ya diagnosticado
-// antes). /api/v3/quote/{symbol} sí funciona en el plan free — es el mismo
-// endpoint que usa motor_psy/motor/macro_engine.py.
+// NOTA (8-jul-2026): /api/v3/quote daba 403 "Legacy Endpoint" — confirmado
+// en logs de Railway. FMP dejó /api/v3 solo para cuentas de antes de agosto
+// 2025. El endpoint vigente hoy es /stable/quote?symbol=... — ver
+// https://site.financialmodelingprep.com/developer/docs/stable/quote
 const FMP_BASE = "https://financialmodelingprep.com/stable";
-const FMP_V3   = "https://financialmodelingprep.com/api/v3";
 async function fmpQuote(symbol: string): Promise<{ price: number; changePct: number; marketCap: number | null } | null> {
   const key = process.env["FMP_API_KEY"];
   if (!key) return null;
   try {
-    const r = await fetch(`${FMP_V3}/quote/${encodeURIComponent(symbol)}?apikey=${key}`, {
+    const r = await fetch(`${FMP_BASE}/quote?symbol=${encodeURIComponent(symbol)}&apikey=${key}`, {
       signal: AbortSignal.timeout(8000),
     });
     if (!r.ok) {
@@ -30,10 +30,12 @@ async function fmpQuote(symbol: string): Promise<{ price: number; changePct: num
       console.warn(`[psy-brain-live] FMP quote ${symbol} HTTP ${r.status}: ${body.slice(0, 200)}`);
       return null;
     }
-    const d = await r.json() as Array<{ price?: number; changesPercentage?: number; marketCap?: number }>;
+    const d = await r.json() as Array<{ price?: number; changePercentage?: number; changesPercentage?: number; marketCap?: number }>;
     const q = Array.isArray(d) ? d[0] : null;
     if (!q || typeof q.price !== "number") return null;
-    return { price: q.price, changePct: q.changesPercentage ?? 0, marketCap: q.marketCap ?? null };
+    // Acepta ambos nombres de campo por si /stable cambia el nombre otra vez
+    const chg = q.changePercentage ?? q.changesPercentage ?? 0;
+    return { price: q.price, changePct: chg, marketCap: q.marketCap ?? null };
   } catch (e) {
     console.warn(`[psy-brain-live] FMP quote ${symbol} excepción:`, e);
     return null;
@@ -73,7 +75,7 @@ async function binanceTicker(sym: string): Promise<{ price: number; changePct: n
 // ── Mapeo de símbolos ────────────────────────────────────────────────────────
 const EQUITY_SYMS = ["AAPL", "NVDA", "MSFT", "AMZN", "GOOGL", "META", "TSLA", "JPM", "NFLX", "COST"];
 const INDEX_MAP: Record<string, string> = { SPX: "^GSPC", NDX: "^NDX", DJI: "^DJI", RUT: "^RUT", VIX: "^VIX" };
-const MACRO_MAP: Record<string, string> = { DXY: "DX-Y.NYB", XAU: "GCUSD", WTI: "CLUSD" };
+const MACRO_MAP: Record<string, string> = { DXY: "DXY", XAU: "GCUSD", WTI: "CLUSD" };
 const CRYPTO_SYMS = ["BTC", "ETH", "SOL", "BNB", "XRP"];
 
 // GET /api/psy-brain/live-data
