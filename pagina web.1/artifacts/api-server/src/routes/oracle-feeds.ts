@@ -22,16 +22,41 @@ async function rssToItems(url: string): Promise<{ title: string; link: string; p
   const res = await fetch(url, { signal: AbortSignal.timeout(8000), headers: { "User-Agent": "Mozilla/5.0 PSYCHOMETRIKS/2.0" } });
   if (!res.ok) throw new Error(`RSS ${res.status}`);
   const xml = await res.text();
-  const parsed = await parseStringPromise(xml, { explicitArray: false, ignoreAttrs: true });
+  const parsed = await parseStringPromise(xml, { explicitArray: false, ignoreAttrs: false });
   const channel = parsed?.rss?.channel ?? parsed?.feed ?? {};
   const rawItems: Record<string, unknown>[] = Array.isArray(channel.item) ? channel.item : channel.item ? [channel.item] : [];
   const sourceName = (typeof channel.title === "string" ? channel.title : (channel.title as { _ ?: string })?._  ?? url.split("/")[2]).replace(" - Cointelegraph","").replace(" — Decrypt","").split(" ").slice(0,3).join(" ");
+
+  // Extrae el link real, contemplando tanto RSS 2.0 (<link>texto</link>) como
+  // Atom (<link href="..."/> — un atributo, no texto). Con ignoreAttrs:false
+  // ya no se pierden los href.
+  function extractLink(it: Record<string, unknown>): string {
+    const raw = it["link"];
+    if (typeof raw === "string") return raw.trim();
+    if (raw && typeof raw === "object") {
+      const obj = raw as { _?: string; $?: { href?: string } };
+      if (obj._) return obj._.trim();
+      if (obj.$?.href) return obj.$.href.trim();
+    }
+    const guid = it["guid"];
+    if (typeof guid === "string") return guid.trim();
+    if (guid && typeof guid === "object") {
+      const g = guid as { _?: string };
+      if (g._) return g._.trim();
+    }
+    return "";
+  }
+
   return rawItems.slice(0, 12).map(it => ({
     title: (typeof it.title === "string" ? it.title : (it.title as { _?: string })?._ ?? "").replace(/<!\[CDATA\[|\]\]>/g,"").trim(),
-    link:  (typeof it.link === "string" ? it.link : (it.link as { _?: string })?._ ?? (it as Record<string,string>).guid ?? "").trim(),
+    link: extractLink(it),
     pubDate: (typeof it.pubDate === "string" ? it.pubDate : (it.pubDate as string) ?? (it as Record<string,string>).updated ?? "").trim(),
     source: sourceName,
-  })).filter(i => i.title && i.link);
+  }))
+    // Solo noticias con un link que sea de verdad una URL absoluta (http/https)
+    // — antes, si el guid no era una URL, el click mandaba a una ruta interna
+    // inexistente ("Did you forget to add the page to the router?").
+    .filter(i => i.title && /^https?:\/\//i.test(i.link));
 }
 
 // ── Railway proxies ──────────────────────────────────────────────────────────
@@ -443,25 +468,21 @@ router.get("/oracle/listing-radar", async (_req, res) => {
       tieneFuturos: futuresSymbols.has(c.symbol.toUpperCase()),
     }));
 
-    // 3) FUNDING RATE EXTREMO — reemplaza a Max Pain (requería plan de pago
-    // de Coinglass). Usa Binance Futures (gratis, sin key): detecta qué
-    // monedas tienen el funding más desbalanceado — long/short "sobrecargado",
-    // el mismo concepto de contrarian-signal que Max Pain, pero gratis.
+    // 3) FUNDING RATE EXTREMO — usa el proxy interno ya probado (OKX + Gate.io
+    // + Hyperliquid) en vez de llamar a Binance directo, que Railway a veces
+    // no puede alcanzar (algunos exchanges bloquean IPs de proveedores cloud).
     let fundingExtremes: Array<{ symbol: string; fundingRate: number; fundingApr: number; bias: string }> = [];
     try {
-      const r = await fetch("https://fapi.binance.com/fapi/v1/premiumIndex", { signal: AbortSignal.timeout(10000) });
+      const port = process.env["PORT"] ?? "8080";
+      const r = await fetch(`http://localhost:${port}/api/proxy/okx/funding-rates`, { signal: AbortSignal.timeout(10000) });
       if (r.ok) {
-        const rows = await r.json() as Array<{ symbol: string; lastFundingRate: string }>;
-        const usdtPerp = rows.filter(x => x.symbol.endsWith("USDT"));
-        const withRate = usdtPerp.map(x => {
-          const fr = parseFloat(x.lastFundingRate);
-          return {
-            symbol: x.symbol.replace("USDT", ""),
-            fundingRate: fr,
-            fundingApr: fr * 3 * 365 * 100, // funding cada 8h → APR aprox
-            bias: fr > 0 ? "Longs pagando — posición sobrecargada" : fr < 0 ? "Shorts pagando — presión short squeeze" : "Balanceado",
-          };
-        });
+        const d = await r.json() as { data?: Array<{ base: string; rate: number }> };
+        const withRate = (d.data ?? []).map(x => ({
+          symbol: x.base,
+          fundingRate: x.rate,
+          fundingApr: x.rate * 3 * 365 * 100,
+          bias: x.rate > 0 ? "Longs pagando — posición sobrecargada" : x.rate < 0 ? "Shorts pagando — presión short squeeze" : "Balanceado",
+        }));
         fundingExtremes = withRate.sort((a, b) => Math.abs(b.fundingRate) - Math.abs(a.fundingRate)).slice(0, 8);
       }
     } catch { /* deja fundingExtremes vacío */ }
