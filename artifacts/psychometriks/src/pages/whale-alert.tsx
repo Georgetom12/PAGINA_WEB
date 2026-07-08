@@ -817,6 +817,62 @@ function CopyTradingTab() {
   const [lastUpdate, setLastUpdate] = useState<Date|null>(null);
   const [historyId, setHistoryId] = useState<string|null>(null);
 
+  // ── Piloto Copy Trade (solo admin) ─────────────────────────────────────
+  const auth = getAuth();
+  const isSuperadmin = auth?.role === "superadmin";
+  const [pilotChatId, setPilotChatId] = useState("");
+  const [pilotMsg, setPilotMsg] = useState("");
+  const [pilotSubs, setPilotSubs] = useState<Array<{ chat_id: string; label: string|null; active: boolean }>>([]);
+  const [pilotNotifs, setPilotNotifs] = useState<Array<{ chat_id: string; coin: string; direction: string; response: string; sent_at: number }>>([]);
+
+  function getToken(): string {
+    try {
+      const raw = localStorage.getItem("psyko_auth");
+      if (!raw) return "";
+      const s = JSON.parse(raw) as { token?: string };
+      return s.token ?? "";
+    } catch { return ""; }
+  }
+
+  const loadPilotData = useCallback(async () => {
+    if (!isSuperadmin) return;
+    try {
+      const r = await fetch("/api/copy-trade/subscribers", { headers: { "x-psy-token": getToken() } });
+      const d = await r.json() as { ok: boolean; subscribers?: typeof pilotSubs; recentNotifications?: typeof pilotNotifs };
+      if (d.ok) { setPilotSubs(d.subscribers ?? []); setPilotNotifs(d.recentNotifications ?? []); }
+    } catch { /* silencioso */ }
+  }, [isSuperadmin]);
+
+  useEffect(() => { loadPilotData(); }, [loadPilotData]);
+
+  async function pilotSubscribe() {
+    if (!pilotChatId.trim()) return;
+    setPilotMsg("Suscribiendo...");
+    try {
+      const r = await fetch("/api/copy-trade/subscribe", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chatId: pilotChatId.trim(), label: "admin-piloto" }),
+      });
+      const d = await r.json() as { ok: boolean; error?: string };
+      setPilotMsg(d.ok ? "✅ Suscripto — revisa tu Telegram" : `⚠ ${d.error}`);
+      loadPilotData();
+    } catch { setPilotMsg("⚠ Error de conexión"); }
+  }
+
+  async function pilotTestSend() {
+    if (!pilotChatId.trim()) return;
+    setPilotMsg("Enviando prueba...");
+    try {
+      const r = await fetch("/api/copy-trade/test-send", {
+        method: "POST", headers: { "Content-Type": "application/json", "x-psy-token": getToken() },
+        body: JSON.stringify({ chatId: pilotChatId.trim() }),
+      });
+      const d = await r.json() as { ok: boolean; error?: string };
+      setPilotMsg(d.ok ? "✅ Prueba enviada — revisa tu Telegram" : `⚠ ${d.error}`);
+      loadPilotData();
+    } catch { setPilotMsg("⚠ Error de conexión"); }
+  }
+
   const load = async () => {
     const [hlResult, cgResult] = await Promise.allSettled([
       fetch("/api/whale-intel/traders").then(r=>r.json()) as Promise<{ok:boolean;traders:WhaleTrader[];sources?:Record<string,number>}>,
@@ -864,6 +920,42 @@ function CopyTradingTab() {
   return (
     <div>
       {historyId && <HistoryModal traderId={historyId} onClose={()=>setHistoryId(null)} />}
+
+      {isSuperadmin && (
+        <div style={{ border: "2px dashed #ffd70050", background: "#1a1400", padding: 16, marginBottom: 18 }}>
+          <div className="font-bebas text-xl text-[#ffd700] mb-1">🔒 PSY COPY TRADE — PILOTO (solo admin)</div>
+          <div className="font-space text-[10px] text-[#b0bec5] leading-relaxed mb-3">
+            Notifica por Telegram cuando aparece una señal fuerte de ballena/trader — el usuario decide si la toma o no (Sí/No), nunca se ejecuta nada automático. Todavía solo vos lo ves y lo pruebas.
+          </div>
+          <div className="flex gap-2 mb-2 flex-wrap">
+            <input value={pilotChatId} onChange={e=>setPilotChatId(e.target.value)}
+              placeholder="Tu chat_id de Telegram"
+              className="flex-1 min-w-[180px] bg-[#0a0f16] border border-[#ffd70030] text-white font-space text-[11px] px-3 py-2 focus:outline-none" />
+            <button onClick={pilotSubscribe} className="px-4 py-2 border border-[#00e676] text-[#00e676] font-space text-[10px] tracking-wide hover:bg-[#00e67615]">SUSCRIBIRME</button>
+            <button onClick={pilotTestSend} className="px-4 py-2 border border-[#00e5ff] text-[#00e5ff] font-space text-[10px] tracking-wide hover:bg-[#00e5ff15]">ENVIAR PRUEBA</button>
+          </div>
+          {pilotMsg && <div className="font-space text-[10px] text-[#ffd700] mb-3">{pilotMsg}</div>}
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <div className="font-sharetech text-[9px] text-[#7ab3c8] mb-1">SUSCRIPTORES ({pilotSubs.filter(s=>s.active).length} activos)</div>
+              {pilotSubs.map(s => (
+                <div key={s.chat_id} className="font-space text-[9px] text-[#8a9ab0]">
+                  {s.active ? "🟢" : "⚪"} {s.chat_id} {s.label ? `(${s.label})` : ""}
+                </div>
+              ))}
+            </div>
+            <div>
+              <div className="font-sharetech text-[9px] text-[#7ab3c8] mb-1">ÚLTIMAS NOTIFICACIONES</div>
+              {pilotNotifs.slice(0, 8).map((n, i) => (
+                <div key={i} className="font-space text-[9px] text-[#8a9ab0]">
+                  {n.coin} {n.direction} — {n.response === "pendiente" ? "⏳ sin responder" : n.response === "si" ? "✅ sí" : "❌ no"}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       <SystemWinRateBanner traders={traders} />
 
