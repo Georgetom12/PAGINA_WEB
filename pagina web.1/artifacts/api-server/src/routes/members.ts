@@ -113,7 +113,18 @@ router.post("/auth/member-login", async (req: Request, res: Response) => {
 
 // ── GET /api/admin/members ───────────────────────────────────────────────────
 router.get("/admin/members", async (req: Request, res: Response) => {
-  const auth = await validateToken(req.headers["x-psy-token"] as string | undefined);
+  const rawToken = req.headers["x-psy-token"] as string | undefined;
+  const auth = await validateToken(rawToken);
+  console.log("[DEBUG members GET]", {
+    tokenPresent: !!rawToken,
+    tokenPreview: rawToken ? rawToken.slice(0, 20) + "..." : null,
+    tokenLength: rawToken?.length,
+    authRole: auth.role,
+    authPlan: auth.plan,
+    authUsername: auth.username,
+    sessionSecretSet: !!process.env["SESSION_SECRET"],
+    sessionSecretLength: process.env["SESSION_SECRET"]?.length,
+  });
   if (auth.role !== "superadmin") { res.status(403).json({ error: "Acceso denegado" }); return; }
   try {
     const rows = await db.select({
@@ -130,7 +141,18 @@ router.get("/admin/members", async (req: Request, res: Response) => {
 
 // ── POST /api/admin/members ──────────────────────────────────────────────────
 router.post("/admin/members", async (req: Request, res: Response) => {
-  const auth = await validateToken(req.headers["x-psy-token"] as string | undefined);
+  const rawToken = req.headers["x-psy-token"] as string | undefined;
+  const auth = await validateToken(rawToken);
+  console.log("[DEBUG members POST]", {
+    tokenPresent: !!rawToken,
+    tokenPreview: rawToken ? rawToken.slice(0, 20) + "..." : null,
+    tokenLength: rawToken?.length,
+    authRole: auth.role,
+    authPlan: auth.plan,
+    authUsername: auth.username,
+    sessionSecretSet: !!process.env["SESSION_SECRET"],
+    sessionSecretLength: process.env["SESSION_SECRET"]?.length,
+  });
   if (auth.role !== "superadmin") { res.status(403).json({ error: "Acceso denegado" }); return; }
 
   const { username, password, displayName, email, plan, expiresAt, notes } = req.body as {
