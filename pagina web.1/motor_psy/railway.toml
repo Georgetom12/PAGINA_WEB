@@ -1,0 +1,13 @@
+# Config del servicio motor_psy dentro del monorepo PAGINA_WEB.
+# En Railway: crear/editar el servicio "motor_psy" y setear
+# Root Directory = "pagina web.1/motor_psy"
+# Railway toma este railway.toml automáticamente al detectar esa carpeta.
+
+[build]
+builder = "NIXPACKS"
+buildCommand = "pip install -r requirements.txt"
+
+[deploy]
+startCommand = "python run.py"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
