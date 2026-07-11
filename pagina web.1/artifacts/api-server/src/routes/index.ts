@@ -45,6 +45,7 @@ import altcoinSignalsRouter from "./altcoin-signals";
 import whitelistRouter from "./whitelist";
 import iaTradingProxyRouter from "./ia-trading-proxy";
 import iaSignalsRouter from "./ia-signals";
+import superadminAuthRouter from "./superadmin-auth"; // montar ANTES de freeAuthRouter: mismo path /auth/superadmin-login, esta versión trae TOTP
 
 const router: IRouter = Router();
 
@@ -74,6 +75,7 @@ router.use(telegramChannelsRouter);
 router.use(botXRouter);
 router.use(exchangeRouter);
 router.use(intelligenceRouter);
+router.use(superadminAuthRouter);
 router.use(freeAuthRouter);
 router.use(supportChatRouter);
 router.use(apiKeysRouter);
