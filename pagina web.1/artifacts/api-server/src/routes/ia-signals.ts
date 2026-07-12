@@ -20,6 +20,14 @@ interface IaVerdict {
   accion: "ENTRAR" | "ESPERAR" | "EVITAR";
   dictamen: string;
   patron: string;
+  // Cruce EMA (nuevo en el motor: 20/50 swing, 3/9 scalping)
+  emaCross?: string;
+  emaRapida?: number;
+  emaLenta?: number;
+  // Memoria/aprendizaje (nuevo en el motor)
+  memAccuracy?: number;
+  memTotal?: number;
+  memNotas?: string[];
 }
 
 async function consultarIaTrading(symbol: string): Promise<IaVerdict | null> {
@@ -36,7 +44,11 @@ async function consultarIaTrading(symbol: string): Promise<IaVerdict | null> {
     if (!r.ok) return null;
     const data = await r.json() as {
       dictamen?: { direccion: string; confianza: number; accion: string; dictamen: string };
-      nucleo?: { fractal_pro_patron?: string; fractal_tipo?: string };
+      nucleo?: {
+        fractal_pro_patron?: string; fractal_tipo?: string;
+        ema_cross?: string; ema_periodo_rapida?: number; ema_periodo_lenta?: number;
+      };
+      memoria?: { stats?: { accuracy?: number; total?: number }; notas?: string[] };
     };
     if (!data.dictamen) return null;
     return {
@@ -47,6 +59,12 @@ async function consultarIaTrading(symbol: string): Promise<IaVerdict | null> {
       patron: data.nucleo?.fractal_pro_patron !== "NINGUNO"
         ? (data.nucleo?.fractal_pro_patron ?? "")
         : (data.nucleo?.fractal_tipo ?? ""),
+      emaCross: data.nucleo?.ema_cross,
+      emaRapida: data.nucleo?.ema_periodo_rapida,
+      emaLenta: data.nucleo?.ema_periodo_lenta,
+      memAccuracy: data.memoria?.stats?.accuracy,
+      memTotal: data.memoria?.stats?.total,
+      memNotas: data.memoria?.notas,
     };
   } catch (err) {
     logger.warn({ err, symbol }, "consultarIaTrading failed");
@@ -785,6 +803,24 @@ router.get("/ia-signals", async (_req: Request, res: Response) => {
         const iaCoincide = iaDireccion === s.direction && ia.accion !== "EVITAR";
         if (iaCoincide) { confirmaciones++; detalles.push(`IA Trading (${ia.confianza.toFixed(0)}%): ${ia.dictamen}`); }
         else detalles.push(`IA Trading discrepa: ${ia.direccion}`);
+
+        // Cruce EMA del motor (20/50 swing) — informativo, no suma confirmación
+        // propia (el motor ya lo integra como bono de confianza internamente)
+        if (ia.emaCross && ia.emaCross !== "NINGUNO") {
+          const cruceTxt = ia.emaCross.includes("CRUCE") ? "cruce reciente" : "alineada";
+          const dirTxt = ia.emaCross.includes("ALCISTA") ? "alcista" : "bajista";
+          detalles.push(`EMA${ia.emaRapida ?? 20}/${ia.emaLenta ?? 50}: ${cruceTxt} ${dirTxt}`);
+        }
+
+        // Accuracy histórica del motor para este símbolo (si ya acumuló
+        // suficientes señales cerradas)
+        if (ia.memTotal && ia.memTotal >= 3) {
+          detalles.push(`Histórico motor: ${(ia.memAccuracy ?? 0).toFixed(0)}% accuracy en ${ia.memTotal} señales`);
+        }
+        // Notas de ajuste por aprendizaje (ej. "TPs ampliados por historial")
+        for (const nota of (ia.memNotas ?? []).slice(0, 1)) {
+          if (nota.includes("TP") || nota.includes("Confirmación")) detalles.push(nota);
+        }
       } else {
         detalles.push("IA Trading: sin respuesta");
       }
