@@ -36,6 +36,7 @@ class NucleoResult:
     symbol:    str = ""
     timeframe: str = ""
     price:     float = 0.0
+    volumen_rel: float = 1.0  # volumen de la vela actual vs su media 20 — >1.5 = "volumen alto"
 
     # ── Pivotes ──────────────────────────────────────────
     pivotes_high: list = field(default_factory=list)  # [(precio, idx)]
@@ -52,11 +53,15 @@ class NucleoResult:
     fib_origen:  float = 0.0
     fib_destino: float = 0.0
     fib_618:     float = 0.0  # zona óptima de entrada
+    fib_50:      float = 0.0  # retroceso 50%
+    fib_886:     float = 0.0  # retroceso 88.6%
     fib_382:     float = 0.0
     fib_236:     float = 0.0
     fib_786:     float = 0.0
     fib_e127:    float = 0.0  # extensión 127.2%
     fib_e161:    float = 0.0  # extensión 161.8%
+    fib_e200:    float = 0.0  # extensión 200%
+    fib_e261:    float = 0.0  # extensión 261.8%
     en_zona_618: bool  = False
 
     # ── Canal de regresión ────────────────────────────────
@@ -118,6 +123,14 @@ class NucleoResult:
     zona_optima_long:  float = 0.0
     zona_optima_short: float = 0.0
     zona_score:        float = 0.0
+
+    # ── EMA 3/9 (cruce rápido, útil para scalping) ────────
+    ema_rapida_val: float = 0.0
+    ema_lenta_val:  float = 0.0
+    ema_cross:   str   = "NINGUNO"  # CRUCE_ALCISTA|CRUCE_BAJISTA|ALCISTA|BAJISTA|NINGUNO
+    ema_dist_pct: float = 0.0       # % de distancia entre EMA rápida y lenta
+    ema_periodo_rapida: int = 9
+    ema_periodo_lenta:  int = 21
 
     # ── Score de agotamiento ──────────────────────────────
     agotamiento_score: float = 0.0  # 0-100
@@ -354,6 +367,8 @@ def calc_fib_fractal(origen: float, destino: float) -> dict:
         # Extensiones (más allá del destino)
         e127 = destino + rng * 0.272
         e161 = destino + rng * 0.618
+        e200 = destino + rng * 1.000
+        e261 = destino + rng * 1.618
     else:
         # Retrocesos
         f236 = destino + rng * 0.236
@@ -365,6 +380,8 @@ def calc_fib_fractal(origen: float, destino: float) -> dict:
         # Extensiones
         e127 = destino - rng * 0.272
         e161 = destino - rng * 0.618
+        e200 = destino - rng * 1.000
+        e261 = destino - rng * 1.618
 
     return {
         "origen":   round(origen, 8),
@@ -379,6 +396,8 @@ def calc_fib_fractal(origen: float, destino: float) -> dict:
         "f886":     round(f886, 8),
         "e127":     round(e127, 8),
         "e161":     round(e161, 8),
+        "e200":     round(e200, 8),
+        "e261":     round(e261, 8),
     }
 
 
@@ -439,6 +458,42 @@ def calc_vwap(df: pd.DataFrame) -> float:
 # ══════════════════════════════════════════════════════════
 # BOLLINGER BANDS
 # ══════════════════════════════════════════════════════════
+def calc_ema_cross(df: pd.DataFrame, rapida: int = 3, lenta: int = 9) -> dict:
+    """
+    Cruce EMA rápida (3) / EMA lenta (9) — clásico para scalping.
+    Detecta cruce en las últimas 3 velas, no solo la posición actual.
+    """
+    close = df["close"]
+    e_rap = close.ewm(span=rapida, adjust=False).mean()
+    e_len = close.ewm(span=lenta,  adjust=False).mean()
+
+    v_rap, v_len = float(e_rap.iloc[-1]), float(e_len.iloc[-1])
+    dist_pct = (v_rap - v_len) / v_len * 100 if v_len else 0.0
+
+    # ¿Hubo cruce reciente (últimas 3 velas)?
+    cruzo_arriba = False
+    cruzo_abajo  = False
+    for i in range(max(1, len(df) - 3), len(df)):
+        prev_diff = e_rap.iloc[i-1] - e_len.iloc[i-1]
+        curr_diff = e_rap.iloc[i]   - e_len.iloc[i]
+        if prev_diff <= 0 < curr_diff: cruzo_arriba = True
+        if prev_diff >= 0 > curr_diff: cruzo_abajo  = True
+
+    if cruzo_arriba:
+        estado = "CRUCE_ALCISTA"
+    elif cruzo_abajo:
+        estado = "CRUCE_BAJISTA"
+    elif v_rap > v_len:
+        estado = "ALCISTA"
+    elif v_rap < v_len:
+        estado = "BAJISTA"
+    else:
+        estado = "NINGUNO"
+
+    return {"ema3": round(v_rap, 8), "ema9": round(v_len, 8),
+            "estado": estado, "dist_pct": round(dist_pct, 3)}
+
+
 def calc_bb(df: pd.DataFrame, n: int = 20, std: float = 2.0) -> dict:
     sma   = df["close"].rolling(n).mean()
     sigma = df["close"].rolling(n).std()
@@ -574,6 +629,7 @@ def psy_depth_fibonacci(df: pd.DataFrame,
     mf_50  = micro_high - micro_range * 0.500 if micro_range > 0 else 0
     mf_618 = micro_high - micro_range * 0.618 if micro_range > 0 else 0
     mf_786 = micro_high - micro_range * 0.786 if micro_range > 0 else 0
+    mf_886 = micro_high - micro_range * 0.886 if micro_range > 0 else 0
 
     # ── VALIDACIÓN DE RANGO (portado de la versión Pine) ───
     # Pine tenía: fib_range_valid = (fib_range/close) < cap_por_timeframe.
@@ -726,6 +782,7 @@ def psy_depth_fibonacci(df: pd.DataFrame,
         "mf_50":  round(mf_50,  8),
         "mf_618": round(mf_618, 8),
         "mf_786": round(mf_786, 8),
+        "mf_886": round(mf_886, 8),
         # Zona optima
         "optimal_low":  round(optimal_low,  8),
         "optimal_high": round(optimal_high, 8),
@@ -900,6 +957,16 @@ def analizar_nucleo(symbol: str, ohlcv_map: dict, modo: str = "swing") -> Nucleo
     nr.price = float(df_base["close"].iloc[-1])
     precio   = nr.price
 
+    # ── Volumen relativo de la vela actual (para aprendizaje: TPs
+    # más agresivos cuando entra con volumen alto, más conservadores
+    # cuando no) ────────────────────────────────────────────
+    try:
+        vol_ma20 = df_base["volume"].rolling(20, min_periods=5).mean().iloc[-1]
+        nr.volumen_rel = float(df_base["volume"].iloc[-1]) / max(float(vol_ma20), 1e-10) \
+                          if vol_ma20 and vol_ma20 > 0 else 1.0
+    except Exception:
+        nr.volumen_rel = 1.0
+
     # ── 1. Pivotes matemáticos ────────────────────────────
     nr.pivotes_high, nr.pivotes_low = calc_pivotes(df_base, n=5)
 
@@ -912,6 +979,8 @@ def analizar_nucleo(symbol: str, ohlcv_map: dict, modo: str = "swing") -> Nucleo
                 nr.fib_618 = psy.get("p_618", 0)
                 nr.fib_786 = psy.get("p_786", 0)
                 nr.fib_382 = psy.get("p_382", 0)
+                nr.fib_50  = psy.get("p_50", 0)
+                nr.fib_886 = psy.get("p_886", 0)
             else:
                 # Rango macro inválido (ATH/low muy lejanos) -> estos niveles
                 # alimentan calc_zonas_confluencia() y de ahí los TPs de
@@ -921,8 +990,12 @@ def analizar_nucleo(symbol: str, ohlcv_map: dict, modo: str = "swing") -> Nucleo
                 nr.fib_618 = psy.get("mf_618", 0)
                 nr.fib_786 = psy.get("mf_786", 0)
                 nr.fib_382 = psy.get("mf_382", 0)
+                nr.fib_50  = psy.get("mf_50", 0)
+                nr.fib_886 = psy.get("mf_886", 0)
             nr.fib_e127    = psy.get("p_e127", 0)
             nr.fib_e161    = psy.get("p_e161", 0)
+            nr.fib_e200    = psy.get("p_e200", 0)
+            nr.fib_e261    = psy.get("p_e261", 0)
             nr.fractal_neckline = psy.get("optimal_low", 0)
             nr.__dict__["psy_depth"]   = psy
             nr.__dict__["cs_382"]      = psy.get("cs_382", 0)
@@ -981,8 +1054,12 @@ def analizar_nucleo(symbol: str, ohlcv_map: dict, modo: str = "swing") -> Nucleo
         nr.fib_618  = fib.get("f618", 0)
         nr.fib_786  = fib.get("f786", 0)
         nr.fib_382  = fib.get("f382", 0)
+        nr.fib_50   = fib.get("f50", 0)
+        nr.fib_886  = fib.get("f886", 0)
         nr.fib_e127 = fib.get("e127", 0)
         nr.fib_e161 = fib.get("e161", 0)
+        nr.fib_e200 = fib.get("e200", 0)
+        nr.fib_e261 = fib.get("e261", 0)
         nr.en_zona_618 = abs(precio - nr.fib_618) / max(precio, 1e-10) < 0.03
 
     # ── 3. Canal de regresión ─────────────────────────────
@@ -1083,6 +1160,17 @@ def analizar_nucleo(symbol: str, ohlcv_map: dict, modo: str = "swing") -> Nucleo
     nr.bb_lower   = bb["lower"]
     nr.bb_squeeze = bb["squeeze"]
     nr.precio_bb  = bb["pos"]
+
+    # ── 9b. EMA cruce rápido — 3/9 en scalping, 20/50 en swing ──
+    # (20/50 es el par clásico para 4H-1D-1SEM; 3/9 es el clásico de scalping)
+    ema_rapida, ema_lenta = (3, 9) if modo == "scalping" else (20, 50)
+    ema_c = calc_ema_cross(df_base, rapida=ema_rapida, lenta=ema_lenta)
+    nr.ema_rapida_val = ema_c["ema3"]
+    nr.ema_lenta_val  = ema_c["ema9"]
+    nr.ema_cross    = ema_c["estado"]
+    nr.ema_dist_pct = ema_c["dist_pct"]
+    nr.ema_periodo_rapida = ema_rapida
+    nr.ema_periodo_lenta  = ema_lenta
 
     # ── 10. Zonas de confluencia ──────────────────────────
     nr.zonas_clave = calc_zonas_confluencia(nr, precio)

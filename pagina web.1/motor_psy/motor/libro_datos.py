@@ -649,6 +649,31 @@ async def fetch_noticias_macro() -> list:
 _top_cache = []
 _top_cache_ts = 0
 
+async def fetch_precios_actuales(symbols: list) -> dict:
+    """
+    Precios actuales en batch para una lista de símbolos — un solo request
+    al endpoint de tickers de OKX (trae TODOS los pares en una llamada).
+    Usado por el loop de verificación de resultados (motor.memoria).
+    """
+    symbols_set = set(symbols)
+    precios = {}
+    try:
+        url = "https://www.okx.com/api/v5/market/tickers"
+        params = {"instType": "SPOT"}
+        async with aiohttp.ClientSession() as s:
+            async with s.get(url, params=params,
+                             timeout=aiohttp.ClientTimeout(total=15)) as r:
+                if r.status == 200:
+                    data = await r.json()
+                    for d in data.get("data", []):
+                        sym = d["instId"].replace("-USDT", "USDT")
+                        if sym in symbols_set:
+                            precios[sym] = float(d.get("last", 0) or 0)
+    except Exception as e:
+        log.warning(f"fetch_precios_actuales: {e}")
+    return precios
+
+
 async def fetch_top_symbols(limit: int = 200) -> list:
     """
     Top símbolos crypto por market cap + noticias.

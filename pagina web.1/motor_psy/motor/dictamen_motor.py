@@ -140,6 +140,9 @@ def generar_dictamen(nr: NucleoResult,
         score_bull += 15 * div_conf
         razones.append(f"📊 Divergencia alcista (conf {getattr(nr,'div_confianza',0):.0f}%) "
                         f"— {getattr(nr,'div_desc','')}")
+    # Nota: el cruce EMA (3/9 scalping, 20/50 swing) NO vota la dirección
+    # aquí — se aplica más abajo como bono de confianza SOLO si confirma
+    # la dirección ya decidida por fractal+divergencia+macro (ver más abajo).
 
     # Canal de regresión
     if nr.precio_en_canal == "SUPERIOR":
@@ -217,10 +220,22 @@ def generar_dictamen(nr: NucleoResult,
     # ════════════════════════════════════════════════════
     total = score_bull + score_bear
     if total > 0:
-        pct_bull = score_bull / total * 100
-        pct_bear = score_bear / total * 100
+        pct_bull_raw = score_bull / total * 100
+        pct_bear_raw = score_bear / total * 100
     else:
-        pct_bull = pct_bear = 50
+        pct_bull_raw = pct_bear_raw = 50
+
+    # ── Calibración por evidencia total ───────────────────
+    # OJO: sin esto, un solo indicador DÉBIL (ej. fractal con 20% de
+    # confianza) sin ninguna oposición del otro lado da 100% de "confianza"
+    # (4/4 = 100%), aunque la evidencia real sea mínima. Se atenúa el
+    # resultado hacia 50% (neutral) cuando el total de puntos acumulados
+    # es bajo, y solo se deja el valor completo cuando hay consenso real
+    # de varios factores (macro+micro+fractal+divergencia, etc).
+    FULL_CONSENSO = 60.0  # total de score a partir del cual no se atenúa más
+    certeza = min(1.0, total / FULL_CONSENSO)
+    pct_bull = 50 + (pct_bull_raw - 50) * certeza
+    pct_bear = 50 + (pct_bear_raw - 50) * certeza
 
     dm.score_total = round(max(score_bull, score_bear), 1)
 
@@ -238,6 +253,25 @@ def generar_dictamen(nr: NucleoResult,
     else:
         dm.direccion = "NEUTRAL"
         dm.confianza = round(max(pct_bull, pct_bear), 1)
+
+    # ── Bono de confirmación EMA (3/9 scalping, 20/50 swing) ──
+    # NO decide la dirección — solo suma confianza si el cruce EMA
+    # coincide con lo que ya determinaron fractal+divergencia+macro.
+    # Si el cruce viene en contra, no se usa (ni resta ni contradice).
+    if dm.direccion == "ALCISTA" and nr.ema_cross in ("CRUCE_ALCISTA", "ALCISTA"):
+        bono = 8 if nr.ema_cross == "CRUCE_ALCISTA" else 4
+        dm.confianza = round(min(100, dm.confianza + bono), 1)
+        razones.append(
+            f"✅ Confirmación EMA{nr.ema_periodo_rapida}/{nr.ema_periodo_lenta}: "
+            f"{'cruce reciente' if nr.ema_cross=='CRUCE_ALCISTA' else 'alineada'} a favor (+{bono}%)"
+        )
+    elif dm.direccion == "BAJISTA" and nr.ema_cross in ("CRUCE_BAJISTA", "BAJISTA"):
+        bono = 8 if nr.ema_cross == "CRUCE_BAJISTA" else 4
+        dm.confianza = round(min(100, dm.confianza + bono), 1)
+        razones.append(
+            f"✅ Confirmación EMA{nr.ema_periodo_rapida}/{nr.ema_periodo_lenta}: "
+            f"{'cruce reciente' if nr.ema_cross=='CRUCE_BAJISTA' else 'alineada'} a favor (+{bono}%)"
+        )
 
     # ════════════════════════════════════════════════════
     # PASO 3: Calcular zonas y TPs
@@ -273,6 +307,12 @@ def generar_dictamen(nr: NucleoResult,
         # -78%/+78%, aunque algún nivel de la lista venga distorsionado
         zonas_arriba = [(p,d,s) for p,d,s in nr.zonas_clave
                         if precio * 1.01 < p < precio * 1.20]
+        # OJO: nr.zonas_clave viene ordenada por SCORE de confluencia, no
+        # por distancia — sin esto, TP2 podía quedar más lejos que TP3
+        # (ej. TP2 +15.1%, TP3 +11.4%) solo porque esa zona tenía mejor
+        # score, aunque estuviera más lejos. Se reordena por distancia para
+        # que TP1 < TP2 < TP3 siempre, como se espera visualmente.
+        zonas_arriba.sort(key=lambda z: z[0])
         if len(zonas_arriba) >= 1: dm.tp1_corto = round(zonas_arriba[0][0], 8)
         if len(zonas_arriba) >= 2: dm.tp2_corto = round(zonas_arriba[1][0], 8)
         if len(zonas_arriba) >= 3: dm.tp3_corto = round(zonas_arriba[2][0], 8)
@@ -312,6 +352,10 @@ def generar_dictamen(nr: NucleoResult,
 
         zonas_abajo = [(p,d,s) for p,d,s in nr.zonas_clave
                        if precio * 0.80 < p < precio * 0.99]
+        # Mismo fix que arriba: reordenar por distancia (aquí descendente
+        # en precio = ascendente en distancia hacia abajo) para que
+        # TP1 sea el más cercano y TP3 el más lejano, no según el score.
+        zonas_abajo.sort(key=lambda z: -z[0])
         if len(zonas_abajo) >= 1: dm.tp1_corto = round(zonas_abajo[0][0], 8)
         if len(zonas_abajo) >= 2: dm.tp2_corto = round(zonas_abajo[1][0], 8)
         if len(zonas_abajo) >= 3: dm.tp3_corto = round(zonas_abajo[2][0], 8)
@@ -327,9 +371,14 @@ def generar_dictamen(nr: NucleoResult,
         dm.sl_razon = "Arriba de zona óptima +3%"
 
     else:
-        dm.zona_entrada = precio
+        # NEUTRAL: no hay una zona de entrada real que ofrecer (por eso la
+        # acción siempre es EVITAR/ESPERAR aquí abajo). Se deja en 0 en vez
+        # de = precio, para que la UI lo muestre como "─" (sin dato) de
+        # forma consistente con cómo se tratan los TPs sin calcular, en vez
+        # de mostrar el engañoso "entrada = SL = precio actual".
+        dm.zona_entrada = 0
         dm.zona_razon   = "Mercado lateral — sin dirección clara"
-        dm.sl           = precio
+        dm.sl           = 0
 
     # ════════════════════════════════════════════════════
     # PASO 4: Acción recomendada

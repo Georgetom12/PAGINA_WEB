@@ -9,10 +9,11 @@ import os
 import hashlib
 from datetime import datetime, timezone
 from aiohttp import web
-from motor.libro_datos import init_db, actualizar_libro, fetch_top_symbols
+from motor.libro_datos import init_db, actualizar_libro, fetch_top_symbols, fetch_precios_actuales
 from motor.macro_engine import get_macro_context, aplicar_macro_al_dictamen
 from motor.memoria import (init_memoria, guardar_senal, get_contexto_memoria,
-                            verificar_resultados, aprender, get_historial, get_leaderboard)
+                            verificar_resultados, aprender, get_historial, get_leaderboard,
+                            get_pending_symbols)
 from motor.nucleo import analizar_nucleo
 from motor.dictamen_motor import generar_dictamen, DictamenMotor
 from motor.unified_motor import analizar_completo
@@ -26,6 +27,8 @@ SECRET_KEY     = os.environ.get("SECRET_KEY", "psy_motor_2026")
 PORT           = int(os.environ.get("PORT", 8080))
 # Secreto compartido con el api-server (Node) en Railway para llamadas
 # servidor-a-servidor via header X-Internal-Secret (sin cookie de sesión).
+# Usado por ia-signals.ts/altcoin-signals.ts (consultarIaTrading()) para
+# pedir el dictamen de este motor sin pasar por /login.
 IA_TRADING_INTERNAL_SECRET = os.environ.get("IA_TRADING_INTERNAL_SECRET", "")
 
 # Cache de an!lisis
@@ -33,8 +36,8 @@ _cache: dict = {}
 _cache_ts: dict = {}
 
 def _check_auth(request) -> bool:
-    # Camino 1: llamada servidor-a-servidor desde el api-server (Node) en Railway,
-    # usando el header X-Internal-Secret (sin cookie, no pasa por /login).
+    # Camino 1: llamada servidor-a-servidor desde el api-server (Node) en
+    # Railway, usando el header X-Internal-Secret (sin cookie, no pasa por /login).
     if IA_TRADING_INTERNAL_SECRET:
         internal = request.headers.get("X-Internal-Secret", "")
         if internal and internal == IA_TRADING_INTERNAL_SECRET:
@@ -246,6 +249,22 @@ nav { background:var(--bg2); border-bottom:1px solid var(--cyan)22;
     <button class="btn btn-gray" onclick="limpiar()">✕</button>
   </div>
 
+  <!-- AUTO-REFRESH -->
+  <div class="auto-refresh-bar" style="display:flex;align-items:center;gap:8px;margin:8px 0 4px;font-size:0.78em;">
+    <span style="color:var(--gray);">🔄 Auto-actualizar:</span>
+    <button class="btn-refresh" data-min="0"    onclick="setAutoRefresh(0)">OFF</button>
+    <button class="btn-refresh" data-min="60"   onclick="setAutoRefresh(60)">1H</button>
+    <button class="btn-refresh" data-min="240"  onclick="setAutoRefresh(240)">4H</button>
+    <span id="autoRefreshStatus" style="color:var(--cyan);"></span>
+  </div>
+  <style>
+    .btn-refresh {
+      background: var(--bg2, #1a1a2e); color: var(--gray); border: 1px solid #333;
+      border-radius: 6px; padding: 3px 10px; font-size: 0.9em; cursor: pointer;
+    }
+    .btn-refresh.active { background: var(--cyan); color: #000; font-weight: bold; border-color: var(--cyan); }
+  </style>
+
   <!-- QUICK SYMBOLS -->
   <div class="quick" id="quickChips">
     <div class="chip" onclick="setSymbol('BTCUSDT')">BTC</div>
@@ -354,6 +373,58 @@ async function cargarTopSymbols() {
 
 window.addEventListener('load', cargarTopSymbols);
 
+// ── AUTO-REFRESH ─────────────────────────────────────────
+// Vuelve a analizar el símbolo actual cada X minutos, para no
+// tener que hacerlo a mano y sin saturar las APIs de datos
+// (por defecto apagado; 1H o 4H recomendado, no menos).
+let autoRefreshTimer = null;
+let autoRefreshCountdownTimer = null;
+let autoRefreshMin = 0;
+let autoRefreshNextAt = 0;
+
+function setAutoRefresh(minutos) {
+  autoRefreshMin = minutos;
+  localStorage.setItem('psy_auto_refresh_min', String(minutos));
+
+  document.querySelectorAll('.btn-refresh').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.min) === minutos);
+  });
+
+  if (autoRefreshTimer)           clearInterval(autoRefreshTimer);
+  if (autoRefreshCountdownTimer)  clearInterval(autoRefreshCountdownTimer);
+
+  const statusEl = document.getElementById('autoRefreshStatus');
+
+  if (minutos <= 0) {
+    statusEl.textContent = '';
+    return;
+  }
+
+  autoRefreshNextAt = Date.now() + minutos * 60 * 1000;
+
+  autoRefreshTimer = setInterval(() => {
+    if (currentSymbol) {
+      console.log(`🔄 Auto-refresh (${minutos}min): re-analizando ${currentSymbol}`);
+      analizar();
+    }
+    autoRefreshNextAt = Date.now() + minutos * 60 * 1000;
+  }, minutos * 60 * 1000);
+
+  autoRefreshCountdownTimer = setInterval(() => {
+    if (!currentSymbol) { statusEl.textContent = '(elige un símbolo primero)'; return; }
+    const restanteMs = Math.max(0, autoRefreshNextAt - Date.now());
+    const m = Math.floor(restanteMs / 60000);
+    const s = Math.floor((restanteMs % 60000) / 1000);
+    statusEl.textContent = `próxima en ${m}m ${s.toString().padStart(2,'0')}s`;
+  }, 1000);
+}
+
+// Restaurar la preferencia guardada al cargar la página
+window.addEventListener('load', () => {
+  const guardado = parseInt(localStorage.getItem('psy_auto_refresh_min') || '0');
+  setAutoRefresh(guardado);
+});
+
 async function analizar() {
   const symbol = document.getElementById('symbolInput').value.trim().toUpperCase();
   if (!symbol) return;
@@ -461,11 +532,11 @@ function renderResultado(d) {
         <div style="color:var(--gray);font-size:0.7em;letter-spacing:2px;margin-bottom:6px;">⚡ CORTO PLAZO (1H-4H)</div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px;">
           ${[['TP1',dm.tp1_corto],['TP2',dm.tp2_corto],['TP3',dm.tp3_corto]].map(([tp,val]) => {
-            const pct = dm.zona_entrada>0 ? ((val-dm.zona_entrada)/dm.zona_entrada*100) : 0;
+            const pct = (val && dm.zona_entrada>0) ? ((val-dm.zona_entrada)/dm.zona_entrada*100) : null;
             return `<div style="background:var(--green)11;border:1px solid var(--green)33;border-radius:6px;padding:8px;text-align:center;">
               <div style="color:var(--gray);font-size:0.7em;">${tp}</div>
               <div style="color:var(--green);font-weight:bold;font-size:0.82em;">${fmt(val)}</div>
-              <div style="color:var(--green);font-size:0.7em;">${pct>=0?'+':''}${pct.toFixed(1)}%</div>
+              <div style="color:var(--green);font-size:0.7em;">${pct!==null ? (pct>=0?'+':'')+pct.toFixed(1)+'%' : '─'}</div>
             </div>`;
           }).join('')}
         </div>
@@ -473,11 +544,11 @@ function renderResultado(d) {
         <div style="color:var(--gray);font-size:0.7em;letter-spacing:2px;margin-bottom:6px;">🌙 LARGO PLAZO (1D-1W)</div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:12px;">
           ${[['TP1',dm.tp1_macro],['TP2',dm.tp2_macro],['TP3',dm.tp3_macro]].map(([tp,val]) => {
-            const pct = dm.zona_entrada>0 ? ((val-dm.zona_entrada)/dm.zona_entrada*100) : 0;
+            const pct = (val && dm.zona_entrada>0) ? ((val-dm.zona_entrada)/dm.zona_entrada*100) : null;
             return `<div style="background:var(--purple)11;border:1px solid var(--purple)33;border-radius:6px;padding:8px;text-align:center;">
               <div style="color:var(--gray);font-size:0.7em;">${tp}</div>
               <div style="color:var(--purple);font-weight:bold;font-size:0.82em;">${fmt(val)}</div>
-              <div style="color:var(--purple);font-size:0.7em;">${pct>=0?'+':''}${pct.toFixed(1)}%</div>
+              <div style="color:var(--purple);font-size:0.7em;">${pct!==null ? (pct>=0?'+':'')+pct.toFixed(1)+'%' : '─'}</div>
             </div>`;
           }).join('')}
         </div>
@@ -565,7 +636,8 @@ function renderResultado(d) {
       <!-- MEMORIA -->
       <div class="card" style="margin-bottom:20px;">
         <div class="card-title">🧠 MEMORIA + APRENDIZAJE</div>
-        ${renderMemoria(d.memoria || {})}
+        ${renderMemoria(d.memoria || {}, (d.memoria?.stats?.total || d.memoria_scalping?.stats?.total) ? 'SWING' : null)}
+        ${d.memoria_scalping?.stats?.total || d.memoria_scalping?.recientes?.length ? `<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border,#333);">${renderMemoria(d.memoria_scalping, 'SCALPING')}</div>` : ''}
       </div>
 
       <!-- CONTEXTO -->
@@ -703,16 +775,18 @@ function renderResultado(d) {
   </div>`;
 }
 
-function renderMemoria(m) {
+function renderMemoria(m, label) {
   if (!m || (!m.stats?.total && !m.recientes?.length)) {
-    return '<div class="empty">Sin historial aun — se acumula con cada analisis</div>';
+    return label ? '' : '<div class="empty">Sin historial aun — se acumula con cada analisis</div>';
   }
 
   const s = m.stats || {};
   const accColor = (s.accuracy||0) >= 60 ? 'var(--green)' :
                    (s.accuracy||0) >= 40 ? 'var(--gold)' : 'var(--red)';
+  const labelColor = label === 'SCALPING' ? 'var(--orange)' : 'var(--cyan)';
 
   return `
+    ${label ? `<div style="display:inline-block;padding:2px 8px;background:${labelColor}22;border:1px solid ${labelColor}55;border-radius:4px;color:${labelColor};font-size:0.7em;font-weight:bold;letter-spacing:1px;margin-bottom:8px;">${label}</div>` : ''}
     ${s.total ? `
     <div class="info-grid" style="margin-bottom:12px;">
       <div class="info-item">
@@ -736,17 +810,22 @@ function renderMemoria(m) {
     ${(m.notas||[]).map(n => `<div class="ctx-item">${n}</div>`).join('')}
 
     ${m.recientes?.length ? `
-    <div style="color:var(--gray);font-size:0.75em;letter-spacing:1px;margin:10px 0 6px;">SEÑALES RECIENTES</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin:10px 0 6px;">
+      <span style="color:var(--gray);font-size:0.75em;letter-spacing:1px;">SEÑALES RECIENTES</span>
+      <span style="color:var(--gray);font-size:0.65em;">✅=TP1 TP2 TP3</span>
+    </div>
     ${m.recientes.slice(0,5).map(r => {
       const col = r.resultado === 'TP3' ? 'var(--green)' :
                   r.resultado === 'TP2' ? 'var(--green)' :
                   r.resultado === 'TP1' ? 'var(--cyan)' :
                   r.resultado === 'SL'  ? 'var(--red)' : 'var(--gray)';
+      const chk = (hit) => hit ? '✅' : '⬜';
       return `<div class="tp-row">
         <span style="color:${r.dir==='ALCISTA'?'var(--green)':'var(--red)'};font-size:0.8em;">${r.dir==='ALCISTA'?'▲':'▼'}</span>
         <span style="color:${col};font-size:0.8em;font-weight:bold;">${r.resultado||'PEND'}</span>
         <span style="color:${(r.ganancia||0)>0?'var(--green)':'var(--red)'};font-size:0.8em;">${(r.ganancia||0)>0?'+':''}${(r.ganancia||0).toFixed(2)}%</span>
         <span style="color:var(--gray);font-size:0.75em;">hace ${r.hace_h}h</span>
+        <span style="font-size:0.75em;letter-spacing:1px;" title="TP1 / TP2 / TP3">${chk(r.tp1_hit)}${chk(r.tp2_hit)}${chk(r.tp3_hit)}</span>
       </div>`;
     }).join('')}` : ''}
   `;
@@ -1081,27 +1160,10 @@ async def handle_analizar(request):
             nr_scalp = None
             dm_scalp = None
 
-        # Contexto de memoria
-        try:
-            mem_ctx = get_contexto_memoria(
-                symbol=symbol,
-                cs_618=nr.__dict__.get("cs_618", 0),
-                patron=nr.fractal_tipo,
-                macro_sesgo=macro_ctx.get("sesgo","NEUTRAL") if macro_ctx else "NEUTRAL",
-                bear_score=nr.__dict__.get("bear_score", 50),
-            )
-            # Aplicar ajuste de memoria a la confianza
-            if mem_ctx.get("ajuste_confianza"):
-                dm.confianza = max(0, min(100,
-                    dm.confianza + mem_ctx["ajuste_confianza"]))
-            # Agregar notas de memoria al contexto
-            for nota in mem_ctx.get("notas", []):
-                dm.contexto.append(nota)
-        except Exception as _me:
-            log.debug(f"Memoria: {_me}")
-            mem_ctx = {}
-
-        # Aplicar contexto macro
+        # Aplicar contexto macro (va PRIMERO: el bloque de memoria necesita
+        # macro_ctx.sesgo ya calculado — antes estaba al revés y macro_ctx
+        # no existía todavía, lo que hacía que ese ajuste fallara siempre
+        # en silencio dentro del except)
         try:
             mc = await get_macro_context()
             aplicar_macro_al_dictamen(dm, mc)
@@ -1125,6 +1187,97 @@ async def handle_analizar(request):
         except Exception as _me:
             log.warning(f"Macro error: {_me}")
             macro_ctx = {}
+
+        # Contexto de memoria
+        def _aplicar_memoria(dm_obj, nr_obj, modo_actual):
+            """Aplica ajuste de confianza + TP aprendido, propio de symbol+modo."""
+            vol_rel_actual = nr_obj.__dict__.get("volumen_rel", 1.0)
+            mem_ctx = get_contexto_memoria(
+                symbol=symbol,
+                cs_618=nr_obj.__dict__.get("cs_618", 0),
+                patron=nr_obj.fractal_tipo,
+                macro_sesgo=macro_ctx.get("sesgo","NEUTRAL") if macro_ctx else "NEUTRAL",
+                bear_score=nr_obj.__dict__.get("bear_score", 50),
+                volumen_alto=vol_rel_actual > 1.5,
+                modo=modo_actual,
+            )
+            if mem_ctx.get("ajuste_confianza"):
+                dm_obj.confianza = max(0, min(100,
+                    dm_obj.confianza + mem_ctx["ajuste_confianza"]))
+
+            # Aplicar el multiplicador de TP aprendido.
+            #
+            # TP CORTO (1H-4H / 5M-1H en scalping): viene de zonas de
+            # confluencia (neckline+POC+BB+VWAP mezclados, no una escalera
+            # Fibonacci pura) -> se sigue escalando proporcionalmente,
+            # re-clipeado a 20% de seguridad.
+            #
+            # TP MACRO (solo aplica en modo swing: 1D-1SEM): TP1=Ext 127.2%,
+            # TP2=Ext 161.8%, TP3=objetivo del patrón -> aquí "ampliar/reducir"
+            # significa saltar al SIGUIENTE nivel real de Fibonacci
+            # (127.2% -> 161.8% -> 200% -> 261.8%), no un % arbitrario.
+            tp_mult = mem_ctx.get("tp_mult", 1.0)
+            precio_actual_nr = nr_obj.price
+
+            if tp_mult != 1.0 and dm_obj.direccion in ("ALCISTA", "BAJISTA") and precio_actual_nr > 0:
+                signo = 1 if dm_obj.direccion == "ALCISTA" else -1
+
+                def _ajustar_proporcional(nivel, cap_pct):
+                    if not nivel:
+                        return nivel
+                    dist_pct = (nivel - precio_actual_nr) / precio_actual_nr
+                    dist_ajustada = dist_pct * tp_mult
+                    if signo > 0:
+                        dist_ajustada = max(0.001, min(dist_ajustada, cap_pct))
+                    else:
+                        dist_ajustada = min(-0.001, max(dist_ajustada, -cap_pct))
+                    return round(precio_actual_nr * (1 + dist_ajustada), 8)
+
+                dm_obj.tp1_corto = _ajustar_proporcional(dm_obj.tp1_corto, 0.20)
+                dm_obj.tp2_corto = _ajustar_proporcional(dm_obj.tp2_corto, 0.20)
+                dm_obj.tp3_corto = _ajustar_proporcional(dm_obj.tp3_corto, 0.20)
+
+                if modo_actual == "swing":
+                    # TP macro: saltar de nivel Fibonacci real. shift redondeado
+                    # a "rungs" de 0.15 (mismo paso que usa aprender()),
+                    # acotado a [-1, +2]
+                    shift = max(-1, min(2, round((tp_mult - 1.0) / 0.15)))
+
+                    if shift != 0:
+                        escalera = [nr_obj.fib_618, nr_obj.fib_e127, nr_obj.fib_e161,
+                                    nr_obj.fib_e200, nr_obj.fib_e261]
+                        escalera = [n for n in escalera if n and
+                                    ((n > precio_actual_nr) if signo > 0 else (n < precio_actual_nr))]
+                        escalera.sort(reverse=(signo < 0))
+
+                        if len(escalera) >= 3:
+                            def _rung(idx_base):
+                                idx = max(0, min(len(escalera) - 1, idx_base + shift))
+                                return round(escalera[idx], 8)
+
+                            dm_obj.tp1_macro = _rung(1)
+                            dm_obj.tp2_macro = _rung(2)
+                            if shift > 0 or not (nr_obj.fractal_objetivo and
+                                                  ((nr_obj.fractal_objetivo > precio_actual_nr) if signo > 0
+                                                   else (nr_obj.fractal_objetivo < precio_actual_nr))):
+                                dm_obj.tp3_macro = _rung(3)
+                            dm_obj.contexto.append(
+                                f"🎯 TPs macro {'ampliados' if shift > 0 else 'reducidos'} "
+                                f"un nivel Fibonacci por historial ({tp_mult:.2f}x)"
+                            )
+
+            for nota in mem_ctx.get("notas", []):
+                dm_obj.contexto.append(nota)
+            return mem_ctx
+
+        mem_ctx_scalp = {}
+        try:
+            mem_ctx = _aplicar_memoria(dm, nr, "swing")
+            if dm_scalp is not None and nr_scalp is not None:
+                mem_ctx_scalp = _aplicar_memoria(dm_scalp, nr_scalp, "scalping")
+        except Exception as _me:
+            log.debug(f"Memoria: {_me}")
+            mem_ctx = {}
 
         # Serializar resultado
         result = {
@@ -1176,6 +1329,9 @@ async def handle_analizar(request):
                 "fractal_confianza": nr_scalp.fractal_confianza,
                 "div_tipo":    nr_scalp.div_tipo,
                 "div_confianza": getattr(nr_scalp, "div_confianza", 0),
+                "ema_cross":   nr_scalp.ema_cross,
+                "ema_periodo_rapida": nr_scalp.ema_periodo_rapida,
+                "ema_periodo_lenta":  nr_scalp.ema_periodo_lenta,
             } if (dm_scalp is not None and nr_scalp is not None) else None),
             "macro": macro_ctx,
             "nucleo": {
@@ -1200,6 +1356,12 @@ async def handle_analizar(request):
                 "div_ema_confirma":       getattr(nr, "div_ema_confirma", False),
                 "div_vela_confirma":      getattr(nr, "div_vela_confirma", False),
                 "canal_tipo":             nr.canal_tipo,
+                "ema_rapida_val":         nr.ema_rapida_val,
+                "ema_lenta_val":          nr.ema_lenta_val,
+                "ema_periodo_rapida":     nr.ema_periodo_rapida,
+                "ema_periodo_lenta":      nr.ema_periodo_lenta,
+                "ema_cross":              nr.ema_cross,
+                "ema_dist_pct":           nr.ema_dist_pct,
                 "en_techo":               nr.en_techo,
                 "en_suelo":               nr.en_suelo,
                 "fib_618":           nr.fib_618,
@@ -1250,14 +1412,24 @@ async def handle_analizar(request):
             }
         }
 
-        # Guardar señal en memoria
+        # Guardar señal en memoria — swing Y scalping, cada uno con su modo
         try:
             guardar_senal(symbol, dm, nr,
-                macro_sesgo=macro_ctx.get("sesgo","NEUTRAL") if macro_ctx else "NEUTRAL")
+                macro_sesgo=macro_ctx.get("sesgo","NEUTRAL") if macro_ctx else "NEUTRAL",
+                modo="swing")
         except Exception as _me:
-            log.debug(f"guardar_senal: {_me}")
+            log.debug(f"guardar_senal swing: {_me}")
+
+        if dm_scalp is not None and nr_scalp is not None:
+            try:
+                guardar_senal(symbol, dm_scalp, nr_scalp,
+                    macro_sesgo=macro_ctx.get("sesgo","NEUTRAL") if macro_ctx else "NEUTRAL",
+                    modo="scalping")
+            except Exception as _me:
+                log.debug(f"guardar_senal scalping: {_me}")
 
         result["memoria"] = mem_ctx
+        result["memoria_scalping"] = mem_ctx_scalp
         _cache[symbol]    = result
         _cache_ts[symbol] = now
 
@@ -1298,6 +1470,64 @@ async def handle_health(request):
 
 
 # ════════════════════════════════════════════════════════
+# LOOP DE ESTADÍSTICA/PROBABILIDAD (antes existía el código
+# pero nunca se llamaba — verificar_resultados() y aprender()
+# estaban importadas y nunca se ejecutaban)
+# ════════════════════════════════════════════════════════
+async def loop_estadisticas(interval_min: int = 20):
+    log.info(f"🎲 Loop de estadística/probabilidad activo — cada {interval_min}min")
+    while True:
+        try:
+            await asyncio.sleep(interval_min * 60)
+            pendientes = get_pending_symbols()
+            if not pendientes:
+                log.info("🎲 Stats: sin señales pendientes por verificar")
+                continue
+            precios = await fetch_precios_actuales(pendientes)
+            verificar_resultados(precios)
+            aprender()
+            log.info(f"🎲 Stats actualizadas — {len(pendientes)} símbolos revisados, "
+                     f"{len(precios)} precios obtenidos")
+        except Exception as e:
+            log.warning(f"loop_estadisticas error: {e}")
+
+
+# ════════════════════════════════════════════════════════
+# BACKTEST DE ARRANQUE — siembra la memoria con señales históricas
+# simuladas para no arrancar el aprendizaje en cero (ver
+# motor/backtest_seed.py para las limitaciones honestas de esto).
+# ════════════════════════════════════════════════════════
+async def loop_backtest_arranque(max_symbols: int = 25):
+    from motor.backtest_seed import backtest_symbol
+    try:
+        log.info(f"🌱 Backtest de arranque: sembrando hasta {max_symbols} símbolos...")
+        top = await fetch_top_symbols(limit=max_symbols)
+        symbols = top[:max_symbols] if top else []
+
+        total = 0
+        for symbol in symbols:
+            try:
+                libro = await actualizar_libro(symbol, ["5m","15m","30m","1h","4h","1d","1w"])
+                ohlcv = libro.get("ohlcv", {})
+                if not ohlcv:
+                    continue
+                total += backtest_symbol(symbol, ohlcv, modo="swing")
+                total += backtest_symbol(symbol, ohlcv, modo="scalping")
+                await asyncio.sleep(1)  # no saturar los exchanges
+            except Exception as e:
+                log.warning(f"Backtest {symbol}: {e}")
+
+        log.info(f"🌱 Backtest de arranque completo — {total} señales sembradas "
+                 f"en {len(symbols)} símbolos")
+
+        # Con datos sembrados, corre aprender() una vez de una vez para
+        # que los pesos ya estén listos desde el primer análisis real
+        aprender()
+    except Exception as e:
+        log.warning(f"loop_backtest_arranque error: {e}")
+
+
+# ════════════════════════════════════════════════════════
 # MAIN
 # ════════════════════════════════════════════════════════
 async def main():
@@ -1319,8 +1549,10 @@ async def main():
     site = web.TCPSite(runner, "0.0.0.0", PORT)
     await site.start()
     log.info(f"🌐 PSY MOTOR corriendo en puerto {PORT}")
+    asyncio.create_task(loop_estadisticas())
+    asyncio.create_task(loop_backtest_arranque())
     await asyncio.Event().wait()
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(main()) 
