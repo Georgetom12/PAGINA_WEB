@@ -56,7 +56,7 @@ async function ensureTables(db: pg.Pool) {
 
 function getPool() {
   if (!pool) {
-    const url = process.env.DATABASE_PUBLIC_URL ?? process.env.BUFFETT_DATABASE_URL;
+    const url = process.env.DATABASE_PUBLIC_URL ?? process.env.BUFFETT_DATABASE_URL ?? process.env.DATABASE_URL;
     if (!url) return null;
     pool = new Pool({ connectionString: url, ssl: { rejectUnauthorized: false } });
     ensureTables(pool).catch(() => { tablesReady = false; });
@@ -112,21 +112,27 @@ async function fmp(ep: string, p: Record<string,string> = {}): Promise<Record<st
   const q = new URLSearchParams({ apikey: key, ...p });
   try {
     const r = await fetch(`${FMP_BASE}/${ep}?${q}`, { signal: AbortSignal.timeout(12000) });
-    if (!r.ok) return null;
+    if (!r.ok) {
+      console.error(`FMP error [${ep}] symbol=${p.symbol ?? "?"} status=${r.status} ${await r.text().catch(() => "")}`);
+      return null;
+    }
     const d = await r.json() as unknown;
     if (Array.isArray(d)) return (d[0] as Record<string,unknown>) ?? null;
     return d as Record<string,unknown> ?? null;
-  } catch { return null; }
+  } catch (e) { console.error(`FMP fetch error [${ep}] symbol=${p.symbol ?? "?"}:`, e); return null; }
 }
 async function fmpList(ep: string, p: Record<string,string> = {}): Promise<Record<string,unknown>[]> {
   const key = process.env.FMP_API_KEY; if (!key) return [];
   const q = new URLSearchParams({ apikey: key, ...p });
   try {
     const r = await fetch(`${FMP_BASE}/${ep}?${q}`, { signal: AbortSignal.timeout(15000) });
-    if (!r.ok) return [];
+    if (!r.ok) {
+      console.error(`FMP error [${ep}] symbol=${p.symbol ?? "?"} status=${r.status} ${await r.text().catch(() => "")}`);
+      return [];
+    }
     const d = await r.json();
     return Array.isArray(d) ? d : [];
-  } catch { return []; }
+  } catch (e) { console.error(`FMP fetch error [${ep}] symbol=${p.symbol ?? "?"}:`, e); return []; }
 }
 const _f = (d: Record<string,unknown> | null, k: string): number => {
   if (!d) return 0;
@@ -690,8 +696,14 @@ router.get("/buffett/results", async (req: Request, res: Response) => {
 // ── Lógica del scan, reusable desde el endpoint manual y el auto-scheduler ──
 async function runScanCycle(): Promise<void> {
   if (scanning) return;
-  if (!(process.env.DATABASE_PUBLIC_URL ?? process.env.BUFFETT_DATABASE_URL)) return;
-  if (!process.env.FMP_API_KEY) return;
+  if (!(process.env.DATABASE_PUBLIC_URL ?? process.env.BUFFETT_DATABASE_URL ?? process.env.DATABASE_URL)) {
+    console.error("Buffett auto-scan: saltado — falta DATABASE_URL/DATABASE_PUBLIC_URL/BUFFETT_DATABASE_URL");
+    return;
+  }
+  if (!process.env.FMP_API_KEY) {
+    console.error("Buffett auto-scan: saltado — falta FMP_API_KEY");
+    return;
+  }
 
   scanning = true;
   try {
@@ -741,7 +753,7 @@ setTimeout(() => {
 
 router.post("/buffett/scan", async (req: Request, res: Response) => {
   if (scanning)                     { res.json({ ok: false, error: "Scan ya en curso" }); return; }
-  if (!(process.env.DATABASE_PUBLIC_URL ?? process.env.BUFFETT_DATABASE_URL)) { res.json({ ok: false, error: "DATABASE_PUBLIC_URL no configurado" }); return; }
+  if (!(process.env.DATABASE_PUBLIC_URL ?? process.env.BUFFETT_DATABASE_URL ?? process.env.DATABASE_URL)) { res.json({ ok: false, error: "DATABASE_PUBLIC_URL no configurado" }); return; }
   if (!process.env.FMP_API_KEY)    { res.json({ ok: false, error: "FMP_API_KEY no configurado" }); return; }
 
   res.json({ ok: true, message: "Scan iniciado en background", universe: UNIVERSE.length });
@@ -811,3 +823,4 @@ router.get("/buffett/ticker/:ticker", async (req: Request, res: Response) => {
 });
 
 export default router;
+
