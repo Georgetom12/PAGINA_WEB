@@ -389,16 +389,35 @@ export default function Equities() {
     return () => clearInterval(id);
   }, []);
 
+  // Rendimiento real por sector (ETFs SPDR: XLK, XLF, XLV, etc.) — reemplaza el mock SECTORS
+  const [liveSectors, setLiveSectors] = useState<typeof SECTORS | null>(null);
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const r = await fetch("/api/market/sectors");
+        if (!r.ok) return;
+        const json = await r.json() as { data?: { symbol: string; name: string; color: string; pct: number; live: boolean }[] };
+        if (!json.data?.length) return;
+        const mapped = json.data.map(s => ({ name: s.name, pct: s.pct, color: s.color }));
+        setLiveSectors(mapped);
+      } catch { /* mantiene el fallback estático */ }
+    };
+    load();
+    const id = setInterval(load, 300000); // 5 min — el rendimiento sectorial no cambia tan rápido como el precio
+    return () => clearInterval(id);
+  }, []);
+
   // Insiders — datos reales de FMP (Form 4 + institucional), solo cuando el
-  // tab está abierto y cuando cambia la empresa seleccionada.
+  // tab está abierto y cuando cambia la empresa seleccionada. Se refresca sola
+  // cada 5 min mientras el tab siga abierto (los Form 4 nuevos llegan goteando).
   useEffect(() => {
     if (section !== "insiders") return;
     let cancelled = false;
-    setLiveInsiderTx([]);
-    setLiveInsiderIsReal(false);
-    setLiveInstData(null);
 
-    (async () => {
+    const loadInsiders = async () => {
+      setLiveInsiderTx([]);
+      setLiveInsiderIsReal(false);
+      setLiveInstData(null);
       try {
         const r = await fetch(`/api/proxy/fmp/insider-trading?symbol=${insiderStock}&limit=20`);
         const d = await r.json() as { ok: boolean; data?: InsiderTx[]; error?: string };
@@ -408,25 +427,26 @@ export default function Equities() {
           setLiveInsiderIsReal(true);
         }
       } catch { /* se queda con el fallback estático */ }
-    })();
 
-    (async () => {
       try {
-        const r = await fetch(`/api/proxy/fmp/institutional-ownership?symbol=${insiderStock}`);
-        const d = await r.json() as { ok: boolean; data?: unknown; error?: string; requiresUpgrade?: boolean };
-        if (!cancelled) setLiveInstData(d);
+        const r2 = await fetch(`/api/proxy/fmp/institutional-ownership?symbol=${insiderStock}`);
+        const d2 = await r2.json() as { ok: boolean; data?: unknown; error?: string; requiresUpgrade?: boolean };
+        if (!cancelled) setLiveInstData(d2);
       } catch { /* deja liveInstData en null → usa fallback */ }
-    })();
+    };
 
-    return () => { cancelled = true; };
+    loadInsiders();
+    const id = setInterval(loadInsiders, 300000);
+    return () => { cancelled = true; clearInterval(id); };
   }, [section, insiderStock]);
 
-  // Dividendos — trae el lote completo una sola vez (cacheado 12h del lado
-  // del servidor), no cada vez que se re-renderiza.
+  // Dividendos — el backend cachea 12h, así que solo hace falta re-chequear
+  // cada hora (no cada render) para eventualmente reflejar la data nueva sin
+  // necesidad de recargar la página.
   useEffect(() => {
-    if (section !== "dividends" || liveDivLoaded) return;
+    if (section !== "dividends") return;
     let cancelled = false;
-    (async () => {
+    const loadDividends = async () => {
       try {
         const symbols = STOCKS.map(s => s.sym).join(",");
         const r = await fetch(`/api/proxy/fmp/dividends-batch?symbols=${encodeURIComponent(symbols)}`);
@@ -436,9 +456,11 @@ export default function Equities() {
           setLiveDivLoaded(true);
         }
       } catch { /* se queda con los valores estáticos de referencia */ }
-    })();
-    return () => { cancelled = true; };
-  }, [section, liveDivLoaded]);
+    };
+    loadDividends();
+    const id = setInterval(loadDividends, 3600000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, [section]);
 
   // Chart render
   const renderChart = useCallback((s: Stock) => {
@@ -1218,8 +1240,8 @@ export default function Equities() {
                 <div className="eq-bottom-panel">
                   <div className="bp-head"><div className="bp-title">RENDIMIENTO POR SECTOR</div><span style={{ fontFamily:"monospace", fontSize:".58rem", color:"var(--eq-gray)" }}>YTD</span></div>
                   <div className="bp-body">
-                    {SECTORS.map(s => {
-                      const max = Math.max(...SECTORS.map(x => Math.abs(x.pct)));
+                    {(liveSectors ?? SECTORS).map(s => {
+                      const max = Math.max(...(liveSectors ?? SECTORS).map(x => Math.abs(x.pct)));
                       const pct = Math.abs(s.pct) / max * 100;
                       const up = s.pct >= 0;
                       return (
@@ -1242,7 +1264,26 @@ export default function Equities() {
           {section === "sectors" && (
             <>
               <div className="eq-sec-title">ANÁLISIS SECTORIAL PROFUNDO</div>
-              {Object.entries(STOCKS.reduce((acc, s) => { if (!acc[s.sector]) acc[s.sector] = []; acc[s.sector].push(s); return acc; }, {} as Record<string,Stock[]>)).map(([sec, stocks]) => (
+              <div className="eq-bottom-panel" style={{ marginBottom: 14 }}>
+                <div className="bp-head"><div className="bp-title">RENDIMIENTO POR SECTOR (ETFs SPDR)</div></div>
+                <div className="bp-body">
+                  {(liveSectors ?? SECTORS).map(s => {
+                    const max = Math.max(...(liveSectors ?? SECTORS).map(x => Math.abs(x.pct)));
+                    const pct = Math.abs(s.pct) / (max || 1) * 100;
+                    const up = s.pct >= 0;
+                    return (
+                      <div key={s.name} className="sec-row">
+                        <div className="sec-name">{s.name}</div>
+                        <div className="sec-track">
+                          <div className="sec-fill" style={{ width:`${pct}%`, background:up?s.color+"33":"rgba(255,23,68,.25)" }} />
+                          <span className="sec-val" style={{ color:up?s.color:"var(--eq-red)" }}>{up?"+":""}{s.pct.toFixed(2)}%</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              {Object.entries(liveStocks.reduce((acc, s) => { if (!acc[s.sector]) acc[s.sector] = []; acc[s.sector].push(s); return acc; }, {} as Record<string,Stock[]>)).map(([sec, stocks]) => (
                 <div key={sec} style={{ background:"var(--eq-panel)", border:"1px solid var(--eq-border)", borderRadius:6, marginBottom:12, overflow:"hidden" }}>
                   <div style={{ padding:"10px 16px", borderBottom:"1px solid var(--eq-border)", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                     <div style={{ fontFamily:"'Orbitron',monospace", fontSize:".7rem", fontWeight:700, color:"var(--eq-cyan)", letterSpacing:".15em" }}>{sec.toUpperCase()}</div>
