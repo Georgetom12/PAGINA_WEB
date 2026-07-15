@@ -364,6 +364,31 @@ export default function Equities() {
     return () => clearInterval(id);
   }, []);
 
+  // Índices macro reales (NASDAQ, S&P, Dow, Russell, DXY, 10Y, VIX, Oro, BTC) — reemplaza el mock MACRO
+  const [liveMacro, setLiveMacro] = useState<typeof MACRO | null>(null);
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const r = await fetch("/api/market/macro");
+        if (!r.ok) return;
+        const json = await r.json() as {
+          data?: { symbol: string; shortName: string; name: string; color: string; price: number; change: number; changePct: number; live: boolean }[];
+        };
+        if (!json.data?.length) return;
+        const mapped = json.data
+          .filter(m => m.live && m.price > 0)
+          .map(m => ({
+            id: m.symbol, name: m.name, value: m.price, chg: m.change, pct: m.changePct,
+            sub: m.shortName, colorClass: "", valClass: m.changePct >= 0 ? "val-up" : "val-down",
+          }));
+        if (mapped.length) setLiveMacro(mapped);
+      } catch { /* mantiene el fallback estático */ }
+    };
+    load();
+    const id = setInterval(load, 90000);
+    return () => clearInterval(id);
+  }, []);
+
   // Insiders — datos reales de FMP (Form 4 + institucional), solo cuando el
   // tab está abierto y cuando cambia la empresa seleccionada.
   useEffect(() => {
@@ -957,7 +982,7 @@ export default function Equities() {
             <>
               <div className="eq-sec-title">ÍNDICES MACRO & CORRELACIONES CLAVE</div>
               <div className="macro-grid">
-                {MACRO.map(m => (
+                {(liveMacro ?? MACRO).map(m => (
                   <div key={m.id} className={`macro-card ${m.colorClass}`}>
                     <div className="mc-name">{m.name}</div>
                     <div className={`mc-value ${m.valClass}`}>{m.value.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
@@ -966,6 +991,23 @@ export default function Equities() {
                   </div>
                 ))}
               </div>
+
+              {(() => {
+                const up = liveStocks.filter(s => s.pct > 0).length;
+                const down = liveStocks.filter(s => s.pct < 0).length;
+                const flat = liveStocks.length - up - down;
+                const upPct = (up / (liveStocks.length || 1)) * 100;
+                const breadthLabel = upPct >= 65 ? "RISK-ON 🟢" : upPct <= 35 ? "RISK-OFF 🔴" : "MIXTO 🟡";
+                return (
+                  <div className="eq-sec-title" style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+                    <span>AMPLITUD DE MERCADO (TOP 20):</span>
+                    <span style={{ color: "var(--eq-green)" }}>▲ {up} suben</span>
+                    <span style={{ color: "var(--eq-red)" }}>▼ {down} bajan</span>
+                    {flat > 0 && <span style={{ color: "var(--eq-gray)" }}>— {flat} planas</span>}
+                    <span style={{ marginLeft: "auto" }}>{breadthLabel}</span>
+                  </div>
+                );
+              })()}
 
               <div className="eq-main-grid">
                 {/* STOCK LIST */}
