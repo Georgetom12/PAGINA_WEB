@@ -179,6 +179,8 @@ const MACRO_DEFS = [
   { symbol: "^IXIC",    name: "NASDAQ Composite",  shortName: "NASDAQ", color: "#00e5ff", btcCorr: 0.55,  inverse: false },
   { symbol: "^NDX",     name: "NASDAQ-100",         shortName: "NDX",    color: "#00bcd4", btcCorr: 0.58,  inverse: false },
   { symbol: "^GSPC",    name: "S&P 500",            shortName: "SPX",    color: "#4fc3f7", btcCorr: 0.48,  inverse: false },
+  { symbol: "^DJI",     name: "Dow Jones",          shortName: "DJIA",   color: "#8bc34a", btcCorr: 0.40,  inverse: false },
+  { symbol: "^RUT",     name: "Russell 2000",       shortName: "RUT",    color: "#cddc39", btcCorr: 0.44,  inverse: false },
   { symbol: "DX-Y.NYB", name: "DXY Dollar Index",   shortName: "DXY",    color: "#ff1744", btcCorr: -0.62, inverse: true  },
   { symbol: "^TNX",     name: "10Y Treasury Yield", shortName: "10Y",    color: "#ff6d00", btcCorr: -0.38, inverse: true  },
   { symbol: "^VIX",     name: "VIX Fear Index",     shortName: "VIX",    color: "#7c4dff", btcCorr: -0.44, inverse: true  },
