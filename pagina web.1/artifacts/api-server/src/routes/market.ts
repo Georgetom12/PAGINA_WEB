@@ -188,6 +188,21 @@ const MACRO_DEFS = [
   { symbol: "BTC-USD",  name: "Bitcoin",            shortName: "BTC",    color: "#f7931a", btcCorr: 1.00,  inverse: false },
 ];
 
+// ETFs SPDR por sector — proxy estándar de la industria para "rendimiento del sector"
+// (lo mismo que usan terminales profesionales cuando no se paga por un feed sectorial propio)
+const SECTOR_ETFS = [
+  { symbol: "XLK",  name: "TECHNOLOGY",       color: "#00e5ff" },
+  { symbol: "XLF",  name: "FINANCIALS",       color: "#00e676" },
+  { symbol: "XLV",  name: "HEALTHCARE",       color: "#e040fb" },
+  { symbol: "XLY",  name: "CONSUMER DISC.",   color: "#ffab00" },
+  { symbol: "XLI",  name: "INDUSTRIALS",      color: "#40c4ff" },
+  { symbol: "XLE",  name: "ENERGY",           color: "#ff6d00" },
+  { symbol: "XLU",  name: "UTILITIES",        color: "#76ff03" },
+  { symbol: "XLRE", name: "REAL ESTATE",      color: "#ff1744" },
+  { symbol: "XLP",  name: "CONSUMER STP.",    color: "#ffd700" },
+  { symbol: "XLB",  name: "MATERIALS",        color: "#00ffcc" },
+];
+
 async function fetchMacroQuote(def: typeof MACRO_DEFS[0]) {
   const enc = encodeURIComponent(def.symbol);
   const path = `v8/finance/chart/${enc}?interval=1d&range=5d&includePrePost=false`;
@@ -239,6 +254,39 @@ router.get("/market/macro", async (_req: Request, res: Response) => {
   );
   const payload = { data, ts: Date.now() };
   cache.set("macro", { data: payload, ts: Date.now() });
+  res.json(payload);
+});
+
+async function fetchSectorQuote(def: typeof SECTOR_ETFS[0]) {
+  const path = `v8/finance/chart/${encodeURIComponent(def.symbol)}?interval=1d&range=5d&includePrePost=false`;
+  const urls = [`https://query2.finance.yahoo.com/${path}`, `https://query1.finance.yahoo.com/${path}`];
+  let lastErr: unknown;
+  for (const url of urls) {
+    try {
+      const r = await fetch(url, { headers: YF_HEADERS, signal: AbortSignal.timeout(8000) });
+      if (!r.ok) { lastErr = new Error(`HTTP ${r.status}`); continue; }
+      const d = await r.json() as { chart?: { result?: { meta?: V8Meta }[] } };
+      const meta = d?.chart?.result?.[0]?.meta ?? {};
+      const price = meta.regularMarketPrice ?? 0;
+      if (price === 0) { lastErr = new Error("zero price"); continue; }
+      const prevClose = meta.chartPreviousClose ?? meta.previousClose ?? price;
+      const changePct = prevClose ? ((price - prevClose) / prevClose) * 100 : 0;
+      return { ...def, pct: changePct, live: true };
+    } catch (e) { lastErr = e; }
+  }
+  throw lastErr ?? new Error("All Yahoo Finance endpoints failed");
+}
+
+router.get("/market/sectors", async (_req: Request, res: Response) => {
+  const hit = cache.get("sectors");
+  if (hit && Date.now() - hit.ts < TTL) { res.json(hit.data); return; }
+  const results = await Promise.allSettled(SECTOR_ETFS.map(fetchSectorQuote));
+  const data = results
+    .map((r, i) => (r.status === "fulfilled" ? r.value : { ...SECTOR_ETFS[i], pct: 0, live: false }))
+    .filter(d => d.live)
+    .sort((a, b) => b.pct - a.pct);
+  const payload = { data, ts: Date.now() };
+  cache.set("sectors", { data: payload, ts: Date.now() });
   res.json(payload);
 });
 
