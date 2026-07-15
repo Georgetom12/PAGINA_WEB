@@ -139,6 +139,92 @@ const _f = (d: Record<string,unknown> | null, k: string): number => {
   const v = d[k]; return typeof v === "number" ? v : parseFloat(String(v ?? 0)) || 0;
 };
 
+// ─── Fuentes alternas — Yahoo Finance y Stooq (gratis, sin API key) ──────────
+// Se usan como respaldo cuando FMP falla (plan limitado / 402-403 / rate limit),
+// para que el escáner NO se quede sin datos por depender de un solo proveedor.
+const YF_HEADERS = { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" };
+
+interface FallbackQuote { price: number; marketCap: number; volume: number; name: string }
+
+// Precio/marketCap/volumen en vivo — Yahoo Finance v7 (batch quote, sin key)
+async function fetchYahooQuote(ticker: string): Promise<FallbackQuote | null> {
+  const path = `v7/finance/quote?symbols=${encodeURIComponent(ticker)}`;
+  for (const host of ["query2.finance.yahoo.com", "query1.finance.yahoo.com"]) {
+    try {
+      const r = await fetch(`https://${host}/${path}`, { headers: YF_HEADERS, signal: AbortSignal.timeout(8000) });
+      if (!r.ok) { console.error(`Yahoo quote error [${ticker}] host=${host} status=${r.status}`); continue; }
+      const d = await r.json() as { quoteResponse?: { result?: Record<string, unknown>[] } };
+      const q = d?.quoteResponse?.result?.[0];
+      if (!q || !q["regularMarketPrice"]) continue;
+      return {
+        price:     Number(q["regularMarketPrice"] ?? 0),
+        marketCap: Number(q["marketCap"] ?? 0),
+        volume:    Number(q["regularMarketVolume"] ?? 0),
+        name:      String(q["longName"] ?? q["shortName"] ?? ticker),
+      };
+    } catch (e) { console.error(`Yahoo quote fetch error [${ticker}] host=${host}:`, e); }
+  }
+  return null;
+}
+
+// Última capa de respaldo — Stooq (CSV plano, sin key, muy estable para precio)
+async function fetchStooqPrice(ticker: string): Promise<{ price: number } | null> {
+  try {
+    const sym = `${ticker.toLowerCase()}.us`;
+    const r = await fetch(`https://stooq.com/q/l/?s=${sym}&f=sd2t2ohlcv&h&e=csv`, { signal: AbortSignal.timeout(8000) });
+    if (!r.ok) { console.error(`Stooq error [${ticker}] status=${r.status}`); return null; }
+    const csv = await r.text();
+    const rows = csv.trim().split("\n");
+    if (rows.length < 2) return null;
+    const cols = rows[1].split(",");
+    const close = parseFloat(cols[6] ?? "");
+    if (!close || close <= 0) return null;
+    return { price: close };
+  } catch (e) { console.error(`Stooq fetch error [${ticker}]:`, e); return null; }
+}
+
+// Fundamentales básicos de respaldo — Yahoo quoteSummary (cuando FMP ratios-ttm
+// y key-metrics-ttm fallan ambos). No cubre todo lo que da FMP (ej. ROIC exacto),
+// pero da lo suficiente para no dejar el criterio entero en 0 por un 403 de FMP.
+interface FallbackFundamentals {
+  pe: number; pb: number; de: number; gm: number; nm: number;
+  roic: number; bvps: number; shares: number; peg: number;
+}
+async function fetchYahooFundamentals(ticker: string): Promise<FallbackFundamentals | null> {
+  const modules = "defaultKeyStatistics,financialData,summaryDetail";
+  const path = `v10/finance/quoteSummary/${encodeURIComponent(ticker)}?modules=${modules}`;
+  for (const host of ["query2.finance.yahoo.com", "query1.finance.yahoo.com"]) {
+    try {
+      const r = await fetch(`https://${host}/${path}`, { headers: YF_HEADERS, signal: AbortSignal.timeout(8000) });
+      if (!r.ok) { console.error(`Yahoo fundamentals error [${ticker}] host=${host} status=${r.status}`); continue; }
+      const d = await r.json() as {
+        quoteSummary?: { result?: [{
+          defaultKeyStatistics?: Record<string, { raw?: number }>;
+          financialData?: Record<string, { raw?: number }>;
+          summaryDetail?: Record<string, { raw?: number }>;
+        }] };
+      };
+      const res = d?.quoteSummary?.result?.[0];
+      if (!res) continue;
+      const dks = res.defaultKeyStatistics ?? {};
+      const fin = res.financialData ?? {};
+      const summ = res.summaryDetail ?? {};
+      return {
+        pe:     summ.trailingPE?.raw ?? summ.forwardPE?.raw ?? 0,
+        pb:     dks.priceToBook?.raw ?? 0,
+        de:     fin.debtToEquity?.raw ? fin.debtToEquity.raw / 100 : 0, // Yahoo lo da en %, FMP en ratio
+        gm:     fin.grossMargins?.raw ? fin.grossMargins.raw * 100 : 0,
+        nm:     fin.profitMargins?.raw ? fin.profitMargins.raw * 100 : 0,
+        roic:   fin.returnOnEquity?.raw ? fin.returnOnEquity.raw * 100 : 0, // proxy — Yahoo no da ROIC directo
+        bvps:   dks.bookValue?.raw ?? 0,
+        shares: dks.sharesOutstanding?.raw ?? 0,
+        peg:    dks.pegRatio?.raw ?? 0,
+      };
+    } catch (e) { console.error(`Yahoo fundamentals fetch error [${ticker}] host=${host}:`, e); }
+  }
+  return null;
+}
+
 // ─── TECHNICAL ANALYSIS (port of technical.py) ───────────────────────────────
 
 type OHLCV = { open: number; high: number; low: number; close: number; volume: number; };
@@ -511,15 +597,31 @@ function zoneCalc(price: number, intrinsic: number): string {
 }
 
 async function analyzeOne(ticker: string) {
-  // 1. Quote (pre-filter)
-  const quote = await fmp("quote", { symbol: ticker });
-  if (!quote) return null;
+  // 1. Quote (pre-filter) — FMP primero, Yahoo y Stooq como respaldo si falla
+  let quote = await fmp("quote", { symbol: ticker });
+  let quoteSource = "fmp";
+  if (!quote) {
+    const yq = await fetchYahooQuote(ticker);
+    if (yq) {
+      quote = { price: yq.price, marketCap: yq.marketCap, volume: yq.volume, name: yq.name };
+      quoteSource = "yahoo";
+    }
+  }
+  if (!quote || _f(quote, "price") <= 0) {
+    const sq = await fetchStooqPrice(ticker);
+    if (sq) { quote = { ...(quote ?? {}), price: sq.price }; quoteSource = quoteSource === "fmp" ? "stooq" : `${quoteSource}+stooq`; }
+  }
+  if (!quote) { console.error(`analyzeOne: sin quote de ninguna fuente [${ticker}]`); return null; }
   const price  = _f(quote, "price");
-  if (price <= 0)                       return null;
-  if (_f(quote, "marketCap") < 500_000_000) return null;
-  if (_f(quote, "volume")    < 100_000)     return null;
+  if (price <= 0) return null;
+  // El filtro de marketCap/volumen solo aplica si tenemos el dato — Stooq no lo da,
+  // y no queremos descartar un ticker válido solo porque la fuente de respaldo es más simple.
+  if (quoteSource === "fmp" || quoteSource === "yahoo") {
+    if (_f(quote, "marketCap") < 500_000_000) return null;
+    if (_f(quote, "volume")    < 100_000)     return null;
+  }
 
-  // 2. Ratios + Metrics + Income + Profile in parallel
+  // 2. Ratios + Metrics + Income + Profile en paralelo (FMP)
   const [ratios, metrics, incomeList, profile] = await Promise.all([
     fmp("ratios-ttm",      { symbol: ticker }),
     fmp("key-metrics-ttm", { symbol: ticker }),
@@ -530,16 +632,24 @@ async function analyzeOne(ticker: string) {
   const epsList      = incomeList.map(d => parseFloat(String(d.epsdiluted ?? 0)) || 0);
   const yearsPositive = epsList.filter(e => e > 0).length;
 
-  const roic  = _f(metrics, "roicTTM")                     * 100;
-  const pe    = _f(ratios,  "priceEarningsRatioTTM");
-  const pb    = _f(ratios,  "priceToBookRatioTTM");
-  const pfcf  = _f(ratios,  "priceToFreeCashFlowsRatioTTM");
-  const peg   = _f(ratios,  "priceEarningsToGrowthRatioTTM");
-  const gm    = _f(ratios,  "grossProfitMarginTTM")         * 100;
-  const de    = _f(ratios,  "debtEquityRatioTTM");
-  const nm    = _f(ratios,  "netProfitMarginTTM")           * 100;
-  const bvps  = _f(metrics, "bookValuePerShareTTM");
-  const shares = _f(metrics, "numberOfSharesOutstandingTTM");
+  // Si FMP no dio ni ratios ni metrics, usamos Yahoo como respaldo de fundamentales
+  let fundSource = "fmp";
+  let yfFund: FallbackFundamentals | null = null;
+  if (!ratios && !metrics) {
+    yfFund = await fetchYahooFundamentals(ticker);
+    if (yfFund) fundSource = "yahoo";
+  }
+
+  const roic  = yfFund ? yfFund.roic  : _f(metrics, "roicTTM")                     * 100;
+  const pe    = yfFund ? yfFund.pe    : _f(ratios,  "priceEarningsRatioTTM");
+  const pb    = yfFund ? yfFund.pb    : _f(ratios,  "priceToBookRatioTTM");
+  const pfcf  = _f(ratios,  "priceToFreeCashFlowsRatioTTM"); // sin equivalente directo gratis en Yahoo
+  const peg   = yfFund ? yfFund.peg   : _f(ratios,  "priceEarningsToGrowthRatioTTM");
+  const gm    = yfFund ? yfFund.gm    : _f(ratios,  "grossProfitMarginTTM")         * 100;
+  const de    = yfFund ? yfFund.de    : _f(ratios,  "debtEquityRatioTTM");
+  const nm    = yfFund ? yfFund.nm    : _f(ratios,  "netProfitMarginTTM")           * 100;
+  const bvps  = yfFund ? yfFund.bvps  : _f(metrics, "bookValuePerShareTTM");
+  const shares = yfFund ? yfFund.shares : _f(metrics, "numberOfSharesOutstandingTTM");
 
   const criteria: Record<string, { label: string; display: string; target: string; pass: number }> = {
     roic:         { label: "ROIC",         display: `${roic.toFixed(1)}%`,  target: `> ${CRITERIA.roic_min}%`,         pass: roic >= CRITERIA.roic_min ? 1 : 0 },
@@ -603,7 +713,7 @@ async function analyzeOne(ticker: string) {
     country:     (profile as Record<string,unknown>)?.country as string ?? "N/A",
     score, passed, total, criteria, valuation,
     technical, polygon: polygon_data,
-    raw: { roic, pe, pb, pfcf, peg, gm, de, nm, eps_yrs: yearsPositive },
+    raw: { roic, pe, pb, pfcf, peg, gm, de, nm, eps_yrs: yearsPositive, quote_source: quoteSource, fundamentals_source: fundSource },
   };
 }
 
@@ -823,4 +933,3 @@ router.get("/buffett/ticker/:ticker", async (req: Request, res: Response) => {
 });
 
 export default router;
-
