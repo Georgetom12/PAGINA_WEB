@@ -2027,6 +2027,28 @@ function GemHunterTab({isEliteUser}:{isEliteUser:boolean}) {
     setRugLoading(p=>({...p,[address]:false}));
   }
 
+  // ─── PUMP LIVE — hoja de cálculo en vivo de monedas detectando pumps ─────
+  interface PumpRow {
+    symbol: string; stage: "early"|"confirming"|"confirmed"|"off";
+    price: number; priceEarly: number; volMultiplier: number; score: number;
+    verdict: string; pctMoveSinceEarly: number; progressPct: number;
+    signals: { multiExchange: string; oi: string; cvd: string; funding: string };
+  }
+  const [pumpRows, setPumpRows] = useState<PumpRow[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const r = await fetch("/api/pump-live/rows");
+        const d = await r.json() as { ok: boolean; rows?: PumpRow[] };
+        if (!cancelled && d.ok && d.rows) setPumpRows(d.rows);
+      } catch { /* deja las filas anteriores */ }
+    };
+    load();
+    const id = setInterval(load, 4000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, []);
+
   if (!isEliteUser) {
     return (
       <div className="border border-[#e040fb33] bg-[#060010] p-8 text-center">
@@ -2059,6 +2081,70 @@ function GemHunterTab({isEliteUser}:{isEliteUser:boolean}) {
 
   return (
     <div>
+      {/* ═══ PUMP LIVE — hoja de cálculo en vivo ═══ */}
+      <div className="border border-[#00e5ff33] bg-[#020a10] mb-6 overflow-hidden">
+        <div className="flex items-center gap-2 px-4 py-2.5 border-b border-[#0d2030] bg-[#040f18]">
+          <div className="w-2 h-2 rounded-full bg-[#00e676]" style={{boxShadow:"0 0 8px #00e676"}} />
+          <span className="font-bebas text-lg text-[#00e5ff] tracking-wide">⚡ PUMP LIVE — DETECTOR EN TIEMPO REAL</span>
+          <span className="font-space text-[9px] text-[#7ab3c8] ml-auto">
+            {pumpRows.length > 0 ? `${pumpRows.length} moneda${pumpRows.length>1?"s":""} en radar` : "escaneando mercado..."}
+          </span>
+        </div>
+        {pumpRows.length === 0 ? (
+          <div className="px-4 py-6 text-center font-space text-[10px] text-[#3a5568]">
+            Ninguna moneda mostrando actividad anómala ahora mismo — la tabla se llena sola apenas algo arranca.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full font-space text-[10px]">
+              <thead>
+                <tr className="border-b border-[#0d2030] text-[#7ab3c8] text-left">
+                  <th className="px-3 py-2">MONEDA</th>
+                  <th className="px-3 py-2">PRECIO</th>
+                  <th className="px-3 py-2">VOL</th>
+                  <th className="px-3 py-2 w-[160px]">PROGRESO</th>
+                  <th className="px-3 py-2">MOV.</th>
+                  <th className="px-3 py-2">VEREDICTO</th>
+                  <th className="px-3 py-2">SEÑALES</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pumpRows.map(row => {
+                  const isUp = row.pctMoveSinceEarly >= 0;
+                  const barColor = row.stage === "confirmed"
+                    ? (row.verdict.includes("REAL") ? "#00e676" : row.verdict.includes("DUDOSO") ? "#ffd700" : "#ff1744")
+                    : "#00e5ff";
+                  return (
+                    <tr key={row.symbol} className="border-b border-[#0a1825] hover:bg-[#040f18] transition-colors">
+                      <td className="px-3 py-2 font-bold text-white">{row.symbol}</td>
+                      <td className="px-3 py-2 text-[#cddc39]">${row.price.toFixed(row.price < 1 ? 6 : 2)}</td>
+                      <td className="px-3 py-2 text-[#7ab3c8]">{row.volMultiplier ? `${row.volMultiplier.toFixed(1)}x` : "—"}</td>
+                      <td className="px-3 py-2">
+                        <div className="w-full h-[6px] bg-[#0d2030] rounded-full overflow-hidden">
+                          <div style={{ width:`${row.progressPct}%`, background:barColor, height:"100%", transition:"width .5s ease" }} />
+                        </div>
+                      </td>
+                      <td className={`px-3 py-2 ${isUp?"text-[#00e676]":"text-[#ff1744]"}`}>
+                        {isUp?"▲":"▼"} {Math.abs(row.pctMoveSinceEarly).toFixed(2)}%
+                      </td>
+                      <td className="px-3 py-2">{row.verdict}</td>
+                      <td className="px-3 py-2 text-[#3a5568] text-[9px]">
+                        {row.stage === "confirmed"
+                          ? `${row.signals.multiExchange} · ${row.signals.oi} · ${row.signals.cvd} · ${row.signals.funding}`
+                          : "confirmando..."}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+        <div className="px-4 py-1.5 border-t border-[#0d2030] font-space text-[8px] text-[#3a5568]">
+          Se actualiza sola cada 4s · monedas ya listadas con perpetuos (Binance/Bybit/OKX) · REAL/BULL TRAP/BEAR TRAP según OI+CVD+multi-exchange+funding
+        </div>
+      </div>
+
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <div className="flex gap-2">
           {(["all","solana","ethereum"] as const).map(c=>(
