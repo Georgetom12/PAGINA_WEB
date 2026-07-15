@@ -172,7 +172,21 @@ async function handleSuperadminLogin(request, env, origin) {
 
   const SA_USER = (env.SUPERADMIN_USER ?? "").toLowerCase().trim();
   const SA_PWD  = env.SUPERADMIN_PASSWORD ?? "";
-  const JWT_SECRET = env.SESSION_SECRET ?? env.JWT_SECRET ?? "psy_fallback_2026";
+  const JWT_SECRET = env.SESSION_SECRET;
+
+  console.log("[DEBUG superadmin-login]", {
+    hasSessionSecret: !!env.SESSION_SECRET,
+    sessionSecretLength: env.SESSION_SECRET?.length,
+    hasSuperadminUser: !!env.SUPERADMIN_USER,
+    hasSuperadminPassword: !!env.SUPERADMIN_PASSWORD,
+  });
+
+  if (!JWT_SECRET) {
+    return Response.json(
+      { ok: false, error: "SESSION_SECRET no configurado en Cloudflare Pages" },
+      { status: 503, headers: cors },
+    );
+  }
 
   if (!SA_USER || !SA_PWD) {
     return Response.json({ ok: false, error: "Servidor no configurado" }, { status: 503, headers: cors });
@@ -1042,3 +1056,4 @@ export default {
     return fetchedReq;
   },
 };
+
