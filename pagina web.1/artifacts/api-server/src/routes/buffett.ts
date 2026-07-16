@@ -43,6 +43,14 @@ async function ensureTables(db: pg.Pool) {
       id           INTEGER PRIMARY KEY DEFAULT 1,
       data         JSONB NOT NULL DEFAULT '{}'
     );
+    ALTER TABLE buffett_state ADD COLUMN IF NOT EXISTS last_index      INTEGER DEFAULT 0;
+    ALTER TABLE buffett_state ADD COLUMN IF NOT EXISTS last_run        TEXT;
+    ALTER TABLE buffett_state ADD COLUMN IF NOT EXISTS calls_today     INTEGER DEFAULT 0;
+    ALTER TABLE buffett_state ADD COLUMN IF NOT EXISTS total_analyzed  INTEGER DEFAULT 0;
+    ALTER TABLE buffett_state ADD COLUMN IF NOT EXISTS total_passed    INTEGER DEFAULT 0;
+    ALTER TABLE buffett_state ADD COLUMN IF NOT EXISTS cycle           INTEGER DEFAULT 1;
+    ALTER TABLE buffett_state ADD COLUMN IF NOT EXISTS universe_size   INTEGER DEFAULT 0;
+    ALTER TABLE buffett_state ADD COLUMN IF NOT EXISTS updated_at      TIMESTAMPTZ DEFAULT NOW();
     INSERT INTO buffett_state (id, data) VALUES (1, '{}') ON CONFLICT DO NOTHING;
     CREATE TABLE IF NOT EXISTS buffett_snapshots (
       id        SERIAL PRIMARY KEY,
