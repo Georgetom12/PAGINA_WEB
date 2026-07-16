@@ -33,6 +33,11 @@ interface Nucleo {
   best_level: string;
   best_score: number;
   zonas_clave: [number, string, number][];
+  poc_cascade?: Record<string, { level: number; status: "ARRIBA" | "CERCA" | "ABAJO" }>;
+  pocs_abajo?: number;
+  bollinger?: string;
+  canal_reg?: string;
+  slope?: number;
 }
 
 interface Macro {
@@ -101,6 +106,22 @@ export default function IntelligentAiTrading() {
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<Resultado | null>(null);
   const [chips, setChips] = useState<string[]>(CHIPS_FALLBACK);
+  const [autoMode, setAutoMode] = useState<"off" | "1h" | "4h">("off");
+  const [secsLeft, setSecsLeft] = useState(0);
+
+  useEffect(() => {
+    if (autoMode === "off" || !symbol) { setSecsLeft(0); return; }
+    const intervalSec = autoMode === "1h" ? 3600 : 14400;
+    setSecsLeft(intervalSec);
+    const tick = setInterval(() => {
+      setSecsLeft(s => {
+        if (s <= 1) { analizar(symbol); return intervalSec; }
+        return s - 1;
+      });
+    }, 1000);
+    return () => clearInterval(tick);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoMode, symbol]);
 
   useEffect(() => {
     (async () => {
@@ -179,6 +200,27 @@ export default function IntelligentAiTrading() {
         </div>
 
         {/* BUSCADOR */}
+        <div className="flex items-center gap-3 mb-3 text-xs text-[#8a9bb0]">
+          <span className="tracking-widest">🔄 AUTO-ACTUALIZAR:</span>
+          {(["off", "1h", "4h"] as const).map(m => (
+            <button
+              key={m}
+              onClick={() => setAutoMode(m)}
+              className="px-2.5 py-1 border text-[10px] tracking-wider uppercase transition-colors"
+              style={{
+                borderColor: autoMode === m ? "#00e5ff" : "#1a2535",
+                color: autoMode === m ? "#00e5ff" : "#8a9bb0",
+                background: autoMode === m ? "#00e5ff11" : "transparent",
+              }}
+            >
+              {m}
+            </button>
+          ))}
+          {autoMode !== "off" && symbol && (
+            <span className="text-[#5a6b7d]">próxima en {Math.floor(secsLeft / 60)}m {secsLeft % 60}s</span>
+          )}
+        </div>
+
         <div className="flex gap-3 mb-4">
           <input
             value={symbol}
@@ -373,7 +415,31 @@ export default function IntelligentAiTrading() {
                   <InfoItem label="BEAR SCORE" value={`${nr.bear_score}/100`} />
                   <InfoItem label="MEJOR NIVEL" value={`${nr.best_level} (${nr.best_score}/100)`} />
                   <InfoItem label="VEREDICTO" value={nr.verdict} />
+                  <InfoItem label="BOLLINGER" value={nr.bollinger ?? "—"} />
+                  <InfoItem label="CANAL REG." value={nr.canal_reg ?? "—"} />
+                  <InfoItem label="SLOPE" value={nr.slope !== undefined ? `${nr.slope.toFixed(4)}%` : "—"} />
+                  <InfoItem label="POCs ABAJO" value={String(nr.pocs_abajo ?? "—")} />
                 </div>
+
+                {nr.poc_cascade && (
+                  <>
+                    <div className="text-[10px] text-[#8a9bb0] tracking-widest mb-2 mt-1">📍 POC CASCADE</div>
+                    <div className="grid grid-cols-2 gap-1.5 mb-4">
+                      {Object.entries(nr.poc_cascade).map(([tf, p]) => (
+                        <div key={tf} className="flex justify-between items-center bg-[#0a0f16] px-2.5 py-1.5 text-xs">
+                          <span className="text-[#8a9bb0] w-8">{tf}</span>
+                          <span className="font-bold">{fmt(p.level)}</span>
+                          <span
+                            className="text-[10px] font-bold px-1.5 py-0.5"
+                            style={{ color: p.status === "ARRIBA" ? "#00e676" : p.status === "ABAJO" ? "#ff1744" : "#ffd700" }}
+                          >
+                            {p.status === "ARRIBA" ? "↑ ARRIBA" : p.status === "ABAJO" ? "↓ ABAJO" : "≈ CERCA"}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
 
                 <div className="text-[10px] text-[#8a9bb0] tracking-widest mb-2">⚡ RSI CASCADA</div>
                 {Object.entries(nr.rsi_map || {}).map(([tf, rsi]) => (
