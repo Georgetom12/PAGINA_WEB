@@ -19,12 +19,12 @@ const WATCHLIST_SIZE = 60;              // más chico que el bot standalone — 
 const WATCHLIST_REFRESH_MS = 15 * 60_000;
 const SCAN_INTERVAL_MS = 5_000;
 const BASELINE_WINDOW_MIN = 20;
-const MIN_BASELINE_SAMPLES = 5; // 5 min de calentamiento — antes 10; se redeploya seguido en desarrollo activo
-const VOL_SPIKE_MULTIPLIER = 3.0;
+const MIN_BASELINE_SAMPLES = Number(process.env.PUMP_MIN_BASELINE_SAMPLES ?? 5); // 5 min de calentamiento por default
+const VOL_SPIKE_MULTIPLIER = Number(process.env.PUMP_VOL_SPIKE_MULTIPLIER ?? 3.0);
 const MAJOR_BASELINE_THRESHOLD = 500_000;
-const MAJOR_VOL_SPIKE_MULTIPLIER = 5.0;
+const MAJOR_VOL_SPIKE_MULTIPLIER = Number(process.env.PUMP_MAJOR_VOL_SPIKE_MULTIPLIER ?? 5.0);
 const MIN_QUOTE_VOL_1M = 20_000;
-const PRICE_MOVE_MIN_PCT = 0.4;
+const PRICE_MOVE_MIN_PCT = Number(process.env.PUMP_PRICE_MOVE_MIN_PCT ?? 0.4);
 const CONFIRMATION_DELAY_MS = 45_000;
 const LINGER_MS = 3 * 60_000;           // cuánto se queda la fila visible tras confirmar, antes de apagarse
 const SYMBOL_COOLDOWN_MS = 10 * 60_000;
@@ -85,6 +85,8 @@ function getState(exchange: string, symbol: string): SymbolState {
 }
 
 const rows = new Map<string, Row>();
+const HISTORY_MAX = 20;
+const history: Row[] = []; // últimas confirmaciones — en memoria, sin DB, peso prácticamente nulo
 const cooldown = new Map<string, number>();
 const pending = new Map<string, { confirmAt: number; earlyPrice: number; earlyTs: number; confirmedExchanges: Set<string> }>();
 
@@ -441,12 +443,17 @@ async function checkConfirmations() {
     const verdict = verdictLabel(score, priceMove >= 0);
     console.log(`[pump-live] ⚡ CONFIRMACIÓN ${symbol} score=${score} -> ${verdict}`);
 
-    rows.set(symbol, {
+    const confirmedRow: Row = {
       symbol, stage: "confirmed", originExchange: PRIMARY_EXCHANGE, price: lastPrice ?? p.earlyPrice, priceEarly: p.earlyPrice,
       volMultiplier: rows.get(symbol)?.volMultiplier ?? 0,
       score, verdict, direction: priceMove >= 0 ? 1 : -1, pctMoveSinceEarly: priceMove, progressPct: 100,
       signals: detail, triggeredAt: p.earlyTs, confirmAt: now, lingerUntil: now + LINGER_MS,
-    });
+    };
+    rows.set(symbol, confirmedRow);
+
+    // Guarda copia en el historial (últimas 20, en memoria — no se borra a los 3 min)
+    history.unshift({ ...confirmedRow });
+    if (history.length > HISTORY_MAX) history.length = HISTORY_MAX;
   }
 }
 
@@ -484,7 +491,7 @@ export function startPumpLiveLoop() {
 // ─── Endpoint para el frontend (hoja de cálculo en vivo) ──────────────────
 router.get("/pump-live/rows", (_req: Request, res: Response) => {
   const list = Array.from(rows.values()).sort((a, b) => b.triggeredAt - a.triggeredAt);
-  res.json({ ok: true, rows: list, watchlistSize: watchlist.length, ts: Date.now() });
+  res.json({ ok: true, rows: list, history, watchlistSize: watchlist.length, ts: Date.now() });
 });
 
 startPumpLiveLoop();
