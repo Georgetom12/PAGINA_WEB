@@ -96,9 +96,9 @@ let loopStarted = false;
 async function getJson(url: string, timeoutMs = 8000): Promise<unknown | null> {
   try {
     const r = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
-    if (!r.ok) return null;
+    if (!r.ok) { console.error(`[pump-live] HTTP ${r.status} en ${url}`); return null; }
     return await r.json();
-  } catch { return null; }
+  } catch (e) { console.error(`[pump-live] error de red en ${url}:`, e instanceof Error ? e.message : e); return null; }
 }
 
 // ─── Exchanges (Binance primero, Bybit/OKX de respaldo — igual que el bot) ─
@@ -120,6 +120,17 @@ async function topSymbolsBybit(limit: number): Promise<string[]> {
     .sort((a, b) => parseFloat(String(b.turnover24h)) - parseFloat(String(a.turnover24h)))
     .slice(0, limit)
     .map(x => String(x.symbol));
+}
+async function topSymbolsOkx(limit: number): Promise<string[]> {
+  const d = await getJson("https://www.okx.com/api/v5/market/tickers?instType=SWAP") as
+    { data?: Array<Record<string, unknown>> } | null;
+  const list = (d?.data ?? []).filter(x => String(x.instId).endsWith("-USDT-SWAP"));
+  const sorted = list
+    .sort((a, b) => parseFloat(String(b.volCcy24h)) - parseFloat(String(a.volCcy24h)))
+    .slice(0, limit);
+  return sorted
+    .map(x => String(x.instId).replace("-USDT-SWAP", "USDT").replace("-", ""))
+    .filter(sym => !EXCLUDE_SYMBOLS.has(sym));
 }
 
 async function klineBinance(symbol: string) {
@@ -341,8 +352,9 @@ const PRIMARY_EXCHANGE = ENABLED_EXCHANGES[0];
 async function refreshWatchlist() {
   let syms = await topSymbolsBybit(WATCHLIST_SIZE);
   if (!syms.length) syms = await topSymbolsBinance(WATCHLIST_SIZE);
+  if (!syms.length) syms = await topSymbolsOkx(WATCHLIST_SIZE);
   if (syms.length) { watchlist = syms; lastWatchlistRefresh = Date.now(); console.log(`[pump-live] watchlist actualizada: ${syms.length} símbolos`); }
-  else console.error("[pump-live] no se pudo refrescar watchlist — bybit y binance fallaron");
+  else console.error("[pump-live] no se pudo refrescar watchlist — bybit, binance y okx fallaron");
 }
 
 async function cheapTierScan() {
