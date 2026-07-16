@@ -199,7 +199,6 @@ function ScreenerWidget() {
       showToolbar: true,
       colorTheme: "dark",
       locale: "es",
-      isTransparent: true,
     });
     ref.current.appendChild(script);
     return () => { if (ref.current) ref.current.innerHTML = ""; };
@@ -219,12 +218,12 @@ const STOCKS = [
 ];
 
 const BONDS = [
-  { sym: "AMEX:TLT", name: "Bono 20+ años (TLT)", icon: "🏛️" },
-  { sym: "AMEX:IEF", name: "Bono 7-10 años (IEF)", icon: "📜" },
-  { sym: "AMEX:SHY", name: "Bono 1-3 años (SHY)", icon: "📄" },
+  { sym: "NASDAQ:TLT", name: "Bono 20+ años (TLT)", icon: "🏛️" },
+  { sym: "NASDAQ:IEF", name: "Bono 7-10 años (IEF)", icon: "📜" },
+  { sym: "NASDAQ:SHY", name: "Bono 1-3 años (SHY)", icon: "📄" },
   { sym: "AMEX:HYG", name: "High Yield Corp. (HYG)", icon: "🏢" },
   { sym: "AMEX:LQD", name: "Corp. Grado Inv. (LQD)", icon: "🏦" },
-  { sym: "TVC:US10Y", name: "Rendimiento 10 años", icon: "📊" },
+  { sym: "TVC:TNX", name: "Rendimiento 10 años", icon: "📊" },
 ];
 
 function MiniChart({ sym, name, icon }: { sym: string; name: string; icon: string }) {
@@ -490,6 +489,14 @@ export default function BolsaValores() {
         <div className="rounded-lg border border-[#0ff2]/10 bg-[#020b12]/60 overflow-hidden">
           <div className="px-4 py-2 border-b border-[#0ff2]/10">
             <span className="text-xs font-mono text-[#0ff2]/80 tracking-widest">SCREENER DE ACCIONES — USA</span>
+          </div>
+          <div className="px-4 py-2.5 border-b border-[#0ff2]/10 bg-[#020b12] flex flex-wrap gap-x-5 gap-y-1.5 font-mono text-[9px] text-[#7ab3c8]">
+            <span><b className="text-[#0ff2]">% CBO</b> = % cambio hoy</span>
+            <span><b className="text-[#0ff2]">CBO</b> = cambio en $ hoy</span>
+            <span><b className="text-[#0ff2]">Rating Técnico</b> = señal automática (compra/venta/neutral) según indicadores técnicos</span>
+            <span><b className="text-[#0ff2]">VOL.</b> = acciones negociadas hoy</span>
+            <span><b className="text-[#0ff2]">P/B</b> = precio vs valor en libros (más bajo = más "barata" contablemente)</span>
+            <span><b className="text-[#0ff2]">BPA (TTM)</b> = ganancia por acción, últimos 12 meses</span>
           </div>
           <div style={{ height: 600 }}>
             <ScreenerWidget />
