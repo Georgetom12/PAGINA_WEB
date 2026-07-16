@@ -23,8 +23,11 @@ const FOREX_SYMBOLS = [
   "EURUSD=X","GBPUSD=X","USDJPY=X","USDCHF=X","AUDUSD=X","USDCAD=X","NZDUSD=X",
   "EURGBP=X","EURJPY=X","GBPJPY=X",
 ];
+// Renta fija — ETFs de bonos más seguidos (corta, media y larga duración + high yield)
+const BOND_SYMBOLS = ["TLT","IEF","SHY","HYG","LQD"];
 const BENCHMARK_STOCK = "SPY";
 const BENCHMARK_FOREX = "DX-Y.NYB"; // DXY
+const BENCHMARK_BOND = "AGG"; // bono agregado — "el mercado de bonos en general"
 
 const SCAN_INTERVAL_MS = 30_000;      // acciones/forex se mueven más lento que cripto — no hace falta cada 5s
 const BASELINE_SAMPLES = 20;
@@ -32,12 +35,13 @@ const MIN_BASELINE_SAMPLES = 8;
 const STOCK_VOL_SPIKE_MULT = 3.0;
 const STOCK_PRICE_MOVE_MIN = 0.5;     // %
 const FOREX_PRICE_MOVE_MIN = 0.15;    // % — forex se mueve mucho menos que acciones
+const BOND_PRICE_MOVE_MIN = 0.3;      // % — entre forex y acciones
 const CONFIRMATION_DELAY_MS = 90_000; // más largo que cripto — spot es más lento
 const LINGER_MS = 5 * 60_000;
 const SYMBOL_COOLDOWN_MS = 15 * 60_000;
 const IDIOSYNCRATIC_MIN_RATIO = 1.8;  // el símbolo debe moverse >=1.8x más que su benchmark para ser "real"
 
-type AssetClass = "stock" | "forex";
+type AssetClass = "stock" | "forex" | "bond";
 type Stage = "early" | "confirmed";
 
 interface Row {
@@ -122,10 +126,10 @@ function checkTrigger(symbol: string, assetClass: AssetClass): boolean {
   const st = getState(symbol);
   if (st.samples.length < MIN_BASELINE_SAMPLES) return false;
   const move = priceMovePct(st);
-  const minMove = assetClass === "stock" ? STOCK_PRICE_MOVE_MIN : FOREX_PRICE_MOVE_MIN;
+  const minMove = assetClass === "stock" ? STOCK_PRICE_MOVE_MIN : assetClass === "bond" ? BOND_PRICE_MOVE_MIN : FOREX_PRICE_MOVE_MIN;
   if (Math.abs(move) < minMove) return false;
 
-  if (assetClass === "stock") {
+  if (assetClass === "stock" || assetClass === "bond") {
     const delta = baselineVolumeDelta(st);
     const avg = avgVolumeDelta(st);
     if (avg <= 0 || delta < avg * STOCK_VOL_SPIKE_MULT) return false;
@@ -136,16 +140,21 @@ function checkTrigger(symbol: string, assetClass: AssetClass): boolean {
 const watchlist: Array<{ symbol: string; assetClass: AssetClass }> = [
   ...STOCK_SYMBOLS.map(symbol => ({ symbol, assetClass: "stock" as const })),
   ...FOREX_SYMBOLS.map(symbol => ({ symbol, assetClass: "forex" as const })),
+  ...BOND_SYMBOLS.map(symbol => ({ symbol, assetClass: "bond" as const })),
 ];
 
 async function scanTick() {
-  // Benchmarks primero (SPY y DXY) para tener con qué comparar
+  // Benchmarks primero (SPY, DXY, AGG) para tener con qué comparar
   const spy = await fetchYahoo1m(BENCHMARK_STOCK);
   const dxy = await fetchYahoo1m(BENCHMARK_FOREX);
+  const agg = await fetchYahoo1m(BENCHMARK_BOND);
   if (spy) ingest(getState(BENCHMARK_STOCK), spy.price, spy.volume);
   if (dxy) ingest(getState(BENCHMARK_FOREX), dxy.price, dxy.volume);
+  if (agg) ingest(getState(BENCHMARK_BOND), agg.price, agg.volume);
   const spyMove = priceMovePct(getState(BENCHMARK_STOCK));
   const dxyMove = priceMovePct(getState(BENCHMARK_FOREX));
+  const aggMove = priceMovePct(getState(BENCHMARK_BOND));
+  const benchmarkMoveFor = (ac: AssetClass) => ac === "stock" ? spyMove : ac === "bond" ? aggMove : dxyMove;
 
   for (const { symbol, assetClass } of watchlist) {
     const q = await fetchYahoo1m(symbol);
@@ -162,8 +171,8 @@ async function scanTick() {
     pending.set(symbol, { confirmAt: Date.now() + CONFIRMATION_DELAY_MS, earlyPrice: q.price, assetClass });
     rows.set(symbol, {
       symbol, assetClass, stage: "early", price: q.price, priceEarly: q.price, pctMoveSinceEarly: 0,
-      volMultiplier: assetClass === "stock" ? (avgVolumeDelta(st) > 0 ? baselineVolumeDelta(st) / avgVolumeDelta(st) : 0) : 0,
-      benchmarkMovePct: assetClass === "stock" ? spyMove : dxyMove, idiosyncraticRatio: 0,
+      volMultiplier: (assetClass === "stock" || assetClass === "bond") ? (avgVolumeDelta(st) > 0 ? baselineVolumeDelta(st) / avgVolumeDelta(st) : 0) : 0,
+      benchmarkMovePct: benchmarkMoveFor(assetClass), idiosyncraticRatio: 0,
       score: 0, verdict: "🌱 arrancando...", progressPct: 5,
       triggeredAt: Date.now(), confirmAt: Date.now() + CONFIRMATION_DELAY_MS, lingerUntil: 0,
     });
@@ -190,7 +199,7 @@ async function scanTick() {
     if (!row || !st.lastPrice) { rows.delete(symbol); continue; }
 
     const move = ((st.lastPrice - p.earlyPrice) / p.earlyPrice) * 100;
-    const benchmarkMove = p.assetClass === "stock" ? spyMove : dxyMove;
+    const benchmarkMove = benchmarkMoveFor(p.assetClass);
     const idiosyncraticRatio = Math.abs(benchmarkMove) > 0.001
       ? Math.abs(move) / Math.abs(benchmarkMove)
       : (Math.abs(move) > 0 ? 99 : 0);
@@ -239,7 +248,22 @@ export function startMarketPulseLoop() {
 
 router.get("/market-pulse/rows", (_req: Request, res: Response) => {
   const list = Array.from(rows.values()).sort((a, b) => b.triggeredAt - a.triggeredAt);
-  res.json({ ok: true, rows: list, ts: Date.now() });
+
+  // Señal de curva de rendimiento — comparación propia (no es un widget de
+  // TradingView, es cálculo nuestro): TLT (bono largo, 20+ años) vs SHY (bono
+  // corto, 1-3 años). Si TLT le está ganando a SHY, el dinero está huyendo
+  // hacia seguridad de largo plazo (típico en risk-off / miedo en el mercado).
+  // Si SHY le gana a TLT, es más bien apetito normal de riesgo (risk-on).
+  const tltMove = priceMovePct(getState("TLT"));
+  const shyMove = priceMovePct(getState("SHY"));
+  const curveSpread = tltMove - shyMove;
+  const yieldCurveSignal = Math.abs(curveSpread) < 0.05
+    ? { label: "➖ NEUTRAL", spread: curveSpread }
+    : curveSpread > 0
+      ? { label: "🛡️ RISK-OFF (huida a bonos largos)", spread: curveSpread }
+      : { label: "🚀 RISK-ON (apetito de riesgo normal)", spread: curveSpread };
+
+  res.json({ ok: true, rows: list, yieldCurveSignal, watchlistSize: STOCK_SYMBOLS.length + FOREX_SYMBOLS.length + BOND_SYMBOLS.length, ts: Date.now() });
 });
 
 startMarketPulseLoop();
