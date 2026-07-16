@@ -1206,6 +1206,37 @@ function PsySignalsTab() {
   return (
     <div>
       <TelegramLinkBox />
+
+      {/* ═══ Cómo leer esta pestaña vs. IA Trading ═══ */}
+      <div className="border border-[#00e5ff1a] bg-[#040f18] mb-5 p-4">
+        <div className="font-bebas text-base text-[#00e5ff] tracking-wide mb-3">📖 SEÑALES PSY vs. IA TRADING — ¿cuál uso y cuándo?</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 text-[13px] leading-snug text-white/90">
+          <div>
+            <div className="font-bold text-[#00e5ff] mb-1">🤖 SEÑALES PSY (esta pestaña)</div>
+            <ul className="list-disc list-inside space-y-1 text-white/80">
+              <li><b>Monedas:</b> solo BTC, ETH, SOL</li>
+              <li><b>Temporalidades:</b> 1H + 4H + Semanal</li>
+              <li><b>Qué mira:</b> EMA, RSI con divergencias, MACD, CVD, volumen anómalo, ATR, estructura, Fibonacci, patrones, Open Interest</li>
+              <li><b>Para qué sirve:</b> sesgo rápido — pensado para operar de <b>horas a pocos días</b></li>
+            </ul>
+          </div>
+          <div>
+            <div className="font-bold text-[#ffd700] mb-1">🧠 IA TRADING (plan completo)</div>
+            <ul className="list-disc list-inside space-y-1 text-white/80">
+              <li><b>Monedas:</b> BTC, ETH, SOL, BNB, XRP, LINK, AAVE, INJ</li>
+              <li><b>Temporalidades:</b> Scalping (5m-15m-30m-1H) y Swing (4H-1D-1SEM), en paralelo</li>
+              <li><b>Qué mira:</b> fractales, RSI en cascada (7 marcos de tiempo), zonas de confluencia, contexto macro (DXY/VIX/oro/petróleo)</li>
+              <li><b>Para qué sirve:</b> plan de trade completo — entrada, stop loss, y TPs separados de <b>corto plazo</b> y de <b>largo plazo</b></li>
+            </ul>
+          </div>
+        </div>
+        <div className="mt-3 pt-3 border-t border-[#0d2030] text-[12px] text-[#7ab3c8] leading-relaxed">
+          <b className="text-white">¿Se contradicen a veces?</b> Sí, y es normal — miran temporalidades y variables distintas, no es un error.
+          Usa el scalping de IA Trading solo si operas en minutos/horas; usa el swing/largo plazo si tu horizonte es de días a semanas.
+          <b className="text-white"> Cuando ambas coinciden</b> en la misma dirección, la señal es mucho más fuerte que cualquiera de las dos por separado.
+        </div>
+      </div>
+
       {/* Header stats */}
       <div className="grid grid-cols-4 gap-3 mb-5">
         {[
