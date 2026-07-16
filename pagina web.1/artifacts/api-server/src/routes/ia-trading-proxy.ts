@@ -104,8 +104,9 @@ async function yahooLevel(symbol: string): Promise<number | null> {
 }
 
 async function getMacro() {
-  const [dxy, vix, spx, ...mag7] = await Promise.all([
+  const [dxy, vix, spx, gold, wti, ...mag7] = await Promise.all([
     yahooChangePct("DX-Y.NYB"), yahooLevel("^VIX"), yahooChangePct("^GSPC"),
+    yahooLevel("GC=F"), yahooLevel("CL=F"),
     yahooChangePct("AAPL"), yahooChangePct("MSFT"), yahooChangePct("GOOGL"),
     yahooChangePct("AMZN"), yahooChangePct("META"), yahooChangePct("NVDA"), yahooChangePct("TSLA"),
   ]);
@@ -128,7 +129,7 @@ async function getMacro() {
   narrativa.push(`VIX ${vixValue.toFixed(0)} ${vixValue > 25 ? "— miedo elevado en mercados" : vixValue < 18 ? "— complacencia, apetito de riesgo" : "— normal"}`);
   narrativa.push(`Mag7 promedio ${mag7_avg >= 0 ? "+" : ""}${mag7_avg.toFixed(2)}% — ${mag7_avg > 0 ? "tech liderando al alza" : "tech débil"}`);
 
-  return { sesgo, sesgo_score, dxy_change: dxyChange, vix_value: vixValue, spx_change: spxChange, mag7_avg, narrativa };
+  return { sesgo, sesgo_score, dxy_change: dxyChange, vix_value: vixValue, spx_change: spxChange, mag7_avg, gold_value: gold ?? 0, wti_value: wti ?? 0, narrativa };
 }
 
 // ─── Análisis nativo completo por símbolo ─────────────────────────────────
@@ -284,6 +285,10 @@ async function analizarNativo(symbolRaw: string) {
   const nucleo = {
     fractal_tipo: bestPattern?.type ?? "NINGUNO",
     fractal_pro_patron: bestPattern?.name ?? "NINGUNO",
+    fractal_descripcion: bestPattern?.description ?? "Sin patrón dominante detectado en este momento.",
+    fractal_objetivo: bestPattern?.target ?? null,
+    fractal_fuerza: bestPattern?.strength ?? "DÉBIL",
+    fractal_confianza: bestPattern?.strength === "FUERTE" ? 85 : bestPattern?.strength === "MODERADO" ? 55 : bestPattern ? 25 : 0,
     rsi_map, rsi_energy,
     vwap: c1d.length ? c1d.slice(-20).reduce((a, c) => a + (c.high + c.low + c.close) / 3 * c.volume, 0) / (c1d.slice(-20).reduce((a, c) => a + c.volume, 0) || 1) : price,
     precio_vwap: price > 0 ? (price > (c1d.length ? c1d.slice(-1)[0]!.close : price) ? "SOBRE" : "BAJO") : "—",
