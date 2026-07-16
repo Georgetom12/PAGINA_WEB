@@ -490,13 +490,40 @@ export default function BolsaValores() {
           <div className="px-4 py-2 border-b border-[#0ff2]/10">
             <span className="text-xs font-mono text-[#0ff2]/80 tracking-widest">SCREENER DE ACCIONES — USA</span>
           </div>
-          <div className="px-4 py-2.5 border-b border-[#0ff2]/10 bg-[#020b12] flex flex-wrap gap-x-5 gap-y-1.5 font-mono text-[9px] text-[#7ab3c8]">
-            <span><b className="text-[#0ff2]">% CBO</b> = % cambio hoy</span>
-            <span><b className="text-[#0ff2]">CBO</b> = cambio en $ hoy</span>
-            <span><b className="text-[#0ff2]">Rating Técnico</b> = señal automática (compra/venta/neutral) según indicadores técnicos</span>
-            <span><b className="text-[#0ff2]">VOL.</b> = acciones negociadas hoy</span>
-            <span><b className="text-[#0ff2]">P/B</b> = precio vs valor en libros (más bajo = más "barata" contablemente)</span>
-            <span><b className="text-[#0ff2]">BPA (TTM)</b> = ganancia por acción, últimos 12 meses</span>
+          <div className="px-4 py-4 border-b border-[#0ff2]/10 bg-[#050f18]">
+            <div className="text-[11px] font-mono text-[#0ff2] tracking-widest mb-3">📖 CÓMO LEER ESTA TABLA</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
+              <div className="text-[13px] leading-snug text-white/90">
+                <b className="text-[#0ff2]">% CBO / CBO</b> — cuánto cambió el precio hoy, en porcentaje y en dólares.
+                Verde significa que subió, rojo que bajó.
+              </div>
+              <div className="text-[13px] leading-snug text-white/90">
+                <b className="text-[#0ff2]">Rating Técnico</b> — un semáforo automático que calcula TradingView
+                combinando varios indicadores técnicos (medias móviles, osciladores). "Fuerte compra"/"Compra"
+                = mayoría de indicadores apuntan al alza; "Venta"/"Fuerte venta" = a la baja; "Neutral" = mixto.
+                No es una recomendación nuestra, es del algoritmo de TradingView.
+              </div>
+              <div className="text-[13px] leading-snug text-white/90">
+                <b className="text-[#0ff2]">VOL.</b> — cuántas acciones se negociaron hoy. Volumen alto respecto
+                a lo normal suele indicar que algo importante está pasando con esa acción (noticia, resultado,
+                movimiento institucional).
+              </div>
+              <div className="text-[13px] leading-snug text-white/90">
+                <b className="text-[#0ff2]">Capitalización de mercado</b> — el valor total de la empresa en bolsa
+                (precio de la acción × número de acciones). Te dice qué tan grande es la empresa.
+              </div>
+              <div className="text-[13px] leading-snug text-white/90">
+                <b className="text-[#0ff2]">P/B (Precio/Valor en Libros)</b> — compara el precio de la acción
+                contra el valor contable de la empresa. Más bajo puede significar que está "barata" respecto a
+                sus activos reales — pero también puede ser una señal de que el mercado desconfía de la empresa,
+                así que no lo uses solo, mira también el Rating Técnico y las ganancias.
+              </div>
+              <div className="text-[13px] leading-snug text-white/90">
+                <b className="text-[#0ff2]">BPA / EPS (TTM)</b> — la ganancia neta de la empresa dividida entre
+                el número de acciones, sumando los últimos 12 meses (TTM = "trailing twelve months"). Es una de
+                las métricas más usadas para saber si una empresa es rentable de verdad.
+              </div>
+            </div>
           </div>
           <div style={{ height: 600 }}>
             <ScreenerWidget />
