@@ -278,7 +278,13 @@ async function analizarNativo(symbolRaw: string) {
   regSlice.forEach((y, i) => { num += (i - xMean) * (y - yMean); den += (i - xMean) ** 2; });
   const slopeRaw = den > 0 ? num / den : 0;
   const slopePct = yMean > 0 ? (slopeRaw / yMean) * 100 : 0;
-  const canalReg = Math.abs(slopePct) > 0.15 ? "FUERTE" : Math.abs(slopePct) > 0.05 ? "MEDIO" : "PLANO";
+
+  // Posición del precio DENTRO del canal de regresión (Superior/Medio/Inferior) —
+  // no confundir con la fuerza de la pendiente (eso es "slope" aparte)
+  const regResiduals = regSlice.map((y, i) => y - (yMean + slopeRaw * (i - xMean)));
+  const regStd = Math.sqrt(regResiduals.reduce((a, r) => a + r ** 2, 0) / (n || 1));
+  const lastResidual = regResiduals.at(-1) ?? 0;
+  const canalReg = lastResidual > regStd * 0.5 ? "SUPERIOR" : lastResidual < -regStd * 0.5 ? "INFERIOR" : "MEDIO";
 
   const macro = await getMacro();
 
