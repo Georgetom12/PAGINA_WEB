@@ -20,6 +20,10 @@ interface Dictamen {
 interface Nucleo {
   fractal_tipo: string;
   fractal_pro_patron: string;
+  fractal_descripcion?: string;
+  fractal_objetivo?: number | null;
+  fractal_fuerza?: string;
+  fractal_confianza?: number;
   rsi_map: Record<string, number>;
   rsi_energy: number;
   vwap: number;
@@ -47,6 +51,8 @@ interface Macro {
   vix_value?: number;
   spx_change?: number;
   mag7_avg?: number;
+  gold_value?: number;
+  wti_value?: number;
   narrativa?: string[];
 }
 
@@ -294,6 +300,7 @@ export default function IntelligentAiTrading() {
                   <span className="text-[#00e5ff] font-bold">{fmt(data.precio)}</span>
                 </div>
 
+                <div className="text-[10px] text-[#8a9bb0] tracking-widest mb-2 mt-1">📐 ZONAS CALCULADAS</div>
                 <div className="flex justify-between px-3 py-2.5 mb-2" style={{ background: `${dirColor}22`, border: `1px solid ${dirColor}44` }}>
                   <div>
                     <div className="font-bold text-sm" style={{ color: dirColor }}>📌 ENTRADA ÓPTIMA</div>
@@ -355,6 +362,25 @@ export default function IntelligentAiTrading() {
                 </div>
               )}
 
+              {/* FRACTAL PRO */}
+              <div className="border border-[#1a2535] bg-[#060a0f] p-5">
+                <div className="font-sharetech text-[9px] tracking-[0.3em] text-[#ff8a00] mb-3">🔺 FRACTAL PRO</div>
+                <div className="flex justify-between items-center mb-2">
+                  <div className="font-bold text-sm" style={{ color: nr.fractal_tipo === "BULLISH" ? "#00e676" : nr.fractal_tipo === "BEARISH" ? "#ff1744" : "#8a9bb0" }}>
+                    {nr.fractal_pro_patron !== "NINGUNO" ? nr.fractal_pro_patron : "Sin patrón dominante"}
+                  </div>
+                  <div className="text-lg font-bold text-[#ff8a00]">{nr.fractal_confianza ?? 0}%</div>
+                </div>
+                <div className="h-1.5 bg-white/10 mb-3">
+                  <div className="h-full" style={{ width: `${nr.fractal_confianza ?? 0}%`, background: "#ff8a00" }} />
+                </div>
+                <div className="text-[12px] text-[#b0bec5] leading-relaxed mb-2">{nr.fractal_descripcion}</div>
+                <div className="grid grid-cols-2 gap-2">
+                  <InfoItem label="OBJETIVO" value={nr.fractal_objetivo ? fmt(nr.fractal_objetivo) : "—"} />
+                  <InfoItem label="FUERZA" value={nr.fractal_fuerza ?? "—"} />
+                </div>
+              </div>
+
               {/* MEMORIA */}
               <div className="border border-[#1a2535] bg-[#060a0f] p-5">
                 <div className="font-sharetech text-[9px] tracking-[0.3em] text-[#00e5ff] mb-3">🧠 MEMORIA + APRENDIZAJE</div>
@@ -405,7 +431,7 @@ export default function IntelligentAiTrading() {
             <div className="space-y-5">
               {/* NÚCLEO */}
               <div className="border border-[#1a2535] bg-[#060a0f] p-5">
-                <div className="font-sharetech text-[9px] tracking-[0.3em] text-[#00e5ff] mb-3">🔬 ANÁLISIS TÉCNICO — {data.symbol}</div>
+                <div className="font-sharetech text-[9px] tracking-[0.3em] text-[#00e5ff] mb-3">🔬 NÚCLEO MATEMÁTICO — {data.symbol}</div>
                 <div className="grid grid-cols-2 gap-2 mb-4">
                   <InfoItem label="PATRÓN" value={nr.fractal_pro_patron !== "NINGUNO" ? nr.fractal_pro_patron : nr.fractal_tipo} />
                   <InfoItem label="VWAP" value={`${fmt(nr.vwap)} (${nr.precio_vwap})`} />
@@ -473,10 +499,12 @@ export default function IntelligentAiTrading() {
                       <div className="font-bold">{data.macro.sesgo_score?.toFixed(0)}/100</div>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
-                      <InfoItem label="DXY" value={`${data.macro.dxy_change?.toFixed(2)}%`} />
-                      <InfoItem label="VIX" value={data.macro.vix_value?.toFixed(0) ?? "─"} />
-                      <InfoItem label="SPX" value={`${data.macro.spx_change?.toFixed(2)}%`} />
-                      <InfoItem label="Mag7" value={`${data.macro.mag7_avg?.toFixed(2)}%`} />
+                      <InfoItem label="DXY" value={`${data.macro.dxy_change?.toFixed(2)}%`} valueColor={(data.macro.dxy_change ?? 0) >= 0 ? "#ff1744" : "#00e676"} />
+                      <InfoItem label="VIX" value={data.macro.vix_value?.toFixed(0) ?? "─"} valueColor={(data.macro.vix_value ?? 0) > 25 ? "#ff1744" : (data.macro.vix_value ?? 0) < 18 ? "#00e676" : "#ffd700"} />
+                      <InfoItem label="SPX" value={`${data.macro.spx_change?.toFixed(2)}%`} valueColor={(data.macro.spx_change ?? 0) >= 0 ? "#00e676" : "#ff1744"} />
+                      <InfoItem label="Mag7" value={`${data.macro.mag7_avg?.toFixed(2)}%`} valueColor={(data.macro.mag7_avg ?? 0) >= 0 ? "#00e676" : "#ff1744"} />
+                      <InfoItem label="Oro (Gold)" value={fmt(data.macro.gold_value)} valueColor="#ffd700" />
+                      <InfoItem label="WTI (Petróleo)" value={fmt(data.macro.wti_value)} valueColor="#ff8a00" />
                     </div>
                   </>
                 ) : (
@@ -511,11 +539,11 @@ export default function IntelligentAiTrading() {
   );
 }
 
-function InfoItem({ label, value }: { label: string; value: React.ReactNode }) {
+function InfoItem({ label, value, valueColor }: { label: string; value: React.ReactNode; valueColor?: string }) {
   return (
     <div className="flex justify-between bg-[#0a0f16] px-3 py-1.5">
       <span className="text-[10px] text-[#8a9bb0]">{label}</span>
-      <span className="text-[11px] font-bold">{value}</span>
+      <span className="text-[11px] font-bold" style={valueColor ? { color: valueColor } : undefined}>{value}</span>
     </div>
   );
 }
