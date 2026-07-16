@@ -156,19 +156,25 @@ interface FallbackQuote { price: number; marketCap: number; volume: number; name
 
 // Precio/marketCap/volumen en vivo — Yahoo Finance v7 (batch quote, sin key)
 async function fetchYahooQuote(ticker: string): Promise<FallbackQuote | null> {
-  const path = `v7/finance/quote?symbols=${encodeURIComponent(ticker)}`;
+  // v7/finance/quote empezó a devolver 401 (Yahoo le agregó autenticación).
+  // v8/finance/chart NO la pide — es el mismo endpoint que ya usamos sin
+  // problema en market.ts para macro/sectores. No trae marketCap, pero sí
+  // precio y volumen, que es lo esencial para no perder el ticker entero.
+  const path = `v8/finance/chart/${encodeURIComponent(ticker)}?interval=1m&range=1d`;
   for (const host of ["query2.finance.yahoo.com", "query1.finance.yahoo.com"]) {
     try {
       const r = await fetch(`https://${host}/${path}`, { headers: YF_HEADERS, signal: AbortSignal.timeout(8000) });
       if (!r.ok) { console.error(`Yahoo quote error [${ticker}] host=${host} status=${r.status}`); continue; }
-      const d = await r.json() as { quoteResponse?: { result?: Record<string, unknown>[] } };
-      const q = d?.quoteResponse?.result?.[0];
-      if (!q || !q["regularMarketPrice"]) continue;
+      const d = await r.json() as {
+        chart?: { result?: [{ meta?: { regularMarketPrice?: number; regularMarketVolume?: number; longName?: string; shortName?: string } }] };
+      };
+      const meta = d?.chart?.result?.[0]?.meta;
+      if (!meta?.regularMarketPrice) continue;
       return {
-        price:     Number(q["regularMarketPrice"] ?? 0),
-        marketCap: Number(q["marketCap"] ?? 0),
-        volume:    Number(q["regularMarketVolume"] ?? 0),
-        name:      String(q["longName"] ?? q["shortName"] ?? ticker),
+        price:     meta.regularMarketPrice,
+        marketCap: 0, // no disponible en este endpoint — el prefiltro de mcap se salta para fuente "yahoo"
+        volume:    meta.regularMarketVolume ?? 0,
+        name:      meta.longName ?? meta.shortName ?? ticker,
       };
     } catch (e) { console.error(`Yahoo quote fetch error [${ticker}] host=${host}:`, e); }
   }
@@ -198,6 +204,11 @@ interface FallbackFundamentals {
   pe: number; pb: number; de: number; gm: number; nm: number;
   roic: number; bvps: number; shares: number; peg: number;
 }
+// NOTA (jul 2026): Yahoo empezó a exigir autenticación en v10/quoteSummary
+// (devuelve 401 en muchos tickers). Cuando eso pasa, esta función simplemente
+// retorna null y el sistema sigue con lo que FMP haya podido dar — no hay
+// todavía un endpoint gratis conocido que reemplace esto para fundamentales
+// completos (a diferencia del precio, que sí tiene alternativa en v8/chart).
 async function fetchYahooFundamentals(ticker: string): Promise<FallbackFundamentals | null> {
   const modules = "defaultKeyStatistics,financialData,summaryDetail";
   const path = `v10/finance/quoteSummary/${encodeURIComponent(ticker)}?modules=${modules}`;
@@ -622,11 +633,15 @@ async function analyzeOne(ticker: string) {
   if (!quote) { console.error(`analyzeOne: sin quote de ninguna fuente [${ticker}]`); return null; }
   const price  = _f(quote, "price");
   if (price <= 0) return null;
-  // El filtro de marketCap/volumen solo aplica si tenemos el dato — Stooq no lo da,
-  // y no queremos descartar un ticker válido solo porque la fuente de respaldo es más simple.
-  if (quoteSource === "fmp" || quoteSource === "yahoo") {
+  // El filtro de marketCap solo aplica si tenemos el dato — Stooq y Yahoo (v8/chart)
+  // no lo dan, y no queremos descartar un ticker válido solo porque la fuente de
+  // respaldo es más simple. El filtro de volumen sí aplica a ambos, ya que Yahoo
+  // v8/chart sí trae regularMarketVolume.
+  if (quoteSource === "fmp") {
     if (_f(quote, "marketCap") < 500_000_000) return null;
-    if (_f(quote, "volume")    < 100_000)     return null;
+  }
+  if (quoteSource === "fmp" || quoteSource === "yahoo") {
+    if (_f(quote, "volume") < 100_000) return null;
   }
 
   // 2. Ratios + Metrics + Income + Profile en paralelo (FMP)
