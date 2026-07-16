@@ -9,16 +9,16 @@ function cGet<T>(k: string): T | null { const e = _c.get(k); return e && Date.no
 function cSet<T>(k: string, d: T, ms: number) { _c.set(k, { data: d, exp: Date.now() + ms }); }
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
-interface OHLCV { time: number; open: number; high: number; low: number; close: number; volume: number; }
+export interface OHLCV { time: number; open: number; high: number; low: number; close: number; volume: number; }
 export interface CandlePattern { name: string; type: "BULLISH" | "BEARISH" | "NEUTRAL"; timeframe: string; description: string; target?: number; strength: "FUERTE" | "MODERADO" | "DÉBIL"; }
 
 // ─── INDICATORS ───────────────────────────────────────────────────────────────
-function ema(vals: number[], p: number): number[] {
+export function ema(vals: number[], p: number): number[] {
   const k = 2 / (p + 1); let prev = vals[0] ?? 0;
   return vals.map(v => { const e = v * k + prev * (1 - k); prev = e; return e; });
 }
 
-function rsi(closes: number[], p = 14): number {
+export function rsi(closes: number[], p = 14): number {
   if (closes.length <= p + 1) return 50;
   let g = 0, l = 0;
   for (let i = 1; i <= p; i++) { const d = closes[i]! - closes[i - 1]!; d > 0 ? (g += d) : (l -= d); }
@@ -31,20 +31,20 @@ function rsi(closes: number[], p = 14): number {
   return l === 0 ? 100 : 100 - 100 / (1 + g / l);
 }
 
-function rsiArr(closes: number[], p = 14): number[] {
+export function rsiArr(closes: number[], p = 14): number[] {
   const out: number[] = [];
   for (let i = p + 1; i <= closes.length; i++) out.push(rsi(closes.slice(0, i), p));
   return out.length ? out : [50];
 }
 
-function macdCalc(closes: number[]) {
+export function macdCalc(closes: number[]) {
   const f = ema(closes, 12), s = ema(closes, 26);
   const line = f.map((v, i) => v - (s[i] ?? 0));
   const sig = ema(line, 9);
   return { line, sig, hist: line.map((v, i) => v - (sig[i] ?? 0)) };
 }
 
-function atr(candles: OHLCV[], p = 14): number {
+export function atr(candles: OHLCV[], p = 14): number {
   if (candles.length < 2) return 0;
   const trs = candles.slice(1).map((c, i) => {
     const pc = candles[i]!.close;
@@ -55,12 +55,12 @@ function atr(candles: OHLCV[], p = 14): number {
   return v;
 }
 
-function cvd(candles: OHLCV[]): number[] {
+export function cvd(candles: OHLCV[]): number[] {
   let cum = 0;
   return candles.map(c => { const r = c.high - c.low || 1; cum += c.volume * ((c.close - c.low) / r * 2 - 1); return cum; });
 }
 
-function swings(candles: OHLCV[], lb = 5) {
+export function swings(candles: OHLCV[], lb = 5) {
   const highs: { i: number; price: number }[] = [], lows: { i: number; price: number }[] = [];
   for (let i = lb; i < candles.length - lb; i++) {
     const w = candles.slice(i - lb, i + lb + 1);
@@ -70,12 +70,12 @@ function swings(candles: OHLCV[], lb = 5) {
   return { highs, lows };
 }
 
-function fibLevels(swH: number, swL: number) {
+export function fibLevels(swH: number, swL: number) {
   const r = swH - swL;
   return { swH, swL, f0: swL, f236: swL + r * 0.236, f382: swL + r * 0.382, f500: swL + r * 0.5, f618: swL + r * 0.618, f786: swL + r * 0.786, f1000: swH, f1272: swH + r * 0.272, f1618: swH + r * 0.618 };
 }
 
-function structure(candles: OHLCV[]): "BULLISH" | "BEARISH" | "NEUTRAL" {
+export function structure(candles: OHLCV[]): "BULLISH" | "BEARISH" | "NEUTRAL" {
   const r = candles.slice(-Math.min(20, candles.length));
   let hh = 0, hl = 0, lh = 0, ll = 0;
   for (let i = 1; i < r.length; i++) {
@@ -88,7 +88,7 @@ function structure(candles: OHLCV[]): "BULLISH" | "BEARISH" | "NEUTRAL" {
 }
 
 // ─── CANDLE PATTERN ENGINE ────────────────────────────────────────────────────
-function candlePatterns(cs: OHLCV[], tf: string): CandlePattern[] {
+export function candlePatterns(cs: OHLCV[], tf: string): CandlePattern[] {
   const ps: CandlePattern[] = [];
   if (cs.length < 4) return ps;
   const c0 = cs.at(-1)!, c1 = cs.at(-2)!, c2 = cs.at(-3)!, c3 = cs.at(-4)!;
@@ -179,7 +179,7 @@ function candlePatterns(cs: OHLCV[], tf: string): CandlePattern[] {
 }
 
 // ─── CHART PATTERNS (multi-vela, macro) ───────────────────────────────────────
-function chartPatterns(candles: OHLCV[], tf: string, price: number): CandlePattern[] {
+export function chartPatterns(candles: OHLCV[], tf: string, price: number): CandlePattern[] {
   const ps: CandlePattern[] = [];
   if (candles.length < 20) return ps;
   const { highs, lows } = swings(candles, 5);
