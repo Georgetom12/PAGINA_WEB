@@ -486,8 +486,8 @@ async function genSignal(a: typeof ASSETS[number]): Promise<AltcoinSignal | null
 
     const e9   = ema(cl1h, 9).at(-1)!;
     const e21  = ema(cl1h, 21).at(-1)!;
-    const e50  = ema(cl1h, 50).at(-1)!;
-    const e200 = ema(cl1h, 200).at(-1) ?? ema(cl1h, cl1h.length).at(-1)!;
+    const e50  = ema(cl4h, Math.min(50, cl4h.length)).at(-1)!;
+    const e200 = ema(cl4h, Math.min(200, cl4h.length)).at(-1)!;
 
     const rArr1h = rsiArr(cl1h);
     const rArr4h = rsiArr(cl4h);
