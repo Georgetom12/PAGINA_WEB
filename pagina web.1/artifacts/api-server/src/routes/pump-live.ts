@@ -19,7 +19,7 @@ const WATCHLIST_SIZE = 60;              // más chico que el bot standalone — 
 const WATCHLIST_REFRESH_MS = 15 * 60_000;
 const SCAN_INTERVAL_MS = 5_000;
 const BASELINE_WINDOW_MIN = 20;
-const MIN_BASELINE_SAMPLES = 10;
+const MIN_BASELINE_SAMPLES = 5; // 5 min de calentamiento — antes 10; se redeploya seguido en desarrollo activo
 const VOL_SPIKE_MULTIPLIER = 3.0;
 const MAJOR_BASELINE_THRESHOLD = 500_000;
 const MAJOR_VOL_SPIKE_MULTIPLIER = 5.0;
@@ -331,12 +331,18 @@ function scoreSymbol(exchangesConfirming: Set<string>, states: Record<string, Sy
   return { score, detail };
 }
 
-const ENABLED_EXCHANGES = ["binance", "bybit", "okx"];
+// Bybit primero: Binance suele bloquear (HTTP 451) IPs de datacenters/Railway
+// según la región — mismo problema y mismo fix que ya resolvimos en el bot
+// standalone de Telegram. Si tu región de Railway SÍ tiene acceso a Binance,
+// puedes reordenar esto para que Binance vaya primero.
+const ENABLED_EXCHANGES = ["bybit", "okx", "binance"];
+const PRIMARY_EXCHANGE = ENABLED_EXCHANGES[0];
 
 async function refreshWatchlist() {
-  let syms = await topSymbolsBinance(WATCHLIST_SIZE);
-  if (!syms.length) syms = await topSymbolsBybit(WATCHLIST_SIZE);
-  if (syms.length) { watchlist = syms; lastWatchlistRefresh = Date.now(); }
+  let syms = await topSymbolsBybit(WATCHLIST_SIZE);
+  if (!syms.length) syms = await topSymbolsBinance(WATCHLIST_SIZE);
+  if (syms.length) { watchlist = syms; lastWatchlistRefresh = Date.now(); console.log(`[pump-live] watchlist actualizada: ${syms.length} símbolos`); }
+  else console.error("[pump-live] no se pudo refrescar watchlist — bybit y binance fallaron");
 }
 
 async function cheapTierScan() {
@@ -360,19 +366,20 @@ async function cheapTierScan() {
     if (Date.now() - cd < SYMBOL_COOLDOWN_MS) continue;
 
     // ── Dispara etapa temprana ──
-    const primarySt = getState("binance", symbol);
+    const primarySt = getState(PRIMARY_EXCHANGE, symbol);
     const earlyPrice = primarySt.lastPrice ?? 0;
     cooldown.set(symbol, Date.now());
     pending.set(symbol, { confirmAt: Date.now() + CONFIRMATION_DELAY_MS, earlyPrice, earlyTs: Date.now(), confirmedExchanges: new Set(triggered) });
 
     const baseline = baselineVolPerMin(primarySt);
     rows.set(symbol, {
-      symbol, stage: "early", originExchange: "binance", price: earlyPrice, priceEarly: earlyPrice,
+      symbol, stage: "early", originExchange: PRIMARY_EXCHANGE, price: earlyPrice, priceEarly: earlyPrice,
       volMultiplier: baseline > 0 ? primarySt.currentVol / baseline : 0,
       score: 0, verdict: "🌱 arrancando...", direction: 1, pctMoveSinceEarly: 0, progressPct: 5,
       signals: { multiExchange: "—", oi: "—", cvd: "—", funding: "—" },
       triggeredAt: Date.now(), confirmAt: Date.now() + CONFIRMATION_DELAY_MS, lingerUntil: 0,
     });
+    console.log(`[pump-live] 🌱 EARLY TRIGGER ${symbol} exchanges=${Array.from(triggered)}`);
   }
 }
 
@@ -388,7 +395,7 @@ async function feedPendingTrades() {
     if (p && row && row.stage === "early") {
       const elapsed = Date.now() - p.earlyTs;
       row.progressPct = Math.min(95, 5 + (elapsed / CONFIRMATION_DELAY_MS) * 90);
-      const st = getState("binance", symbol);
+      const st = getState(PRIMARY_EXCHANGE, symbol);
       if (st.lastPrice) {
         row.price = st.lastPrice;
         row.pctMoveSinceEarly = ((st.lastPrice - row.priceEarly) / row.priceEarly) * 100;
@@ -420,9 +427,10 @@ async function checkConfirmations() {
     const priceMove = p.earlyPrice ? ((lastPrice! - p.earlyPrice) / p.earlyPrice) * 100 : 0;
     const { score, detail } = scoreSymbol(p.confirmedExchanges, perExchangeStates, priceMove);
     const verdict = verdictLabel(score, priceMove >= 0);
+    console.log(`[pump-live] ⚡ CONFIRMACIÓN ${symbol} score=${score} -> ${verdict}`);
 
     rows.set(symbol, {
-      symbol, stage: "confirmed", originExchange: "binance", price: lastPrice ?? p.earlyPrice, priceEarly: p.earlyPrice,
+      symbol, stage: "confirmed", originExchange: PRIMARY_EXCHANGE, price: lastPrice ?? p.earlyPrice, priceEarly: p.earlyPrice,
       volMultiplier: rows.get(symbol)?.volMultiplier ?? 0,
       score, verdict, direction: priceMove >= 0 ? 1 : -1, pctMoveSinceEarly: priceMove, progressPct: 100,
       signals: detail, triggeredAt: p.earlyTs, confirmAt: now, lingerUntil: now + LINGER_MS,
