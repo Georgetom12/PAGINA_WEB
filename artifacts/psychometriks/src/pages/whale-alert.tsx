@@ -2035,13 +2035,17 @@ function GemHunterTab({isEliteUser}:{isEliteUser:boolean}) {
     signals: { multiExchange: string; oi: string; cvd: string; funding: string };
   }
   const [pumpRows, setPumpRows] = useState<PumpRow[]>([]);
+  const [pumpHistory, setPumpHistory] = useState<PumpRow[]>([]);
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
       try {
         const r = await fetch("/api/pump-live/rows");
-        const d = await r.json() as { ok: boolean; rows?: PumpRow[] };
-        if (!cancelled && d.ok && d.rows) setPumpRows(d.rows);
+        const d = await r.json() as { ok: boolean; rows?: PumpRow[]; history?: PumpRow[] };
+        if (!cancelled && d.ok) {
+          if (d.rows) setPumpRows(d.rows);
+          if (d.history) setPumpHistory(d.history);
+        }
       } catch { /* deja las filas anteriores */ }
     };
     load();
@@ -2144,6 +2148,34 @@ function GemHunterTab({isEliteUser}:{isEliteUser:boolean}) {
           Se actualiza sola cada 4s · monedas ya listadas con perpetuos (Binance/Bybit/OKX) · REAL/BULL TRAP/BEAR TRAP según OI+CVD+multi-exchange+funding
         </div>
       </div>
+
+      {/* ═══ Historial reciente de Pump Live (últimas 20) ═══ */}
+      {pumpHistory.length > 0 && (
+        <div className="border border-[#00e5ff1a] bg-[#020a10] mb-6 overflow-hidden">
+          <div className="px-4 py-2 border-b border-[#0d2030] bg-[#040f18]">
+            <span className="font-bebas text-base text-[#7ab3c8] tracking-wide">📋 HISTORIAL RECIENTE — últimas {pumpHistory.length}</span>
+          </div>
+          <div className="overflow-x-auto max-h-[300px] overflow-y-auto">
+            <table className="w-full font-space text-[10px]">
+              <tbody>
+                {pumpHistory.map((row, i) => {
+                  const isUp = row.pctMoveSinceEarly >= 0;
+                  return (
+                    <tr key={`${row.symbol}-${i}`} className="border-b border-[#0a1825]">
+                      <td className="px-3 py-1.5 font-bold text-white">{row.symbol}</td>
+                      <td className="px-3 py-1.5 text-[#cddc39]">${row.price.toFixed(row.price < 1 ? 6 : 2)}</td>
+                      <td className={`px-3 py-1.5 ${isUp?"text-[#00e676]":"text-[#ff1744]"}`}>
+                        {isUp?"▲":"▼"} {Math.abs(row.pctMoveSinceEarly).toFixed(2)}%
+                      </td>
+                      <td className="px-3 py-1.5">{row.verdict}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <div className="flex gap-2">
