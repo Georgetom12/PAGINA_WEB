@@ -245,6 +245,40 @@ async function analizarNativo(symbolRaw: string) {
   const zonas_clave = zonasRaw.sort((a, b) => b[2] - a[2]).slice(0, 6);
   const best = zonas_clave[0];
 
+  // POC Cascade — "Point of Control" aproximado por temporalidad (precio de la
+  // vela de mayor volumen entre las últimas N), comparado contra el precio actual
+  const pocCascade: Record<string, { level: number; status: "ARRIBA" | "CERCA" | "ABAJO" }> = {};
+  for (const tf of tfKeys) {
+    const candles = (klinesByTf[tf] ?? []).slice(-40);
+    if (!candles.length) { pocCascade[tf] = { level: price, status: "CERCA" }; continue; }
+    const pocCandle = candles.reduce((a, b) => (b.volume > a.volume ? b : a));
+    const level = (pocCandle.high + pocCandle.low + pocCandle.close) / 3;
+    const diffPct = ((price - level) / level) * 100;
+    const status = diffPct > 0.3 ? "ARRIBA" : diffPct < -0.3 ? "ABAJO" : "CERCA";
+    pocCascade[tf] = { level, status };
+  }
+  const pocsAbajo = Object.values(pocCascade).filter(p => p.status === "ABAJO").length;
+
+  // Bollinger Bands (20, 2σ) + ancho de canal + pendiente de regresión — todo sobre 4H
+  const bbPeriod = Math.min(20, cl4h.length - 1);
+  const bbSlice = cl4h.slice(-bbPeriod);
+  const bbMid = bbSlice.reduce((a, b) => a + b, 0) / (bbSlice.length || 1);
+  const bbVariance = bbSlice.reduce((a, b) => a + (b - bbMid) ** 2, 0) / (bbSlice.length || 1);
+  const bbStd = Math.sqrt(bbVariance);
+  const bbUpper = bbMid + bbStd * 2, bbLower = bbMid - bbStd * 2;
+  const bbWidthPct = bbMid > 0 ? ((bbUpper - bbLower) / bbMid) * 100 : 0;
+  const bollinger = bbWidthPct > 8 ? "ANCHO" : bbWidthPct > 4 ? "MEDIO" : "ESTRECHO";
+
+  // Pendiente de regresión lineal simple sobre los últimos 20 cierres (4H)
+  const regSlice = cl4h.slice(-20);
+  const n = regSlice.length;
+  const xMean = (n - 1) / 2, yMean = regSlice.reduce((a, b) => a + b, 0) / (n || 1);
+  let num = 0, den = 0;
+  regSlice.forEach((y, i) => { num += (i - xMean) * (y - yMean); den += (i - xMean) ** 2; });
+  const slopeRaw = den > 0 ? num / den : 0;
+  const slopePct = yMean > 0 ? (slopeRaw / yMean) * 100 : 0;
+  const canalReg = Math.abs(slopePct) > 0.15 ? "FUERTE" : Math.abs(slopePct) > 0.05 ? "MEDIO" : "PLANO";
+
   const macro = await getMacro();
 
   const nucleo = {
@@ -261,6 +295,9 @@ async function analizarNativo(symbolRaw: string) {
     best_level: best ? best[1] : "—",
     best_score: best ? best[2] * 10 : 0,
     zonas_clave,
+    poc_cascade: pocCascade,
+    pocs_abajo: pocsAbajo,
+    bollinger, canal_reg: canalReg, slope: slopePct,
   };
 
   const dictamen = {
