@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import SiteNav from "@/components/site-nav";
 import { getAuth, hasAccess } from "@/lib/auth";
 
@@ -56,6 +56,7 @@ interface Resultado {
   symbol: string;
   precio: number;
   dictamen: Dictamen;
+  dictamen_scalping?: { direccion: string; confianza: number; accion: string; contexto: string[] } | null;
   nucleo: Nucleo;
   macro: Macro;
   memoria: Memoria;
@@ -71,7 +72,7 @@ function fmt(v: number | undefined | null): string {
   return v.toFixed(8);
 }
 
-const CHIPS = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT", "LINKUSDT", "AAVEUSDT", "INJUSDT"];
+const CHIPS_FALLBACK = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT", "LINKUSDT", "AAVEUSDT", "INJUSDT"];
 
 // ─── Plan Gate ──────────────────────────────────────────────────────────────
 function PlanGate() {
@@ -99,6 +100,17 @@ export default function IntelligentAiTrading() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<Resultado | null>(null);
+  const [chips, setChips] = useState<string[]>(CHIPS_FALLBACK);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetch("/api/ia-trading/top-symbols", { headers: { "X-PSY-Token": auth?.token ?? "" } });
+        const json = await r.json() as { symbols?: string[] };
+        if (json.symbols?.length) setChips(json.symbols);
+      } catch { /* se queda con el respaldo fijo */ }
+    })();
+  }, []);
 
   async function analizar(sym?: string) {
     const target = (sym ?? symbol).trim().toUpperCase();
@@ -145,6 +157,27 @@ export default function IntelligentAiTrading() {
           </p>
         </div>
 
+        {/* MÉTRICAS Y TEMPORALIDAD ÓPTIMA */}
+        <div className="border border-[#1a2535] bg-[#060a0f] p-4 mb-6">
+          <div className="font-sharetech text-[9px] tracking-[0.3em] text-[#00e5ff] mb-3">📖 QUÉ MÉTRICAS USA ESTE ANÁLISIS</div>
+          <p className="text-[13px] text-white/90 leading-relaxed mb-3">
+            EMA (9/21 en 1H, 50/200 en 4H) · RSI en 7 temporalidades (5m a 1 semana) con detección de divergencias ·
+            MACD (4H) · CVD — volumen delta acumulado (1H) · ATR (4H) · estructura de mercado (4H, 1D, 1 semana) ·
+            niveles de Fibonacci (desde los últimos swings de 4H) · patrones de velas y de gráfico (hombro-cabeza-hombro,
+            dobles techos/suelos, cuñas, etc.) · contexto macro (DXY, VIX, S&P 500, promedio Mag7).
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-[13px]">
+            <div className="bg-[#0a0f16] border-l-2 border-[#ffd700] p-3">
+              <span className="text-[#ffd700] font-bold">⚡ Scalping (5m-15m-30m-1H):</span>{" "}
+              <span className="text-white/80">óptimo si vas a operar en minutos a pocas horas.</span>
+            </div>
+            <div className="bg-[#0a0f16] border-l-2 border-[#00e5ff] p-3">
+              <span className="text-[#00e5ff] font-bold">📈 Swing / Largo plazo (4H-1D-1SEM):</span>{" "}
+              <span className="text-white/80">óptimo si tu horizonte es de días a semanas.</span>
+            </div>
+          </div>
+        </div>
+
         {/* BUSCADOR */}
         <div className="flex gap-3 mb-4">
           <input
@@ -163,8 +196,8 @@ export default function IntelligentAiTrading() {
           </button>
         </div>
 
-        <div className="flex gap-2 flex-wrap mb-8">
-          {CHIPS.map((c) => (
+        <div className="flex gap-2 flex-wrap mb-2 max-h-[92px] overflow-y-auto pr-1">
+          {chips.map((c) => (
             <button
               key={c}
               onClick={() => analizar(c)}
@@ -174,6 +207,7 @@ export default function IntelligentAiTrading() {
             </button>
           ))}
         </div>
+        <div className="text-[10px] text-[#5a6b7d] mb-8">{chips.length} monedas disponibles (top por volumen en Binance Futures) — o escribe cualquier símbolo arriba</div>
 
         {loading && (
           <div className="text-center py-16 text-[#8a9bb0]">
@@ -252,6 +286,33 @@ export default function IntelligentAiTrading() {
                 </div>
               </div>
 
+              {/* SCALPING (5m-15m-30m-1H) — análisis paralelo, independiente del swing */}
+              {data.dictamen_scalping && (
+                <div className="border border-[#1a2535] bg-[#060a0f] p-5">
+                  <div className="font-sharetech text-[9px] tracking-[0.3em] text-[#ffd700] mb-3">⚡ SCALPING (5M-15M-30M-1H)</div>
+                  {(() => {
+                    const ds = data.dictamen_scalping!;
+                    const scColor = ds.direccion === "ALCISTA" ? "#00e676" : ds.direccion === "BAJISTA" ? "#ff1744" : "#8a9bb0";
+                    return (
+                      <>
+                        <div className="flex justify-between items-center mb-3">
+                          <div className="font-bold text-sm" style={{ color: scColor }}>
+                            {ds.direccion === "ALCISTA" ? "🟢" : ds.direccion === "BAJISTA" ? "🔴" : "⚪"} {ds.direccion} — {ds.accion === "ENTRAR" ? "✅ ENTRAR" : ds.accion === "ESPERAR" ? "⏳ ESPERAR" : "🚫 EVITAR"}
+                          </div>
+                          <div className="text-2xl font-bold" style={{ color: scColor }}>{ds.confianza}%</div>
+                        </div>
+                        <div className="h-1.5 bg-white/10 mb-3">
+                          <div className="h-full" style={{ width: `${ds.confianza}%`, background: scColor }} />
+                        </div>
+                        {ds.contexto.map((c, i) => (
+                          <div key={i} className="text-[12px] text-[#b0bec5] py-1 border-b border-white/5 last:border-0">{c}</div>
+                        ))}
+                      </>
+                    );
+                  })()}
+                </div>
+              )}
+
               {/* MEMORIA */}
               <div className="border border-[#1a2535] bg-[#060a0f] p-5">
                 <div className="font-sharetech text-[9px] tracking-[0.3em] text-[#00e5ff] mb-3">🧠 MEMORIA + APRENDIZAJE</div>
@@ -308,7 +369,9 @@ export default function IntelligentAiTrading() {
                   <InfoItem label="VWAP" value={`${fmt(nr.vwap)} (${nr.precio_vwap})`} />
                   <InfoItem label="Fib 61.8%" value={fmt(nr.fib_618)} />
                   <InfoItem label="Fib 38.2%" value={fmt(nr.fib_382)} />
-                  <InfoItem label="AGOTAMIENTO" value={`${nr.agotamiento_score?.toFixed(0)}/100`} />
+                  <InfoItem label="AGOTAMIENTO" value={`${nr.agotamiento_score?.toFixed(0)}/100 (${nr.agotamiento_dir})`} />
+                  <InfoItem label="BEAR SCORE" value={`${nr.bear_score}/100`} />
+                  <InfoItem label="MEJOR NIVEL" value={`${nr.best_level} (${nr.best_score}/100)`} />
                   <InfoItem label="VEREDICTO" value={nr.verdict} />
                 </div>
 
