@@ -218,6 +218,15 @@ const STOCKS = [
   { sym: "NYSE:COIN", name: "Coinbase", icon: "🪙" },
 ];
 
+const BONDS = [
+  { sym: "AMEX:TLT", name: "Bono 20+ años (TLT)", icon: "🏛️" },
+  { sym: "AMEX:IEF", name: "Bono 7-10 años (IEF)", icon: "📜" },
+  { sym: "AMEX:SHY", name: "Bono 1-3 años (SHY)", icon: "📄" },
+  { sym: "AMEX:HYG", name: "High Yield Corp. (HYG)", icon: "🏢" },
+  { sym: "AMEX:LQD", name: "Corp. Grado Inv. (LQD)", icon: "🏦" },
+  { sym: "TVC:US10Y", name: "Rendimiento 10 años", icon: "📊" },
+];
+
 function MiniChart({ sym, name, icon }: { sym: string; name: string; icon: string }) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -258,19 +267,23 @@ export default function BolsaValores() {
   const [session] = useState(getSession);
 
   interface PulseRow {
-    symbol: string; assetClass: "stock"|"forex"; stage: "early"|"confirmed";
+    symbol: string; assetClass: "stock"|"forex"|"bond"; stage: "early"|"confirmed";
     price: number; pctMoveSinceEarly: number; volMultiplier: number;
     benchmarkMovePct: number; idiosyncraticRatio: number; score: number;
     verdict: string; progressPct: number;
   }
   const [pulseRows, setPulseRows] = useState<PulseRow[]>([]);
+  const [yieldCurveSignal, setYieldCurveSignal] = useState<{label: string; spread: number} | null>(null);
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
       try {
         const r = await fetch("/api/market-pulse/rows");
-        const d = await r.json() as { ok: boolean; rows?: PulseRow[] };
-        if (!cancelled && d.ok && d.rows) setPulseRows(d.rows);
+        const d = await r.json() as { ok: boolean; rows?: PulseRow[]; yieldCurveSignal?: {label:string; spread:number} };
+        if (!cancelled && d.ok) {
+          if (d.rows) setPulseRows(d.rows);
+          if (d.yieldCurveSignal) setYieldCurveSignal(d.yieldCurveSignal);
+        }
       } catch { /* deja las filas anteriores */ }
     };
     load();
@@ -336,8 +349,13 @@ export default function BolsaValores() {
           <div className="flex items-center gap-2 px-4 py-2.5 border-b border-[#0ff2]/10 bg-[#020b12]">
             <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
             <span className="font-bebas text-lg text-[#40c4ff] tracking-wide">⚡ MARKET PULSE — MOVIMIENTOS ANÓMALOS EN VIVO</span>
+            {yieldCurveSignal && (
+              <span className="font-mono text-[9px] text-[#7ab3c8] border border-[#0ff2]/15 rounded px-2 py-0.5 ml-2" title="TLT (bono largo) vs SHY (bono corto) — cálculo propio, no es un widget">
+                {yieldCurveSignal.label}
+              </span>
+            )}
             <span className="font-mono text-[9px] text-[#7ab3c8] ml-auto">
-              {pulseRows.length > 0 ? `${pulseRows.length} activo${pulseRows.length>1?"s":""} en radar` : "escaneando acciones y forex..."}
+              {pulseRows.length > 0 ? `${pulseRows.length} activo${pulseRows.length>1?"s":""} en radar` : "escaneando acciones, forex y bonos..."}
             </span>
           </div>
           {pulseRows.length === 0 ? (
@@ -367,7 +385,7 @@ export default function BolsaValores() {
                     return (
                       <tr key={row.symbol} className="border-b border-[#0ff2]/5 hover:bg-[#0ff2]/[.03] transition-colors">
                         <td className="px-3 py-2 font-bold text-white">{row.symbol.replace("=X","")}</td>
-                        <td className="px-3 py-2 text-[#7ab3c8]">{row.assetClass === "stock" ? "📈 Acción" : "💱 Forex"}</td>
+                        <td className="px-3 py-2 text-[#7ab3c8]">{row.assetClass === "stock" ? "📈 Acción" : row.assetClass === "bond" ? "💵 Bono" : "💱 Forex"}</td>
                         <td className="px-3 py-2 text-[#cddc39]">{row.price.toFixed(row.assetClass === "forex" ? 4 : 2)}</td>
                         <td className="px-3 py-2">
                           <div className="w-full h-[6px] bg-[#0ff2]/10 rounded-full overflow-hidden">
@@ -378,7 +396,7 @@ export default function BolsaValores() {
                           {isUp?"▲":"▼"} {Math.abs(row.pctMoveSinceEarly).toFixed(2)}%
                         </td>
                         <td className="px-3 py-2 text-[#7ab3c8]">
-                          {row.stage === "confirmed" ? `${row.assetClass === "stock" ? "SPY" : "DXY"}: ${row.benchmarkMovePct.toFixed(2)}% (${row.idiosyncraticRatio.toFixed(1)}x)` : "confirmando..."}
+                          {row.stage === "confirmed" ? `${row.assetClass === "stock" ? "SPY" : row.assetClass === "bond" ? "AGG" : "DXY"}: ${row.benchmarkMovePct.toFixed(2)}% (${row.idiosyncraticRatio.toFixed(1)}x)` : "confirmando..."}
                         </td>
                         <td className="px-3 py-2">{row.verdict}</td>
                       </tr>
@@ -389,7 +407,7 @@ export default function BolsaValores() {
             </div>
           )}
           <div className="px-4 py-1.5 border-t border-[#0ff2]/10 font-mono text-[8px] text-[#3a5568]">
-            Se actualiza sola cada 8s · 20 acciones + 10 pares forex · compara contra SPY/DXY para saber si el movimiento es propio o de todo el mercado
+            Se actualiza sola cada 8s · 20 acciones + 10 pares forex + 5 ETFs de bonos · compara contra SPY/DXY/AGG para saber si el movimiento es propio o de todo el mercado
           </div>
         </div>
 
@@ -452,6 +470,18 @@ export default function BolsaValores() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {STOCKS.map(s => (
               <MiniChart key={s.sym} sym={s.sym} name={s.name} icon={s.icon} />
+            ))}
+          </div>
+        </div>
+
+        {/* Renta fija — bonos y rendimientos del Tesoro */}
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-xs font-mono text-[#0ff2]/60 tracking-widest">RENTA FIJA — BONOS Y RENDIMIENTOS</span>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {BONDS.map(b => (
+              <MiniChart key={b.sym} sym={b.sym} name={b.name} icon={b.icon} />
             ))}
           </div>
         </div>
