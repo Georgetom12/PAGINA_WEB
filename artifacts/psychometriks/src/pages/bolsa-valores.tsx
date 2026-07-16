@@ -257,6 +257,27 @@ function MiniChart({ sym, name, icon }: { sym: string; name: string; icon: strin
 export default function BolsaValores() {
   const [session] = useState(getSession);
 
+  interface PulseRow {
+    symbol: string; assetClass: "stock"|"forex"; stage: "early"|"confirmed";
+    price: number; pctMoveSinceEarly: number; volMultiplier: number;
+    benchmarkMovePct: number; idiosyncraticRatio: number; score: number;
+    verdict: string; progressPct: number;
+  }
+  const [pulseRows, setPulseRows] = useState<PulseRow[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const r = await fetch("/api/market-pulse/rows");
+        const d = await r.json() as { ok: boolean; rows?: PulseRow[] };
+        if (!cancelled && d.ok && d.rows) setPulseRows(d.rows);
+      } catch { /* deja las filas anteriores */ }
+    };
+    load();
+    const id = setInterval(load, 8000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, []);
+
   if (!session || !isElite(session)) {
     return (
       <div className="min-h-screen bg-[#020408] text-white font-rajdhani">
@@ -307,6 +328,68 @@ export default function BolsaValores() {
           <div>
             <h1 className="text-2xl font-bold font-mono text-white tracking-widest">BOLSA DE VALORES</h1>
             <p className="text-xs text-[#0ff2]/60 font-mono tracking-widest mt-0.5">MERCADOS GLOBALES — ACCIONES · ÍNDICES · COMMODITIES</p>
+          </div>
+        </div>
+
+        {/* ═══ MARKET PULSE — hoja de cálculo en vivo (acciones + forex) ═══ */}
+        <div className="rounded-lg border border-[#0ff2]/10 bg-[#020b12]/60 overflow-hidden">
+          <div className="flex items-center gap-2 px-4 py-2.5 border-b border-[#0ff2]/10 bg-[#020b12]">
+            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+            <span className="font-bebas text-lg text-[#40c4ff] tracking-wide">⚡ MARKET PULSE — MOVIMIENTOS ANÓMALOS EN VIVO</span>
+            <span className="font-mono text-[9px] text-[#7ab3c8] ml-auto">
+              {pulseRows.length > 0 ? `${pulseRows.length} activo${pulseRows.length>1?"s":""} en radar` : "escaneando acciones y forex..."}
+            </span>
+          </div>
+          {pulseRows.length === 0 ? (
+            <div className="px-4 py-6 text-center font-mono text-[10px] text-[#3a5568]">
+              Nada anómalo ahora mismo — aparece solo cuando una acción o par de forex se mueve distinto al resto del mercado.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full font-mono text-[10px]">
+                <thead>
+                  <tr className="border-b border-[#0ff2]/10 text-[#7ab3c8] text-left">
+                    <th className="px-3 py-2">ACTIVO</th>
+                    <th className="px-3 py-2">TIPO</th>
+                    <th className="px-3 py-2">PRECIO</th>
+                    <th className="px-3 py-2 w-[140px]">PROGRESO</th>
+                    <th className="px-3 py-2">MOV.</th>
+                    <th className="px-3 py-2">VS BENCHMARK</th>
+                    <th className="px-3 py-2">VEREDICTO</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pulseRows.map(row => {
+                    const isUp = row.pctMoveSinceEarly >= 0;
+                    const barColor = row.stage === "confirmed"
+                      ? (row.verdict.includes("REAL") ? "#00e676" : row.verdict.includes("SIGUE") ? "#ffd700" : "#ff1744")
+                      : "#40c4ff";
+                    return (
+                      <tr key={row.symbol} className="border-b border-[#0ff2]/5 hover:bg-[#0ff2]/[.03] transition-colors">
+                        <td className="px-3 py-2 font-bold text-white">{row.symbol.replace("=X","")}</td>
+                        <td className="px-3 py-2 text-[#7ab3c8]">{row.assetClass === "stock" ? "📈 Acción" : "💱 Forex"}</td>
+                        <td className="px-3 py-2 text-[#cddc39]">{row.price.toFixed(row.assetClass === "forex" ? 4 : 2)}</td>
+                        <td className="px-3 py-2">
+                          <div className="w-full h-[6px] bg-[#0ff2]/10 rounded-full overflow-hidden">
+                            <div style={{ width:`${row.progressPct}%`, background:barColor, height:"100%", transition:"width .5s ease" }} />
+                          </div>
+                        </td>
+                        <td className={`px-3 py-2 ${isUp?"text-[#00e676]":"text-[#ff1744]"}`}>
+                          {isUp?"▲":"▼"} {Math.abs(row.pctMoveSinceEarly).toFixed(2)}%
+                        </td>
+                        <td className="px-3 py-2 text-[#7ab3c8]">
+                          {row.stage === "confirmed" ? `${row.assetClass === "stock" ? "SPY" : "DXY"}: ${row.benchmarkMovePct.toFixed(2)}% (${row.idiosyncraticRatio.toFixed(1)}x)` : "confirmando..."}
+                        </td>
+                        <td className="px-3 py-2">{row.verdict}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <div className="px-4 py-1.5 border-t border-[#0ff2]/10 font-mono text-[8px] text-[#3a5568]">
+            Se actualiza sola cada 8s · 20 acciones + 10 pares forex · compara contra SPY/DXY para saber si el movimiento es propio o de todo el mercado
           </div>
         </div>
 
