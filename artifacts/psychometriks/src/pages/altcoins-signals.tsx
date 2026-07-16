@@ -193,9 +193,34 @@ export default function AltcoinsSignals() {
   const [sigError, setSigError] = useState("");
   const [cachedAt, setCachedAt] = useState<string>("");
   const [filter, setFilter] = useState<"ALL" | "LONG" | "SHORT">("ALL");
-  const [tab, setTab] = useState<"signals" | "scanner" | "hyperliquid">("signals");
+  const [tab, setTab] = useState<"signals" | "scanner" | "oiradar">("signals");
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const ws1Ref = useRef<WebSocket | null>(null);
+
+  // ── OI Radar (real, multi-exchange) — solo carga mientras ese tab esté abierto ──
+  interface OiRow { symbol: string; oiUsd: number | null; longsPct: number | null; shortsPct: number | null; source: string }
+  const [oiData, setOiData] = useState<Record<string, OiRow>>({});
+  const [oiLoading, setOiLoading] = useState(true);
+  useEffect(() => {
+    if (tab !== "oiradar") return;
+    let cancelled = false;
+    const symbols = TOP50_ALTCOINS.slice(0, 18).map(c => c.symbol).join(",");
+    const load = async () => {
+      try {
+        const r = await fetch(`/api/oi-radar/live?symbols=${symbols}`);
+        const d = await r.json() as { ok: boolean; data?: OiRow[] };
+        if (!cancelled && d.ok && d.data) {
+          const map: Record<string, OiRow> = {};
+          for (const row of d.data) map[row.symbol] = row;
+          setOiData(map);
+        }
+      } catch { /* deja los datos anteriores */ }
+      finally { if (!cancelled) setOiLoading(false); }
+    };
+    load();
+    const id = setInterval(load, 90_000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, [tab]);
 
   // ── Live prices for Scanner tab (Binance WebSocket) ───────────────────────
   useEffect(() => {
@@ -252,7 +277,7 @@ export default function AltcoinsSignals() {
           <div className="font-space text-[9px] text-[#ffd700] tracking-[0.3em] uppercase mb-3">ACCESO RESTRINGIDO</div>
           <h1 className="font-bebas text-5xl text-white mb-4">SEÑALES ALTCOINS<br /><span className="text-[#ffd700]">PLAN ELITE</span></h1>
           <p className="font-space text-sm text-[#7ab3c8] max-w-md mb-8 leading-relaxed">
-            El panel de señales para top 50 altcoins con integración Hyperliquid es exclusivo del plan Elite.
+            El panel de señales para top 50 altcoins con Open Interest multi-exchange es exclusivo del plan Elite.
             Acceso en tiempo real con análisis de whale flow y funding.
           </p>
           <div className="flex gap-4 flex-wrap justify-center">
@@ -315,7 +340,7 @@ export default function AltcoinsSignals() {
           {[
             { key: "signals", label: "🔔 Señales Activas" },
             { key: "scanner", label: "📡 Scanner Precios" },
-            { key: "hyperliquid", label: "⚡ Hyperliquid OI" },
+            { key: "oiradar", label: "🌐 OI RADAR — MULTI-EXCHANGE" },
           ].map(t => (
             <button key={t.key}
               onClick={() => setTab(t.key as typeof tab)}
@@ -602,23 +627,24 @@ export default function AltcoinsSignals() {
           </div>
         )}
 
-        {/* === HYPERLIQUID TAB === */}
-        {tab === "hyperliquid" && (
+        {/* === OI RADAR TAB (datos reales multi-exchange) === */}
+        {tab === "oiradar" && (
           <div>
             <div className="mb-6 flex items-center gap-3">
-              <div className="w-1.5 h-1.5 bg-[#00e676] rounded-full animate-pulse" />
+              <div className={`w-1.5 h-1.5 rounded-full ${oiLoading ? "bg-[#ffd700] animate-pulse" : "bg-[#00e676] animate-pulse"}`} />
               <div className="font-space text-[10px] text-[#7ab3c8] tracking-widest">
-                Datos de Open Interest y posiciones institucionales en Hyperliquid. Actualización cada 90 segundos.
+                Open Interest y sesgo Long/Short reales — Binance → Bybit → Hyperliquid (lo que responda primero). Actualización cada 90 segundos.
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
-              {TOP50_ALTCOINS.slice(0, 18).map((coin, i) => {
-                const longs = 45 + (i * 7 % 30);
-                const shorts = 100 - longs;
-                const oi = (5 + i * 2.3).toFixed(1);
-                const bias = longs > 55 ? "ALCISTA" : longs < 45 ? "BAJISTA" : "NEUTRAL";
-                const biasColor = bias === "ALCISTA" ? "#00e676" : bias === "BAJISTA" ? "#ff1744" : "#ffd700";
+              {TOP50_ALTCOINS.slice(0, 18).map((coin) => {
+                const row = oiData[coin.symbol];
+                const longs  = row?.longsPct  != null ? Math.round(row.longsPct)  : null;
+                const shorts = row?.shortsPct != null ? Math.round(row.shortsPct) : (longs != null ? 100 - longs : null);
+                const oi = row?.oiUsd != null ? (row.oiUsd / 1_000_000).toFixed(1) : null;
+                const bias = longs == null ? "SIN DATO" : longs > 55 ? "ALCISTA" : longs < 45 ? "BAJISTA" : "NEUTRAL";
+                const biasColor = bias === "ALCISTA" ? "#00e676" : bias === "BAJISTA" ? "#ff1744" : bias === "NEUTRAL" ? "#ffd700" : "#3a5568";
                 return (
                   <div key={coin.symbol} className="bg-[#060a0f] border border-[#1a2535] p-4 hover:border-opacity-60 transition-all">
                     <div className="flex items-center justify-between mb-3">
@@ -626,7 +652,7 @@ export default function AltcoinsSignals() {
                         <span style={{ color: coin.color, fontSize: 18 }}>{coin.icon}</span>
                         <div>
                           <div className="font-space text-[11px] text-white">{coin.name}</div>
-                          <div className="font-space text-[8px] text-[#7ab3c8]">Hyperliquid Perps</div>
+                          <div className="font-space text-[8px] text-[#7ab3c8]">{row?.source ?? (oiLoading ? "cargando..." : "—")}</div>
                         </div>
                       </div>
                       <span className="font-space text-[9px] font-bold px-2 py-0.5 tracking-[0.1em]"
@@ -636,14 +662,14 @@ export default function AltcoinsSignals() {
                     </div>
 
                     <div className="text-[10px] font-space text-[#7ab3c8] mb-2 flex justify-between">
-                      <span>LONGS <strong className="text-[#00e676]">{longs}%</strong></span>
-                      <span>OI <strong className="text-white">${oi}M</strong></span>
-                      <span>SHORTS <strong className="text-[#ff1744]">{shorts}%</strong></span>
+                      <span>LONGS <strong className="text-[#00e676]">{longs != null ? `${longs}%` : "—"}</strong></span>
+                      <span>OI <strong className="text-white">{oi != null ? `$${oi}M` : "—"}</strong></span>
+                      <span>SHORTS <strong className="text-[#ff1744]">{shorts != null ? `${shorts}%` : "—"}</strong></span>
                     </div>
 
                     <div className="h-1.5 bg-[#0d1520] rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-[#00e676] to-[#ff1744] rounded-full"
-                        style={{ background: `linear-gradient(90deg, #00e676 ${longs}%, #ff1744 ${longs}%)` }} />
+                      <div className="h-full rounded-full"
+                        style={{ background: longs != null ? `linear-gradient(90deg, #00e676 ${longs}%, #ff1744 ${longs}%)` : "#1a2535" }} />
                     </div>
                   </div>
                 );
@@ -652,11 +678,11 @@ export default function AltcoinsSignals() {
 
             {/* Disclaimer */}
             <div className="border border-[#ffd70020] bg-[#ffd70008] p-4 rounded">
-              <div className="font-space text-[9px] text-[#ffd700] tracking-[0.15em] uppercase mb-1">⚠ Integración Hyperliquid — Bot Python</div>
+              <div className="font-space text-[9px] text-[#ffd700] tracking-[0.15em] uppercase mb-1">⚠ Fuente de datos</div>
               <div className="font-space text-[10px] text-[#7ab3c8] leading-relaxed">
-                Los datos de Hyperliquid se actualizan desde el bot Python WHALE INTEL v3.1 conectado en el servidor.
-                Para alertas en tiempo real en Telegram, asegurate de estar suscrito al canal privado Elite.
-                Los datos de Open Interest y posiciones son referenciales y actualizados cada 90 segundos.
+                Open Interest en dólares y % real de cuentas long/short, tomados directo de las APIs públicas de
+                Binance Futures y Bybit (con Hyperliquid como respaldo — ahí el sesgo se estima por el signo del
+                funding rate, ya que su API pública no expone ratio de cuentas). Cache de 90 segundos por símbolo.
               </div>
             </div>
           </div>
@@ -665,7 +691,7 @@ export default function AltcoinsSignals() {
         {/* Footer disclaimer */}
         <div className="mt-8 border-t border-[#0d1520] pt-6">
           <p className="font-space text-[9px] text-[#5a8898] leading-relaxed">
-            ⚠ DISCLAIMER: Las señales son únicamente educativas y de referencia. No constituyen asesoramiento financiero. El trading con apalancamiento implica riesgo de pérdida total del capital. Operá siempre con gestión de riesgo adecuada (máx 1-2% por trade). Datos en tiempo real vía Binance WebSocket e Hyperliquid API.
+            ⚠ DISCLAIMER: Las señales son únicamente educativas y de referencia. No constituyen asesoramiento financiero. El trading con apalancamiento implica riesgo de pérdida total del capital. Operá siempre con gestión de riesgo adecuada (máx 1-2% por trade). Datos en tiempo real vía Binance WebSocket, Bybit y Hyperliquid API.
           </p>
         </div>
       </div>
