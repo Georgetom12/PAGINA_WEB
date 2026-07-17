@@ -521,24 +521,19 @@ async function genSignal(a: typeof ASSETS[number]) {
 
 // ─── GET /api/psy-algo/signals ─────────────────────────────────────────────────
 // ── IA Trading (motor interno) — cruce de confirmación ─────────────────────
-const IA_TRADING_URL = process.env["IA_TRADING_URL"];
-const IA_TRADING_SECRET = process.env["IA_TRADING_INTERNAL_SECRET"];
-
+// ACTUALIZACIÓN (jul 2026): ya no llama al servicio Python externo por HTTP —
+// llama directo a la función del motor nativo (import dinámico para evitar
+// dependencia circular, ya que ia-trading-proxy.ts a su vez importa las
+// funciones de indicadores de este mismo archivo).
 async function consultarIaTrading(symbol: string): Promise<{
   direccion: string; confianza: number; accion: string; dictamen: string; patron: string;
 } | null> {
-  if (!IA_TRADING_URL || !IA_TRADING_SECRET) return null;
   try {
-    const r = await fetch(`${IA_TRADING_URL}/api/analizar`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Internal-Secret": IA_TRADING_SECRET },
-      body: JSON.stringify({ symbol: `${symbol}USDT` }),
-      signal: AbortSignal.timeout(20000),
-    });
-    if (!r.ok) return null;
-    const data = await r.json() as {
+    const { analizarNativo } = await import("./ia-trading-proxy");
+    const data = await analizarNativo(`${symbol}USDT`) as {
       dictamen?: { direccion: string; confianza: number; accion: string; dictamen: string };
       nucleo?: { fractal_pro_patron?: string; fractal_tipo?: string };
+      error?: string;
     };
     if (!data.dictamen) return null;
     return {

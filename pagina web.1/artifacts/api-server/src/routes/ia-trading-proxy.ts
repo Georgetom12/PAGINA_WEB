@@ -167,7 +167,7 @@ async function getMacro() {
 }
 
 // ─── Análisis nativo completo por símbolo ─────────────────────────────────
-async function analizarNativo(symbolRaw: string) {
+export async function analizarNativo(symbolRaw: string) {
   const symbol = symbolRaw.toUpperCase().trim();
   const cacheKey = symbol;
   const hit = _cache.get(cacheKey);

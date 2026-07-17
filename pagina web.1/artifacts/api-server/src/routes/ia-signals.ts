@@ -4,15 +4,17 @@
  * Copia de altcoin-signals.ts (no se toca el original). Cada señal clásica
  * se contrasta contra el veredicto multi-timeframe del motor de IA Trading.
  * Solo se muestran las señales donde AMBOS coinciden en dirección.
+ *
+ * ACTUALIZACIÓN (jul 2026): el cruce con "IA Trading" ya NO llama al servicio
+ * Python externo por HTTP — llama DIRECTO a la función del motor nativo
+ * (misma que usa la página /ia-trading), en el mismo proceso. Más rápido y
+ * sin dependencia externa.
  */
 import { Router, type Request, type Response } from "express";
 import { logger } from "../lib/logger";
+import { analizarNativo } from "./ia-trading-proxy";
 
 const router = Router();
-
-// ─── IA TRADING (interno) ──────────────────────────────────────────────────
-const IA_TRADING_URL = process.env["IA_TRADING_URL"];
-const IA_TRADING_SECRET = process.env["IA_TRADING_INTERNAL_SECRET"];
 
 interface IaVerdict {
   direccion: "ALCISTA" | "BAJISTA" | "NEUTRAL";
@@ -31,24 +33,15 @@ interface IaVerdict {
 }
 
 async function consultarIaTrading(symbol: string): Promise<IaVerdict | null> {
-  if (!IA_TRADING_URL || !IA_TRADING_SECRET) return null;
   try {
-    const r = await fetch(`${IA_TRADING_URL}/api/analizar`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Internal-Secret": IA_TRADING_SECRET,
-      },
-      body: JSON.stringify({ symbol }),
-    });
-    if (!r.ok) return null;
-    const data = await r.json() as {
+    const data = await analizarNativo(symbol) as {
       dictamen?: { direccion: string; confianza: number; accion: string; dictamen: string };
       nucleo?: {
         fractal_pro_patron?: string; fractal_tipo?: string;
         ema_cross?: string; ema_periodo_rapida?: number; ema_periodo_lenta?: number;
       };
       memoria?: { stats?: { accuracy?: number; total?: number }; notas?: string[] };
+      error?: string;
     };
     if (!data.dictamen) return null;
     return {
