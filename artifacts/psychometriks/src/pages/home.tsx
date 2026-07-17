@@ -317,8 +317,8 @@ const ACCESS_PANELS: MPanel[] = [
       { icon: "🏛", label: "Equities Command Center",   desc: "Top 20 acciones · Charts · Macro · Confluencia",     href: "/equities", badge: "ELITE" },
       { icon: "🔮", label: "PSY ORACLE",               desc: "Dashboard institucional · 9 secciones · PSY BRAIN IA (Claude)",  href: "/psy-oracle", badge: "ELITE" },
       { icon: "🧠", label: "PSY BRAIN",                 desc: "Analista IA institucional · Claude Sonnet 4 · 9 tipos de análisis", href: "/psy-brain", badge: "ELITE" },
-      { icon: "🦄", label: "IA Trading",                desc: "Análisis cuantitativo multi-timeframe · Memoria y aprendizaje", href: "/ia-trading", badge: "NUEVO" },
-      { icon: "✅", label: "Señales Confirmadas",       desc: "Altcoins con doble confirmación · Técnico + IA multi-timeframe", href: "/ia-signals", badge: "NUEVO" },
+      { icon: "🦄", label: "IA Trading",                desc: "Trading intradía — análisis cuantitativo multi-timeframe · Memoria y aprendizaje", href: "/ia-trading", badge: "NUEVO" },
+      { icon: "🚀", label: "SEÑALES FUERTES CONFIRMADAS", desc: "Scalping rápido — Altcoins con doble confirmación · Técnico + IA multi-timeframe", href: "/ia-signals", badge: "NUEVO" },
     ],
   },
   {
