@@ -57,6 +57,7 @@ interface AssetItem {
   sym: string; name: string; px: number; pct: number;
   color: string; bg: string; sector: string; mcap: string;
   pe: number | null; beta: number | null; rsi: number; si: string; iv: string;
+  volRelativo?: number | null;
 }
 
 const ANALYSIS_TYPES = [
@@ -243,6 +244,8 @@ export default function PsyBrain() {
   const [clock, setClock] = useState("");
   const [history, setHistory] = useState<{ asset: string; type: string; ts: string }[]>([]);
   const [livePrices, setLivePrices] = useState<Record<string, { price: number | null; changePct: number | null; marketCap?: number | null }>>({});
+  const [liveEquityMetrics, setLiveEquityMetrics] = useState<Record<string, { rsi14: number | null; beta: number | null; volRealizada: number | null; volRelativo: number | null }>>({});
+  const [liveMacroScore, setLiveMacroScore] = useState<number | null>(null);
   const [liveMacroCtx, setLiveMacroCtx] = useState<string>("");
   const messagesRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -256,13 +259,16 @@ export default function PsyBrain() {
         const r = await fetch("/api/psy-brain/live-data");
         const d = await r.json() as {
           ok: boolean;
-          equities: Record<string, { price: number | null; changePct: number | null; marketCap: number | null }>;
+          equities: Record<string, { price: number | null; changePct: number | null; marketCap: number | null; rsi14: number | null; beta: number | null; volRealizada: number | null; volRelativo: number | null }>;
           indices: Record<string, { price: number | null; changePct: number | null }>;
           macro: Record<string, { price: number | null; changePct: number | null }>;
           crypto: Record<string, { price: number | null; changePct: number | null }>;
+          macroScore?: number;
         };
         if (cancelled || !d.ok) return;
         setLivePrices({ ...d.equities, ...d.indices, ...d.macro, ...d.crypto });
+        setLiveEquityMetrics(d.equities);
+        if (d.macroScore !== undefined) setLiveMacroScore(d.macroScore);
 
         const m = d.macro;
         const fmtM = (v: number | null, suf = "") => (v == null ? "N/D" : `${v.toFixed(2)}${suf}`);
@@ -289,14 +295,25 @@ export default function PsyBrain() {
   };
   const withLive = useCallback((asset: AssetItem): AssetItem => {
     const live = livePrices[asset.sym];
-    if (!live || live.price == null) return asset;
-    return {
+    const metrics = liveEquityMetrics[asset.sym];
+    const base = !live || live.price == null ? asset : {
       ...asset,
       px: live.price,
       pct: live.changePct ?? asset.pct,
       mcap: live.marketCap != null ? fmtMcap(live.marketCap) : asset.mcap,
     };
-  }, [livePrices]);
+    if (!metrics) return base;
+    return {
+      ...base,
+      rsi: metrics.rsi14 ?? base.rsi,
+      beta: metrics.beta ?? base.beta,
+      volRelativo: metrics.volRelativo,
+      // La "IV" estática ya no se muestra como si fuera de opciones — se
+      // reemplaza por volatilidad realizada real (calculada del precio),
+      // que es un dato genuino aunque no sea IV de opciones de verdad.
+      iv: metrics.volRealizada != null ? `${metrics.volRealizada.toFixed(0)}%` : "N/D",
+    };
+  }, [livePrices, liveEquityMetrics]);
 
   useEffect(() => {
     const iv = setInterval(() => {
@@ -323,10 +340,14 @@ export default function PsyBrain() {
     setAnalysisText("");
     setShowAnalysis(false);
     setErrorMsg("");
-    const s = Math.floor(55 + Math.random() * 35);
+    // Score real: fuerza de momentum (distancia del RSI a 50) + macro score,
+    // en vez del Math.random() de antes.
+    const rsiComponent = (asset.rsi - 50) * 1.2;
+    const macroComponent = ((liveMacroScore ?? 50) - 50) * 0.4;
+    const s = Math.max(0, Math.min(100, Math.round(60 + rsiComponent + macroComponent)));
     setScore(s);
     runAnalysis(asset, "completo");
-  }, []);
+  }, [liveMacroScore]);
 
   const runAnalysis = useCallback(async (asset: AssetItem, type: string) => {
     if (isStreaming) return;
@@ -639,10 +660,9 @@ export default function PsyBrain() {
                   </div>
                 </div>
                 {[
-                  { name: "Técnico",      score: currentAsset.rsi,                color: "#22d4f5" },
-                  { name: "Macro",        score: Math.floor(40 + Math.random() * 50), color: "#e8c547" },
-                  { name: "Institucional",score: Math.floor(45 + Math.random() * 40), color: "#9060f0" },
-                  { name: "Opciones",     score: Math.floor(35 + Math.random() * 55), color: "#1aeb8a" },
+                  { name: "Técnico",      score: currentAsset.rsi,  color: "#22d4f5" },
+                  { name: "Macro",        score: liveMacroScore ?? 50, color: "#e8c547" },
+                  { name: "Volatilidad",  score: currentAsset.iv !== "N/D" ? Math.min(100, Math.round(parseFloat(currentAsset.iv) * 1.4)) : 50, color: "#1aeb8a" },
                 ].map(d => (
                   <div key={d.name} style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6 }}>
                     <div style={{ width: 5, height: 5, borderRadius: "50%", background: d.color, flexShrink: 0 }} />
@@ -678,10 +698,7 @@ export default function PsyBrain() {
                 {[
                   { lbl: "Momentum",    val: currentAsset.rsi,                        color: "#22d4f5" },
                   { lbl: "Tendencia",   val: currentAsset.pct > 0 ? 72 : 35,          color: "#1aeb8a" },
-                  { lbl: "Volumen",     val: Math.floor(45 + Math.random() * 40),      color: "#e8c547" },
-                  { lbl: "Sentimiento", val: Math.floor(40 + Math.random() * 50),      color: "#9060f0" },
-                  { lbl: "Smart Money", val: Math.floor(50 + Math.random() * 45),      color: "#f0a020" },
-                  { lbl: "Opciones",    val: Math.floor(35 + Math.random() * 55),      color: "#1aeb8a" },
+                  { lbl: "Volumen",     val: currentAsset.volRelativo != null ? Math.round(currentAsset.volRelativo * 50) : 50, color: "#e8c547" },
                 ].map(d => (
                   <div key={d.lbl} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
                     <span style={{ fontSize: "0.55rem", color: "#5a8099", width: 72, flexShrink: 0 }}>{d.lbl}</span>
