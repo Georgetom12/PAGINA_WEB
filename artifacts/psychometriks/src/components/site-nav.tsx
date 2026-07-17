@@ -2,6 +2,13 @@ import React, { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { getAuth, isAdmin, hasAccess, logout, PLAN_COLORS, PLAN_NAMES } from "@/lib/auth";
 
+// Pila de navegación propia — window.history.back() no es confiable cuando la
+// persona llega directo a una página (pestaña nueva, bookmark, recarga, o
+// vino de fuera del sitio): en esos casos no hay historial de VERDAD al que
+// regresar y el botón se queda sin hacer nada. Con esto, siempre sabemos
+// exactamente qué página de la app se visitó justo antes.
+let navHistoryStack: string[] = [];
+
 const TESTS_LINKS = [
   { href: "/tests/tipo-trader",           icon: "🧠", label: "¿Qué tipo de trader eres?",    desc: "5 perfiles · 3 min" },
   { href: "/tests/por-que-te-liquidan",   icon: "⚡", label: "¿Por qué te liquidan?",        desc: "4 perfiles · 3 min" },
@@ -78,7 +85,23 @@ const PLAN_BADGE_COLOR: Record<string, { bg: string; border: string; text: strin
 };
 
 export default function SiteNav() {
-  const [location]      = useLocation();
+  const [location, setLocation] = useLocation();
+
+  // Registra cada ruta visitada en nuestra propia pila (no depende del
+  // historial nativo del navegador, que falla en pestañas nuevas/bookmarks)
+  useEffect(() => {
+    if (navHistoryStack[navHistoryStack.length - 1] !== location) {
+      navHistoryStack.push(location);
+      if (navHistoryStack.length > 30) navHistoryStack = navHistoryStack.slice(-30);
+    }
+  }, [location]);
+
+  const goBack = () => {
+    // Quita la página actual (siempre está en el tope) y toma la anterior real
+    while (navHistoryStack.length && navHistoryStack[navHistoryStack.length - 1] === location) navHistoryStack.pop();
+    const prev = navHistoryStack.pop();
+    setLocation(prev && prev !== location ? prev : "/dashboard");
+  };
   const [open, setOpen] = useState(false);
   const [drop, setDrop] = useState<DropKey>(null);
   const navRef          = useRef<HTMLDivElement>(null);
@@ -422,7 +445,7 @@ export default function SiteNav() {
     {/* ── Botón de retroceso — aparece en todas las páginas excepto Home ── */}
     {location !== "/" && (
       <button
-        onClick={() => window.history.back()}
+        onClick={goBack}
         style={{
           position: "fixed",
           top: 58,
