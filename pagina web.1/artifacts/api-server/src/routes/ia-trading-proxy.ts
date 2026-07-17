@@ -17,6 +17,7 @@ import {
   ema, rsi, rsiArr, macdCalc, atr, cvd, swings, fibLevels, structure,
   candlePatterns, chartPatterns, type OHLCV, type CandlePattern,
 } from "./psy-algo";
+import { detectarDivergencia } from "./altcoin-signals";
 
 const router = Router();
 
@@ -162,8 +163,11 @@ async function analizarNativo(symbolRaw: string) {
   const e50 = ema(cl4h, 50).at(-1)!, e200 = ema(cl4h, 200).at(-1)!;
   const rsi1h = rsi_map["1h"]!, rsi4h = rsi_map["4h"]!, rsi1d = rsi_map["1d"]!;
   const rArr1h = rsiArr(cl1h);
-  const rsi1hPrev5 = rArr1h.at(-6) ?? rsi1h, pxPrev5 = cl1h.at(-6) ?? price;
-  const rsiDiv = (price < pxPrev5 && rsi1h > rsi1hPrev5) ? "BULLISH_DIV" : (price > pxPrev5 && rsi1h < rsi1hPrev5) ? "BEARISH_DIV" : "NONE";
+  const divergencia1h = detectarDivergencia(c1h, 5);
+  const divergencia4h = detectarDivergencia(c4h, 5);
+  // La de 4H manda si ambas coinciden en dirección o si 1H no encontró nada — es la más confiable de las dos
+  const divergenciaFinal = divergencia4h.tipo !== "NONE" ? divergencia4h : divergencia1h;
+  const rsiDiv = divergenciaFinal.tipo === "DIV_ALCISTA" ? "BULLISH_DIV" : divergenciaFinal.tipo === "DIV_BAJISTA" ? "BEARISH_DIV" : "NONE";
   const m4 = macdCalc(cl4h);
   const mH = m4.hist.at(-1)!, mHP = m4.hist.at(-2) ?? 0;
   const macdX = mHP < 0 && mH > 0 ? "BULLISH" : mHP > 0 && mH < 0 ? "BEARISH" : "NONE";
@@ -195,8 +199,9 @@ async function analizarNativo(symbolRaw: string) {
   if (e9 > e21 && e21 > e50) { score += 2; dir = "ALCISTA"; contexto.push("EMA 9>21>50 (1H/4H) — alineación alcista"); }
   if (e9 < e21 && e21 < e50) { score += 2; dir = "BAJISTA"; contexto.push("EMA 9<21<50 (1H/4H) — alineación bajista"); }
   contexto.push(price > e200 ? "Precio > EMA200 (4H) — macro alcista" : "Precio < EMA200 (4H) — macro bajista");
-  if (rsiDiv === "BULLISH_DIV") { score += 3; dir = "ALCISTA"; contexto.push("Divergencia alcista RSI (1H)"); }
-  if (rsiDiv === "BEARISH_DIV") { score += 3; dir = "BAJISTA"; contexto.push("Divergencia bajista RSI (1H)"); }
+  const pesoDiv = (divergenciaFinal.confianza / 100) * 3;
+  if (rsiDiv === "BULLISH_DIV") { score += pesoDiv; dir = "ALCISTA"; contexto.push(`Divergencia alcista (${divergenciaFinal.confianza}% confianza): ${divergenciaFinal.desc}`); }
+  if (rsiDiv === "BEARISH_DIV") { score += pesoDiv; dir = "BAJISTA"; contexto.push(`Divergencia bajista (${divergenciaFinal.confianza}% confianza): ${divergenciaFinal.desc}`); }
   if (macdX === "BULLISH") { score += 3; dir = "ALCISTA"; contexto.push("MACD cruce alcista (4H)"); }
   if (macdX === "BEARISH") { score += 3; dir = "BAJISTA"; contexto.push("MACD cruce bajista (4H)"); }
   contexto.push(cvdTrend === "BULLISH" ? "CVD (1H) — compras netas dominando" : "CVD (1H) — ventas netas dominando");
