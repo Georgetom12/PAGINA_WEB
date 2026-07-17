@@ -31,11 +31,11 @@ const BENCHMARK_BOND = "AGG"; // bono agregado — "el mercado de bonos en gener
 
 const SCAN_INTERVAL_MS = 30_000;      // acciones/forex se mueven más lento que cripto — no hace falta cada 5s
 const BASELINE_SAMPLES = 20;
-const MIN_BASELINE_SAMPLES = 8;
-const STOCK_VOL_SPIKE_MULT = 3.0;
-const STOCK_PRICE_MOVE_MIN = 0.5;     // %
-const FOREX_PRICE_MOVE_MIN = 0.15;    // % — forex se mueve mucho menos que acciones
-const BOND_PRICE_MOVE_MIN = 0.3;      // % — entre forex y acciones
+const MIN_BASELINE_SAMPLES = Number(process.env.PULSE_MIN_BASELINE_SAMPLES ?? 8);
+const STOCK_VOL_SPIKE_MULT = Number(process.env.PULSE_STOCK_VOL_SPIKE_MULT ?? 3.0);
+const STOCK_PRICE_MOVE_MIN = Number(process.env.PULSE_STOCK_PRICE_MOVE_MIN ?? 0.5);     // %
+const FOREX_PRICE_MOVE_MIN = Number(process.env.PULSE_FOREX_PRICE_MOVE_MIN ?? 0.15);    // % — forex se mueve mucho menos que acciones
+const BOND_PRICE_MOVE_MIN = Number(process.env.PULSE_BOND_PRICE_MOVE_MIN ?? 0.3);      // % — entre forex y acciones
 const CONFIRMATION_DELAY_MS = 90_000; // más largo que cripto — spot es más lento
 const LINGER_MS = 5 * 60_000;
 const SYMBOL_COOLDOWN_MS = 15 * 60_000;
@@ -73,14 +73,14 @@ async function fetchYahoo1m(symbol: string): Promise<{ price: number; volume: nu
   for (const host of ["query2.finance.yahoo.com", "query1.finance.yahoo.com"]) {
     try {
       const r = await fetch(`https://${host}/${path}`, { headers: YF_HEADERS, signal: AbortSignal.timeout(8000) });
-      if (!r.ok) continue;
+      if (!r.ok) { console.error(`[market-pulse] HTTP ${r.status} en ${host} para ${symbol}`); continue; }
       const d = await r.json() as {
         chart?: { result?: [{ meta?: { regularMarketPrice?: number; regularMarketVolume?: number } }] };
       };
       const meta = d?.chart?.result?.[0]?.meta;
-      if (!meta?.regularMarketPrice) continue;
+      if (!meta?.regularMarketPrice) { console.error(`[market-pulse] sin regularMarketPrice para ${symbol} (${host})`); continue; }
       return { price: meta.regularMarketPrice, volume: meta.regularMarketVolume ?? null };
-    } catch { /* intenta el siguiente host */ }
+    } catch (e) { console.error(`[market-pulse] error de red ${symbol} (${host}):`, e instanceof Error ? e.message : e); }
   }
   return null;
 }
@@ -169,6 +169,7 @@ async function scanTick() {
 
     cooldown.set(symbol, Date.now());
     pending.set(symbol, { confirmAt: Date.now() + CONFIRMATION_DELAY_MS, earlyPrice: q.price, assetClass });
+    console.log(`[market-pulse] 🌱 EARLY TRIGGER ${symbol} (${assetClass}) precio=${q.price}`);
     rows.set(symbol, {
       symbol, assetClass, stage: "early", price: q.price, priceEarly: q.price, pctMoveSinceEarly: 0,
       volMultiplier: (assetClass === "stock" || assetClass === "bond") ? (avgVolumeDelta(st) > 0 ? baselineVolumeDelta(st) / avgVolumeDelta(st) : 0) : 0,
@@ -235,11 +236,19 @@ let started = false;
 export function startMarketPulseLoop() {
   if (started) return;
   started = true;
+  let tickCount = 0;
   setTimeout(() => {
     setInterval(async () => {
       if (running) return;
       running = true;
-      try { await scanTick(); } catch (e) { console.error("market-pulse loop error:", e); }
+      try {
+        await scanTick();
+        tickCount++;
+        if (tickCount % 20 === 0) {
+          const conListos = watchlist.filter(w => getState(w.symbol).samples.length >= MIN_BASELINE_SAMPLES).length;
+          console.log(`[market-pulse] resumen: ${conListos}/${watchlist.length} símbolos con suficiente historial · ${pending.size} pendientes de confirmar · ${rows.size} filas activas`);
+        }
+      } catch (e) { console.error("market-pulse loop error:", e); }
       finally { running = false; }
     }, SCAN_INTERVAL_MS);
   }, 5000);
