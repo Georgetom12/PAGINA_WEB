@@ -42,6 +42,8 @@ interface Nucleo {
   bollinger?: string;
   canal_reg?: string;
   slope?: number;
+  divergencia_capital_oi?: { tipo: "DIV_ALCISTA" | "DIV_BAJISTA" | "NONE"; desc: string; oiChangePct: number };
+  divergencia_capital_spot?: { tipo: "DIV_ALCISTA" | "DIV_BAJISTA" | "NONE"; desc: string; spotChangePct: number; futChangePct: number };
 }
 
 interface Macro {
@@ -463,6 +465,36 @@ export default function IntelligentAiTrading() {
                           </span>
                         </div>
                       ))}
+                    </div>
+                  </>
+                )}
+
+                {(nr.divergencia_capital_oi || nr.divergencia_capital_spot) && (
+                  <>
+                    <div className="text-[10px] text-[#8a9bb0] tracking-widest mb-2 mt-1">💰 DIVERGENCIA DE CAPITAL</div>
+                    <div className="space-y-1.5 mb-4">
+                      {nr.divergencia_capital_oi && (
+                        <div
+                          className="text-[11px] px-2.5 py-2 leading-snug"
+                          style={{
+                            background: nr.divergencia_capital_oi.tipo === "NONE" ? "#0a0f16" : `${nr.divergencia_capital_oi.tipo === "DIV_ALCISTA" ? "#00e676" : "#ff1744"}15`,
+                            borderLeft: `2px solid ${nr.divergencia_capital_oi.tipo === "NONE" ? "#1a2535" : nr.divergencia_capital_oi.tipo === "DIV_ALCISTA" ? "#00e676" : "#ff1744"}`,
+                          }}
+                        >
+                          <b className="text-[#8a9bb0]">Precio vs OI:</b> {nr.divergencia_capital_oi.desc}
+                        </div>
+                      )}
+                      {nr.divergencia_capital_spot && (
+                        <div
+                          className="text-[11px] px-2.5 py-2 leading-snug"
+                          style={{
+                            background: nr.divergencia_capital_spot.tipo === "NONE" ? "#0a0f16" : `${nr.divergencia_capital_spot.tipo === "DIV_ALCISTA" ? "#00e676" : "#ff1744"}15`,
+                            borderLeft: `2px solid ${nr.divergencia_capital_spot.tipo === "NONE" ? "#1a2535" : nr.divergencia_capital_spot.tipo === "DIV_ALCISTA" ? "#00e676" : "#ff1744"}`,
+                          }}
+                        >
+                          <b className="text-[#8a9bb0]">Futuros vs Spot:</b> {nr.divergencia_capital_spot.desc}
+                        </div>
+                      )}
                     </div>
                   </>
                 )}
