@@ -173,7 +173,7 @@ function cvdTrend(candles: OHLCV[]): "BULLISH" | "BEARISH" {
   return (cvds.at(-1) ?? 0) > (cvds.at(-10) ?? 0) ? "BULLISH" : "BEARISH";
 }
 
-function swingPoints(candles: OHLCV[], lb = 5) {
+export function swingPoints(candles: OHLCV[], lb = 5) {
   const highs: { i: number; price: number }[] = [], lows: { i: number; price: number }[] = [];
   for (let i = lb; i < candles.length - lb; i++) {
     const w = candles.slice(i - lb, i + lb + 1);
@@ -183,7 +183,7 @@ function swingPoints(candles: OHLCV[], lb = 5) {
   return { highs, lows };
 }
 
-interface DivergenciaResult {
+export interface DivergenciaResult {
   tipo: "DIV_ALCISTA" | "DIV_BAJISTA" | "NONE";
   confianza: number;         // 0-100
   volConfirma: boolean;
@@ -197,7 +197,7 @@ interface DivergenciaResult {
 //  2. Compara volumen relativo de cada swing (vs su propia media de 20 velas previas)
 //  3. Compara pendiente de EMA9 entre ambos swings (momentum más débil?)
 //  4. Confirma con vela de rechazo (mecha > 1.5x cuerpo) en el swing actual
-function detectarDivergencia(candles: OHLCV[], lb = 5): DivergenciaResult {
+export function detectarDivergencia(candles: OHLCV[], lb = 5): DivergenciaResult {
   const none: DivergenciaResult = { tipo: "NONE", confianza: 0, volConfirma: false, emaConfirma: false, velaConfirma: false, desc: "" };
   if (candles.length < lb * 4 + 10) return none;
 
