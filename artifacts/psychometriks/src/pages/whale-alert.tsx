@@ -2064,6 +2064,7 @@ function GemHunterTab({isEliteUser}:{isEliteUser:boolean}) {
     price: number; priceEarly: number; volMultiplier: number; score: number;
     verdict: string; pctMoveSinceEarly: number; progressPct: number;
     signals: { multiExchange: string; oi: string; cvd: string; funding: string };
+    escenario?: { nombre: string; categoria: string; significado: string };
   }
   const [pumpRows, setPumpRows] = useState<PumpRow[]>([]);
   const [pumpHistory, setPumpHistory] = useState<PumpRow[]>([]);
@@ -2139,6 +2140,7 @@ function GemHunterTab({isEliteUser}:{isEliteUser:boolean}) {
                   <th className="px-3 py-2">VOL</th>
                   <th className="px-3 py-2 w-[160px]">PROGRESO</th>
                   <th className="px-3 py-2">MOV.</th>
+                  <th className="px-3 py-2">ESCENARIO</th>
                   <th className="px-3 py-2">VEREDICTO</th>
                   <th className="px-3 py-2">SEÑALES</th>
                 </tr>
@@ -2149,6 +2151,7 @@ function GemHunterTab({isEliteUser}:{isEliteUser:boolean}) {
                   const barColor = row.stage === "confirmed"
                     ? (row.verdict.includes("REAL") ? "#00e676" : row.verdict.includes("DUDOSO") ? "#ffd700" : "#ff1744")
                     : "#00e5ff";
+                  const escColor = row.escenario?.categoria === "ALCISTA" ? "#00e676" : row.escenario?.categoria === "BAJISTA" ? "#ff1744" : row.escenario?.categoria === "TRAMPA" ? "#e040fb" : "#ffd700";
                   return (
                     <tr key={row.symbol} className="border-b border-[#0a1825] hover:bg-[#040f18] transition-colors">
                       <td className="px-3 py-2 font-bold text-white">{row.symbol}</td>
@@ -2161,6 +2164,9 @@ function GemHunterTab({isEliteUser}:{isEliteUser:boolean}) {
                       </td>
                       <td className={`px-3 py-2 ${isUp?"text-[#00e676]":"text-[#ff1744]"}`}>
                         {isUp?"▲":"▼"} {Math.abs(row.pctMoveSinceEarly).toFixed(2)}%
+                      </td>
+                      <td className="px-3 py-2 font-bold" style={{ color: escColor }} title={row.escenario?.significado}>
+                        {row.escenario?.nombre ?? "—"}
                       </td>
                       <td className="px-3 py-2">{row.verdict}</td>
                       <td className="px-3 py-2 text-[#3a5568] text-[9px]">
