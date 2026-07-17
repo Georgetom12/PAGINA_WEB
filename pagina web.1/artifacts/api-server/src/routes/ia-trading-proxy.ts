@@ -73,6 +73,39 @@ async function fetchKlines(symbol: string, interval: string, limit = 200): Promi
   } catch { return []; }
 }
 
+// Open Interest histórico (futuros) — para divergencia PRECIO vs CAPITAL:
+// si el precio hace nuevo máximo/mínimo pero el OI no acompaña, es un movimiento
+// sin dinero nuevo detrás (débil, más propenso a revertir).
+async function fetchOiHistory(symbol: string, period = "1h", limit = 30): Promise<{ time: number; oiUsd: number }[]> {
+  try {
+    const r = await fetch(
+      `https://fapi.binance.com/futures/data/openInterestHist?symbol=${symbol}&period=${period}&limit=${limit}`,
+      { signal: AbortSignal.timeout(10000) },
+    );
+    if (!r.ok) return [];
+    const d = await r.json() as Array<{ timestamp: number; sumOpenInterestValue: string }>;
+    return d.map(x => ({ time: x.timestamp, oiUsd: parseFloat(x.sumOpenInterestValue) }));
+  } catch { return []; }
+}
+
+// Precio SPOT (no futuros) — para divergencia FUTUROS vs SPOT: si el movimiento
+// en futuros es mucho más agresivo que en spot, es apalancamiento especulativo,
+// no demanda/oferta real — menos duradero.
+async function fetchSpotKlines(symbol: string, interval: string, limit = 30): Promise<OHLCV[]> {
+  try {
+    const r = await fetch(
+      `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`,
+      { signal: AbortSignal.timeout(10000) },
+    );
+    if (!r.ok) return [];
+    const d = await r.json() as unknown[][];
+    return d.map(k => ({
+      time: Number(k[0]), open: parseFloat(String(k[1])), high: parseFloat(String(k[2])),
+      low: parseFloat(String(k[3])), close: parseFloat(String(k[4])), volume: parseFloat(String(k[5])),
+    }));
+  } catch { return []; }
+}
+
 // ─── Macro (mismo patrón/endpoint que ya funciona en market.ts) ───────────
 const YF_HEADERS = { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" };
 async function yahooChangePct(symbol: string): Promise<number | null> {
@@ -142,12 +175,51 @@ async function analizarNativo(symbolRaw: string) {
 
   const tfKeys = ["5m", "15m", "30m", "1h", "4h", "1d", "1w"];
   const klinesByTf: Record<string, OHLCV[]> = {};
-  await Promise.all(tfKeys.map(async tf => { klinesByTf[tf] = await fetchKlines(symbol, TIMEFRAMES[tf]!, tf === "1w" ? 60 : 200); }));
+  const [oiHist, spotKlines] = await Promise.all([
+    (async () => { await Promise.all(tfKeys.map(async tf => { klinesByTf[tf] = await fetchKlines(symbol, TIMEFRAMES[tf]!, tf === "1w" ? 60 : 200); })); return null; })(),
+    fetchOiHistory(symbol, "1h", 30),
+    fetchSpotKlines(symbol, "4h", 30),
+  ]).then(([, oi, spot]) => [oi, spot] as const);
 
   const c1h = klinesByTf["1h"] ?? [], c4h = klinesByTf["4h"] ?? [], c1d = klinesByTf["1d"] ?? [], c1w = klinesByTf["1w"] ?? [];
   if (!c1h.length || !c4h.length) return { error: `Sin datos para ${symbol}` };
 
   const price = c1h.at(-1)!.close;
+
+  // ── Divergencia de CAPITAL (1): Precio vs Open Interest ────────────────
+  // Si el precio se mueve pero el OI no acompaña (o va en contra), el
+  // movimiento no tiene dinero nuevo detrás — es débil y más propenso a revertir.
+  let capitalOiDiv: { tipo: "DIV_ALCISTA" | "DIV_BAJISTA" | "NONE"; desc: string; oiChangePct: number } = { tipo: "NONE", desc: "Sin suficiente historial de OI", oiChangePct: 0 };
+  if (oiHist.length >= 10) {
+    const oiNow = oiHist.at(-1)!.oiUsd, oiBefore = oiHist.at(-10)!.oiUsd;
+    const oiChangePct = oiBefore > 0 ? ((oiNow - oiBefore) / oiBefore) * 100 : 0;
+    const priceChangePct10h = c1h.length >= 10 ? ((c1h.at(-1)!.close - c1h.at(-10)!.close) / c1h.at(-10)!.close) * 100 : 0;
+    if (priceChangePct10h > 0.3 && oiChangePct < -1) {
+      capitalOiDiv = { tipo: "DIV_BAJISTA", oiChangePct, desc: `Precio +${priceChangePct10h.toFixed(2)}% pero OI ${oiChangePct.toFixed(2)}% — rally sin capital nuevo, solo cierre de shorts` };
+    } else if (priceChangePct10h < -0.3 && oiChangePct < -1) {
+      capitalOiDiv = { tipo: "DIV_ALCISTA", oiChangePct, desc: `Precio ${priceChangePct10h.toFixed(2)}% pero OI ${oiChangePct.toFixed(2)}% — caída sin capital nuevo, solo cierre de longs (posible agotamiento)` };
+    } else {
+      capitalOiDiv = { tipo: "NONE", oiChangePct, desc: `OI ${oiChangePct >= 0 ? "+" : ""}${oiChangePct.toFixed(2)}% — movimiento acompañado por capital, sin divergencia` };
+    }
+  }
+
+  // ── Divergencia de CAPITAL (2): Futuros vs Spot ────────────────────────
+  // Si futuros se mueve mucho más agresivo que spot, es apalancamiento
+  // especulativo, no demanda/oferta real de compradores/vendedores de a pie.
+  let capitalSpotDiv: { tipo: "DIV_ALCISTA" | "DIV_BAJISTA" | "NONE"; desc: string; spotChangePct: number; futChangePct: number } =
+    { tipo: "NONE", desc: "Sin datos de spot", spotChangePct: 0, futChangePct: 0 };
+  if (spotKlines.length >= 10 && c4h.length >= 10) {
+    const spotChangePct = ((spotKlines.at(-1)!.close - spotKlines.at(-10)!.close) / spotKlines.at(-10)!.close) * 100;
+    const futChangePct = ((c4h.at(-1)!.close - c4h.at(-10)!.close) / c4h.at(-10)!.close) * 100;
+    const gap = futChangePct - spotChangePct;
+    if (Math.abs(gap) > 1.5) {
+      capitalSpotDiv = gap > 0
+        ? { tipo: "DIV_BAJISTA", spotChangePct, futChangePct, desc: `Futuros +${futChangePct.toFixed(2)}% vs Spot ${spotChangePct >= 0 ? "+" : ""}${spotChangePct.toFixed(2)}% — subida impulsada por apalancamiento, no por compradores reales` }
+        : { tipo: "DIV_ALCISTA", spotChangePct, futChangePct, desc: `Futuros ${futChangePct.toFixed(2)}% vs Spot ${spotChangePct >= 0 ? "+" : ""}${spotChangePct.toFixed(2)}% — caída impulsada por shorts apalancados, no por vendedores reales` };
+    } else {
+      capitalSpotDiv = { tipo: "NONE", spotChangePct, futChangePct, desc: `Spot y futuros se mueven parejo (${spotChangePct.toFixed(2)}% vs ${futChangePct.toFixed(2)}%) — sin divergencia de apalancamiento` };
+    }
+  }
 
   // RSI en cascada (5m → 1 semana)
   const rsi_map: Record<string, number> = {};
@@ -214,8 +286,15 @@ async function analizarNativo(symbolRaw: string) {
   if (bullP.length) { score += Math.min(bullP.length * 1.5, 4); contexto.push(`${bullP.length} patrón(es) alcista(s): ${bullP.map(p => p.name).join(", ")}`); }
   if (bearP.length) { score += Math.min(bearP.length * 1.5, 4); contexto.push(`${bearP.length} patrón(es) bajista(s): ${bearP.map(p => p.name).join(", ")}`); }
 
+  // Divergencia de capital (Precio vs OI, y Futuros vs Spot) — pesan menos que
+  // la divergencia de precio/volumen porque son señales de contexto, no de gatillo
+  if (capitalOiDiv.tipo === "DIV_ALCISTA") { score += 1.5; if (dir !== "BAJISTA") dir = "ALCISTA"; contexto.push(`Divergencia de capital (OI): ${capitalOiDiv.desc}`); }
+  if (capitalOiDiv.tipo === "DIV_BAJISTA") { score += 1.5; if (dir !== "ALCISTA") dir = "BAJISTA"; contexto.push(`Divergencia de capital (OI): ${capitalOiDiv.desc}`); }
+  if (capitalSpotDiv.tipo === "DIV_ALCISTA") { score += 1; contexto.push(`Divergencia Futuros/Spot: ${capitalSpotDiv.desc}`); }
+  if (capitalSpotDiv.tipo === "DIV_BAJISTA") { score += 1; contexto.push(`Divergencia Futuros/Spot: ${capitalSpotDiv.desc}`); }
+
   if (dir === "NEUTRAL") dir = bullP.length > bearP.length ? "ALCISTA" : bearP.length > bullP.length ? "BAJISTA" : "NEUTRAL";
-  const confianza = Math.round(Math.min(100, (score / 24) * 100));
+  const confianza = Math.round(Math.min(100, (score / 29) * 100));
   const accion: "ENTRAR" | "ESPERAR" | "EVITAR" = dir === "NEUTRAL" ? "EVITAR" : confianza >= 65 ? "ENTRAR" : confianza >= 40 ? "ESPERAR" : "EVITAR";
 
   // Bear score independiente (qué tan fuerte es el caso bajista, sin importar cuál ganó)
@@ -314,6 +393,8 @@ async function analizarNativo(symbolRaw: string) {
     poc_cascade: pocCascade,
     pocs_abajo: pocsAbajo,
     bollinger, canal_reg: canalReg, slope: slopePct,
+    divergencia_capital_oi: capitalOiDiv,
+    divergencia_capital_spot: capitalSpotDiv,
   };
 
   const dictamen = {
