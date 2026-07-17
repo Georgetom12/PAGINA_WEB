@@ -51,6 +51,7 @@ interface Row {
   pctMoveSinceEarly: number;
   progressPct: number;      // 0-100, para la barra visual de "cuánto falta para confirmar"
   signals: { multiExchange: string; oi: string; cvd: string; funding: string };
+  escenario?: { nombre: string; categoria: string; significado: string };
   triggeredAt: number;
   confirmAt: number;
   lingerUntil: number;
@@ -310,6 +311,91 @@ function verdictLabel(score: number, directionUp: boolean): string {
   return "🟡 DUDOSO";
 }
 
+// ─── Clasificador de escenario (Precio + CVD + OI + Funding) ──────────────
+// Tabla de decisión que Jorge armó y compartió — cruza las 4 variables para
+// nombrar el escenario exacto (no solo "sube/baja", sino el PORQUÉ real
+// detrás del movimiento: acumulación real, distribución disfrazada, trampa,
+// short squeeze, etc.). Las combinaciones que Jorge no listó explícitamente
+// se completaron con la MISMA lógica interpretativa que él usó:
+//   • CVD = convicción del taker agresivo (compra/venta real en ese momento)
+//   • OI  = si sube, hay posiciones NUEVAS abriendo; si baja, se están
+//           CERRANDO (toma de ganancia o liquidación), no es convicción nueva
+//   • Funding = sesgo de apalancamiento ya acumulado (positivo = longs
+//           pagando shorts, negativo = shorts pagando longs)
+type Tri = "POSITIVO" | "NEGATIVO" | "NEUTRO";
+type Escenario = { nombre: string; categoria: "BAJISTA" | "ALCISTA" | "TRAMPA" | "NEUTRAL"; significado: string };
+
+function claseCVD(v: number, ref: number): Tri {
+  if (Math.abs(v) < ref * 0.1) return "NEUTRO";
+  return v > 0 ? "POSITIVO" : "NEGATIVO";
+}
+function claseFunding(pct: number): Tri {
+  if (Math.abs(pct) < 0.005) return "NEUTRO";
+  return pct > 0 ? "POSITIVO" : "NEGATIVO";
+}
+
+function clasificarEscenario(
+  precioDir: "SUBE" | "BAJA" | "LATERAL",
+  cvd: Tri,
+  oiSube: boolean | null,
+  funding: Tri,
+): Escenario {
+  // ── LATERAL — sin dirección clara de precio ──────────────────────────
+  if (precioDir === "LATERAL") {
+    if (cvd === "NEUTRO" && funding === "NEUTRO") {
+      return { nombre: "Lateralización", categoria: "NEUTRAL", significado: "Sin convicción en ninguna dirección. Esperar ruptura antes de entrar." };
+    }
+    if (cvd === "NEGATIVO" && oiSube && funding === "NEGATIVO") {
+      return { nombre: "Presión bajista oculta", categoria: "NEUTRAL", significado: "Parece lateral pero los shorts se están acumulando. Ruptura bajista probable." };
+    }
+    if (cvd === "POSITIVO" && oiSube && funding === "POSITIVO") {
+      return { nombre: "Presión alcista oculta", categoria: "NEUTRAL", significado: "Parece lateral pero los longs se están acumulando. Ruptura alcista probable." };
+    }
+    if (cvd === "POSITIVO" && !oiSube) {
+      return { nombre: "Toma de ganancias silenciosa", categoria: "NEUTRAL", significado: "Compradores activos pero sin posiciones nuevas — impulso alcista debilitándose." };
+    }
+    if (cvd === "NEGATIVO" && !oiSube) {
+      return { nombre: "Capitulación silenciosa", categoria: "NEUTRAL", significado: "Vendedores activos pero sin posiciones nuevas — presión bajista debilitándose." };
+    }
+    return { nombre: "Indecisión con señales mixtas", categoria: "NEUTRAL", significado: "El precio no define dirección y las variables no coinciden entre sí — esperar más confirmación." };
+  }
+
+  // ── SUBE ──────────────────────────────────────────────────────────────
+  if (precioDir === "SUBE") {
+    if (cvd === "POSITIVO") {
+      if (oiSube) {
+        if (funding !== "NEGATIVO") return { nombre: "Acumulación pura", categoria: "ALCISTA", significado: "La más fuerte. Compradores con convicción, posiciones nuevas reales." };
+        return { nombre: "Short squeeze", categoria: "ALCISTA", significado: "Shorts liquidados empujan el precio. Explosivo pero puede revertir rápido." };
+      }
+      return { nombre: "Longs tomando profit", categoria: "ALCISTA", significado: "Sube mientras posiciones se cierran — alcista pero el momentum se está debilitando." };
+    }
+    // CVD negativo o neutro pese a que el precio sube — sospechoso
+    if (oiSube) {
+      if (funding === "NEGATIVO") return { nombre: "Distribución disfrazada / Judas Swing", categoria: "BAJISTA", significado: "El dinero inteligente ya está posicionado en ambos lados: vendiendo spot arriba y con shorts en futuros." };
+      return { nombre: "Distribución", categoria: "BAJISTA", significado: "Ballenas vendiendo mientras el retail compra la subida. Colapso próximo cuando terminen de distribuir." };
+    }
+    return { nombre: "Bull trap", categoria: "TRAMPA", significado: "Precio sube pero sin compradores reales — solo shorts cubriendo. No es una subida para entrar." };
+  }
+
+  // ── BAJA ──────────────────────────────────────────────────────────────
+  if (cvd === "NEGATIVO") {
+    if (oiSube) {
+      if (funding === "NEGATIVO") return { nombre: "Shorts nuevos", categoria: "BAJISTA", significado: "Shorts institucionales abriendo posición. Presión vendedora entrando fuerte." };
+      return { nombre: "Bear trap institucional", categoria: "ALCISTA", significado: "El precio cae para cazar stops del retail mientras ballenas acumulan posiciones vía órdenes límite. Reversión alcista próxima." };
+    }
+    if (funding === "NEGATIVO") return { nombre: "Distribución pura", categoria: "BAJISTA", significado: "La más peligrosa. Ballenas saliendo, longs liquidándose. Caída orgánica real." };
+    return { nombre: "Liquidación de longs", categoria: "BAJISTA", significado: "Longs apalancados siendo barridos. Caída acelerada por stop hunts." };
+  }
+  // CVD positivo o neutro pese a que el precio baja — posible trampa/divergencia
+  if (oiSube) {
+    if (funding !== "NEGATIVO") return { nombre: "Bear trap", categoria: "TRAMPA", significado: "Precio cae pero entran posiciones institucionales reales. Acumulación disfrazada — reversión próxima." };
+    return { nombre: "Compradores absorbiendo shorts nuevos", categoria: "NEUTRAL", significado: "Posible agotamiento bajista — hay compra agresiva absorbiendo la apertura de nuevos shorts." };
+  }
+  if (funding !== "NEGATIVO") return { nombre: "Divergencia compradora / shorts tomando profit", categoria: "NEUTRAL", significado: "Shorts cerrando ganancias. Caída sin convicción vendedora real — posible rebote técnico sin fuerza institucional detrás." };
+  return { nombre: "Divergencia", categoria: "TRAMPA", significado: "Precio cae pero el CVD compra. Conflicto — esperar confirmación, no operar aún." };
+}
+
+
 function scoreSymbol(exchangesConfirming: Set<string>, states: Record<string, SymbolState>, priceMove: number) {
   let score = 0;
   const direction = priceMove >= 0 ? 1 : -1;
@@ -335,13 +421,21 @@ function scoreSymbol(exchangesConfirming: Set<string>, states: Record<string, Sy
   else { score -= 1; detail.cvd = `❌ $${Math.round(cvdTotal).toLocaleString()}`; }
 
   const fundings = Object.values(states).map(s => s.lastFunding).filter((f): f is number => f !== null);
+  let fundingClass: Tri = "NEUTRO";
   if (fundings.length) {
     const avgPct = (fundings.reduce((a, b) => a + b, 0) / fundings.length) * 100;
     if (Math.abs(avgPct) >= FUNDING_EXTREME_PCT) { score -= 1; detail.funding = `⚠️ ${avgPct.toFixed(4)}%`; }
     else detail.funding = `➖ ${avgPct.toFixed(4)}%`;
+    fundingClass = claseFunding(avgPct);
   } else detail.funding = "➖ sin dato";
 
-  return { score, detail };
+  // ── Escenario (Precio + CVD + OI + Funding) — tabla de decisión de Jorge ──
+  const precioDir = Math.abs(priceMove) < 0.1 ? "LATERAL" : priceMove > 0 ? "SUBE" : "BAJA";
+  const cvdClass = claseCVD(cvdTotal, Math.max(Math.abs(cvdTotal), 1));
+  const oiSube = oiDeltas.length ? (oiDeltas.reduce((a, b) => a + b, 0) / oiDeltas.length) > 0 : null;
+  const escenario = clasificarEscenario(precioDir, cvdClass, oiSube, fundingClass);
+
+  return { score, detail, escenario };
 }
 
 // Bybit primero: Binance suele bloquear (HTTP 451) IPs de datacenters/Railway
@@ -439,15 +533,15 @@ async function checkConfirmations() {
 
     const lastPrice = Object.values(perExchangeStates).map(s => s.lastPrice).find(p2 => p2) ?? p.earlyPrice;
     const priceMove = p.earlyPrice ? ((lastPrice! - p.earlyPrice) / p.earlyPrice) * 100 : 0;
-    const { score, detail } = scoreSymbol(p.confirmedExchanges, perExchangeStates, priceMove);
+    const { score, detail, escenario } = scoreSymbol(p.confirmedExchanges, perExchangeStates, priceMove);
     const verdict = verdictLabel(score, priceMove >= 0);
-    console.log(`[pump-live] ⚡ CONFIRMACIÓN ${symbol} score=${score} -> ${verdict}`);
+    console.log(`[pump-live] ⚡ CONFIRMACIÓN ${symbol} score=${score} -> ${verdict} | escenario=${escenario.nombre}`);
 
     const confirmedRow: Row = {
       symbol, stage: "confirmed", originExchange: PRIMARY_EXCHANGE, price: lastPrice ?? p.earlyPrice, priceEarly: p.earlyPrice,
       volMultiplier: rows.get(symbol)?.volMultiplier ?? 0,
       score, verdict, direction: priceMove >= 0 ? 1 : -1, pctMoveSinceEarly: priceMove, progressPct: 100,
-      signals: detail, triggeredAt: p.earlyTs, confirmAt: now, lingerUntil: now + LINGER_MS,
+      signals: detail, escenario, triggeredAt: p.earlyTs, confirmAt: now, lingerUntil: now + LINGER_MS,
     };
     rows.set(symbol, confirmedRow);
 
