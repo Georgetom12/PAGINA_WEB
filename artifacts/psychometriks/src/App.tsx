@@ -44,6 +44,7 @@ import WhaleAlert from "@/pages/whale-alert";
 import BuffettScanner from "@/pages/buffett-scanner";
 import WhaleTracker from "@/pages/whale-tracker";
 import IntelligentAiTrading from "@/pages/ia-trading";
+import IaTradingBolsa from "@/pages/ia-trading-bolsa";
 import IaSignalsConfirmadas from "@/pages/ia-signals";
 
 import Challenge from "@/pages/challenge";
@@ -196,6 +197,7 @@ function Router() {
       <Route path="/whale-alert"     component={() => <Guard plan="elite"><WhaleAlert /></Guard>} />
       <Route path="/whale-tracker"   component={() => <Guard plan="elite"><WhaleTracker /></Guard>} />
       <Route path="/ia-trading"      component={() => <Guard plan="elite"><IntelligentAiTrading /></Guard>} />
+      <Route path="/ia-trading-bolsa" component={() => <Guard plan="elite"><IaTradingBolsa /></Guard>} />
       <Route path="/ia-signals"      component={() => <Guard plan="elite"><IaSignalsConfirmadas /></Guard>} />
       <Route path="/buffett-scanner" component={() => <Guard plan="elite"><BuffettScanner /></Guard>} />
       <Route path="/bolsa"           component={() => <Guard plan="elite"><BolsaValores /></Guard>} />
