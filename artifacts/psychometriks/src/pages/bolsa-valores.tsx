@@ -269,18 +269,20 @@ export default function BolsaValores() {
     symbol: string; assetClass: "stock"|"forex"|"bond"; stage: "early"|"confirmed";
     price: number; pctMoveSinceEarly: number; volMultiplier: number;
     benchmarkMovePct: number; idiosyncraticRatio: number; score: number;
-    verdict: string; progressPct: number;
+    verdict: string; progressPct: number; triggeredAt?: number; confirmAt?: number;
   }
   const [pulseRows, setPulseRows] = useState<PulseRow[]>([]);
+  const [pulseHistory, setPulseHistory] = useState<PulseRow[]>([]);
   const [yieldCurveSignal, setYieldCurveSignal] = useState<{label: string; spread: number} | null>(null);
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
       try {
         const r = await fetch("/api/market-pulse/rows");
-        const d = await r.json() as { ok: boolean; rows?: PulseRow[]; yieldCurveSignal?: {label:string; spread:number} };
+        const d = await r.json() as { ok: boolean; rows?: PulseRow[]; history?: PulseRow[]; yieldCurveSignal?: {label:string; spread:number} };
         if (!cancelled && d.ok) {
           if (d.rows) setPulseRows(d.rows);
+          if (d.history) setPulseHistory(d.history);
           if (d.yieldCurveSignal) setYieldCurveSignal(d.yieldCurveSignal);
         }
       } catch { /* deja las filas anteriores */ }
@@ -409,6 +411,46 @@ export default function BolsaValores() {
             Se actualiza sola cada 8s · 20 acciones + 10 pares forex + 5 ETFs de bonos · compara contra SPY/DXY/AGG para saber si el movimiento es propio o de todo el mercado
           </div>
         </div>
+
+        {/* ═══ Historial reciente de Market Pulse (últimas 20, con fecha y hora) ═══ */}
+        {pulseHistory.length > 0 && (
+          <div className="border border-[#0ff2]/10 bg-[#020b12] mb-6 overflow-hidden">
+            <div className="px-4 py-2 border-b border-[#0ff2]/10 bg-[#040f18]">
+              <span className="font-mono text-sm text-[#7ab3c8] tracking-wide">📋 HISTORIAL RECIENTE — últimas {pulseHistory.length}</span>
+            </div>
+            <div className="overflow-x-auto max-h-[300px] overflow-y-auto">
+              <table className="w-full font-mono text-[10px]">
+                <thead>
+                  <tr className="border-b border-[#0ff2]/10 text-[#7ab3c8] text-left">
+                    <th className="px-3 py-1.5">FECHA / HORA</th>
+                    <th className="px-3 py-1.5">ACTIVO</th>
+                    <th className="px-3 py-1.5">PRECIO</th>
+                    <th className="px-3 py-1.5">MOV.</th>
+                    <th className="px-3 py-1.5">VEREDICTO</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pulseHistory.map((row, i) => {
+                    const isUp = row.pctMoveSinceEarly >= 0;
+                    const ts = row.confirmAt ?? row.triggeredAt;
+                    const fecha = ts ? new Date(ts).toLocaleString("es-EC", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" }) : "—";
+                    return (
+                      <tr key={`${row.symbol}-${i}`} className="border-b border-[#0ff2]/5">
+                        <td className="px-3 py-1.5 text-[#5a6b7d]">{fecha}</td>
+                        <td className="px-3 py-1.5 font-bold text-white">{row.symbol.replace("=X","")}</td>
+                        <td className="px-3 py-1.5 text-[#cddc39]">{row.price.toFixed(row.assetClass === "forex" ? 4 : 2)}</td>
+                        <td className={`px-3 py-1.5 ${isUp?"text-[#00e676]":"text-[#ff1744]"}`}>
+                          {isUp?"▲":"▼"} {Math.abs(row.pctMoveSinceEarly).toFixed(2)}%
+                        </td>
+                        <td className="px-3 py-1.5">{row.verdict}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
         {/* Main chart + Market overview */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
