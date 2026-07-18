@@ -47,6 +47,7 @@ import psyWhalesRouter from "./psy-whales";
 import altcoinSignalsRouter from "./altcoin-signals";
 import whitelistRouter from "./whitelist";
 import iaTradingProxyRouter from "./ia-trading-proxy";
+import iaTradingBolsaRouter from "./ia-trading-bolsa";
 import iaSignalsRouter from "./ia-signals";
 import superadminAuthRouter from "./superadmin-auth"; // montar ANTES de freeAuthRouter: mismo path /auth/superadmin-login, esta versión trae TOTP
 
@@ -101,6 +102,7 @@ router.use(psyWhalesRouter);
 router.use(altcoinSignalsRouter);
 router.use(whitelistRouter);
 router.use(iaTradingProxyRouter);
+router.use(iaTradingBolsaRouter);
 router.use(iaSignalsRouter);
 
 export default router;
