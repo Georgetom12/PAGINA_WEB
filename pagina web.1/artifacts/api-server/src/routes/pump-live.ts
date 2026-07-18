@@ -15,7 +15,11 @@ import { Router, type Request, type Response } from "express";
 const router = Router();
 
 // ─── Config ───────────────────────────────────────────────────────────────
-const WATCHLIST_SIZE = 60;              // más chico que el bot standalone — comparte proceso con el resto del API
+const WATCHLIST_SIZE = 150;             // antes 60 — ampliado a pedido de Jorge, sigue compartiendo proceso con el resto del API
+const PRIORITY_SYMBOLS = [
+  "PAXGUSDT", "BOMEUSDT", "WLDUSDT", "ENAUSDT", "PENGUUSDT", "ASTERUSDT",
+  "LABUSDT", "RAVEUSDT", "BSBUSDT", "BILLUSDT",
+];
 const WATCHLIST_REFRESH_MS = 15 * 60_000;
 const SCAN_INTERVAL_MS = 5_000;
 const BASELINE_WINDOW_MIN = 20;
@@ -449,7 +453,11 @@ async function refreshWatchlist() {
   let syms = await topSymbolsBybit(WATCHLIST_SIZE);
   if (!syms.length) syms = await topSymbolsBinance(WATCHLIST_SIZE);
   if (!syms.length) syms = await topSymbolsOkx(WATCHLIST_SIZE);
-  if (syms.length) { watchlist = syms; lastWatchlistRefresh = Date.now(); console.log(`[pump-live] watchlist actualizada: ${syms.length} símbolos`); }
+  if (syms.length) {
+    watchlist = [...new Set([...PRIORITY_SYMBOLS, ...syms])];
+    lastWatchlistRefresh = Date.now();
+    console.log(`[pump-live] watchlist actualizada: ${watchlist.length} símbolos`);
+  }
   else console.error("[pump-live] no se pudo refrescar watchlist — bybit, binance y okx fallaron");
 }
 

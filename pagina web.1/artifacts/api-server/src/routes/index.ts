@@ -48,6 +48,7 @@ import altcoinSignalsRouter from "./altcoin-signals";
 import whitelistRouter from "./whitelist";
 import iaTradingProxyRouter from "./ia-trading-proxy";
 import iaTradingBolsaRouter from "./ia-trading-bolsa";
+import cryptoIndicesRouter from "./crypto-indices";
 import iaSignalsRouter from "./ia-signals";
 import superadminAuthRouter from "./superadmin-auth"; // montar ANTES de freeAuthRouter: mismo path /auth/superadmin-login, esta versión trae TOTP
 
@@ -103,6 +104,7 @@ router.use(altcoinSignalsRouter);
 router.use(whitelistRouter);
 router.use(iaTradingProxyRouter);
 router.use(iaTradingBolsaRouter);
+router.use(cryptoIndicesRouter);
 router.use(iaSignalsRouter);
 
 export default router;

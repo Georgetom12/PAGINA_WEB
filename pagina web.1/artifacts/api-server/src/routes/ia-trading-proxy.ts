@@ -22,7 +22,18 @@ import { detectarDivergencia } from "./altcoin-signals";
 const router = Router();
 
 const FALLBACK_SYMBOLS = ["BTCUSDT","ETHUSDT","SOLUSDT","BNBUSDT","XRPUSDT","LINKUSDT","AAVEUSDT","INJUSDT"];
-const TOP_SYMBOLS_COUNT = 60;
+const TOP_SYMBOLS_COUNT = 200; // antes 60 — Binance Futures ya no llega a 500 pares reales, pero sí a varios cientos
+
+// Tickers que Jorge pidió explícitamente y que deben estar SIEMPRE disponibles
+// (aunque no estén en el top por volumen esa semana). Si alguno no existe de
+// verdad en Binance, el sistema ya lo maneja sin romperse (falla en silencio
+// solo para ESE símbolo, como ya vimos con PUMPFUNUSDT en los logs).
+const PRIORITY_SYMBOLS = [
+  "PAXGUSDT", // oro tokenizado — este SÍ es un par real en Binance
+  "BOMEUSDT", "WLDUSDT", "ENAUSDT", "PENGUUSDT", "ASTERUSDT",
+  "LABUSDT", "RAVEUSDT", "BSBUSDT", "BILLUSDT",
+  // "LAOZIUSDT" — no confirmado, pendiente que Jorge confirme el ticker exacto
+];
 let _topSymbolsCache: { data: string[]; ts: number } | null = null;
 const TOP_SYMBOLS_TTL_MS = 15 * 60_000;
 
@@ -37,7 +48,8 @@ async function getTopSymbols(): Promise<string[]> {
         .sort((a, b) => parseFloat(String(b.quoteVolume)) - parseFloat(String(a.quoteVolume)))
         .slice(0, TOP_SYMBOLS_COUNT)
         .map(x => String(x.symbol));
-      if (syms.length) { _topSymbolsCache = { data: syms, ts: Date.now() }; return syms; }
+      const combinados = [...new Set([...PRIORITY_SYMBOLS, ...syms])];
+      if (combinados.length) { _topSymbolsCache = { data: combinados, ts: Date.now() }; return combinados; }
     }
   } catch { /* usa el respaldo fijo */ }
   return FALLBACK_SYMBOLS;

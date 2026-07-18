@@ -18,9 +18,35 @@ import { detectarDivergencia } from "./altcoin-signals";
 
 const router = Router();
 
-const STOCK_SYMBOLS = ["AAPL","MSFT","NVDA","AMZN","GOOGL","META","TSLA","BRK-B","JPM","V","WMT","XOM","JNJ","UNH","PG","MA","LLY","COST","HD","NFLX"];
-const FOREX_SYMBOLS = ["EURUSD=X","GBPUSD=X","USDJPY=X","USDCHF=X","AUDUSD=X","USDCAD=X","NZDUSD=X","EURGBP=X","EURJPY=X","GBPJPY=X"];
-const ALL_SYMBOLS = [...STOCK_SYMBOLS, ...FOREX_SYMBOLS];
+const STOCK_SYMBOLS = [
+  // Tech
+  "AAPL","MSFT","NVDA","AMZN","GOOGL","META","TSLA","AVGO","ADBE","CRM","ORCL","INTC","AMD","QCOM","TXN","CSCO","IBM","NOW","INTU","AMAT","MU","ADI",
+  // Finanzas
+  "JPM","V","MA","BAC","WFC","GS","MS","C","AXP","BLK","SCHW","USB","PNC","BRK-B",
+  // Salud
+  "JNJ","UNH","LLY","ABBV","TMO","ABT","PFE","MRK","DHR","BMY","GILD","CI","ELV","MDT",
+  // Consumo
+  "WMT","PG","COST","HD","NFLX","DIS","MCD","NKE","SBUX","KO","PEP",
+  // Energía / Industrial / Materiales
+  "XOM","CVX","BA","CAT","HON","UPS","LMT","RTX","GE","MMM","DE","LIN","SHW","NEM","FCX",
+  // Utilities / Telecom
+  "DUK","SO","NEE","D","T","VZ","CMCSA","TMUS",
+  // Transporte
+  "UNP","CSX",
+];
+const FOREX_SYMBOLS = [
+  // Majors
+  "EURUSD=X","GBPUSD=X","USDJPY=X","USDCHF=X","AUDUSD=X","USDCAD=X","NZDUSD=X",
+  // Cruces principales
+  "EURGBP=X","EURJPY=X","GBPJPY=X","EURCHF=X","EURAUD=X","EURCAD=X","GBPCHF=X","GBPAUD=X","GBPCAD=X",
+  "AUDJPY=X","AUDCAD=X","AUDNZD=X","NZDJPY=X","CHFJPY=X","CADJPY=X",
+  // Emergentes/commodities
+  "USDSEK=X","USDNOK=X","USDMXN=X",
+];
+// DXY (Dollar Index) — Jorge pidió esto en cripto, pero ahí no hay velas
+// reales disponibles; aquí en Bolsa sí (Yahoo lo trae sin problema)
+const MACRO_INDEX_SYMBOLS = ["DX-Y.NYB"];
+const ALL_SYMBOLS = [...STOCK_SYMBOLS, ...FOREX_SYMBOLS, ...MACRO_INDEX_SYMBOLS];
 
 const _cache = new Map<string, { data: unknown; ts: number }>();
 const CACHE_MS = 5 * 60_000;
