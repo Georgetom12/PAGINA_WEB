@@ -2068,6 +2068,24 @@ function GemHunterTab({isEliteUser}:{isEliteUser:boolean}) {
   }
   const [pumpRows, setPumpRows] = useState<PumpRow[]>([]);
   const [pumpHistory, setPumpHistory] = useState<PumpRow[]>([]);
+
+  // Índices cripto (BTC.D, USDT.D, TOTAL/2/3) — construyen su propio historial
+  // real desde cero, no son activos con velas ya disponibles
+  interface IndiceCripto { id: string; nombre: string; valor: number | null; muestras: number; actualizado: number | null }
+  const [indicesCripto, setIndicesCripto] = useState<IndiceCripto[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const r = await fetch("/api/crypto-indices/live");
+        const d = await r.json() as { ok: boolean; data?: IndiceCripto[] };
+        if (!cancelled && d.ok && d.data) setIndicesCripto(d.data);
+      } catch { /* deja los datos anteriores */ }
+    };
+    load();
+    const id = setInterval(load, 60_000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, []);
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
@@ -2183,6 +2201,30 @@ function GemHunterTab({isEliteUser}:{isEliteUser:boolean}) {
         )}
         <div className="px-4 py-1.5 border-t border-[#0d2030] font-space text-[8px] text-[#3a5568]">
           Se actualiza sola cada 4s · monedas ya listadas con perpetuos (Binance/Bybit/OKX) · REAL/BULL TRAP/BEAR TRAP según OI+CVD+multi-exchange+funding
+        </div>
+      </div>
+
+      {/* ═══ Índices Cripto — BTC.D, USDT.D, TOTAL/2/3 ═══ */}
+      <div className="border border-[#00e5ff1a] bg-[#020a10] mb-6 overflow-hidden">
+        <div className="flex items-center gap-2 px-4 py-2.5 border-b border-[#0d2030] bg-[#040f18]">
+          <div className="w-2 h-2 rounded-full bg-[#ffd700]" style={{boxShadow:"0 0 8px #ffd700"}} />
+          <span className="font-bebas text-lg text-[#ffd700] tracking-wide">📊 ÍNDICES CRIPTO — DOMINANCIA Y TOTAL</span>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-px bg-[#0d2030]">
+          {indicesCripto.map(ix => (
+            <div key={ix.id} className="bg-[#020a10] p-3">
+              <div className="font-space text-[8px] text-[#7ab3c8] tracking-wider mb-1">{ix.nombre}</div>
+              <div className="font-bebas text-xl text-white">
+                {ix.valor == null ? "—" : ix.id.startsWith("total") ? `$${(ix.valor/1e12).toFixed(2)}T` : `${ix.valor.toFixed(2)}%`}
+              </div>
+              <div className="font-space text-[8px] text-[#3a5568] mt-1">{ix.muestras} muestras acumuladas</div>
+            </div>
+          ))}
+        </div>
+        <div className="px-4 py-1.5 border-t border-[#0d2030] font-space text-[8px] text-[#3a5568]">
+          Dominancia BTC/USDT y TOTAL/2/3 no son activos negociables — son índices calculados. No hay historial gratis disponible en ningún lado,
+          así que este panel construye su propio historial real desde cero (una muestra real cada 5 min vía CoinGecko) — el análisis técnico completo
+          se activa solo cuando ya hay suficiente historial acumulado, no antes.
         </div>
       </div>
 
