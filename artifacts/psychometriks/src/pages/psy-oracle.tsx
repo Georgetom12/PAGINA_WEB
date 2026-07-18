@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { useLocation } from "wouter";
 import { Chart, registerables } from "chart.js";
 import { getAuth } from "@/lib/auth";
 
@@ -865,6 +866,35 @@ function SectionInstitucional({macro}:{macro:LiveMacro|null}) {
     });
   }, [macro]);
 
+  // 13F real vía SEC EDGAR (ya construido en oracle-feeds.ts) — reemplaza la
+  // tabla fija de "Bridgewater/Millennium/Citadel" que nunca cambiaba.
+  interface Holding13F { nameOfIssuer: string; cusip: string; value: number; shares: number }
+  interface Investor13F { name: string; fund: string; ok: boolean; periodOfReport?: string; filedAt?: string; holdings?: Holding13F[] }
+  const [investors13F, setInvestors13F] = useState<Investor13F[]>([]);
+  const [loading13F, setLoading13F] = useState(true);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch("/api/oracle/superinvestors");
+        const d = await r.json() as { ok: boolean; investors?: Investor13F[] };
+        if (!cancelled && d.ok && d.investors) setInvestors13F(d.investors);
+      } catch { /* deja la tabla vacía, se mostrará el mensaje de carga/error */ }
+      finally { if (!cancelled) setLoading13F(false); }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+  // Aplanamos: una fila por cada holding, de cada superinversor, ordenado por valor
+  const filas13F = useMemo(() => {
+    const out: Array<{ fund: string; sym: string; shares: number; value: number; periodo?: string }> = [];
+    for (const inv of investors13F) {
+      for (const h of (inv.holdings ?? []).slice(0, 5)) {
+        out.push({ fund: inv.fund, sym: h.nameOfIssuer, shares: h.shares, value: h.value, periodo: inv.periodOfReport });
+      }
+    }
+    return out.sort((a, b) => b.value - a.value).slice(0, 20);
+  }, [investors13F]);
+
   return (
     <div style={{display:"flex",flexDirection:"column",gap:16}}>
       <div style={{display:"flex",gap:8,alignItems:"center"}}>
@@ -895,22 +925,23 @@ function SectionInstitucional({macro}:{macro:LiveMacro|null}) {
           <table style={{width:"100%",borderCollapse:"collapse",fontSize:11,fontFamily:"monospace"}}>
             <thead>
               <tr style={{borderBottom:"1px solid #1e2530"}}>
-                {["FONDO","ACCIÓN","SYM","ACCIONES","VALOR","CAMBIO"].map(h => (
+                {["FONDO","POSICIÓN","ACCIONES","VALOR (miles USD)","PERIODO 13F"].map(h => (
                   <th key={h} style={{color:"#7b8fa0",padding:"6px 8px",textAlign:"left",fontSize:9,letterSpacing:1}}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {HOLDINGS_13F.map((h,i) => (
+              {loading13F ? (
+                <tr><td colSpan={5} style={{color:"#7b8fa0",padding:"14px 8px",textAlign:"center"}}>Cargando 13F real desde SEC EDGAR…</td></tr>
+              ) : filas13F.length === 0 ? (
+                <tr><td colSpan={5} style={{color:"#7b8fa0",padding:"14px 8px",textAlign:"center"}}>Sin datos disponibles ahora mismo — SEC EDGAR puede estar limitando la consulta, intenta más tarde.</td></tr>
+              ) : filas13F.map((h,i) => (
                 <tr key={i} style={{borderBottom:"1px solid #1e253040"}}>
                   <td style={{color:"#e8eaed",padding:"7px 8px",fontWeight:700}}>{h.fund}</td>
-                  <td style={{padding:"7px 8px"}}>
-                    <span style={{background:h.action==="ADD"?"#00ff8818":h.action==="SELL"?"#ff336618":"#7b2ff718",color:h.action==="ADD"?"#00ff88":h.action==="SELL"?"#ff3366":"#7b2ff7",fontSize:9,padding:"2px 6px",borderRadius:4}}>{h.action}</span>
-                  </td>
-                  <td style={{color:"#e8eaed",padding:"7px 8px",fontWeight:700}}>{h.sym}</td>
-                  <td style={{color:"#7b8fa0",padding:"7px 8px"}}>{h.shares}</td>
-                  <td style={{color:"#cdd",padding:"7px 8px"}}>{h.value}</td>
-                  <td style={{color:h.chg.startsWith("+")||h.chg==="NEW"?"#00ff88":"#ff3366",padding:"7px 8px"}}>{h.chg}</td>
+                  <td style={{color:"#e8eaed",padding:"7px 8px"}}>{h.sym}</td>
+                  <td style={{color:"#7b8fa0",padding:"7px 8px"}}>{h.shares.toLocaleString("en-US")}</td>
+                  <td style={{color:"#cdd",padding:"7px 8px"}}>${h.value.toLocaleString("en-US")}K</td>
+                  <td style={{color:"#7b8fa0",padding:"7px 8px"}}>{h.periodo ?? "—"}</td>
                 </tr>
               ))}
             </tbody>
@@ -1087,54 +1118,73 @@ function SectionMacro({macro}:{macro:LiveMacro|null}) {
 }
 
 // ─── Section 7: SQUEEZE SCAN ─────────────────────────────────────────────────
-function SectionSqueeze() {
-  const siRef = useRef<HTMLCanvasElement>(null);
-  const siChart = useRef<Chart | null>(null);
+// Reemplaza el viejo "Squeeze Scanner" (necesitaba short interest real, que no
+// tenemos gratis) por algo que SÍ podemos calcular 100% real: combina 3
+// métricas que ya construimos para PSY BRAIN (volumen relativo, qué tan
+// extremo está el RSI, y volatilidad realizada) en un solo puntaje que
+// resalta qué acciones están teniendo un movimiento genuinamente anómalo
+// ahora mismo — mismo espíritu que "squeeze candidates", sin inventar nada.
+function SectionVolatilidad() {
+  interface VolRow { sym: string; price: number | null; changePct: number | null; rsi14: number | null; volRealizada: number | null; volRelativo: number | null; score: number }
+  const [rows, setRows] = useState<VolRow[]>([]);
+  const [loading, setLoading] = useState(true);
   useEffect(() => {
-    if (!siRef.current) return;
-    if (siChart.current) { siChart.current.destroy(); }
-    siChart.current = new Chart(siRef.current, {
-      type:"bar",
-      data:{labels:SQUEEZE_CANDIDATES.map(s=>s.sym),datasets:[
-        {label:"Short Interest %",data:SQUEEZE_CANDIDATES.map(s=>parseFloat(s.si)),backgroundColor:"#ff336633",borderColor:"#ff3366",borderWidth:1},
-        {label:"Squeeze Score",data:SQUEEZE_CANDIDATES.map(s=>s.score),backgroundColor:"#7b2ff733",borderColor:"#7b2ff7",borderWidth:1,type:"line" as const},
-      ]},
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:"#7b8fa0",font:{size:10}}}},scales:{x:{ticks:{color:"#7b8fa0",font:{size:9}},grid:{color:"#1e2530"}},y:{ticks:{color:"#7b8fa0",font:{size:9}},grid:{color:"#1e2530"}}}},
-    });
-    return () => { if (siChart.current) { siChart.current.destroy(); siChart.current = null; } };
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const r = await fetch("/api/psy-brain/live-data");
+        const d = await r.json() as { ok: boolean; equities?: Record<string, { price: number|null; changePct: number|null; rsi14: number|null; volRealizada: number|null; volRelativo: number|null }> };
+        if (!cancelled && d.ok && d.equities) {
+          const list = Object.entries(d.equities).map(([sym, e]) => {
+            const volRel = Math.min(e.volRelativo ?? 1, 5);
+            const rsiExtremo = Math.abs((e.rsi14 ?? 50) - 50);
+            const vol = Math.min(e.volRealizada ?? 0, 100);
+            const score = Math.round((volRel / 5) * 40 + (rsiExtremo / 50) * 30 + (vol / 100) * 30);
+            return { sym, price: e.price, changePct: e.changePct, rsi14: e.rsi14, volRealizada: e.volRealizada, volRelativo: e.volRelativo, score };
+          }).sort((a, b) => b.score - a.score);
+          setRows(list);
+        }
+      } catch { /* deja la tabla anterior */ }
+      finally { if (!cancelled) setLoading(false); }
+    };
+    load();
+    const iv = setInterval(load, 60_000);
+    return () => { cancelled = true; clearInterval(iv); };
   }, []);
 
   return (
     <div style={{display:"flex",flexDirection:"column",gap:16}}>
       <div style={{display:"flex",gap:8,alignItems:"center"}}>
-        <span style={{color:"#7b8fa0",fontSize:10,fontFamily:"monospace",letterSpacing:2}}>SHORT SQUEEZE SCANNER</span>
-        <RefBadge text="FINRA · 2 SEMANAS DELAY" />
+        <span style={{color:"#7b8fa0",fontSize:10,fontFamily:"monospace",letterSpacing:2}}>🌡️ RADAR DE VOLATILIDAD EXTREMA</span>
+        <RefBadge text="DATOS REALES · YAHOO FINANCE" />
       </div>
-      <Card title="Short Squeeze Scanner — Candidatos Activos">
+      <Card title="¿Dónde está pasando algo raro ahora mismo?">
         <div style={{overflowX:"auto"}}>
           <table style={{width:"100%",borderCollapse:"collapse",fontSize:11,fontFamily:"monospace"}}>
             <thead>
               <tr style={{borderBottom:"1px solid #1e2530"}}>
-                {["SYM","SHORT INT","BORROW RATE","DÍAS CUBRIR","CALL THETA","FLOAT","SCORE"].map(h => (
+                {["SYM","PRECIO","% HOY","RSI(14)","VOL. REALIZADA","VOL. RELATIVO","SCORE"].map(h => (
                   <th key={h} style={{color:"#7b8fa0",padding:"6px 8px",textAlign:"left",fontSize:9,letterSpacing:1}}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {SQUEEZE_CANDIDATES.map((s,i) => (
-                <tr key={i} style={{borderBottom:"1px solid #1e253040",background:s.score>=80?"#7b2ff708":"transparent"}}>
+              {loading ? (
+                <tr><td colSpan={7} style={{color:"#7b8fa0",padding:"14px 8px",textAlign:"center"}}>Cargando datos reales…</td></tr>
+              ) : rows.slice(0, 15).map((s,i) => (
+                <tr key={i} style={{borderBottom:"1px solid #1e253040",background:s.score>=70?"#7b2ff708":"transparent"}}>
                   <td style={{color:"#e8eaed",padding:"8px 8px",fontWeight:700}}>{s.sym}</td>
-                  <td style={{color:"#ff3366",padding:"8px 8px"}}>{s.si}</td>
-                  <td style={{color:"#ff6b35",padding:"8px 8px"}}>{s.borrow}</td>
-                  <td style={{color:"#ffd700",padding:"8px 8px"}}>{s.days}d</td>
-                  <td style={{color:"#7b8fa0",padding:"8px 8px"}}>{s.ctc}%</td>
-                  <td style={{padding:"8px 8px"}}><span style={{color:s.float==="Low"?"#ff3366":s.float==="Mid"?"#ffd700":"#00ff88",fontSize:9}}>{s.float}</span></td>
+                  <td style={{color:"#cdd",padding:"8px 8px"}}>{s.price != null ? `$${s.price.toFixed(2)}` : "—"}</td>
+                  <td style={{color:(s.changePct ?? 0) >= 0 ? "#00ff88" : "#ff3366",padding:"8px 8px"}}>{s.changePct != null ? `${s.changePct >= 0 ? "+" : ""}${s.changePct.toFixed(2)}%` : "—"}</td>
+                  <td style={{color:"#ffd700",padding:"8px 8px"}}>{s.rsi14?.toFixed(0) ?? "—"}</td>
+                  <td style={{color:"#7b8fa0",padding:"8px 8px"}}>{s.volRealizada != null ? `${s.volRealizada.toFixed(0)}%` : "—"}</td>
+                  <td style={{color:"#7b8fa0",padding:"8px 8px"}}>{s.volRelativo != null ? `${s.volRelativo.toFixed(1)}x` : "—"}</td>
                   <td style={{padding:"8px 8px"}}>
                     <div style={{display:"flex",alignItems:"center",gap:6}}>
                       <div style={{width:60,height:6,background:"#1e2530",borderRadius:3}}>
-                        <div style={{height:"100%",width:`${s.score}%`,background:s.score>=80?"#7b2ff7":s.score>=60?"#ffd700":"#4a5568",borderRadius:3}} />
+                        <div style={{height:"100%",width:`${s.score}%`,background:s.score>=70?"#7b2ff7":s.score>=45?"#ffd700":"#4a5568",borderRadius:3}} />
                       </div>
-                      <span style={{color:s.score>=80?"#7b2ff7":s.score>=60?"#ffd700":"#4a5568",fontWeight:700}}>{s.score}</span>
+                      <span style={{color:s.score>=70?"#7b2ff7":s.score>=45?"#ffd700":"#4a5568",fontWeight:700}}>{s.score}</span>
                     </div>
                   </td>
                 </tr>
@@ -1144,15 +1194,11 @@ function SectionSqueeze() {
         </div>
       </Card>
 
-      <Card title="Short Interest & Squeeze Score">
-        <div style={{height:220,position:"relative"}}><canvas ref={siRef} /></div>
-      </Card>
-
       <div className="psy-grid-2" style={{display:"grid",gridTemplateColumns:"repeat(3, 1fr)",gap:12}}>
         {[
-          {title:"Método Squeeze",body:"Score: SI% (40%) + Borrow Rate (25%) + Días Cubrir (20%) + Call OI (15%). Score ≥80: Alta probabilidad squeeze en 5-10 días."},
-          {title:"Fuente FINRA",  body:"Datos FINRA actualizados cada 2 semanas. Borrow rate obtenido de prime brokers. Dark pool prints complementan la señal."},
-          {title:"Risk Management",body:"⚡ Squeezes = ALTA VOLATILIDAD. Stop loss estricto recomendado. Máximo 2% del capital en cualquier squeeze trade."},
+          {title:"Cómo se calcula",body:"Score real (0-100): Volumen relativo hoy vs 20 días (40%) + qué tan lejos está el RSI de 50 (30%) + volatilidad realizada anualizada (30%). Todo calculado del precio, no inventado."},
+          {title:"Fuente",  body:"Yahoo Finance (6 meses de historial diario por acción) — el mismo dato real ya conectado en PSY BRAIN. Se refresca solo cada 60s."},
+          {title:"Cómo usarlo",body:"Score alto = la acción se está moviendo distinto a lo normal AHORA. No dice para qué lado va — combínalo con IA Trading para el plan de entrada."},
         ].map((c,i) => (
           <Card key={i} title={c.title}>
             <div style={{fontSize:10,fontFamily:"monospace",color:"#9aa5b4",lineHeight:1.7}}>{c.body}</div>
@@ -1502,16 +1548,16 @@ const SECTIONS = [
   {id:"dashboard",    label:"Dashboard",    icon:"📊"},
   {id:"heatmap",      label:"Heatmap",      icon:"🔥"},
   {id:"orderflow",    label:"Order Flow",   icon:"🌊"},
-  {id:"options",      label:"Options",      icon:"⚗️"},
   {id:"institucional",label:"Institucional",icon:"🏛"},
   {id:"macro",        label:"Macro",        icon:"🌐"},
-  {id:"squeeze",      label:"Squeeze",      icon:"⚡"},
+  {id:"volatilidad",  label:"Volatilidad",  icon:"🌡️"},
   {id:"narrativa",    label:"Narrativa",    icon:"📖"},
   {id:"brain",        label:"PSY BRAIN",    icon:"🧠"},
 ];
 
 export default function PsyOracle() {
   const [active, setActive] = useState("dashboard");
+  const [, setLocation] = useLocation();
   const { crypto, macro, orderBook, fetchOB, loading, lastUpdate } = useLiveMarketData();
 
   return (
@@ -1524,6 +1570,16 @@ export default function PsyOracle() {
           .psy-brain-chat   { min-height: 300px !important; max-height: 400px !important; }
         }
       `}</style>
+      <div style={{padding:"8px 20px 0"}}>
+        <button
+          onClick={() => setLocation("/dashboard")}
+          style={{background:"transparent",border:"1px solid #1e2530",color:"#7b8fa0",fontSize:9,fontFamily:"monospace",letterSpacing:2,padding:"6px 12px",cursor:"pointer",borderRadius:2}}
+          onMouseEnter={e => { e.currentTarget.style.color = "#00e5ff"; e.currentTarget.style.borderColor = "#00e5ff55"; }}
+          onMouseLeave={e => { e.currentTarget.style.color = "#7b8fa0"; e.currentTarget.style.borderColor = "#1e2530"; }}
+        >
+          ← VOLVER
+        </button>
+      </div>
       {/* Top bar */}
       <div style={{background:"#0d1117",borderBottom:"1px solid #1e2530",padding:"0 20px"}}>
         <div style={{maxWidth:1400,margin:"0 auto",display:"flex",alignItems:"center",gap:0}}>
@@ -1554,10 +1610,9 @@ export default function PsyOracle() {
         {active==="dashboard"     && <SectionDashboard    crypto={crypto} macro={macro} loading={loading} />}
         {active==="heatmap"       && <SectionHeatmap      crypto={crypto} macro={macro} />}
         {active==="orderflow"     && <SectionOrderFlow    crypto={crypto} orderBook={orderBook} fetchOB={fetchOB} />}
-        {active==="options"       && <SectionOptions />}
         {active==="institucional" && <SectionInstitucional macro={macro} />}
         {active==="macro"         && <SectionMacro        macro={macro} />}
-        {active==="squeeze"       && <SectionSqueeze />}
+        {active==="volatilidad"   && <SectionVolatilidad />}
         {active==="narrativa"     && <SectionNarrativa    macro={macro} />}
         {active==="brain"         && <SectionPsyBrain     crypto={crypto} macro={macro} />}
       </div>

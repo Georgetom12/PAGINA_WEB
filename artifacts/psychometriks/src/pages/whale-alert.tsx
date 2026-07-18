@@ -2770,7 +2770,6 @@ function OracleFeedsTab() {
   const SUBTABS: { key: SubTab; label: string }[] = [
     { key: "crypto",   label: "◉ CRYPTO INTEL" },
     { key: "onchain",  label: "◈ ON-CHAIN" },
-    { key: "analistas",label: "⚡ ANALISTAS" },
     { key: "noticias", label: "📰 NOTICIAS" },
   ];
 
@@ -3146,7 +3145,7 @@ function ListingRadarTab() {
 
 // ─── MAIN CONTENT ─────────────────────────────────────────────────────────────
 function WhaleIntelContent() {
-  const [tab, setTab] = useState<"signals"|"feeds"|"copy"|"gems"|"exchanges"|"squeeze"|"twitter"|"oracle"|"radar">("signals");
+  const [tab, setTab] = useState<"signals"|"feeds"|"copy"|"gems"|"exchanges"|"squeeze"|"oracle"|"radar">("signals");
   const auth = getAuth();
   const elite = isElite(auth);
 
@@ -3156,7 +3155,6 @@ function WhaleIntelContent() {
     {key:"feeds",     label:"🐋 WHALE TRACKER (historial)",   icon:"🐋"},
     {key:"copy",      label:"📊 OI FLOW",           icon:"📊"},
     {key:"oracle",    label:"🔮 ORACLE FEEDS",      icon:"🔮"},
-    {key:"twitter",   label:"𝕏 TWITTER INTEL",     icon:"𝕏"},
     {key:"gems",      label:"💎 GEM HUNTER",        icon:"💎", elite:true},
     {key:"squeeze",   label:"💥 SHORT SQUEEZE",     icon:"💥"},
     {key:"radar",     label:"🎯 LISTING RADAR",    icon:"🎯"},
@@ -3194,7 +3192,6 @@ function WhaleIntelContent() {
         {tab === "signals"   && <PsySignalsTab />}
         {tab === "feeds"     && <WhaleFeedsTab />}
         {tab === "oracle"    && <OracleFeedsTab />}
-        {tab === "twitter"   && <TwitterFeedTab />}
         {tab === "copy"      && <CopyTradingTab />}
         {tab === "gems"      && <GemHunterTab isEliteUser={elite} />}
         {tab === "exchanges" && <ExchangeSignalsTab />}
