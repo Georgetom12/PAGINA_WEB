@@ -37,7 +37,8 @@ const LIQMAP_LINKS = [
   { href: "/command-center",    icon: "⚡", label: "Command Center",          desc: "Overview · Scanner · Portfolio · OI · PSY AI",  plan: "elite" },
   { href: "/psy-brain",         icon: "🧠", label: "PSY BRAIN",               desc: "Analista IA institucional · Claude Sonnet 4 · 9 tipos de análisis", plan: "elite" },
   { href: "/ia-trading",        icon: "🦄", label: "IA TRADING",              desc: "Análisis cuantitativo multi-timeframe · Memoria y aprendizaje continuo", plan: "elite" },
-  { href: "/ia-signals",        icon: "✅", label: "SEÑALES CONFIRMADAS",     desc: "Señales altcoins con doble confirmación · Técnico + IA multi-timeframe", plan: "elite" },
+  { href: "/ia-trading-bolsa",  icon: "📊", label: "IA TRADING — BOLSA",      desc: "Acciones y forex — mismo motor, entrada/stop/TPs", plan: "elite" },
+  { href: "/ia-signals",        icon: "🚀", label: "SEÑALES FUERTES CONFIRMADAS", desc: "Scalping rápido — Altcoins con doble confirmación · Técnico + IA multi-timeframe", plan: "elite" },
   { href: "/oracle-feeds",      icon: "📡", label: "ORACLE FEEDS",             desc: "Precios live · Whales · Noticias · Mineros · Tesoros · Fear & Greed", plan: "elite" },
 ];
 
