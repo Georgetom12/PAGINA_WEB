@@ -32,10 +32,10 @@ const BENCHMARK_BOND = "AGG"; // bono agregado — "el mercado de bonos en gener
 const SCAN_INTERVAL_MS = 30_000;      // acciones/forex se mueven más lento que cripto — no hace falta cada 5s
 const BASELINE_SAMPLES = 20;
 const MIN_BASELINE_SAMPLES = Number(process.env.PULSE_MIN_BASELINE_SAMPLES ?? 8);
-const STOCK_VOL_SPIKE_MULT = Number(process.env.PULSE_STOCK_VOL_SPIKE_MULT ?? 3.0);
-const STOCK_PRICE_MOVE_MIN = Number(process.env.PULSE_STOCK_PRICE_MOVE_MIN ?? 0.5);     // %
-const FOREX_PRICE_MOVE_MIN = Number(process.env.PULSE_FOREX_PRICE_MOVE_MIN ?? 0.15);    // % — forex se mueve mucho menos que acciones
-const BOND_PRICE_MOVE_MIN = Number(process.env.PULSE_BOND_PRICE_MOVE_MIN ?? 0.3);      // % — entre forex y acciones
+const STOCK_VOL_SPIKE_MULT = Number(process.env.PULSE_STOCK_VOL_SPIKE_MULT ?? 1.8);      // antes 3.0 — acciones/forex se mueven mucho más lento que cripto
+const STOCK_PRICE_MOVE_MIN = Number(process.env.PULSE_STOCK_PRICE_MOVE_MIN ?? 0.2);      // % — antes 0.5
+const FOREX_PRICE_MOVE_MIN = Number(process.env.PULSE_FOREX_PRICE_MOVE_MIN ?? 0.06);     // % — antes 0.15, forex se mueve en fracciones de % la mayoría del tiempo
+const BOND_PRICE_MOVE_MIN = Number(process.env.PULSE_BOND_PRICE_MOVE_MIN ?? 0.12);       // % — antes 0.3
 const CONFIRMATION_DELAY_MS = 90_000; // más largo que cripto — spot es más lento
 const LINGER_MS = 5 * 60_000;
 const SYMBOL_COOLDOWN_MS = 15 * 60_000;
@@ -65,6 +65,8 @@ function getState(symbol: string): SymState {
 }
 
 const rows = new Map<string, Row>();
+const HISTORY_MAX = 20;
+const history: Row[] = []; // últimas confirmaciones — en memoria, sin DB, peso nulo
 const cooldown = new Map<string, number>();
 const pending = new Map<string, { confirmAt: number; earlyPrice: number; assetClass: AssetClass }>();
 
@@ -218,11 +220,16 @@ async function scanTick() {
         ? "🟡 SOLO SIGUE AL MERCADO (no es la acción, es todo el índice)"
         : "🔴 TRAP — revirtió";
 
-    rows.set(symbol, {
+    const confirmedRow: Row = {
       ...row, stage: "confirmed", price: st.lastPrice, pctMoveSinceEarly: move,
       benchmarkMovePct: benchmarkMove, idiosyncraticRatio, score, verdict, progressPct: 100,
       confirmAt: now, lingerUntil: now + LINGER_MS,
-    });
+    };
+    rows.set(symbol, confirmedRow);
+
+    // Guarda copia en el historial (últimas 20, en memoria — no se borra a los 5 min)
+    history.unshift({ ...confirmedRow });
+    if (history.length > HISTORY_MAX) history.length = HISTORY_MAX;
   }
 
   // Apaga filas viejas
@@ -272,7 +279,7 @@ router.get("/market-pulse/rows", (_req: Request, res: Response) => {
       ? { label: "🛡️ RISK-OFF (huida a bonos largos)", spread: curveSpread }
       : { label: "🚀 RISK-ON (apetito de riesgo normal)", spread: curveSpread };
 
-  res.json({ ok: true, rows: list, yieldCurveSignal, watchlistSize: STOCK_SYMBOLS.length + FOREX_SYMBOLS.length + BOND_SYMBOLS.length, ts: Date.now() });
+  res.json({ ok: true, rows: list, history, yieldCurveSignal, watchlistSize: STOCK_SYMBOLS.length + FOREX_SYMBOLS.length + BOND_SYMBOLS.length, ts: Date.now() });
 });
 
 startMarketPulseLoop();
