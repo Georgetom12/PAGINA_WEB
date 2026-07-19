@@ -837,8 +837,11 @@ router.get("/whale-intel/traders", async (req: Request, res: Response) => {
     cSet("whale_traders", traders, 90_000);
     res.json({ ok: true, traders, sources });
 
-    // Save snapshots to DB in background (no await — don't block response)
-    saveTraderSnapshots(traders).catch(err => logger.warn({ err }, "saveTraderSnapshots failed"));
+    // (julio 19 2026) Se dejó de guardar snapshots para el gráfico de historial
+    // por tarjeta — Jorge lo marcó como engañoso (PNL acumulado estimado, no
+    // real) y se quitó del frontend. saveTraderSnapshots() queda sin usar acá
+    // a propósito; no se borró por si se reconstruye con datos genuinamente
+    // reales más adelante.
   } catch (err) {
     res.status(502).json({ ok: false, error: String(err) });
   }
