@@ -45,7 +45,7 @@ interface WhaleAlert {
 }
 interface WhaleTrader {
   id: string; displayName: string; coin: string;
-  exchange?: "binance"|"bybit"|"okx"|"hyperliquid"|"dydx"|"bitmex";
+  exchange?: "binance"|"bybit"|"okx"|"hyperliquid"|"dydx"|"bitmex"|"gmx";
   currentPosition: "LONG"|"SHORT"|"NEUTRAL";
   positionSizeUsd: number; winRate: number;
   pnl24h: number; pnlWeek: number; volume24h: number;
@@ -61,6 +61,12 @@ interface WhaleTrader {
   tpPrice?: number;
   slPrice?: number;
   walletLabel?: string;
+  // "real_position" = ballena individual real (wallet/tamaño/dirección reales).
+  // "market_aggregate" = no es una ballena, es la foto del mercado completo
+  // para ese activo — este exchange no expone posiciones de clientes.
+  dataType?: "real_position" | "market_aggregate";
+  walletShort?: string;
+  txHash?: string;
 }
 interface CgSignalRaw {
   id: string;
@@ -176,7 +182,7 @@ function fmtPrice(p: number) {
 }
 
 // ─── Exchange meta ─────────────────────────────────────────────────────────────
-type ExchangeKey = "all"|"hyperliquid"|"dydx"|"okx"|"bitmex"|"binance"|"bybit";
+type ExchangeKey = "all"|"hyperliquid"|"dydx"|"okx"|"bitmex"|"binance"|"bybit"|"gmx";
 const EX_META: Record<ExchangeKey, { color: string; short: string; bg: string }> = {
   all:         { color: "#00e5ff", short: "TODAS",  bg: "#001a1f" },
   hyperliquid: { color: "#00d4aa", short: "HL",     bg: "#001a15" },
@@ -185,18 +191,20 @@ const EX_META: Record<ExchangeKey, { color: string; short: string; bg: string }>
   bitmex:      { color: "#ff6d00", short: "BMX",    bg: "#1a0800" },
   binance:     { color: "#f0b90b", short: "BNB",    bg: "#1a1000" },
   bybit:       { color: "#f7a600", short: "BYB",    bg: "#1a1200" },
+  gmx:         { color: "#ffd700", short: "GMX",    bg: "#1a1400" },
 };
 
-// ─── CG mapper ────────────────────────────────────────────────────────────────
+// ─── CG mapper (Binance/Bybit) — dato de mercado real, no ballena individual ──
 function cgToTrader(s: CgSignalRaw): WhaleTrader {
   return {
     id: s.id, displayName: `${s.exchange.toUpperCase()}-${s.coin}`, coin: s.coin,
     exchange: s.exchange, currentPosition: s.direction,
-    positionSizeUsd: s.oiUsd * 0.01, winRate: s.score100,
+    positionSizeUsd: s.oiUsd, winRate: s.score100,
     pnl24h: 0, pnlWeek: 0, volume24h: s.volume24h,
     totalTrades: 0, roi: 0, fundingRate: s.fundingRate,
     oiUsd: s.oiUsd, signal: s.signal, size: s.size,
     score100: s.score100, fundingFormatted: s.fundingFormatted, isCoinglass: true,
+    dataType: "market_aggregate",
   };
 }
 
@@ -763,6 +771,22 @@ function TraderCard({
                 {t.size}
               </span>
             )}
+            {t.dataType === "real_position" && (
+              <span
+                title="Wallet, tamaño y dirección de una posición real y específica — visible porque este mercado corre sobre una red pública."
+                className="font-sharetech text-[7px] px-1.5 py-0.5 cursor-help"
+                style={{ color: "#00e676", border: "1px solid #00e67640", background: "#00e67612" }}>
+                🐋 BALLENA REAL
+              </span>
+            )}
+            {t.dataType === "market_aggregate" && (
+              <span
+                title="Este exchange no permite ver la posición de ningún cliente en particular. Esto es la foto real de todo el mercado para este activo — funding, Open Interest total y hacia dónde está inclinado (long/short)."
+                className="font-sharetech text-[7px] px-1.5 py-0.5 cursor-help"
+                style={{ color: "#ffb300", border: "1px solid #ffb30040", background: "#ffb30012" }}>
+                ⚠️ DATO DE MERCADO
+              </span>
+            )}
           </div>
           <span className="font-bebas text-lg px-4 py-1 tracking-[0.1em] leading-none"
             style={{
@@ -776,7 +800,7 @@ function TraderCard({
         </div>
 
         <div className="flex items-center gap-3 mt-1.5">
-          <span className="font-sharetech text-[7px] text-[#5a8898]">OI</span>
+          <span className="font-sharetech text-[7px] text-[#5a8898]">{t.dataType === "real_position" ? "TAMAÑO POSICIÓN" : "OI TOTAL MERCADO"}</span>
           <span className="font-space text-[10px] font-bold text-[#00e5ff]">{fmt(t.oiUsd)}</span>
           {t.pnlSource === "mtm" && t.priceChange24h !== undefined && (
             <>
@@ -793,6 +817,26 @@ function TraderCard({
       </div>
 
       <div className="p-4">
+        {t.dataType === "real_position" && t.exchange === "gmx" ? (
+          <div className="mb-4 p-3 border" style={{borderColor:`${posColor}20`, background:`${posColor}06`}}>
+            <div className="font-sharetech text-[8px] tracking-[0.15em] text-[#7ab3c8] mb-1">🐋 WALLET</div>
+            <div className="font-space text-[12px] font-bold text-white">{t.walletShort ?? t.displayName}</div>
+            {t.txHash && (
+              <a href={`https://arbiscan.io/tx/${t.txHash}`} target="_blank" rel="noreferrer"
+                className="font-sharetech text-[7px] text-[#00e5ff] underline mt-1 inline-block">
+                Ver transacción ↗
+              </a>
+            )}
+          </div>
+        ) : t.dataType === "real_position" ? (
+          <div className="mb-4 p-3 border" style={{borderColor:`${wrColor}20`, background:`${wrColor}06`}}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="font-sharetech text-[8px] tracking-[0.15em] text-[#7ab3c8]">RATING DE LA ALERTA</span>
+              <span className="font-bebas text-2xl leading-none" style={{color:wrColor}}>{(wr??0).toFixed(0)}/100</span>
+            </div>
+            <div className="font-sharetech text-[7px] text-[#5a8898]">🐋 {t.walletShort ?? t.displayName}</div>
+          </div>
+        ) : (
         <div className="mb-4 p-3 border" style={{borderColor:`${wrColor}20`, background:`${wrColor}06`}}>
           <div className="flex items-center justify-between mb-2">
             <span className="font-sharetech text-[8px] tracking-[0.15em] text-[#7ab3c8]">WIN RATE {winPeriod.toUpperCase()}</span>
@@ -807,6 +851,7 @@ function TraderCard({
               }}/>
           </div>
         </div>
+        )}
 
         <div className="grid grid-cols-2 gap-2 mb-4">
           {[
