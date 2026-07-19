@@ -426,4 +426,121 @@ router.get("/market-data/live-signals", async (req: Request, res: Response) => {
   }
 });
 
+// ─── Volatilidad realizada cripto — reemplaza al viejo "Options" (necesitaba
+// un feed de opciones pago que no tenemos). Mismo cálculo que ya se usa para
+// acciones en psy-brain-live.ts, pero con velas de Binance para cripto.
+const VOL_CRYPTO_SYMBOLS = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT"];
+async function fetchBinanceCloses(symbol: string): Promise<number[]> {
+  try {
+    const r = await fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=1d&limit=90`, { signal: AbortSignal.timeout(8000) });
+    if (!r.ok) return [];
+    const d = await r.json() as unknown[][];
+    return d.map(k => parseFloat(String(k[4])));
+  } catch { return []; }
+}
+function volatilidadRealizadaCripto(closes: number[]): number | null {
+  if (closes.length < 10) return null;
+  const rets: number[] = [];
+  for (let i = 1; i < closes.length; i++) rets.push((closes[i]! - closes[i - 1]!) / closes[i - 1]!);
+  const mean = rets.reduce((a, b) => a + b, 0) / rets.length;
+  const variance = rets.reduce((a, r) => a + (r - mean) ** 2, 0) / rets.length;
+  return Math.sqrt(variance) * Math.sqrt(365) * 100; // cripto opera 365 días, no 252 como acciones
+}
+
+router.get("/market-data/crypto-volatility", async (req: Request, res: Response) => {
+  try {
+    const results = await Promise.all(VOL_CRYPTO_SYMBOLS.map(async sym => {
+      const closes = await fetchBinanceCloses(sym);
+      const vol = volatilidadRealizadaCripto(closes);
+      const price = closes.at(-1) ?? null;
+      const price7dAgo = closes.at(-8) ?? null;
+      const chg7d = price != null && price7dAgo ? ((price - price7dAgo) / price7dAgo) * 100 : null;
+      return { sym: sym.replace("USDT", ""), price, chg7d, volatilidadRealizada: vol };
+    }));
+    res.json({ ok: true, data: results.sort((a, b) => (b.volatilidadRealizada ?? 0) - (a.volatilidadRealizada ?? 0)), ts: Date.now() });
+  } catch (err) {
+    req.log.error({ err }, "market-data/crypto-volatility");
+    res.status(502).json({ error: "upstream error" });
+  }
+});
+
+router.get("/market-data/econ-calendar", async (req: Request, res: Response) => {
+  const key = process.env["FMP_API_KEY"];
+  if (!key) { res.json({ ok: false, error: "FMP_API_KEY no configurado", data: [] }); return; }
+  try {
+    const today = new Date();
+    const in14d = new Date(today.getTime() + 14 * 86400000);
+    const from = today.toISOString().slice(0, 10), to = in14d.toISOString().slice(0, 10);
+    const r = await fetch(`https://financialmodelingprep.com/api/v3/economic_calendar?from=${from}&to=${to}&apikey=${key}`, { signal: AbortSignal.timeout(10000) });
+    if (!r.ok) { res.json({ ok: false, error: `FMP respondió ${r.status} — probablemente no incluido en el plan actual`, data: [] }); return; }
+    const d = await r.json() as Array<{ event: string; date: string; country: string; estimate: number | null; previous: number | null; impact: string }>;
+    if (!Array.isArray(d)) { res.json({ ok: false, error: "Respuesta inesperada de FMP", data: [] }); return; }
+    const relevantes = d
+      .filter(e => e.country === "US" && e.impact !== "Low")
+      .slice(0, 10)
+      .map(e => ({ date: e.date, event: e.event, est: e.estimate, prev: e.previous, impact: e.impact }));
+    res.json({ ok: true, data: relevantes, ts: Date.now() });
+  } catch (err) {
+    req.log.error({ err }, "market-data/econ-calendar");
+    res.json({ ok: false, error: "Error de red consultando FMP", data: [] });
+  }
+});
+
+// ─── Volumen relativo de ETFs (reemplaza "Capital Flow" que necesitaría datos
+// de creación/redención reales — feed pago que no tenemos) ─────────────────
+const ETF_VOLUME_SYMBOLS = ["QQQ", "SPY", "GLD", "IBIT", "SQQQ", "IEF"];
+
+async function fetchYahooDailyHistory(symbol: string): Promise<{ closes: number[]; volumes: number[] }> {
+  try {
+    const r = await fetch(
+      `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=1mo`,
+      { headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" }, signal: AbortSignal.timeout(10000) },
+    );
+    if (!r.ok) return { closes: [], volumes: [] };
+    const d = await r.json() as { chart?: { result?: [{ indicators?: { quote?: [{ close?: (number|null)[]; volume?: (number|null)[] }] } }] } };
+    const q = d?.chart?.result?.[0]?.indicators?.quote?.[0];
+    const closes = (q?.close ?? []).filter((c): c is number => c !== null && c > 0);
+    const volumes = (q?.volume ?? []).filter((v): v is number => v !== null && v >= 0);
+    return { closes, volumes };
+  } catch { return { closes: [], volumes: [] }; }
+}
+
+router.get("/market-data/etf-volume", async (req: Request, res: Response) => {
+  try {
+    const results = await Promise.all(ETF_VOLUME_SYMBOLS.map(async sym => {
+      const { closes, volumes } = await fetchYahooDailyHistory(sym);
+      if (closes.length < 2 || volumes.length < 15) return { name: sym, pct: 0, volRelativo: null };
+      const pct = ((closes.at(-1)! - closes.at(-2)!) / closes.at(-2)!) * 100;
+      const hoy = volumes.at(-1)!;
+      const prev = volumes.slice(-21, -1);
+      const avg = prev.reduce((a, b) => a + b, 0) / (prev.length || 1);
+      const volRelativo = avg > 0 ? hoy / avg : null;
+      return { name: sym, pct, volRelativo };
+    }));
+    res.json({ ok: true, data: results, ts: Date.now() });
+  } catch (err) {
+    req.log.error({ err }, "market-data/etf-volume");
+    res.status(502).json({ error: "upstream error" });
+  }
+});
+
+router.get("/market-data/fed-rate", async (req: Request, res: Response) => {
+  const key = process.env["FRED_API_KEY"];
+  if (!key) { res.json({ ok: false, error: "FRED_API_KEY no configurado" }); return; }
+  try {
+    const r = await fetch(
+      `https://api.stlouisfed.org/fred/series/observations?series_id=DFEDTARU&api_key=${key}&file_type=json&sort_order=desc&limit=1`,
+      { signal: AbortSignal.timeout(8000) },
+    );
+    if (!r.ok) { res.json({ ok: false, error: `FRED respondió ${r.status}` }); return; }
+    const d = await r.json() as { observations?: Array<{ date: string; value: string }> };
+    const obs = d.observations?.[0];
+    if (!obs) { res.json({ ok: false, error: "Sin datos de FRED" }); return; }
+    res.json({ ok: true, rate: parseFloat(obs.value), date: obs.date });
+  } catch (err) {
+    req.log.error({ err }, "market-data/fed-rate");
+    res.json({ ok: false, error: "Error de red consultando FRED" });
+  }
+});
+
 export default router;
