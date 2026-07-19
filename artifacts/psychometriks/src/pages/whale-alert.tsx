@@ -414,6 +414,20 @@ function WhaleFeedsTab() {
   const [paused, setPaused] = useState(false);
   const [filter, setFilter] = useState<"all"|"whale_buy"|"whale_sell"|"liquidation"|"exchange_in"|"exchange_out">("all");
   const [coinFilter, setCoinFilter] = useState<"all"|"BTC"|"ETH"|"SOL">("all");
+  const [cexHistory, setCexHistory] = useState<WhaleAlert[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const r = await fetch("/api/whale-intel/alerts-history");
+        const d = await r.json() as { ok: boolean; alerts?: WhaleAlert[] };
+        if (!cancelled && d.ok && d.alerts) setCexHistory(d.alerts);
+      } catch { /* deja lo anterior */ }
+    };
+    load();
+    const iv = setInterval(load, 30_000);
+    return () => { cancelled = true; clearInterval(iv); };
+  }, []);
   const histRef = useRef(loadHistory());
 
   const load = useCallback(async () => {
@@ -578,6 +592,44 @@ function WhaleFeedsTab() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {filtered.map(a => <TelegramAlertCard key={a.id} a={a} />)}
+        </div>
+      )}
+
+      {/* ═══ Historial — Entrada/Salida CEX (últimas 100, se guardan aunque roten de la vista de arriba) ═══ */}
+      {cexHistory.length > 0 && (
+        <div className="mt-6 border border-[#0d2030] bg-[#020a10]">
+          <div className="px-4 py-2 border-b border-[#0d2030] bg-[#040f18]">
+            <span className="font-sharetech text-[10px] text-[#7ab3c8] tracking-wide">📋 HISTORIAL — ENTRADA/SALIDA CEX (últimas {cexHistory.length})</span>
+          </div>
+          <div className="overflow-x-auto max-h-[300px] overflow-y-auto">
+            <table className="w-full font-space text-[10px]">
+              <thead>
+                <tr className="border-b border-[#0d2030] text-[#7ab3c8] text-left">
+                  <th className="px-3 py-1.5">HORA</th>
+                  <th className="px-3 py-1.5">TIPO</th>
+                  <th className="px-3 py-1.5">MONEDA</th>
+                  <th className="px-3 py-1.5">MONTO</th>
+                  <th className="px-3 py-1.5">USD</th>
+                  <th className="px-3 py-1.5">DE / A</th>
+                </tr>
+              </thead>
+              <tbody>
+                {cexHistory.map((a, i) => {
+                  const meta = TYPE_META[a.type];
+                  return (
+                    <tr key={`${a.id}-${i}`} className="border-b border-[#0d203030]">
+                      <td className="px-3 py-1.5 text-[#5a6b7d]">{new Date(a.ts).toLocaleTimeString("es-EC")}</td>
+                      <td className="px-3 py-1.5" style={{ color: meta?.color ?? "#7ab3c8" }}>{meta?.emoji} {meta?.label ?? a.type}</td>
+                      <td className="px-3 py-1.5 font-bold text-white">{a.coin}</td>
+                      <td className="px-3 py-1.5 text-[#7ab3c8]">{a.amount.toFixed(3)}</td>
+                      <td className="px-3 py-1.5 text-[#cddc39]">${a.usd.toLocaleString("en-US", { maximumFractionDigits: 0 })}</td>
+                      <td className="px-3 py-1.5 text-[#5a6b7d] text-[9px]">{a.from} → {a.to}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
