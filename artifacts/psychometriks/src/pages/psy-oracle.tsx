@@ -5,6 +5,30 @@ import { getAuth } from "@/lib/auth";
 
 Chart.register(...registerables);
 
+// Calendario Económico real de TradingView (gratis, sin API key, sin límite
+// de cuota) — reemplaza el intento vía FMP que daba 403 en el plan actual.
+// Mismo patrón de embeds que ya se usa en bolsa-valores.tsx.
+function EconomicCalendarWidget() {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!ref.current) return;
+    ref.current.innerHTML = "";
+    const container = document.createElement("div");
+    container.className = "tradingview-widget-container__widget";
+    ref.current.appendChild(container);
+    const script = document.createElement("script");
+    script.src = "https://s3.tradingview.com/external-embedding/embed-widget-events.js";
+    script.async = true;
+    script.innerHTML = JSON.stringify({
+      colorTheme: "dark", isTransparent: true, width: "100%", height: "100%",
+      locale: "es", importanceFilter: "-1,0,1", currencyFilter: "USD",
+    });
+    ref.current.appendChild(script);
+    return () => { if (ref.current) ref.current.innerHTML = ""; };
+  }, []);
+  return <div ref={ref} className="tradingview-widget-container" style={{ height: 380, width: "100%" }} />;
+}
+
 // ─── Color helpers ─────────────────────────────────────────────────────────
 function chgColor(v: number): string {
   if (v >= 3) return "#00ff88";
@@ -316,12 +340,23 @@ function SectionDashboard({crypto,macro,loading}:{crypto:LiveCrypto[];macro:Live
     {type:"MACRO",   msg:`US10Y toca ${macro?.indices["TNX"]?.price.toFixed(3) ?? "4.392"}% — zona resistencia`,ts:"hace 44m"},
     {type:"13F",     msg:"Bridgewater añadió 2M acciones de GLD en Q1",            ts:"hace 1h"},
   ];
-  const EARNINGS = [
-    {sym:"NVDA",date:"22 May",est:"+12%", sentiment:"BULLISH"},
-    {sym:"AAPL",date:"01 Jun",est:"+4%",  sentiment:"NEUTRAL"},
-    {sym:"TSLA",date:"08 Jun",est:"-8%",  sentiment:"BEARISH"},
-    {sym:"META",date:"15 Jun",est:"+18%", sentiment:"BULLISH"},
-  ];
+  // Earnings reales vía Alpha Vantage (antes EARNINGS era un arreglo fijo con
+  // fechas de "22 May" sin año, y un "% esperado de movimiento" que en
+  // realidad nadie puede saber antes del reporte — eso era inventado)
+  interface EarningsRow { sym: string; name: string; date: string; estimateEps: number | null }
+  const [earnings, setEarnings] = useState<EarningsRow[]>([]);
+  const [earningsError, setEarningsError] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch("/api/market-data/earnings-calendar");
+        const d = await r.json() as { ok: boolean; data?: EarningsRow[]; error?: string };
+        if (!cancelled) { if (d.ok && d.data) setEarnings(d.data); else setEarningsError(d.error ?? "No disponible"); }
+      } catch { if (!cancelled) setEarningsError("Error de red"); }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   return (
     <div style={{display:"flex",flexDirection:"column",gap:16}}>
@@ -425,17 +460,21 @@ function SectionDashboard({crypto,macro,loading}:{crypto:LiveCrypto[];macro:Live
         </Card>
 
         {/* Earnings */}
-        <Card title="Earnings Próximos">
+        <Card title="Earnings Próximos" badge={earnings.length ? <LiveBadge /> : undefined}>
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
-            {EARNINGS.map((e,i) => (
+            {earningsError ? (
+              <div style={{color:"#7b8fa0",fontSize:10,fontFamily:"monospace",textAlign:"center",padding:"14px 0"}}>No disponible: {earningsError}</div>
+            ) : earnings.length === 0 ? (
+              <div style={{color:"#7b8fa0",fontSize:10,fontFamily:"monospace",textAlign:"center",padding:"14px 0"}}>Cargando calendario real…</div>
+            ) : earnings.slice(0, 6).map((e,i) => (
               <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",paddingBottom:6,borderBottom:"1px solid #1e2530"}}>
                 <div>
                   <div style={{color:"#e8eaed",fontSize:13,fontWeight:700,fontFamily:"monospace"}}>{e.sym}</div>
                   <div style={{color:"#7b8fa0",fontSize:9,fontFamily:"monospace"}}>{e.date}</div>
                 </div>
                 <div style={{textAlign:"right"}}>
-                  <div style={{color:Number(e.est.replace("%","")) > 0 ? "#00ff88":"#ff3366",fontSize:11,fontFamily:"monospace"}}>{e.est}</div>
-                  <div style={{fontSize:9,fontFamily:"monospace",color:e.sentiment==="BULLISH"?"#00ff88":e.sentiment==="BEARISH"?"#ff3366":"#ffd700"}}>{e.sentiment}</div>
+                  <div style={{color:"#7b8fa0",fontSize:9,fontFamily:"monospace"}}>EPS est.</div>
+                  <div style={{color:"#00e5ff",fontSize:11,fontFamily:"monospace"}}>{e.estimateEps !== null ? `$${e.estimateEps.toFixed(2)}` : "—"}</div>
                 </div>
               </div>
             ))}
@@ -1063,23 +1102,7 @@ function SectionMacro({macro}:{macro:LiveMacro|null}) {
   }, []);
 
 
-  interface EconEvent { date: string; event: string; est: number | null; prev: number | null; impact: string }
-  const [econCal, setEconCal] = useState<EconEvent[]>([]);
-  const [econCalError, setEconCalError] = useState<string | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const r = await fetch("/api/market-data/econ-calendar");
-        const d = await r.json() as { ok: boolean; data?: EconEvent[]; error?: string };
-        if (!cancelled) {
-          if (d.ok && d.data) setEconCal(d.data);
-          else setEconCalError(d.error ?? "No disponible");
-        }
-      } catch { if (!cancelled) setEconCalError("Error de red"); }
-    })();
-    return () => { cancelled = true; };
-  }, []);
+
 
   const macroMetrics = useMemo(() => [
     {lbl:"Fear & Greed", val: `${fng}`, sub: fngLbl.toUpperCase(), c:"#ffd700", live: macro !== null},
@@ -1152,27 +1175,8 @@ function SectionMacro({macro}:{macro:LiveMacro|null}) {
       </Card>
 
       <div className="psy-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
-        <Card title="Calendario Económico — Próximos Eventos" badge={econCal.length ? <LiveBadge /> : undefined}>
-          <div style={{display:"flex",flexDirection:"column",gap:6}}>
-            <div style={{display:"flex",justifyContent:"space-between",color:"#7b8fa0",fontSize:9,fontFamily:"monospace",letterSpacing:1,paddingBottom:6,borderBottom:"1px solid #1e2530"}}>
-              <span>FECHA</span><span>EVENTO</span><span>EST</span><span>PREV</span><span>IMPACTO</span>
-            </div>
-            {econCalError ? (
-              <div style={{color:"#7b8fa0",fontSize:10,fontFamily:"monospace",padding:"14px 0",textAlign:"center"}}>
-                Calendario no disponible ahora mismo: {econCalError}
-              </div>
-            ) : econCal.length === 0 ? (
-              <div style={{color:"#7b8fa0",fontSize:10,fontFamily:"monospace",padding:"14px 0",textAlign:"center"}}>Cargando eventos reales…</div>
-            ) : econCal.map((e,i) => (
-              <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"5px 0",borderBottom:"1px solid #1e253030",fontSize:10,fontFamily:"monospace"}}>
-                <span style={{color:"#00e5ff",minWidth:50}}>{e.date}</span>
-                <span style={{color:"#cdd",flex:1,padding:"0 8px"}}>{e.event}</span>
-                <span style={{color:"#00ff88",minWidth:40}}>{e.est ?? "—"}</span>
-                <span style={{color:"#7b8fa0",minWidth:40}}>{e.prev ?? "—"}</span>
-                <span style={{color:e.impact==="High"?"#ff3366":"#ffd700",fontSize:9,padding:"1px 5px",background:e.impact==="High"?"#ff336618":"#ffd70018",borderRadius:3}}>{e.impact}</span>
-              </div>
-            ))}
-          </div>
+        <Card title="Calendario Económico — Próximos Eventos" badge={<LiveBadge />}>
+          <EconomicCalendarWidget />
         </Card>
 
         <Card title="FED Watch — Cambio Implícito por Reunión" badge={fedWatch.length ? <LiveBadge /> : undefined}>
