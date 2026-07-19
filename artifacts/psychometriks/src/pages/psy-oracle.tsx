@@ -1065,6 +1065,22 @@ function SectionInstitucional({macro}:{macro:LiveMacro|null}) {
 
 // ─── Section 6: MACRO GLOBAL ─────────────────────────────────────────────────
 function SectionMacro({macro}:{macro:LiveMacro|null}) {
+  // Indicadores económicos reales (CPI, desempleo, PIB, PCE) — vía FRED, que
+  // recopila datos oficiales de BLS y BEA en un solo lugar
+  interface EconIndicator { valor: number; fecha: string; unidad: string }
+  const [econInd, setEconInd] = useState<Record<string, EconIndicator | null>>({});
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch("/api/market-data/econ-indicators");
+        const d = await r.json() as { ok: boolean; data?: Record<string, EconIndicator | null> };
+        if (!cancelled && d.ok && d.data) setEconInd(d.data);
+      } catch { /* deja vacío, se muestra "—" */ }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   const fng     = macro?.fng.value ?? 68;
   const fngLbl  = macro?.fng.label ?? "GREED";
   const dxy     = macro?.indices["DXY"];
@@ -1171,6 +1187,31 @@ function SectionMacro({macro}:{macro:LiveMacro|null}) {
         <div style={{padding:"8px 10px",background:"#080c14",borderRadius:6,border:`1px solid ${spread < 0 ? "#ff336622" : "#00ff8822"}`,fontSize:10,fontFamily:"monospace",color:"#9aa5b4"}}>
           2Y-10Y Spread: <span style={{color:spread<0?"#ff3366":"#00ff88",fontWeight:700}}>{spread >= 0 ? "+" : ""}{(spread*100).toFixed(1)}bps</span>
           {spread < 0 ? " — Inversión activa (señal recesión 12-18M lag)" : " — Normal. Expansión crediticia."}
+        </div>
+      </Card>
+
+      <Card title="Indicadores Económicos Reales — CPI, Desempleo, PIB, PCE" badge={Object.keys(econInd).length ? <LiveBadge /> : undefined}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(4, 1fr)",gap:12}}>
+          {[
+            { key: "cpi", label: "CPI (Inflación)" },
+            { key: "desempleo", label: "Desempleo" },
+            { key: "pib", label: "PIB Real" },
+            { key: "pce", label: "PCE Núcleo" },
+          ].map(({ key, label }) => {
+            const ind = econInd[key];
+            return (
+              <div key={key} style={{background:"#080c14",borderRadius:6,padding:"10px 12px",textAlign:"center"}}>
+                <div style={{color:"#7b8fa0",fontSize:9,fontFamily:"monospace",marginBottom:4}}>{label}</div>
+                <div style={{color:ind ? (ind.valor >= 0 ? "#00e5ff" : "#ff3366") : "#4a5568",fontSize:18,fontFamily:"monospace",fontWeight:700}}>
+                  {ind ? `${ind.valor >= 0 && key !== "desempleo" ? "+" : ""}${ind.valor}%` : "—"}
+                </div>
+                <div style={{color:"#4a5568",fontSize:8,fontFamily:"monospace",marginTop:2}}>{ind?.fecha ?? "cargando…"}</div>
+              </div>
+            );
+          })}
+        </div>
+        <div style={{fontSize:8,color:"#4a5568",fontFamily:"monospace",marginTop:10}}>
+          Fuente: FRED (recopila datos oficiales de BLS y BEA) — CPI/PCE/PIB en variación interanual real
         </div>
       </Card>
 
