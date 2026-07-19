@@ -2,6 +2,7 @@ import { Router, type Request, type Response } from "express";
 import { db, pool, apiConfigTable, traderSnapshotsTable } from "@workspace/db";
 import { eq, desc, and, sql } from "drizzle-orm";
 import { logger } from "../lib/logger";
+import { AbiCoder, keccak256, toUtf8Bytes } from "ethers";
 
 const router = Router();
 
@@ -42,7 +43,7 @@ export interface WhaleTrader {
   id: string;
   displayName: string;
   coin: string;
-  exchange: "hyperliquid" | "dydx" | "okx" | "bitmex";
+  exchange: "hyperliquid" | "dydx" | "okx" | "bitmex" | "gmx";
   exchangeLabel: string;
   currentPosition: "LONG" | "SHORT" | "NEUTRAL";
   positionSizeUsd: number;
@@ -62,6 +63,17 @@ export interface WhaleTrader {
   tp2Price?: number;
   slPrice?: number;
   walletLabel?: string;
+  // ─── Honestidad del dato (July 19 2026) ─────────────────────────────────────
+  // "real_position"    → ballena real e individual (wallet real, tamaño real,
+  //                       dirección real) — Hyperliquid/dYdX vía WhalePerp
+  //                       (whale_alerts_tg) o GMX vía evento on-chain real.
+  // "market_aggregate"  → NO es una ballena — es la foto del mercado completo
+  //                       para ese activo (OI total + funding), porque el
+  //                       exchange (OKX/BitMEX/Binance/Bybit) no expone
+  //                       posiciones de clientes individuales por ningún medio.
+  dataType: "real_position" | "market_aggregate";
+  walletShort?: string;   // solo para real_position — wallet truncada (0x1234…abcd)
+  txHash?: string;        // solo para real_position on-chain (GMX)
 }
 
 export interface Gem {
@@ -403,125 +415,91 @@ function estimateLevels(markPx: number, isLong: boolean, fundingAbs: number) {
   };
 }
 
-// ─── Hyperliquid traders ──────────────────────────────────────────────────────
-async function fetchHLTraders(priceChanges: Record<string, number>): Promise<WhaleTrader[]> {
+// ─── Hyperliquid / dYdX traders — REALES vía WhalePerp (whale_alerts_tg) ──────
+// (julio 19 2026 — antes esto inventaba nombres de ballena tipo "HL-WHALE-01"
+// sobre OI agregado del mercado completo. Ahora se lee directo de la misma
+// tabla real que ya usa el tab WHALE TRACKER — el bot de Telegram WhalePerp,
+// que sí identifica wallet/dirección/tamaño reales de cada posición.)
+async function fetchTgWhaleTraders(exchangeFilter: "hyperliquid" | "dydx"): Promise<WhaleTrader[]> {
   try {
-    const r = await fetch("https://api.hyperliquid.xyz/info", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type: "metaAndAssetCtxs" }),
-      signal: AbortSignal.timeout(8000),
-    });
-    const [meta, ctxs] = await r.json() as [
-      { universe: Array<{ name: string }> },
-      Array<{ funding: string; openInterest: string; markPx: string; dayNtlVlm: string }>
-    ];
-    const HL_NAMES = ["HL-WHALE-01","HL-SIGMA","HL-ALPHA","HL-BLOCK","HL-QUANT",
-      "HL-ORACLE","HL-TITAN","HL-NEXUS","HL-GHOST","HL-FLOW","HL-PRIME",
-      "HL-APEX","HL-DELTA","HL-ZETA","HL-MEGA"];
-    return meta.universe
-      .map((u, i) => ({ name: u.name, ctx: ctxs[i] }))
-      .filter(x => x.ctx && parseFloat(x.ctx.openInterest) > 0)
-      .map(x => ({
-        name: x.name, ctx: x.ctx,
-        oiUsd: parseFloat(x.ctx.openInterest) * parseFloat(x.ctx.markPx),
-        funding: parseFloat(x.ctx.funding),
-        volume: parseFloat(x.ctx.dayNtlVlm),
-        markPx: parseFloat(x.ctx.markPx),
-      }))
-      .filter(x => x.oiUsd > 5_000_000)
-      .sort((a, b) => b.oiUsd - a.oiUsd)
-      .slice(0, 15)
-      .map((a, i): WhaleTrader => {
-        const isLong = a.funding < 0;
-        const volToOi = a.oiUsd > 0 ? a.volume / a.oiUsd : 0;
-        const wr = traderWinRate(a.funding, a.oiUsd, volToOi);
-        const pchg = priceChanges[a.name] ?? 0;
-        const pnl24h = a.oiUsd * (pchg / 100) * (isLong ? 1 : -1);
-        const pnlWeek = pnl24h * 5;
-        const roi = a.oiUsd > 0 ? (pnl24h / (a.oiUsd * 0.1)) * 100 : 0;
-        return {
-          id: `hl_${a.name}_${i}`,
-          displayName: HL_NAMES[i] ?? `HL-WHALE-${i + 1}`,
-          coin: a.name,
-          exchange: "hyperliquid", exchangeLabel: "Hyperliquid",
-          currentPosition: isLong ? "LONG" : "SHORT",
-          positionSizeUsd: a.oiUsd * 0.003,
-          winRate: wr,
-          pnl24h,
-          pnlWeek,
-          volume24h: a.volume,
-          totalTrades: Math.max(10, Math.floor(a.volume / a.markPx / 5)),
-          roi,
-          fundingRate: a.funding,
-          oiUsd: a.oiUsd,
-          signal: traderSignal(a.funding),
-          priceChange24h: pchg,
-          pnlSource: "mtm",
-          ...estimateLevels(a.markPx, isLong, Math.abs(a.funding)),
-          walletLabel: "🔒 On-chain",
-        };
-      });
-  } catch { return []; }
-}
+    const client = await pool.connect();
+    let rows: Array<{
+      exchange: string | null; coin: string | null; direccion: string | null;
+      tamano_usd: string | null; precio: string | null; wallet: string | null;
+      upnl: string | null; rating: number | null; ts: string;
+    }>;
+    try {
+      const r = await client.query(
+        `SELECT exchange, coin, direccion, tamano_usd, precio, wallet, upnl, rating, ts
+         FROM whale_alerts_tg
+         WHERE ts > $1
+         ORDER BY ts DESC LIMIT 200`,
+        [Date.now() - 7 * 24 * 60 * 60 * 1000],
+      );
+      rows = r.rows;
+    } finally {
+      client.release();
+    }
 
-// ─── dYdX v4 traders ──────────────────────────────────────────────────────────
-async function fetchDydxTraders(priceChanges: Record<string, number>): Promise<WhaleTrader[]> {
-  try {
-    const r = await fetch("https://indexer.dydx.trade/v4/perpetualMarkets?limit=30", {
-      signal: AbortSignal.timeout(8000),
-    });
-    const data = await r.json() as { markets: Record<string, {
-      ticker: string; openInterest: string; oraclePrice: string;
-      nextFundingRate: string; status: string; trades24H?: number;
-      volume24H?: string;
-    }> };
-    const DYDX_NAMES = ["DX-ALPHA","DX-SIGMA","DX-ORACLE","DX-FLOW","DX-TITAN",
-      "DX-GHOST","DX-QUANT","DX-PRIME","DX-NEXUS","DX-APEX"];
-    const mkts = Object.entries(data.markets ?? {})
-      .filter(([, v]) => v.status === "ACTIVE" && parseFloat(v.openInterest) > 0)
-      .map(([, v]) => {
-        const oi = parseFloat(v.openInterest);
-        const px = parseFloat(v.oraclePrice || "0");
-        const fr = parseFloat(v.nextFundingRate || "0");
-        const vol = parseFloat(v.volume24H || "0");
-        const ticker = v.ticker.replace("-USD", "").replace("-USDT", "");
-        return { ticker, oiUsd: oi * px, funding: fr, vol, px };
-      })
-      .filter(x => x.oiUsd > 1_000_000)
-      .sort((a, b) => b.oiUsd - a.oiUsd)
-      .slice(0, 10);
+    // Filtro por exchange — WhalePerp reporta "dYdX v4"/"Hyperliquid" en el
+    // campo `exchange` (texto libre del mensaje de Telegram, ver PARSER 1 del
+    // spec original), por eso se compara en minúsculas con includes().
+    const matchesExchange = (ex: string | null) => {
+      const e = (ex ?? "").toLowerCase();
+      return exchangeFilter === "hyperliquid" ? e.includes("hyperliquid") : e.includes("dydx") || e.includes("dydx v4");
+    };
 
-    return mkts.map((m, i): WhaleTrader => {
-      const isLong = m.funding < 0;
-      const volToOi = m.oiUsd > 0 ? m.vol / m.oiUsd : 0;
-      const wr = traderWinRate(m.funding, m.oiUsd, volToOi);
-      const pchg = priceChanges[m.ticker] ?? 0;
-      const pnl24h = m.oiUsd * (pchg / 100) * (isLong ? 1 : -1);
-      const pnlWeek = pnl24h * 5;
-      const roi = m.oiUsd > 0 ? (pnl24h / (m.oiUsd * 0.1)) * 100 : 0;
-      return {
-        id: `dydx_${m.ticker}_${i}`,
-        displayName: DYDX_NAMES[i] ?? `DX-${i + 1}`,
-        coin: m.ticker,
-        exchange: "dydx", exchangeLabel: "dYdX v4",
+    // Nos quedamos con la posición MÁS RECIENTE por (wallet+coin) — si la
+    // misma ballena tiene varias alertas en la ventana, mostramos su estado
+    // actual, no una fila por cada alerta vieja.
+    const latestByKey = new Map<string, typeof rows[number]>();
+    for (const row of rows) {
+      if (!matchesExchange(row.exchange)) continue;
+      if (!row.wallet || !row.coin) continue;
+      const key = `${row.wallet}_${row.coin}`;
+      if (!latestByKey.has(key)) latestByKey.set(key, row);
+    }
+
+    const exchangeLabel = exchangeFilter === "hyperliquid" ? "Hyperliquid" : "dYdX v4";
+    const out: WhaleTrader[] = [];
+    for (const row of latestByKey.values()) {
+      const sizeUsd = parseFloat(row.tamano_usd ?? "0");
+      if (!sizeUsd || sizeUsd < 50_000) continue; // umbral ballena real
+      const isLong = (row.direccion ?? "").toUpperCase() === "LONG";
+      const price = parseFloat(row.precio ?? "0");
+      const pnl = parseFloat(row.upnl ?? "0");
+      const walletFull = row.wallet ?? "";
+      const walletShort = walletFull.length > 10
+        ? `${walletFull.slice(0, 6)}…${walletFull.slice(-4)}`
+        : walletFull;
+      out.push({
+        id: `tg_${exchangeFilter}_${walletFull}_${row.coin}`,
+        displayName: walletShort || "Ballena",
+        coin: row.coin ?? "?",
+        exchange: exchangeFilter, exchangeLabel,
         currentPosition: isLong ? "LONG" : "SHORT",
-        positionSizeUsd: m.oiUsd * 0.002,
-        winRate: wr,
-        pnl24h,
-        pnlWeek,
-        volume24h: m.vol,
-        totalTrades: Math.max(5, Math.floor(m.vol / 1000)),
-        roi,
-        fundingRate: m.funding,
-        oiUsd: m.oiUsd,
-        signal: traderSignal(m.funding),
-        priceChange24h: pchg,
-        pnlSource: "mtm",
-        ...estimateLevels(m.px, isLong, Math.abs(m.funding)),
-        walletLabel: "🔒 Privada",
-      };
-    });
-  } catch { return []; }
+        positionSizeUsd: sizeUsd,
+        winRate: row.rating ?? 0, // "rating" del bot = score de la alerta, no win-rate histórico — se muestra como tal en el frontend, no como % de acierto
+        pnl24h: pnl,
+        pnlWeek: pnl,
+        volume24h: sizeUsd,
+        totalTrades: 1,
+        roi: 0,
+        fundingRate: 0,
+        oiUsd: sizeUsd,
+        signal: isLong ? "BUY" : "SELL",
+        pnlSource: pnl ? "mtm" : "est",
+        entryPrice: price || undefined,
+        walletLabel: "🐋 Wallet real",
+        walletShort,
+        dataType: "real_position",
+      });
+    }
+    return out.sort((a, b) => b.positionSizeUsd - a.positionSizeUsd).slice(0, 20);
+  } catch (err) {
+    logger.warn({ err }, "fetchTgWhaleTraders error");
+    return [];
+  }
 }
 
 // ─── OKX SWAP traders ─────────────────────────────────────────────────────────
@@ -545,11 +523,11 @@ async function fetchOkxTraders(priceChanges: Record<string, number>): Promise<Wh
       )),
     ]);
 
+    // Respaldo SOLO si OKX no responde el precio (no reemplaza el precio real,
+    // ver oiCcy > 0 abajo — este mapa nunca pisa un dato real disponible)
     const PRICE_MAP: Record<string, number> = {
       BTC:95000,ETH:2800,SOL:150,XRP:2.2,DOGE:0.18,AVAX:28,LINK:14,ARB:0.7,OP:1.2,BNB:600,
     };
-    const OKX_NAMES = ["OX-ALPHA","OX-SIGMA","OX-PRIME","OX-QUANT","OX-TITAN",
-      "OX-NEXUS","OX-GHOST","OX-FLOW","OX-ORACLE","OX-APEX"];
 
     const traders: WhaleTrader[] = [];
     for (let i = 0; i < fundingResults.length; i++) {
@@ -569,12 +547,12 @@ async function fetchOkxTraders(priceChanges: Record<string, number>): Promise<Wh
       const pnlWeek = pnl24h * 5;
       const roi = oiUsd > 0 ? (pnl24h / (oiUsd * 0.1)) * 100 : 0;
       traders.push({
-        id: `okx_${coin}_${i}`,
-        displayName: OKX_NAMES[i] ?? `OX-${i + 1}`,
+        id: `okx_${coin}`,
+        displayName: `OKX-${coin}`,
         coin,
         exchange: "okx", exchangeLabel: "OKX",
         currentPosition: isLong ? "LONG" : "SHORT",
-        positionSizeUsd: oiUsd * 0.001,
+        positionSizeUsd: oiUsd, // OI total del mercado — NO es la posición de nadie en particular
         winRate: wr,
         pnl24h,
         pnlWeek,
@@ -587,7 +565,8 @@ async function fetchOkxTraders(priceChanges: Record<string, number>): Promise<Wh
         priceChange24h: pchg,
         pnlSource: "mtm",
         ...estimateLevels(price, isLong, Math.abs(fr)),
-        walletLabel: "🔒 Privada",
+        walletLabel: "Sin ballenas individuales — dato de mercado",
+        dataType: "market_aggregate",
       });
     }
     return traders;
@@ -605,7 +584,6 @@ async function fetchBitmexTraders(priceChanges: Record<string, number>): Promise
       symbol: string; fundingRate: number; openInterest: number;
       lastPrice: number; volume24h: number;
     }>;
-    const BMX_NAMES = ["BX-ORACLE","BX-SIGMA","BX-ALPHA","BX-TITAN","BX-NEXUS","BX-FLOW","BX-QUANT","BX-DELTA","BX-PRIME","BX-APEX"];
     const active = instruments
       .filter(x => x.openInterest > 0 && x.lastPrice > 0 && x.fundingRate !== undefined)
       .map(x => {
@@ -628,12 +606,12 @@ async function fetchBitmexTraders(priceChanges: Record<string, number>): Promise
       const pnlWeek = pnl24h * 5;
       const roi = inst.oiUsd > 0 ? (pnl24h / (inst.oiUsd * 0.1)) * 100 : 0;
       return {
-        id: `bitmex_${inst.symbol}_${i}`,
-        displayName: BMX_NAMES[i] ?? `BX-${i + 1}`,
+        id: `bitmex_${coin}`,
+        displayName: `BitMEX-${coin}`,
         coin,
         exchange: "bitmex", exchangeLabel: "BitMEX",
         currentPosition: isLong ? "LONG" : "SHORT",
-        positionSizeUsd: inst.oiUsd * 0.002,
+        positionSizeUsd: inst.oiUsd, // OI total del mercado — NO es la posición de nadie en particular
         winRate: wr,
         pnl24h,
         pnlWeek,
@@ -646,10 +624,190 @@ async function fetchBitmexTraders(priceChanges: Record<string, number>): Promise
         priceChange24h: pchg,
         pnlSource: "mtm",
         ...estimateLevels(inst.lastPrice, isLong, Math.abs(fr)),
-        walletLabel: "🔒 Privada",
+        walletLabel: "Sin ballenas individuales — dato de mercado",
+        dataType: "market_aggregate",
       };
     });
   } catch { return []; }
+}
+
+// ─── GMX v2 traders — REALES, on-chain (Arbitrum) ────────────────────────────
+// (julio 19 2026 — esto es lo único genuinamente NUEVO del arreglo: antes GMX
+// solo tenía OI agregado del mercado (ver oi-radar.ts / psy-algo.ts gmxMarket),
+// sin ninguna ballena individual. Acá se leen los eventos reales del contrato
+// EventEmitter de GMX v2 en Arbitrum (PositionIncrease/PositionDecrease), que
+// traen wallet real + tamaño real + dirección real de cada apertura/cierre de
+// posición grande. Fuente verificada directo del repo oficial gmx-io/gmx-
+// synthetics (deployments/arbitrum/EventEmitter.json + PositionEventUtils.sol).
+//
+// Usa la MISMA ETHERSCAN_API_KEY que ya está en Railway — Etherscan v2 unificó
+// su API para varias chains bajo una sola key, solo cambia chainid=42161 en
+// vez de chainid=1. No hace falta ninguna key nueva.
+const GMX_EVENT_EMITTER_ARBITRUM = "0xC8ee91A54287DB53897056e12D9819156D3822Fb";
+const GMX_POSITION_INCREASE_HASH = keccak256(toUtf8Bytes("PositionIncrease"));
+const GMX_POSITION_DECREASE_HASH = keccak256(toUtf8Bytes("PositionDecrease"));
+const GMX_MIN_WHALE_USD = 50_000; // umbral para considerar "ballena" (sizeDeltaUsd)
+
+// Tipo ABI exacto de EventUtils.EventLogData (7 categorías × items/arrayItems),
+// confirmado contra el binding Go auto-generado del ABI real de GMX synthetics.
+const GMX_EVENT_LOG_DATA_TYPE =
+  "tuple(" +
+    "tuple(tuple(string,address)[] items, tuple(string,address[])[] arrayItems) addressItems," +
+    "tuple(tuple(string,uint256)[] items, tuple(string,uint256[])[] arrayItems) uintItems," +
+    "tuple(tuple(string,int256)[] items, tuple(string,int256[])[] arrayItems) intItems," +
+    "tuple(tuple(string,bool)[] items, tuple(string,bool[])[] arrayItems) boolItems," +
+    "tuple(tuple(string,bytes32)[] items, tuple(string,bytes32[])[] arrayItems) bytes32Items," +
+    "tuple(tuple(string,bytes)[] items, tuple(string,bytes[])[] arrayItems) bytesItems," +
+    "tuple(tuple(string,string)[] items, tuple(string,string[])[] arrayItems) stringItems" +
+  ")";
+
+interface GmxDecodedEvent {
+  account: string;
+  market: string;
+  isLong: boolean;
+  sizeDeltaUsd: number;    // ya convertido de 1e30 a USD normal
+  executionPrice: number;  // idem
+}
+
+function decodeGmxEventLog(dataHex: string): GmxDecodedEvent | null {
+  try {
+    const coder = AbiCoder.defaultAbiCoder();
+    const [, , eventData] = coder.decode(["address", "string", GMX_EVENT_LOG_DATA_TYPE], dataHex);
+    const addressItems = eventData[0][0] as Array<[string, string]>;
+    const uintItems = eventData[1][0] as Array<[string, bigint]>;
+    const boolItems = eventData[3][0] as Array<[string, boolean]>;
+
+    const getAddr = (key: string) => addressItems.find(([k]) => k === key)?.[1];
+    const getUint = (key: string) => uintItems.find(([k]) => k === key)?.[1];
+    const getBool = (key: string) => boolItems.find(([k]) => k === key)?.[1];
+
+    const account = getAddr("account");
+    const market = getAddr("market");
+    const sizeDeltaUsdRaw = getUint("sizeDeltaUsd");
+    const executionPriceRaw = getUint("executionPrice");
+    const isLong = getBool("isLong");
+    if (!account || !market || sizeDeltaUsdRaw === undefined || isLong === undefined) return null;
+
+    return {
+      account,
+      market,
+      isLong,
+      sizeDeltaUsd: Number(sizeDeltaUsdRaw) / 1e30,
+      executionPrice: executionPriceRaw !== undefined ? Number(executionPriceRaw) / 1e30 : 0,
+    };
+  } catch (err) {
+    logger.warn({ err }, "decodeGmxEventLog: fallo decodificando evento GMX (posible cambio de ABI)");
+    return null;
+  }
+}
+
+// Mapa dirección de mercado (GM token) → símbolo, ej "0x47c0...9703" → "ETH".
+// Reusa el mismo endpoint público que ya usa psy-algo.ts (gmxMarket), cacheado
+// aparte para no repetir la llamada.
+async function fetchGmxMarketSymbols(): Promise<Record<string, string>> {
+  const cached = cGet<Record<string, string>>("gmx_market_symbols");
+  if (cached) return cached;
+  try {
+    const r = await fetch("https://arbitrum-api.gmxinfra.io/markets/info", { signal: AbortSignal.timeout(8000) });
+    if (!r.ok) return {};
+    const d = await r.json() as { markets?: Array<Record<string, unknown>> };
+    const map: Record<string, string> = {};
+    for (const m of d.markets ?? []) {
+      const addr = (m["marketToken"] ?? m["market"] ?? m["address"]) as string | undefined;
+      const name = m["name"] as string | undefined;
+      if (!addr || !name) continue;
+      const symbol = name.split("/")[0]?.trim();
+      if (symbol) map[addr.toLowerCase()] = symbol;
+    }
+    if (Object.keys(map).length === 0) {
+      logger.warn("fetchGmxMarketSymbols: respuesta de gmxinfra sin campo marketToken/market/address — revisar shape del endpoint");
+    }
+    cSet("gmx_market_symbols", map, 30 * 60_000);
+    return map;
+  } catch (err) {
+    logger.warn({ err }, "fetchGmxMarketSymbols error");
+    return {};
+  }
+}
+
+async function fetchGmxWhales(): Promise<WhaleTrader[]> {
+  const ethKey = await getDbKey("ETHERSCAN_API_KEY");
+  if (!ethKey) return [];
+  try {
+    const [marketSymbols, blockNumRes] = await Promise.all([
+      fetchGmxMarketSymbols(),
+      fetch(`https://api.etherscan.io/v2/api?chainid=42161&module=proxy&action=eth_blockNumber&apikey=${ethKey}`,
+        { signal: AbortSignal.timeout(8000) }),
+    ]);
+    const { result: latestHex } = await blockNumRes.json() as { result: string };
+    const latestBlock = parseInt(latestHex, 16);
+    if (!latestBlock) { logger.warn("fetchGmxWhales: no se pudo leer el bloque más reciente de Arbitrum"); return []; }
+    const fromBlock = Math.max(0, latestBlock - 3000); // ≈ últimos 12-15 min en Arbitrum
+
+    async function getLogsFor(eventNameHash: string) {
+      const url = `https://api.etherscan.io/v2/api?chainid=42161&module=logs&action=getLogs` +
+        `&address=${GMX_EVENT_EMITTER_ARBITRUM}` +
+        `&fromBlock=${fromBlock}&toBlock=${latestBlock}` +
+        `&topic1=${eventNameHash}` +
+        `&apikey=${ethKey}`;
+      const r = await fetch(url, { signal: AbortSignal.timeout(12000) });
+      const d = await r.json() as { status: string; result: unknown; message?: string };
+      if (d.status !== "1" || !Array.isArray(d.result)) {
+        if (d.message && d.message !== "No records found") {
+          logger.warn({ message: d.message }, "fetchGmxWhales: Etherscan getLogs no devolvió status=1");
+        }
+        return [] as Array<{ data: string; transactionHash: string; timeStamp: string }>;
+      }
+      return d.result as Array<{ data: string; transactionHash: string; timeStamp: string }>;
+    }
+
+    const [incLogs, decLogs] = await Promise.all([
+      getLogsFor(GMX_POSITION_INCREASE_HASH),
+      getLogsFor(GMX_POSITION_DECREASE_HASH),
+    ]);
+
+    const out: WhaleTrader[] = [];
+    const processLogs = (logs: typeof incLogs, isIncrease: boolean) => {
+      for (const log of logs) {
+        const decoded = decodeGmxEventLog(log.data);
+        if (!decoded) continue;
+        if (decoded.sizeDeltaUsd < GMX_MIN_WHALE_USD) continue;
+        const symbol = marketSymbols[decoded.market.toLowerCase()] ?? decoded.market.slice(0, 8);
+        const walletShort = `${decoded.account.slice(0, 6)}…${decoded.account.slice(-4)}`;
+        const ts = parseInt(log.timeStamp, 16) * 1000;
+        out.push({
+          id: `gmx_${log.transactionHash}`,
+          displayName: walletShort,
+          coin: symbol,
+          exchange: "gmx", exchangeLabel: "GMX v2",
+          currentPosition: decoded.isLong ? "LONG" : "SHORT",
+          positionSizeUsd: decoded.sizeDeltaUsd,
+          winRate: 0, // no aplica — es un evento puntual, no un historial de aciertos
+          pnl24h: 0,
+          pnlWeek: 0,
+          volume24h: decoded.sizeDeltaUsd,
+          totalTrades: 1,
+          roi: 0,
+          fundingRate: 0,
+          oiUsd: decoded.sizeDeltaUsd,
+          signal: decoded.isLong ? "BUY" : "SELL",
+          entryPrice: decoded.executionPrice || undefined,
+          pnlSource: "est",
+          walletLabel: isIncrease ? "🐋 Wallet real — abrió posición" : "🐋 Wallet real — cerró posición",
+          walletShort,
+          txHash: log.transactionHash,
+          dataType: "real_position",
+        });
+      }
+    };
+    processLogs(incLogs, true);
+    processLogs(decLogs, false);
+
+    return out.sort((a, b) => b.positionSizeUsd - a.positionSizeUsd).slice(0, 20);
+  } catch (err) {
+    logger.warn({ err }, "fetchGmxWhales error");
+    return [];
+  }
 }
 
 // GET /api/whale-intel/traders  — multi-exchange
@@ -659,19 +817,21 @@ router.get("/whale-intel/traders", async (req: Request, res: Response) => {
 
   try {
     const priceChanges = await fetchPriceChanges();
-    const [hlTraders, dydxTraders, okxTraders, bitmexTraders] = await Promise.all([
-      fetchHLTraders(priceChanges),
-      fetchDydxTraders(priceChanges),
+    const [hlTraders, dydxTraders, okxTraders, bitmexTraders, gmxTraders] = await Promise.all([
+      fetchTgWhaleTraders("hyperliquid"),
+      fetchTgWhaleTraders("dydx"),
       fetchOkxTraders(priceChanges),
       fetchBitmexTraders(priceChanges),
+      fetchGmxWhales(),
     ]);
 
-    const traders = [...hlTraders, ...dydxTraders, ...okxTraders, ...bitmexTraders];
+    const traders = [...hlTraders, ...dydxTraders, ...okxTraders, ...bitmexTraders, ...gmxTraders];
     const sources = {
       hyperliquid: hlTraders.length,
       dydx: dydxTraders.length,
       okx: okxTraders.length,
       bitmex: bitmexTraders.length,
+      gmx: gmxTraders.length,
     };
 
     cSet("whale_traders", traders, 90_000);
@@ -1052,8 +1212,7 @@ router.get("/whale-intel/live-whales", async (req: Request, res: Response) => {
       dbRows = r.rows;
     } catch { /* table may not exist yet */ } finally { client.release(); }
 
-    const priceChanges = await fetchPriceChanges().catch(() => ({} as Record<string, number>));
-    const hlTraders = await fetchHLTraders(priceChanges).catch(() => [] as WhaleTrader[]);
+    const hlTraders = await fetchTgWhaleTraders("hyperliquid").catch(() => [] as WhaleTrader[]);
 
     const result = { db_whales: dbRows, hl_traders: hlTraders };
     cSet("live_whales", result, 30_000);
