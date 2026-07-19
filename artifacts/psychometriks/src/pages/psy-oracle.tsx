@@ -1045,7 +1045,24 @@ function SectionMacro({macro}:{macro:LiveMacro|null}) {
     return () => { cancelled = true; };
   }, []);
 
-  // Calendario económico real (FMP) — antes eran fechas fijas de "2025"
+  // Fed Watch calculado con futuros ZQ reales (no la API pagada de CME) —
+  // ver metodología completa en el comentario del endpoint en market-data.ts
+  interface FedWatchRow { mes: string; fecha_decision: string; tasa_antes: number; tasa_despues_implicita: number | null; cambio_bps: number | null }
+  const [fedWatch, setFedWatch] = useState<FedWatchRow[]>([]);
+  const [fedWatchError, setFedWatchError] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch("/api/market-data/fed-watch");
+        const d = await r.json() as { ok: boolean; data?: FedWatchRow[] };
+        if (!cancelled) { if (d.ok && d.data) setFedWatch(d.data); else setFedWatchError(true); }
+      } catch { if (!cancelled) setFedWatchError(true); }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+
   interface EconEvent { date: string; event: string; est: number | null; prev: number | null; impact: string }
   const [econCal, setEconCal] = useState<EconEvent[]>([]);
   const [econCalError, setEconCalError] = useState<string | null>(null);
@@ -1156,6 +1173,33 @@ function SectionMacro({macro}:{macro:LiveMacro|null}) {
               </div>
             ))}
           </div>
+        </Card>
+
+        <Card title="FED Watch — Cambio Implícito por Reunión" badge={fedWatch.length ? <LiveBadge /> : undefined}>
+          {fedWatchError ? (
+            <div style={{color:"#7b8fa0",fontSize:10,fontFamily:"monospace",padding:"14px 0",textAlign:"center"}}>No disponible ahora mismo (futuros ZQ sin datos en Yahoo)</div>
+          ) : fedWatch.length === 0 ? (
+            <div style={{color:"#7b8fa0",fontSize:10,fontFamily:"monospace",padding:"14px 0",textAlign:"center"}}>Calculando desde futuros de Fed Funds reales…</div>
+          ) : (
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              {fedWatch.map(f => (
+                <div key={f.mes} style={{background:"#080c14",borderRadius:6,padding:"10px 12px"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                    <span style={{color:"#e8eaed",fontSize:11,fontFamily:"monospace",fontWeight:700}}>Reunión {f.fecha_decision}</span>
+                    <span style={{color:f.cambio_bps===null?"#7b8fa0":f.cambio_bps>0?"#ff3366":f.cambio_bps<0?"#00ff88":"#ffd700",fontSize:11,fontFamily:"monospace",fontWeight:700}}>
+                      {f.cambio_bps === null ? "—" : f.cambio_bps === 0 ? "SIN CAMBIO" : `${f.cambio_bps > 0 ? "+" : ""}${f.cambio_bps} bps`}
+                    </span>
+                  </div>
+                  <div style={{color:"#7b8fa0",fontSize:9,fontFamily:"monospace"}}>
+                    Tasa implícita: {f.tasa_antes.toFixed(3)}% → {f.tasa_despues_implicita?.toFixed(3) ?? "—"}%
+                  </div>
+                </div>
+              ))}
+              <div style={{fontSize:8,color:"#4a5568",fontFamily:"monospace",marginTop:4}}>
+                Calculado de futuros ZQ reales (mismo principio público que CME FedWatch) — expectativa de valor esperado, no el desglose de probabilidades HOLD/CUT25/CUT50 exacto de la API oficial de pago.
+              </div>
+            </div>
+          )}
         </Card>
       </div>
     </div>
