@@ -493,6 +493,80 @@ async function fetchZqPrice(ticker: string): Promise<number | null> {
   } catch { return null; }
 }
 
+// Calendario de ganancias real vía Alpha Vantage (gratis, CSV) — cuota muy
+// chica (25 llamadas/día), por eso cache largo (12h)
+let _earningsCache: { data: unknown; ts: number } | null = null;
+router.get("/market-data/earnings-calendar", async (req: Request, res: Response) => {
+  if (_earningsCache && Date.now() - _earningsCache.ts < 12 * 3_600_000) { res.json(_earningsCache.data); return; }
+  const key = process.env["ALPHA_VANTAGE_KEY"];
+  if (!key) { res.json({ ok: false, error: "ALPHA_VANTAGE_KEY no configurado", data: [] }); return; }
+  try {
+    const r = await fetch(`https://www.alphavantage.co/query?function=EARNINGS_CALENDAR&horizon=3month&apikey=${key}`, { signal: AbortSignal.timeout(10000) });
+    if (!r.ok) { res.json({ ok: false, error: `Alpha Vantage respondió ${r.status}`, data: [] }); return; }
+    const csv = await r.text();
+    if (csv.includes("\"Information\"") || csv.includes("\"Note\"")) { res.json({ ok: false, error: "Cuota diaria de Alpha Vantage agotada", data: [] }); return; }
+    const lines = csv.trim().split("\n");
+    const rows = lines.slice(1).map(line => {
+      const [symbol, name, reportDate, , estimate] = line.split(",");
+      return { sym: symbol, name, date: reportDate, estimateEps: estimate && estimate !== "" ? parseFloat(estimate) : null };
+    }).filter(r => r.sym && r.date);
+    const payload = { ok: true, data: rows.slice(0, 30), ts: Date.now() };
+    _earningsCache = { data: payload, ts: Date.now() };
+    res.json(payload);
+  } catch (err) {
+    req.log.error({ err }, "market-data/earnings-calendar");
+    res.json({ ok: false, error: "Error de red consultando Alpha Vantage", data: [] });
+  }
+});
+
+// Indicadores económicos reales vía FRED (que ya recopila BLS + BEA en un
+// solo lugar) — CPI y PCE se calculan como variación interanual (YoY),
+// desempleo se toma directo (ya es %), PIB real como variación interanual.
+const FRED_SERIES: Record<string, { id: string; tipo: "yoy_indice" | "directo" | "yoy_trimestral" }> = {
+  cpi: { id: "CPIAUCSL", tipo: "yoy_indice" },       // BLS — CPI todos los consumidores urbanos
+  desempleo: { id: "UNRATE", tipo: "directo" },       // BLS — tasa de desempleo
+  pib: { id: "GDPC1", tipo: "yoy_trimestral" },       // BEA — PIB real
+  pce: { id: "PCEPILFE", tipo: "yoy_indice" },        // BEA — PCE núcleo (el que la Fed más mira)
+};
+
+async function fetchFredSeries(seriesId: string, key: string, limit: number): Promise<Array<{ date: string; value: number }>> {
+  const r = await fetch(
+    `https://api.stlouisfed.org/fred/series/observations?series_id=${seriesId}&api_key=${key}&file_type=json&sort_order=desc&limit=${limit}`,
+    { signal: AbortSignal.timeout(8000) },
+  );
+  if (!r.ok) return [];
+  const d = await r.json() as { observations?: Array<{ date: string; value: string }> };
+  return (d.observations ?? [])
+    .filter(o => o.value !== ".")
+    .map(o => ({ date: o.date, value: parseFloat(o.value) }));
+}
+
+router.get("/market-data/econ-indicators", async (req: Request, res: Response) => {
+  const key = process.env["FRED_API_KEY"];
+  if (!key) { res.json({ ok: false, error: "FRED_API_KEY no configurado", data: {} }); return; }
+  try {
+    const resultados: Record<string, { valor: number; fecha: string; unidad: string } | null> = {};
+    for (const [nombre, cfg] of Object.entries(FRED_SERIES)) {
+      const obs = await fetchFredSeries(cfg.id, key, cfg.tipo === "yoy_trimestral" ? 6 : 14);
+      if (cfg.tipo === "directo") {
+        resultados[nombre] = obs[0] ? { valor: obs[0].value, fecha: obs[0].date, unidad: "%" } : null;
+      } else if (cfg.tipo === "yoy_indice" && obs.length >= 13) {
+        const yoy = ((obs[0]!.value - obs[12]!.value) / obs[12]!.value) * 100;
+        resultados[nombre] = { valor: Math.round(yoy * 100) / 100, fecha: obs[0]!.date, unidad: "% interanual" };
+      } else if (cfg.tipo === "yoy_trimestral" && obs.length >= 5) {
+        const yoy = ((obs[0]!.value - obs[4]!.value) / obs[4]!.value) * 100;
+        resultados[nombre] = { valor: Math.round(yoy * 100) / 100, fecha: obs[0]!.date, unidad: "% interanual" };
+      } else {
+        resultados[nombre] = null;
+      }
+    }
+    res.json({ ok: true, data: resultados, ts: Date.now(), fuente: "FRED (recopila datos oficiales de BLS y BEA)" });
+  } catch (err) {
+    req.log.error({ err }, "market-data/econ-indicators");
+    res.json({ ok: false, error: "Error consultando FRED", data: {} });
+  }
+});
+
 router.get("/market-data/fed-watch", async (req: Request, res: Response) => {
   try {
     const now = new Date();
