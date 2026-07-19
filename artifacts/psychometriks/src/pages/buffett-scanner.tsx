@@ -1,6 +1,40 @@
 import React, { useState, useEffect, useCallback } from "react";
 import SiteNav from "@/components/site-nav";
 
+// Contexto de industria (BEA) — dato adicional de si el sector de la acción
+// está creciendo o no a nivel macro. NO reemplaza los fundamentales que
+// faltan (P/E, ROE, etc — eso necesita datos por empresa, que BEA no tiene).
+function IndustryContextBadge({ sector }: { sector: string }) {
+  const [ctx, setCtx] = useState<{ industriaBea: string; cambioPctInteranual: number } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    if (!sector) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch(`/api/buffett/industry-context/${encodeURIComponent(sector)}`);
+        const d = await r.json() as { ok: boolean; industriaBea?: string; cambioPctInteranual?: number; error?: string };
+        if (!cancelled) {
+          if (d.ok && d.industriaBea !== undefined && d.cambioPctInteranual !== undefined) setCtx({ industriaBea: d.industriaBea, cambioPctInteranual: d.cambioPctInteranual });
+          else setError(d.error ?? "No disponible");
+        }
+      } catch { if (!cancelled) setError("Error de red"); }
+    })();
+    return () => { cancelled = true; };
+  }, [sector]);
+
+  if (error) return <div className="bg-[#020b12] border border-[#0d2030] p-3"><div className="font-sharetech text-[6px] text-[#5a8898] tracking-[0.08em] mb-1">PIB SECTOR (BEA)</div><div className="font-space text-[9px] text-[#5a8898]">No disponible</div></div>;
+  if (!ctx) return <div className="bg-[#020b12] border border-[#0d2030] p-3"><div className="font-sharetech text-[6px] text-[#5a8898] tracking-[0.08em] mb-1">PIB SECTOR (BEA)</div><div className="font-space text-[9px] text-[#5a8898]">Cargando…</div></div>;
+  return (
+    <div className="bg-[#020b12] border border-[#0d2030] p-3">
+      <div className="font-sharetech text-[6px] text-[#5a8898] tracking-[0.08em] mb-1">PIB SECTOR (BEA) — {ctx.industriaBea}</div>
+      <div className="font-space text-[10px] font-bold" style={{ color: ctx.cambioPctInteranual >= 0 ? "#00e676" : "#ff6b6b" }}>
+        {ctx.cambioPctInteranual >= 0 ? "+" : ""}{ctx.cambioPctInteranual}% interanual
+      </div>
+    </div>
+  );
+}
+
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 function getAuth() {
   try {
@@ -468,6 +502,7 @@ export default function BuffettScanner() {
                               <div className="font-space text-[10px] font-bold" style={{ color: s.color }}>{s.value}</div>
                             </div>
                           ))}
+                          <IndustryContextBadge sector={r.sector} />
                         </div>
 
                         {/* Buffett entry zones analysis */}

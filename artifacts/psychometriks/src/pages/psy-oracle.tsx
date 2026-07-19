@@ -1065,6 +1065,22 @@ function SectionInstitucional({macro}:{macro:LiveMacro|null}) {
 
 // ─── Section 6: MACRO GLOBAL ─────────────────────────────────────────────────
 function SectionMacro({macro}:{macro:LiveMacro|null}) {
+  // PIB regional por estado (BEA) — qué estados crecen más rápido
+  interface RegionalGdp { estado: string; año: string; cambioPct: number }
+  const [regionalGdp, setRegionalGdp] = useState<RegionalGdp[]>([]);
+  const [regionalGdpError, setRegionalGdpError] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch("/api/market-data/regional-gdp");
+        const d = await r.json() as { ok: boolean; data?: RegionalGdp[]; error?: string };
+        if (!cancelled) { if (d.ok && d.data) setRegionalGdp(d.data); else setRegionalGdpError(d.error ?? "No disponible"); }
+      } catch { if (!cancelled) setRegionalGdpError("Error de red"); }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   // Indicadores económicos reales (CPI, desempleo, PIB, PCE) — vía FRED, que
   // recopila datos oficiales de BLS y BEA en un solo lugar
   interface EconIndicator { valor: number; fecha: string; unidad: string }
@@ -1212,6 +1228,26 @@ function SectionMacro({macro}:{macro:LiveMacro|null}) {
         </div>
         <div style={{fontSize:8,color:"#4a5568",fontFamily:"monospace",marginTop:10}}>
           Fuente: FRED (recopila datos oficiales de BLS y BEA) — CPI/PCE/PIB en variación interanual real
+        </div>
+      </Card>
+
+      <Card title="PIB Regional — Estados que Más Crecen" badge={regionalGdp.length ? <LiveBadge /> : undefined}>
+        {regionalGdpError ? (
+          <div style={{color:"#7b8fa0",fontSize:10,fontFamily:"monospace",padding:"14px 0",textAlign:"center"}}>No disponible: {regionalGdpError}</div>
+        ) : regionalGdp.length === 0 ? (
+          <div style={{color:"#7b8fa0",fontSize:10,fontFamily:"monospace",padding:"14px 0",textAlign:"center"}}>Cargando datos reales de BEA…</div>
+        ) : (
+          <div style={{display:"grid",gridTemplateColumns:"repeat(2, 1fr)",gap:8}}>
+            {regionalGdp.slice(0, 10).map(r => (
+              <div key={r.estado} style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:"#080c14",borderRadius:6,padding:"6px 10px"}}>
+                <span style={{color:"#e8eaed",fontSize:11,fontFamily:"monospace"}}>{r.estado}</span>
+                <span style={{color:r.cambioPct >= 0 ? "#00e5ff" : "#ff3366",fontSize:11,fontFamily:"monospace",fontWeight:700}}>{r.cambioPct >= 0 ? "+" : ""}{r.cambioPct}%</span>
+              </div>
+            ))}
+          </div>
+        )}
+        <div style={{fontSize:8,color:"#4a5568",fontFamily:"monospace",marginTop:10}}>
+          Fuente: BEA (oficial) — PIB real por estado, variación interanual, top 10 de mayor a menor
         </div>
       </Card>
 
