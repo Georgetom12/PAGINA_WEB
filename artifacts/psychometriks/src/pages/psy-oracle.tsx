@@ -483,6 +483,45 @@ function SectionDashboard({crypto,macro,loading}:{crypto:LiveCrypto[];macro:Live
 function SectionHeatmap({crypto,macro}:{crypto:LiveCrypto[];macro:LiveMacro|null}) {
   const [tf, setTf] = useState<"1D"|"1W"|"1M">("1D");
 
+  // Rotación sectorial REAL — antes SECTOR_YTD era un arreglo fijo que nunca
+  // cambiaba. Ahora usa el mismo endpoint de sectores (10 SPDR ETFs) ya
+  // construido en market.ts. Es el % de HOY, no YTD real (para YTD real
+  // haría falta guardar el precio del 1 de enero, que no tenemos).
+  interface SectorLive { symbol: string; name: string; pct: number }
+  const [sectores, setSectores] = useState<SectorLive[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const r = await fetch("/api/market/sectors");
+        const d = await r.json() as { data?: SectorLive[] };
+        if (!cancelled && d.data) setSectores(d.data);
+      } catch { /* deja los datos anteriores */ }
+    };
+    load();
+    const iv = setInterval(load, 5 * 60_000);
+    return () => { cancelled = true; clearInterval(iv); };
+  }, []);
+
+  // Volumen relativo REAL de ETFs (reemplaza "Capital Flow" que necesitaría
+  // flujos de creación/redención reales — eso sí requiere un feed pago tipo
+  // Farside que no tenemos). El volumen relativo SÍ es 100% real y gratis.
+  interface EtfVol { name: string; pct: number; volRelativo: number | null }
+  const [etfVol, setEtfVol] = useState<EtfVol[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const r = await fetch("/api/market-data/etf-volume");
+        const d = await r.json() as { ok: boolean; data?: EtfVol[] };
+        if (!cancelled && d.ok && d.data) setEtfVol(d.data);
+      } catch { /* deja los datos anteriores */ }
+    };
+    load();
+    const iv = setInterval(load, 5 * 60_000);
+    return () => { cancelled = true; clearInterval(iv); };
+  }, []);
+
   const live1D = useMemo(() => [
     ...CRYPTO_HEATMAP.map(sym => {
       const live = crypto.find(c => c.sym === sym);
@@ -500,15 +539,15 @@ function SectionHeatmap({crypto,macro}:{crypto:LiveCrypto[];macro:LiveMacro|null
   const sectorRef = useRef<HTMLCanvasElement>(null);
   const sectorChart = useRef<Chart | null>(null);
   useEffect(() => {
-    if (!sectorRef.current) return;
+    if (!sectorRef.current || !sectores.length) return;
     if (sectorChart.current) { sectorChart.current.destroy(); }
     sectorChart.current = new Chart(sectorRef.current, {
       type:"bar",
-      data:{labels:SECTOR_YTD.map(s=>s.name),datasets:[{data:SECTOR_YTD.map(s=>s.chg),backgroundColor:SECTOR_YTD.map(s=>s.chg>=0?"#00ff8833":"#ff336633"),borderColor:SECTOR_YTD.map(s=>s.chg>=0?"#00ff88":"#ff3366"),borderWidth:1}]},
+      data:{labels:sectores.map(s=>s.name),datasets:[{data:sectores.map(s=>s.pct),backgroundColor:sectores.map(s=>s.pct>=0?"#00ff8833":"#ff336633"),borderColor:sectores.map(s=>s.pct>=0?"#00ff88":"#ff3366"),borderWidth:1}]},
       options:{indexAxis:"y",responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:"#7b8fa0",font:{size:9}},grid:{color:"#1e2530"}},y:{ticks:{color:"#cdd",font:{size:9}},grid:{display:false}}}},
     });
     return () => { if (sectorChart.current) { sectorChart.current.destroy(); sectorChart.current = null; } };
-  }, []);
+  }, [sectores]);
 
   // Live global markets (SPX/NDX real, others reference)
   const globalMarkets = useMemo(() => {
@@ -539,24 +578,27 @@ function SectionHeatmap({crypto,macro}:{crypto:LiveCrypto[];macro:LiveMacro|null
       </Card>
 
       <div className="psy-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
-        <Card title="Rotación Sectorial YTD" badge={<RefBadge />}>
+        <Card title="Rotación Sectorial — Hoy" badge={sectores.length ? <LiveBadge /> : <RefBadge />}>
           <div style={{height:240,position:"relative"}}>
-            <canvas ref={sectorRef} />
+            {sectores.length ? <canvas ref={sectorRef} /> : <div style={{color:"#7b8fa0",fontSize:11,textAlign:"center",paddingTop:100}}>Cargando datos reales de sectores…</div>}
           </div>
         </Card>
 
-        <Card title="Capital Flow 24H — ETFs" badge={<RefBadge />}>
+        <Card title="Volumen Relativo — ETFs" badge={etfVol.length ? <LiveBadge /> : <RefBadge />}>
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
-            {ETF_FLOWS.map(e => {
-              const w = Math.abs(e.flow) / 3000 * 100;
+            {etfVol.length === 0 ? (
+              <div style={{color:"#7b8fa0",fontSize:11,textAlign:"center",padding:"20px 0"}}>Cargando…</div>
+            ) : etfVol.map(e => {
+              const w = Math.min((e.volRelativo ?? 1) / 3 * 100, 100);
+              const up = e.pct >= 0;
               return (
                 <div key={e.name}>
                   <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}>
                     <span style={{color:"#e8eaed",fontSize:11,fontFamily:"monospace"}}>{e.name}</span>
-                    <span style={{color:e.type==="IN"?"#00ff88":"#ff3366",fontSize:11,fontFamily:"monospace"}}>{e.type==="IN"?"+":"-"}${Math.abs(e.flow).toLocaleString()}M</span>
+                    <span style={{color:up?"#00ff88":"#ff3366",fontSize:11,fontFamily:"monospace"}}>{up?"+":""}{e.pct.toFixed(2)}% · vol {e.volRelativo?.toFixed(1) ?? "—"}x</span>
                   </div>
                   <div style={{height:6,background:"#1e2530",borderRadius:3,overflow:"hidden"}}>
-                    <div style={{height:"100%",width:`${w}%`,background:e.type==="IN"?"#00ff88":"#ff3366",borderRadius:3,transition:"width 0.4s"}} />
+                    <div style={{height:"100%",width:`${w}%`,background:up?"#00ff88":"#ff3366",borderRadius:3,transition:"width 0.4s"}} />
                   </div>
                 </div>
               );
@@ -719,23 +761,27 @@ function SectionOrderFlow({crypto,orderBook,fetchOB}:{crypto:LiveCrypto[];orderB
           </div>
         </Card>
 
-        <Card title="Dark Pool Prints" badge={<RefBadge />}>
+        <Card title="Órdenes Grandes en el Libro" badge={orderBook ? <LiveBadge /> : <RefBadge />}>
           <div style={{display:"flex",flexDirection:"column",gap:6}}>
             <div style={{display:"flex",justifyContent:"space-between",color:"#7b8fa0",fontSize:9,fontFamily:"monospace",letterSpacing:1,paddingBottom:6,borderBottom:"1px solid #1e2530"}}>
-              <span>SYM</span><span>PRECIO</span><span>TAMAÑO</span><span>LADO</span><span>HORA</span>
+              <span>PAR</span><span>PRECIO</span><span>TAMAÑO</span><span>LADO</span>
             </div>
-            {DARK_POOL.map((d,i) => (
+            {!orderBook ? (
+              <div style={{color:"#7b8fa0",fontSize:11,textAlign:"center",padding:"14px 0"}}>Cargando libro de órdenes en vivo…</div>
+            ) : [
+              ...orderBook.bids.slice(0, 4).map(b => ({ price: b.price, size: b.size, side: "BID" as const })),
+              ...orderBook.asks.slice(0, 4).map(a => ({ price: a.price, size: a.size, side: "OFFER" as const })),
+            ].sort((a, b) => b.size - a.size).slice(0, 6).map((d, i) => (
               <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"5px 0",borderBottom:"1px solid #1e253030",fontSize:11,fontFamily:"monospace"}}>
-                <span style={{color:"#e8eaed",fontWeight:700,width:50}}>{d.sym}</span>
-                <span style={{color:"#cdd"}}>{d.price}</span>
-                <span style={{color:"#7b8fa0"}}>{d.size}</span>
+                <span style={{color:"#e8eaed",fontWeight:700,width:50}}>{orderBook.pair}</span>
+                <span style={{color:"#cdd"}}>${d.price.toLocaleString("en-US",{maximumFractionDigits:2})}</span>
+                <span style={{color:"#7b8fa0"}}>{d.size.toFixed(3)}</span>
                 <span style={{color:d.side==="BID"?"#00ff88":"#ff3366"}}>{d.side}</span>
-                <span style={{color:"#4a5568"}}>{d.ts}</span>
               </div>
             ))}
           </div>
           <div style={{marginTop:10,padding:"8px 10px",background:"#080c14",borderRadius:6,border:"1px solid #1e2530",fontSize:9,color:"#7b8fa0",fontFamily:"monospace"}}>
-            ⚡ Dark pool activity neta: <span style={{color:"#00ff88"}}>BID $5.2B</span> vs OFFER $3.1B — Acumulación detectada
+            Órdenes reales del libro en vivo de {orderBook?.pair ?? "—"} — no es "dark pool" (eso necesita un feed FINRA pago que no tenemos), es el libro visible ordenado por tamaño.
           </div>
         </Card>
       </div>
@@ -744,113 +790,79 @@ function SectionOrderFlow({crypto,orderBook,fetchOB}:{crypto:LiveCrypto[];orderB
 }
 
 // ─── Section 4: OPTIONS ──────────────────────────────────────────────────────
+// Reemplaza el viejo "Options" (GEX/greeks/max pain — necesitaba un feed de
+// opciones pago que no tenemos) por volatilidad realizada REAL de cripto,
+// calculada con velas diarias de Binance — mismo cálculo honesto que ya se
+// usa para acciones en PSY BRAIN, aplicado aquí a las criptos principales.
 function SectionOptions() {
-  const [sel, setSel] = useState(0);
-  const opt = OPTIONS_DATA[sel];
-  const gexRef = useRef<HTMLCanvasElement>(null);
-  const gexChart = useRef<Chart | null>(null);
-
+  interface VolCripto { sym: string; price: number | null; chg7d: number | null; volatilidadRealizada: number | null }
+  const [rows, setRows] = useState<VolCripto[]>([]);
+  const [loading, setLoading] = useState(true);
   useEffect(() => {
-    if (!gexRef.current) return;
-    if (gexChart.current) { gexChart.current.destroy(); }
-    const strikes = [-10,-8,-5,-3,-1,0,1,3,5,8,10].map(d => (opt.strike*(1+d/100)));
-    const gexData = strikes.map((_,i) => {
-      const mid=5; const dist=Math.abs(i-mid);
-      return (dist===0?8.4:dist===1?5.2:dist===2?2.8:1.2)*(Math.random()>0.5?1:-0.4);
-    });
-    gexChart.current = new Chart(gexRef.current, {
-      type:"bar",
-      data:{labels:strikes.map(s=>s.toFixed(0)),datasets:[{data:gexData,backgroundColor:gexData.map(v=>v>=0?"#00ff8833":"#ff336633"),borderColor:gexData.map(v=>v>=0?"#00ff88":"#ff3366"),borderWidth:1}]},
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},title:{display:true,text:"GEX por Strike",color:"#7b8fa0",font:{size:10}}},scales:{x:{ticks:{color:"#7b8fa0",font:{size:8}},grid:{color:"#1e2530"}},y:{ticks:{color:"#7b8fa0",font:{size:8}},grid:{color:"#1e2530"}}}},
-    });
-    return () => { if (gexChart.current) { gexChart.current.destroy(); gexChart.current = null; } };
-  }, [sel, opt.strike]);
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const r = await fetch("/api/market-data/crypto-volatility");
+        const d = await r.json() as { ok: boolean; data?: VolCripto[] };
+        if (!cancelled && d.ok && d.data) setRows(d.data);
+      } catch { /* deja la tabla anterior */ }
+      finally { if (!cancelled) setLoading(false); }
+    };
+    load();
+    const iv = setInterval(load, 5 * 60_000);
+    return () => { cancelled = true; clearInterval(iv); };
+  }, []);
 
   return (
     <div style={{display:"flex",flexDirection:"column",gap:16}}>
       <div style={{display:"flex",gap:8,alignItems:"center"}}>
-        <span style={{color:"#7b8fa0",fontSize:10,fontFamily:"monospace",letterSpacing:2}}>ACTIVO:</span>
-        {OPTIONS_DATA.map((o,i) => (
-          <button key={i} onClick={()=>setSel(i)} style={{background:sel===i?"#7b2ff722":"#0d1117",border:`1px solid ${sel===i?"#7b2ff7":"#1e2530"}`,color:sel===i?"#7b2ff7":"#7b8fa0",padding:"4px 14px",borderRadius:6,fontSize:11,cursor:"pointer",fontFamily:"monospace"}}>{o.sym}</button>
-        ))}
-        <RefBadge text="DATOS CBOE — REFERENCIA" />
+        <span style={{color:"#7b8fa0",fontSize:10,fontFamily:"monospace",letterSpacing:2}}>📉 VOLATILIDAD CRIPTO</span>
+        <RefBadge text="DATOS REALES · BINANCE" />
       </div>
-
-      <div className="psy-grid-2" style={{display:"grid",gridTemplateColumns:"repeat(4, 1fr)",gap:12}}>
-        {[
-          {lbl:"Delta",val:opt.delta.toFixed(2),c:opt.delta>0.5?"#00ff88":"#ffd700"},
-          {lbl:"Gamma",val:opt.gamma.toFixed(3),c:"#00e5ff"},
-          {lbl:"Theta",val:opt.theta.toFixed(2),c:"#ff6b35"},
-          {lbl:"Vega", val:opt.vega.toFixed(1), c:"#7b2ff7"},
-          {lbl:"IV",   val:opt.iv,               c:"#ffd700"},
-          {lbl:"P/C Ratio",val:opt.pcr.toFixed(2),c:opt.pcr>1?"#ff3366":"#00ff88"},
-          {lbl:"Max Pain",val:`$${opt.maxPain.toLocaleString()}`,c:"#ffd700"},
-          {lbl:"GEX Net",val:opt.gex>0?`+${opt.gex}B`:`${opt.gex}B`,c:opt.gex>0?"#00ff88":"#ff3366"},
-        ].map(m => (
-          <Card key={m.lbl}>
-            <div style={{color:"#7b8fa0",fontSize:9,fontFamily:"monospace",letterSpacing:1}}>{m.lbl}</div>
-            <div style={{color:m.c,fontSize:20,fontWeight:700,fontFamily:"monospace",marginTop:4}}>{m.val}</div>
-          </Card>
-        ))}
-      </div>
-
-      <div className="psy-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
-        <Card title="GEX — Gamma Exposure por Strike">
-          <div style={{height:200,position:"relative"}}><canvas ref={gexRef} /></div>
-        </Card>
-        <Card title="P/C Ratio — Interpretación">
-          <div style={{display:"flex",flexDirection:"column",gap:8}}>
-            <div style={{display:"flex",alignItems:"center",gap:12}}>
-              <div style={{flex:1,height:20,background:"#1e2530",borderRadius:4,overflow:"hidden"}}>
-                <div style={{height:"100%",width:`${Math.min(opt.pcr/2*100,100)}%`,background:opt.pcr>1?"#ff3366":"#00ff88",transition:"width 0.4s"}} />
-              </div>
-              <span style={{color:opt.pcr>1?"#ff3366":"#00ff88",fontSize:14,fontWeight:700,fontFamily:"monospace",minWidth:40}}>{opt.pcr.toFixed(2)}</span>
-            </div>
-            <div style={{fontSize:10,fontFamily:"monospace",color:"#9aa5b4",lineHeight:1.6}}>
-              {opt.pcr>1.2?"▸ P/C > 1.2 → Presión vendedora institucional.":opt.pcr<0.8?"▸ P/C < 0.8 → Euforia compradora.":"▸ P/C neutral (0.8-1.2) → Sin sesgo claro."}
-            </div>
-            <div style={{display:"flex",gap:8,marginTop:4}}>
-              <div style={{flex:1,background:"#080c14",borderRadius:6,padding:"8px 10px"}}>
-                <div style={{color:"#7b8fa0",fontSize:9,fontFamily:"monospace"}}>Señal Opuesta</div>
-                <div style={{color:opt.pcr>1?"#00ff88":"#ff3366",fontSize:12,fontWeight:700,fontFamily:"monospace"}}>{opt.pcr>1?"CONTRARIAN BULL":"CONTRARIAN BEAR"}</div>
-              </div>
-              <div style={{flex:1,background:"#080c14",borderRadius:6,padding:"8px 10px"}}>
-                <div style={{color:"#7b8fa0",fontSize:9,fontFamily:"monospace"}}>Setup</div>
-                <div style={{color:"#ffd700",fontSize:12,fontWeight:700,fontFamily:"monospace"}}>{opt.type} BIAS</div>
-              </div>
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      <Card title="Unusual Options Activity — Top Prints" badge={<RefBadge />}>
+      <Card title="Volatilidad Realizada (90 días, anualizada)">
         <div style={{overflowX:"auto"}}>
           <table style={{width:"100%",borderCollapse:"collapse",fontSize:11,fontFamily:"monospace"}}>
             <thead>
               <tr style={{borderBottom:"1px solid #1e2530"}}>
-                {["SYM","TIPO","STRIKE","EXP","VOL","OI","VOL/OI","PREMIUM","LADO"].map(h => (
+                {["SYM","PRECIO","% 7D","VOLATILIDAD REALIZADA"].map(h => (
                   <th key={h} style={{color:"#7b8fa0",padding:"6px 8px",textAlign:"left",fontSize:9,letterSpacing:1}}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {UNUSUAL_OPTIONS.map((u,i) => (
+              {loading ? (
+                <tr><td colSpan={4} style={{color:"#7b8fa0",padding:"14px 8px",textAlign:"center"}}>Cargando datos reales de Binance…</td></tr>
+              ) : rows.map((s,i) => (
                 <tr key={i} style={{borderBottom:"1px solid #1e253040"}}>
-                  <td style={{color:"#e8eaed",padding:"7px 8px",fontWeight:700}}>{u.sym}</td>
-                  <td style={{color:u.type==="CALL"?"#00ff88":"#ff3366",padding:"7px 8px"}}>{u.type}</td>
-                  <td style={{color:"#cdd",padding:"7px 8px"}}>{u.strike}</td>
-                  <td style={{color:"#7b8fa0",padding:"7px 8px"}}>{u.exp}</td>
-                  <td style={{color:"#cdd",padding:"7px 8px"}}>{u.vol}</td>
-                  <td style={{color:"#7b8fa0",padding:"7px 8px"}}>{u.oi}</td>
-                  <td style={{color:"#ffd700",padding:"7px 8px",fontWeight:700}}>{u.ratio}</td>
-                  <td style={{color:u.type==="CALL"?"#00ff88":"#ff3366",padding:"7px 8px"}}>{u.premium}</td>
-                  <td style={{padding:"7px 8px"}}><span style={{background:u.side==="BUY"?"#00ff8818":"#ff336618",color:u.side==="BUY"?"#00ff88":"#ff3366",fontSize:9,padding:"2px 6px",borderRadius:4}}>{u.side}</span></td>
+                  <td style={{color:"#e8eaed",padding:"8px 8px",fontWeight:700}}>{s.sym}</td>
+                  <td style={{color:"#cdd",padding:"8px 8px"}}>{s.price != null ? `$${s.price.toLocaleString("en-US",{maximumFractionDigits:2})}` : "—"}</td>
+                  <td style={{color:(s.chg7d ?? 0) >= 0 ? "#00ff88" : "#ff3366",padding:"8px 8px"}}>{s.chg7d != null ? `${s.chg7d >= 0 ? "+" : ""}${s.chg7d.toFixed(2)}%` : "—"}</td>
+                  <td style={{padding:"8px 8px"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:6}}>
+                      <div style={{width:100,height:6,background:"#1e2530",borderRadius:3}}>
+                        <div style={{height:"100%",width:`${Math.min(100,(s.volatilidadRealizada ?? 0))}%`,background:(s.volatilidadRealizada ?? 0)>80?"#ff3366":(s.volatilidadRealizada ?? 0)>50?"#ffd700":"#00ff88",borderRadius:3}} />
+                      </div>
+                      <span style={{color:"#e8eaed",fontWeight:700}}>{s.volatilidadRealizada != null ? `${s.volatilidadRealizada.toFixed(0)}%` : "—"}</span>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </Card>
+
+      <div className="psy-grid-2" style={{display:"grid",gridTemplateColumns:"repeat(3, 1fr)",gap:12}}>
+        {[
+          {title:"Qué es esto",body:"Volatilidad Realizada — qué tanto se ha movido el precio en los últimos 90 días, anualizada. No es lo mismo que la IV de opciones (esa la fija el mercado de opciones y necesita un feed pago que no tenemos), pero es un dato real calculado del precio, no inventado."},
+          {title:"Fuente",  body:"Velas diarias de Binance Futures (90 días) — se recalcula cada 5 minutos."},
+          {title:"Por qué reemplazó a Options",body:"La sección de opciones (GEX, greeks, max pain) necesitaba un feed de opciones pago (CBOE/ORATS/Tradier) que la plataforma no tiene conectado — mostraba números fijos que nunca cambiaban."},
+        ].map((c,i) => (
+          <Card key={i} title={c.title}>
+            <div style={{fontSize:10,fontFamily:"monospace",color:"#9aa5b4",lineHeight:1.7}}>{c.body}</div>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }
@@ -885,6 +897,22 @@ function SectionInstitucional({macro}:{macro:LiveMacro|null}) {
     return () => { cancelled = true; };
   }, []);
   // Aplanamos: una fila por cada holding, de cada superinversor, ordenado por valor
+  // Volumen relativo real de ETFs — mismo endpoint que Heatmap (reemplaza
+  // "Capital Flow Neto" que necesitaría flujos de creación/redención reales)
+  interface EtfVol2 { name: string; pct: number; volRelativo: number | null }
+  const [etfVolInst, setEtfVolInst] = useState<EtfVol2[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch("/api/market-data/etf-volume");
+        const d = await r.json() as { ok: boolean; data?: EtfVol2[] };
+        if (!cancelled && d.ok && d.data) setEtfVolInst(d.data);
+      } catch { /* deja vacío */ }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   const filas13F = useMemo(() => {
     const out: Array<{ fund: string; sym: string; shares: number; value: number; periodo?: string }> = [];
     for (const inv of investors13F) {
@@ -967,21 +995,24 @@ function SectionInstitucional({macro}:{macro:LiveMacro|null}) {
           </div>
         </Card>
 
-        <Card title="ETF Flows — Capital Flow Neto 7D" badge={<RefBadge />}>
+        <Card title="Volumen Relativo — ETFs" badge={etfVolInst.length ? <LiveBadge /> : <RefBadge />}>
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
-            {ETF_FLOWS.map(e => {
-              const w = Math.abs(e.flow)/3000*100;
+            {etfVolInst.length === 0 ? (
+              <div style={{color:"#7b8fa0",fontSize:11,textAlign:"center",padding:"14px 0"}}>Cargando…</div>
+            ) : etfVolInst.map(e => {
+              const w = Math.min((e.volRelativo ?? 1) / 3 * 100, 100);
+              const up = e.pct >= 0;
               return (
                 <div key={e.name}>
                   <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}>
                     <span style={{color:"#e8eaed",fontSize:12,fontFamily:"monospace",fontWeight:700}}>{e.name}</span>
-                    <span style={{color:e.type==="IN"?"#00ff88":"#ff3366",fontSize:11,fontFamily:"monospace"}}>{e.type==="IN"?"+":"-"}${Math.abs(e.flow).toLocaleString()}M</span>
+                    <span style={{color:up?"#00ff88":"#ff3366",fontSize:11,fontFamily:"monospace"}}>{up?"+":""}{e.pct.toFixed(2)}%</span>
                   </div>
                   <div style={{display:"flex",alignItems:"center",gap:6}}>
                     <div style={{flex:1,height:8,background:"#1e2530",borderRadius:4,overflow:"hidden"}}>
-                      <div style={{height:"100%",width:`${w}%`,background:e.type==="IN"?"#00ff88":"#ff3366",borderRadius:4,transition:"width 0.4s"}} />
+                      <div style={{height:"100%",width:`${w}%`,background:up?"#00ff88":"#ff3366",borderRadius:4,transition:"width 0.4s"}} />
                     </div>
-                    <span style={{color:e.type==="IN"?"#00ff8888":"#ff336688",fontSize:9,fontFamily:"monospace",minWidth:20}}>{e.type}</span>
+                    <span style={{color:"#7b8fa0",fontSize:9,fontFamily:"monospace",minWidth:34}}>{e.volRelativo?.toFixed(1) ?? "—"}x</span>
                   </div>
                 </div>
               );
@@ -1000,12 +1031,45 @@ function SectionMacro({macro}:{macro:LiveMacro|null}) {
   const dxy     = macro?.indices["DXY"];
   const tnx     = macro?.indices["TNX"];
 
+  // Tasa Fed real (FRED) — antes era "5.25%" fijo, nunca cambiaba
+  const [fedRate, setFedRate] = useState<{ rate: number; date: string } | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch("/api/market-data/fed-rate");
+        const d = await r.json() as { ok: boolean; rate?: number; date?: string };
+        if (!cancelled && d.ok && d.rate !== undefined && d.date) setFedRate({ rate: d.rate, date: d.date });
+      } catch { /* deja null, se muestra "—" */ }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Calendario económico real (FMP) — antes eran fechas fijas de "2025"
+  interface EconEvent { date: string; event: string; est: number | null; prev: number | null; impact: string }
+  const [econCal, setEconCal] = useState<EconEvent[]>([]);
+  const [econCalError, setEconCalError] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch("/api/market-data/econ-calendar");
+        const d = await r.json() as { ok: boolean; data?: EconEvent[]; error?: string };
+        if (!cancelled) {
+          if (d.ok && d.data) setEconCal(d.data);
+          else setEconCalError(d.error ?? "No disponible");
+        }
+      } catch { if (!cancelled) setEconCalError("Error de red"); }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   const macroMetrics = useMemo(() => [
     {lbl:"Fear & Greed", val: `${fng}`, sub: fngLbl.toUpperCase(), c:"#ffd700", live: macro !== null},
     {lbl:"DXY",          val: dxy ? dxy.price.toFixed(2) : "—",   sub: dxy ? `${dxy.chg >= 0 ? "▲" : "▼"} ${Math.abs(dxy.chg).toFixed(2)}%` : "—", c:"#ff6b35", live: dxy !== undefined},
-    {lbl:"FED Rate",     val: "5.25%",   sub: "Sin cambio",    c:"#00e5ff", live: false},
+    {lbl:"FED Rate",     val: fedRate ? `${fedRate.rate.toFixed(2)}%` : "—",   sub: fedRate ? `Al ${fedRate.date}` : "cargando…",    c:"#00e5ff", live: fedRate !== null},
     {lbl:"US10Y Yield",  val: tnx ? `${tnx.price.toFixed(3)}%` : "—", sub: tnx ? `${tnx.chg >= 0 ? "▲" : "▼"} ${Math.abs(tnx.chg).toFixed(3)}%` : "—", c:"#7b2ff7", live: tnx !== undefined},
-  ], [macro, fng, fngLbl, dxy, tnx]);
+  ], [macro, fng, fngLbl, dxy, tnx, fedRate]);
 
   // Live yield table
   const yieldData = macro?.yields ?? [
@@ -1071,43 +1135,24 @@ function SectionMacro({macro}:{macro:LiveMacro|null}) {
       </Card>
 
       <div className="psy-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
-        <Card title="Calendario Económico — Próximos Eventos">
+        <Card title="Calendario Económico — Próximos Eventos" badge={econCal.length ? <LiveBadge /> : undefined}>
           <div style={{display:"flex",flexDirection:"column",gap:6}}>
             <div style={{display:"flex",justifyContent:"space-between",color:"#7b8fa0",fontSize:9,fontFamily:"monospace",letterSpacing:1,paddingBottom:6,borderBottom:"1px solid #1e2530"}}>
               <span>FECHA</span><span>EVENTO</span><span>EST</span><span>PREV</span><span>IMPACTO</span>
             </div>
-            {ECO_CALENDAR.map((e,i) => (
+            {econCalError ? (
+              <div style={{color:"#7b8fa0",fontSize:10,fontFamily:"monospace",padding:"14px 0",textAlign:"center"}}>
+                Calendario no disponible ahora mismo: {econCalError}
+              </div>
+            ) : econCal.length === 0 ? (
+              <div style={{color:"#7b8fa0",fontSize:10,fontFamily:"monospace",padding:"14px 0",textAlign:"center"}}>Cargando eventos reales…</div>
+            ) : econCal.map((e,i) => (
               <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"5px 0",borderBottom:"1px solid #1e253030",fontSize:10,fontFamily:"monospace"}}>
                 <span style={{color:"#00e5ff",minWidth:50}}>{e.date}</span>
                 <span style={{color:"#cdd",flex:1,padding:"0 8px"}}>{e.event}</span>
-                <span style={{color:"#00ff88",minWidth:40}}>{e.est}</span>
-                <span style={{color:"#7b8fa0",minWidth:40}}>{e.prev}</span>
-                <span style={{color:e.impact==="ALTO"?"#ff3366":"#ffd700",fontSize:9,padding:"1px 5px",background:e.impact==="ALTO"?"#ff336618":"#ffd70018",borderRadius:3}}>{e.impact}</span>
-              </div>
-            ))}
-          </div>
-        </Card>
-
-        <Card title="FED Watch — Probabilidades de Cambio de Tasas">
-          <div style={{display:"flex",flexDirection:"column",gap:8}}>
-            {[
-              {meeting:"Jun 2025",hold:72,cut25:24,cut50:4},
-              {meeting:"Jul 2025",hold:48,cut25:38,cut50:14},
-              {meeting:"Sep 2025",hold:28,cut25:48,cut50:24},
-            ].map(f => (
-              <div key={f.meeting} style={{background:"#080c14",borderRadius:6,padding:"10px 12px"}}>
-                <div style={{color:"#e8eaed",fontSize:11,fontFamily:"monospace",fontWeight:700,marginBottom:6}}>{f.meeting}</div>
-                <div style={{display:"flex",gap:6}}>
-                  {[["HOLD",f.hold,"#ffd700"],["CUT 25bps",f.cut25,"#00ff88"],["CUT 50bps",f.cut50,"#00e5ff"]].map(([l,v,c]) => (
-                    <div key={String(l)} style={{flex:1}}>
-                      <div style={{color:c as string,fontSize:13,fontWeight:700,fontFamily:"monospace"}}>{v}%</div>
-                      <div style={{color:"#4a5568",fontSize:8,fontFamily:"monospace"}}>{l}</div>
-                      <div style={{height:4,background:"#1e2530",borderRadius:2,marginTop:3}}>
-                        <div style={{height:"100%",width:`${v}%`,background:c as string,borderRadius:2}} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <span style={{color:"#00ff88",minWidth:40}}>{e.est ?? "—"}</span>
+                <span style={{color:"#7b8fa0",minWidth:40}}>{e.prev ?? "—"}</span>
+                <span style={{color:e.impact==="High"?"#ff3366":"#ffd700",fontSize:9,padding:"1px 5px",background:e.impact==="High"?"#ff336618":"#ffd70018",borderRadius:3}}>{e.impact}</span>
               </div>
             ))}
           </div>
@@ -1210,16 +1255,56 @@ function SectionVolatilidad() {
 }
 
 // ─── Section 8: NARRATIVA ────────────────────────────────────────────────────
-function SectionNarrativa({macro}:{macro:LiveMacro|null}) {
+function SectionNarrativa({macro,crypto}:{macro:LiveMacro|null;crypto:LiveCrypto[]}) {
   const fng = macro?.fng.value ?? 68;
   const dxy = macro?.indices["DXY"];
   const regime = fng >= 70 ? "RISK-ON BULL" : fng >= 50 ? "NEUTRAL" : "RISK-OFF BEAR";
   const regimeColor = fng >= 70 ? "#00ff88" : fng >= 50 ? "#ffd700" : "#ff3366";
 
+  // Todo lo de abajo usa datos REALES ya disponibles (antes eran textos fijos
+  // que nunca cambiaban, incluida la fase del ciclo que siempre marcaba
+  // "MOMENTUM" y el sesgo de cada clase de activo que siempre decía "BULL").
+  const btc = crypto.find(c => c.sym === "BTC");
+  const spx = macro?.indices["GSPC"];
+  const gold = macro?.indices["GOLD"];
+  const tnx = macro?.indices["TNX"];
+
+  // Rotación de capital real: compara el % de cambio de cripto vs bonos vs
+  // acciones vs materias primas y ordena de mayor a menor
+  const rotacionCapital = useMemo(() => {
+    const clases = [
+      { nombre: "Crypto", chg: btc?.chg24h ?? 0 },
+      { nombre: "Acciones", chg: spx?.chg ?? 0 },
+      { nombre: "Materias Primas", chg: gold?.chg ?? 0 },
+      { nombre: "Bonos", chg: tnx ? -tnx.chg : 0 }, // yield sube = precio del bono baja
+    ].sort((a, b) => b.chg - a.chg);
+    return clases.map(c => c.nombre).join(" + ");
+  }, [btc, spx, gold, tnx]);
+
+  // Fase del ciclo real: combina qué tan extremo está el F&G con la
+  // dirección de BTC en las últimas 24h (heurística real, no aleatoria)
+  const faseCiclo = useMemo(() => {
+    const chg = btc?.chg24h ?? 0;
+    if (fng >= 80) return "DISTRIB";
+    if (fng >= 65 && chg > 0) return "MOMENTUM";
+    if (fng >= 50 && chg > 0) return "DESPEGUE";
+    if (fng < 25) return "CORREC";
+    if (fng < 50 && chg < 0) return "ACUM";
+    return "MOMENTUM";
+  }, [fng, btc]);
+
+  const biasAssetClass = useMemo(() => [
+    {cls:"CRYPTO",     nar:`BTC ${(btc?.chg24h ?? 0) >= 0 ? "+" : ""}${(btc?.chg24h ?? 0).toFixed(2)}% (24h)`, bias: (btc?.chg24h ?? 0) >= 0 ? "BULL" : "BEAR"},
+    {cls:"EQUITIES",   nar:`S&P 500 ${(spx?.chg ?? 0) >= 0 ? "+" : ""}${(spx?.chg ?? 0).toFixed(2)}% (hoy)`,   bias: (spx?.chg ?? 0) >= 0 ? "BULL" : "BEAR"},
+    {cls:"COMMODITIES",nar:`Oro ${(gold?.chg ?? 0) >= 0 ? "+" : ""}${(gold?.chg ?? 0).toFixed(2)}% (hoy)`,     bias: (gold?.chg ?? 0) >= 0 ? "BULL" : "BEAR"},
+    {cls:"BONDS",      nar:`US10Y ${tnx ? (tnx.chg >= 0 ? "subiendo" : "bajando") : "—"} — ${tnx && tnx.chg >= 0 ? "presión en precios" : "alivio en precios"}`, bias: tnx ? (tnx.chg >= 0 ? "BEAR" : "BULL") : "NEUTRAL"},
+    {cls:"FOREX",      nar: dxy ? `DXY ${dxy.chg >= 0 ? "fortaleciéndose" : "debilitándose"}` : "—", bias: dxy && dxy.chg < 0 ? "BEAR" : dxy ? "BULL" : "NEUTRAL"},
+  ], [btc, spx, gold, tnx, dxy]);
+
   return (
     <div style={{display:"flex",flexDirection:"column",gap:16}}>
       <div className="psy-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
-        <Card title="Narrativas Dominantes del Mercado">
+        <Card title="Narrativas Dominantes del Mercado" badge={<RefBadge text="ANÁLISIS CUALITATIVO — REFERENCIA" />}>
           <div style={{display:"flex",flexDirection:"column",gap:10}}>
             {NARRATIVES.map((n,i) => (
               <div key={i} style={{background:"#080c14",borderRadius:8,padding:"10px 12px",border:`1px solid ${n.trend==="BULL"?"#00ff8822":"#ff336622"}`}}>
@@ -1247,7 +1332,7 @@ function SectionNarrativa({macro}:{macro:LiveMacro|null}) {
                 {lbl:"Fear & Greed",    val: `${fng}/100 — ${(macro?.fng.label ?? "GREED").toUpperCase()}`, c: "#ffd700"},
                 {lbl:"DXY Tendencia",   val: dxy ? (dxy.chg < 0 ? "BAJISTA ↓ (BULL crypto)" : "ALCISTA ↑ (BEAR crypto)") : "—", c: dxy ? (dxy.chg < 0 ? "#00ff88" : "#ff3366") : "#7b8fa0"},
                 {lbl:"US10Y",           val: macro?.indices["TNX"] ? `${macro.indices["TNX"].price.toFixed(3)}%` : "—", c: "#7b2ff7"},
-                {lbl:"Rotación Capital",val: "Crypto + Tech + Commodities",                            c: "#ff6b35"},
+                {lbl:"Rotación Capital",val: rotacionCapital,                            c: "#ff6b35"},
               ].map(m => (
                 <div key={m.lbl} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderBottom:"1px solid #1e253030"}}>
                   <span style={{color:"#7b8fa0",fontSize:10,fontFamily:"monospace"}}>{m.lbl}</span>
@@ -1264,7 +1349,7 @@ function SectionNarrativa({macro}:{macro:LiveMacro|null}) {
               </div>
               <div style={{display:"flex",justifyContent:"center",gap:6}}>
                 {["ACUM","DESPEGUE","MOMENTUM","DISTRIB","CORREC"].map((phase,i) => (
-                  <div key={i} style={{background:phase==="MOMENTUM"?"#00e5ff22":"#0d1117",border:`1px solid ${phase==="MOMENTUM"?"#00e5ff":"#1e2530"}`,borderRadius:6,padding:"6px 10px",fontSize:9,fontFamily:"monospace",color:phase==="MOMENTUM"?"#00e5ff":"#4a5568"}}>{phase}</div>
+                  <div key={i} style={{background:phase===faseCiclo?"#00e5ff22":"#0d1117",border:`1px solid ${phase===faseCiclo?"#00e5ff":"#1e2530"}`,borderRadius:6,padding:"6px 10px",fontSize:9,fontFamily:"monospace",color:phase===faseCiclo?"#00e5ff":"#4a5568"}}>{phase}</div>
                 ))}
               </div>
             </div>
@@ -1272,13 +1357,7 @@ function SectionNarrativa({macro}:{macro:LiveMacro|null}) {
 
           <Card title="Narrativas por Asset Class">
             <div style={{display:"flex",flexDirection:"column",gap:6}}>
-              {[
-                {cls:"CRYPTO",     nar:"Adopción institucional + halving cycle",bias:"BULL"},
-                {cls:"EQUITIES",   nar:"IA supercycle + buybacks masivos",       bias:"BULL"},
-                {cls:"COMMODITIES",nar:"Demanda infraestructura + geopolitics",  bias:"BULL"},
-                {cls:"BONDS",      nar:"Yield alto = compresión valuaciones",    bias:"BEAR"},
-                {cls:"FOREX",      nar:"DXY debilidad estructural",              bias:dxy && dxy.chg < 0 ? "BEAR" : "NEUTRAL"},
-              ].map(n => (
+              {biasAssetClass.map(n => (
                 <div key={n.cls} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"5px 0",borderBottom:"1px solid #1e253030"}}>
                   <span style={{color:"#7b8fa0",fontSize:9,fontFamily:"monospace",minWidth:90}}>{n.cls}</span>
                   <span style={{color:"#9aa5b4",fontSize:9,fontFamily:"monospace",flex:1}}>{n.nar}</span>
@@ -1551,6 +1630,7 @@ const SECTIONS = [
   {id:"institucional",label:"Institucional",icon:"🏛"},
   {id:"macro",        label:"Macro",        icon:"🌐"},
   {id:"volatilidad",  label:"Volatilidad",  icon:"🌡️"},
+  {id:"volcripto",    label:"Vol. Cripto",  icon:"📉"},
   {id:"narrativa",    label:"Narrativa",    icon:"📖"},
   {id:"brain",        label:"PSY BRAIN",    icon:"🧠"},
 ];
@@ -1613,7 +1693,8 @@ export default function PsyOracle() {
         {active==="institucional" && <SectionInstitucional macro={macro} />}
         {active==="macro"         && <SectionMacro        macro={macro} />}
         {active==="volatilidad"   && <SectionVolatilidad />}
-        {active==="narrativa"     && <SectionNarrativa    macro={macro} />}
+        {active==="volcripto"     && <SectionOptions />}
+        {active==="narrativa"     && <SectionNarrativa    macro={macro} crypto={crypto} />}
         {active==="brain"         && <SectionPsyBrain     crypto={crypto} macro={macro} />}
       </div>
     </div>
