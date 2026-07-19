@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import SiteNav from "@/components/site-nav";
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
@@ -648,83 +647,17 @@ function WhaleFeedsTab() {
   );
 }
 
-// ─── HISTORY MODAL ─────────────────────────────────────────────────────────────
-interface TraderHistory {
-  traderId: string; displayName: string; coin: string; exchange: string;
-  daysTracked: number; cumulativePnl: number;
-  timeline: Array<{date:string;pnl:number;cumPnl:number;oi:number;winRate:number;position:string}>;
-}
-function HistoryModal({ traderId, onClose }: { traderId: string; onClose: () => void }) {
-  const [hist, setHist] = useState<TraderHistory|null>(null);
-  const [loading, setLoading] = useState(true);
-  useEffect(() => {
-    fetch(`/api/whale-intel/trader-history/${traderId}`)
-      .then(r=>r.json()).then(d=>{if(d.ok)setHist(d);}).catch(()=>{}).finally(()=>setLoading(false));
-  }, [traderId]);
-  const color = (hist?.cumulativePnl ?? 0) >= 0 ? "#00e676" : "#ff1744";
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{background:"rgba(2,8,18,0.9)",backdropFilter:"blur(4px)"}}>
-      <div className="w-full max-w-2xl border border-[#1a2535] bg-[#020b14] overflow-hidden max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-4 border-b border-[#0d1a2a]">
-          <div>
-            <div className="font-bebas text-2xl text-white tracking-wider">{hist?.displayName ?? traderId}</div>
-            <div className="font-sharetech text-[8px] text-[#7ab3c8]">{hist?.coin} · {hist?.exchange?.toUpperCase()} · {hist?.daysTracked ?? 0} días rastreados</div>
-          </div>
-          <button onClick={onClose} className="font-sharetech text-[10px] px-3 py-1.5 border border-[#1a2535] text-[#7ab3c8] hover:border-[#00e5ff] hover:text-[#00e5ff] transition-colors">✕</button>
-        </div>
-        {loading ? (
-          <div className="py-12 text-center font-sharetech text-[9px] text-[#7ab3c8] animate-pulse">CARGANDO HISTORIAL…</div>
-        ) : !hist || hist.timeline.length === 0 ? (
-          <div className="py-12 text-center">
-            <div className="font-bebas text-2xl text-[#7ab3c8] mb-2">SIN HISTORIAL AÚN</div>
-            <div className="font-space text-[8px] text-[#5a8898]">Los datos se acumulan con el tiempo. Volvé mañana.</div>
-          </div>
-        ) : (
-          <div className="p-4">
-            <div className="grid grid-cols-3 gap-3 mb-5">
-              {[
-                { label: "PNL ACUMULADO", value: fmt(hist.cumulativePnl), color },
-                { label: "DÍAS RASTREADOS", value: String(hist.daysTracked), color: "#00e5ff" },
-                { label: "PUNTOS DATOS", value: String(hist.timeline.length), color: "#e040fb" },
-              ].map(s => (
-                <div key={s.label} className="bg-[#040d18] border border-[#0d1a2a] p-3 text-center">
-                  <div className="font-sharetech text-[6px] text-[#5a8898] tracking-[0.1em] mb-1">{s.label}</div>
-                  <div className="font-bebas text-xl tracking-wider" style={{color:s.color}}>{s.value}</div>
-                </div>
-              ))}
-            </div>
-            <div className="mb-2 font-sharetech text-[7px] text-[#5a8898] tracking-[0.12em]">PNL ACUMULADO — ÚLTIMOS {hist.daysTracked} DÍAS</div>
-            <div className="h-48 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={hist.timeline} margin={{top:4,right:4,left:0,bottom:0}}>
-                  <defs>
-                    <linearGradient id="histGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={color} stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor={color} stopOpacity={0.02}/>
-                    </linearGradient>
-                  </defs>
-                  <XAxis dataKey="date" tick={{fill:"#5a8898",fontSize:7}} tickLine={false} axisLine={false} tickFormatter={v=>v.slice(5)}/>
-                  <YAxis tick={{fill:"#5a8898",fontSize:7}} tickLine={false} axisLine={false} tickFormatter={v=>v>=1e6?`$${(v/1e6).toFixed(1)}M`:v>=1e3?`$${(v/1e3).toFixed(0)}K`:`$${v}`}/>
-                  <Tooltip contentStyle={{background:"#040d18",border:"1px solid #1a2535",borderRadius:0,fontFamily:"Share Tech Mono"}} labelStyle={{color:"#7ab3c8",fontSize:9}} itemStyle={{color,fontSize:9}} formatter={(v:number)=>[fmt(v),"PNL Acum."]}/>
-                  <ReferenceLine y={0} stroke="#1a2535" strokeDasharray="3 3"/>
-                  <Area type="monotone" dataKey="cumPnl" stroke={color} strokeWidth={2} fill="url(#histGrad)" dot={false} activeDot={{r:3,fill:color}}/>
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
+// ─── HISTORY MODAL — quitado (julio 19 2026): el PNL acumulado que mostraba
+// se armaba sobre pnl24h estimado (OI × variación de precio), no sobre PnL
+// real de nadie — mostrarlo como "historial" era engañoso. Ver WHALE TRACKER
+// para el historial real de movimientos de ballena.
 
 // ─── TELEGRAM-STYLE TRADER CARD ───────────────────────────────────────────────
 function TraderCard({
-  t, winPeriod, onHistory
+  t, winPeriod
 }: {
   t: WhaleTrader;
   winPeriod: "day"|"week"|"month";
-  onHistory: (id: string) => void;
 }) {
   const isLong = t.currentPosition === "LONG";
   const isShort = t.currentPosition === "SHORT";
@@ -888,12 +821,7 @@ function TraderCard({
           </div>
         </div>
 
-        <div className="flex items-center justify-between pt-2">
-          <button
-            onClick={()=>onHistory(t.id)}
-            className="font-sharetech text-[7px] tracking-[0.12em] px-3 py-2 border border-[#1a2535] text-[#5a8898] hover:border-[#00e5ff55] hover:text-[#00e5ff] transition-all">
-            📈 HISTORIAL 6M
-          </button>
+        <div className="flex items-center justify-end pt-2">
           <span className="font-bebas text-xl px-6 py-1 tracking-[0.15em] text-black"
             style={{background:sigColor, boxShadow:`0 0 20px ${sigColor}60`}}>
             {t.signal==="BUY"?"▲":t.signal==="SELL"?"▼":"●"} {t.signal}
@@ -912,7 +840,6 @@ function CopyTradingTab() {
   const [exFilter, setExFilter] = useState<ExchangeKey>("all");
   const [sources, setSources] = useState<Record<string,number>>({});
   const [lastUpdate, setLastUpdate] = useState<Date|null>(null);
-  const [historyId, setHistoryId] = useState<string|null>(null);
 
   // ── Piloto Copy Trade (solo admin) ─────────────────────────────────────
   const auth = getAuth();
@@ -1016,8 +943,6 @@ function CopyTradingTab() {
 
   return (
     <div>
-      {historyId && <HistoryModal traderId={historyId} onClose={()=>setHistoryId(null)} />}
-
       {isSuperadmin && (
         <div style={{ border: "2px dashed #ffd70050", background: "#1a1400", padding: 16, marginBottom: 18 }}>
           <div className="font-bebas text-xl text-[#ffd700] mb-1">🔒 PSY COPY TRADE — PILOTO (solo admin)</div>
@@ -1144,7 +1069,7 @@ function CopyTradingTab() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {visible.map(t => (
-            <TraderCard key={t.id} t={t} winPeriod={winPeriod} onHistory={setHistoryId} />
+            <TraderCard key={t.id} t={t} winPeriod={winPeriod} />
           ))}
         </div>
       )}
