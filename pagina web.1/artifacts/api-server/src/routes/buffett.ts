@@ -955,4 +955,59 @@ router.get("/buffett/ticker/:ticker", async (req: Request, res: Response) => {
   } catch (e) { res.status(500).json({ ok: false, error: String(e) }); }
 });
 
+// ─── Contexto de industria (BEA) — PIB real por sector, para dar contexto de
+// si el sector de una acción es viento a favor o en contra. NO reemplaza los
+// fundamentales que faltan (P/E, ROE, etc — eso necesita datos por empresa,
+// que BLS/BEA no tienen), es un dato adicional de contexto macro por sector.
+const SECTOR_TO_BEA_INDUSTRY: Record<string, { code: string; nombre: string }> = {
+  "Technology": { code: "51", nombre: "Información/Tecnología" },
+  "Communication Services": { code: "51", nombre: "Información/Tecnología" },
+  "Financial Services": { code: "52", nombre: "Finanzas y Seguros" },
+  "Real Estate": { code: "53", nombre: "Bienes Raíces" },
+  "Healthcare": { code: "62", nombre: "Salud" },
+  "Consumer Cyclical": { code: "44RT", nombre: "Comercio Minorista" },
+  "Consumer Defensive": { code: "44RT", nombre: "Comercio Minorista" },
+  "Industrials": { code: "31G", nombre: "Manufactura" },
+  "Basic Materials": { code: "21", nombre: "Minería/Energía" },
+  "Energy": { code: "21", nombre: "Minería/Energía" },
+  "Utilities": { code: "22", nombre: "Servicios Públicos" },
+};
+
+const _industryGdpCache = new Map<string, { data: unknown; ts: number }>();
+const INDUSTRY_GDP_CACHE_MS = 24 * 3_600_000; // los datos de industria son anuales, no hace falta refrescar seguido
+
+router.get("/buffett/industry-context/:sector", async (req: Request, res: Response) => {
+  const sector = decodeURIComponent(req.params.sector ?? "");
+  const mapping = SECTOR_TO_BEA_INDUSTRY[sector];
+  if (!mapping) { res.json({ ok: false, error: `Sin mapeo BEA para el sector "${sector}"` }); return; }
+
+  const hit = _industryGdpCache.get(mapping.code);
+  if (hit && Date.now() - hit.ts < INDUSTRY_GDP_CACHE_MS) { res.json(hit.data); return; }
+
+  const key = process.env["BEA_API_KEY"];
+  if (!key) { res.json({ ok: false, error: "BEA_API_KEY no configurado" }); return; }
+  try {
+    const r = await fetch(
+      `https://apps.bea.gov/api/data?UserID=${key}&method=GetData&datasetname=GDPbyIndustry&TableID=1&Frequency=A&Year=LAST2&Industry=${mapping.code}&ResultFormat=JSON`,
+      { signal: AbortSignal.timeout(12000) },
+    );
+    if (!r.ok) { res.json({ ok: false, error: `BEA respondió ${r.status}` }); return; }
+    const d = await r.json() as { BEAAPI?: { Results?: [{ Data?: Array<{ Year: string; DataValue: string }> }] | { Error?: { APIErrorDescription?: string } } } };
+    const results = d?.BEAAPI?.Results;
+    const errObj = (results as { Error?: { APIErrorDescription?: string } })?.Error;
+    if (errObj) { res.json({ ok: false, error: errObj.APIErrorDescription ?? "Error de BEA" }); return; }
+    const rowsArr = Array.isArray(results) ? results[0]?.Data ?? [] : [];
+    if (rowsArr.length < 2) { res.json({ ok: false, error: "Datos insuficientes de BEA para este sector" }); return; }
+    const sorted = rowsArr.map(x => ({ year: x.Year, val: parseFloat(x.DataValue.replace(/,/g, "")) })).sort((a, b) => a.year.localeCompare(b.year));
+    const anterior = sorted[0]!, actual = sorted.at(-1)!;
+    const cambioPct = Math.round(((actual.val - anterior.val) / anterior.val) * 10000) / 100;
+    const payload = { ok: true, sector, industriaBea: mapping.nombre, cambioPctInteranual: cambioPct, año: actual.year, fuente: "BEA GDPbyIndustry" };
+    _industryGdpCache.set(mapping.code, { data: payload, ts: Date.now() });
+    res.json(payload);
+  } catch (err) {
+    req.log.error({ err }, "buffett/industry-context");
+    res.json({ ok: false, error: "Error consultando BEA" });
+  }
+});
+
 export default router;

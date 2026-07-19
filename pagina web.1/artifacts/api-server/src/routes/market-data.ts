@@ -686,4 +686,44 @@ router.get("/market-data/fed-rate", async (req: Request, res: Response) => {
   }
 });
 
+// PIB Real por Estado (BEA) — cuáles estados están creciendo más rápido.
+// Dataset "Regional", tabla SAGDP9 (Real GDP by state), LineCode=1 (total).
+router.get("/market-data/regional-gdp", async (req: Request, res: Response) => {
+  const key = process.env["BEA_API_KEY"];
+  if (!key) { res.json({ ok: false, error: "BEA_API_KEY no configurado", data: [] }); return; }
+  try {
+    const r = await fetch(
+      `https://apps.bea.gov/api/data?UserID=${key}&method=GetData&datasetname=Regional&TableName=SAGDP9&LineCode=1&GeoFips=STATE&Year=LAST2&ResultFormat=JSON`,
+      { signal: AbortSignal.timeout(12000) },
+    );
+    if (!r.ok) { res.json({ ok: false, error: `BEA respondió ${r.status}`, data: [] }); return; }
+    const d = await r.json() as { BEAAPI?: { Results?: { Error?: { APIErrorDescription?: string }; Data?: Array<{ GeoName: string; TimePeriod: string; DataValue: string }> } } };
+    const err = d?.BEAAPI?.Results?.Error;
+    if (err) { res.json({ ok: false, error: err.APIErrorDescription ?? "Error de BEA", data: [] }); return; }
+    const rows = d?.BEAAPI?.Results?.Data ?? [];
+    if (!rows.length) { res.json({ ok: false, error: "Sin datos de BEA", data: [] }); return; }
+    const byState = new Map<string, Array<{ year: string; val: number }>>();
+    for (const row of rows) {
+      if (row.GeoName === "United States") continue; // solo estados individuales
+      const val = parseFloat(row.DataValue.replace(/,/g, ""));
+      if (!byState.has(row.GeoName)) byState.set(row.GeoName, []);
+      byState.get(row.GeoName)!.push({ year: row.TimePeriod, val });
+    }
+    const resultado = Array.from(byState.entries())
+      .map(([estado, years]) => {
+        const sorted = years.sort((a, b) => a.year.localeCompare(b.year));
+        const anterior = sorted[0], actual = sorted.at(-1);
+        if (!anterior || !actual || anterior === actual) return null;
+        const cambioPct = ((actual.val - anterior.val) / anterior.val) * 100;
+        return { estado, año: actual.year, cambioPct: Math.round(cambioPct * 100) / 100 };
+      })
+      .filter((x): x is { estado: string; año: string; cambioPct: number } => x !== null)
+      .sort((a, b) => b.cambioPct - a.cambioPct);
+    res.json({ ok: true, data: resultado, ts: Date.now(), fuente: "BEA — Real GDP by state (SAGDP9)" });
+  } catch (err) {
+    req.log.error({ err }, "market-data/regional-gdp");
+    res.json({ ok: false, error: "Error consultando BEA", data: [] });
+  }
+});
+
 export default router;
