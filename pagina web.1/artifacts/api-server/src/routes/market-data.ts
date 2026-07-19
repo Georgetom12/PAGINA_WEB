@@ -464,6 +464,75 @@ router.get("/market-data/crypto-volatility", async (req: Request, res: Response)
   }
 });
 
+// ─── FED WATCH — calculado con datos reales, no la API pagada de CME ──────
+// Metodología pública (misma que usa la librería open-source pyfedwatch):
+// el precio de los futuros de Fed Funds a 30 días (ticker ZQ) = 100 - tasa
+// promedio esperada ese mes. En un mes SIN reunión FOMC, eso es directo. En
+// un mes CON reunión, se resuelve la tasa post-reunión ponderando por días
+// antes/después de la fecha de decisión dentro del mes.
+// Fechas FOMC 2026 verificadas (Fed oficial): 28-29 ene, 17-18 mar, 28-29 abr,
+// 16-17 jun, 28-29 jul, 15-16 sep, 27-28 oct, 8-9 dic. Decisión siempre el
+// segundo día. Tasa actual (jul 2026): 3.50%–3.75% (punto medio 3.625%).
+const FOMC_2026_DECISION_DAYS: Record<number, number> = { 1: 28, 3: 18, 4: 29, 6: 17, 7: 29, 9: 16, 10: 28, 12: 9 };
+const CURRENT_FED_MIDPOINT = 3.625;
+
+function zqTickerFor(year: number, month: number): string {
+  const codes = ["F","G","H","J","K","M","N","Q","U","V","X","Z"]; // ene..dic
+  return `ZQ${codes[month - 1]}${String(year).slice(-2)}=F`;
+}
+
+async function fetchZqPrice(ticker: string): Promise<number | null> {
+  try {
+    const r = await fetch(
+      `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?interval=1d&range=5d`,
+      { headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" }, signal: AbortSignal.timeout(8000) },
+    );
+    if (!r.ok) return null;
+    const d = await r.json() as { chart?: { result?: [{ meta?: { regularMarketPrice?: number } }] } };
+    return d?.chart?.result?.[0]?.meta?.regularMarketPrice ?? null;
+  } catch { return null; }
+}
+
+router.get("/market-data/fed-watch", async (req: Request, res: Response) => {
+  try {
+    const now = new Date();
+    const meses = Array.from({ length: 5 }, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+      return { year: d.getFullYear(), month: d.getMonth() + 1 };
+    });
+    const precios = await Promise.all(meses.map(m => fetchZqPrice(zqTickerFor(m.year, m.month))));
+    const impliedRates = precios.map(p => (p !== null ? 100 - p : null));
+
+    // Recorre mes a mes; si el mes tiene reunión, despeja la tasa post-decisión
+    // ponderando por días antes/después dentro de ese mes calendario
+    let tasaVigente = CURRENT_FED_MIDPOINT;
+    const resultados: Array<{ mes: string; fecha_decision: string; tasa_antes: number; tasa_despues_implicita: number | null; cambio_bps: number | null }> = [];
+    for (let i = 0; i < meses.length; i++) {
+      const { year, month } = meses[i]!;
+      const diaReunion = FOMC_2026_DECISION_DAYS[month];
+      const impliedRate = impliedRates[i];
+      if (!diaReunion || impliedRate === null) { continue; }
+      const diasEnMes = new Date(year, month, 0).getDate();
+      const pesoAntes = (diaReunion - 1) / diasEnMes;
+      const pesoDespues = (diasEnMes - diaReunion + 1) / diasEnMes;
+      const tasaDespues = pesoDespues > 0 ? (impliedRate - pesoAntes * tasaVigente) / pesoDespues : null;
+      const cambioBps = tasaDespues !== null ? Math.round((tasaDespues - tasaVigente) * 100) : null;
+      resultados.push({
+        mes: `${year}-${String(month).padStart(2, "0")}`,
+        fecha_decision: `${year}-${String(month).padStart(2, "0")}-${String(diaReunion).padStart(2, "0")}`,
+        tasa_antes: Math.round(tasaVigente * 1000) / 1000,
+        tasa_despues_implicita: tasaDespues !== null ? Math.round(tasaDespues * 1000) / 1000 : null,
+        cambio_bps: cambioBps,
+      });
+      if (tasaDespues !== null) tasaVigente = tasaDespues;
+    }
+    res.json({ ok: true, data: resultados, ts: Date.now(), metodo: "Calculado de futuros ZQ reales (Yahoo) — mismo principio público que CME FedWatch, no es la API oficial de pago" });
+  } catch (err) {
+    req.log.error({ err }, "market-data/fed-watch");
+    res.json({ ok: false, error: "Error calculando Fed Watch", data: [] });
+  }
+});
+
 router.get("/market-data/econ-calendar", async (req: Request, res: Response) => {
   const key = process.env["FMP_API_KEY"];
   if (!key) { res.json({ ok: false, error: "FMP_API_KEY no configurado", data: [] }); return; }
