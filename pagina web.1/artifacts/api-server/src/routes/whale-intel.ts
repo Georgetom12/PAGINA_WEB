@@ -186,6 +186,15 @@ async function fetchHLLiquidations(): Promise<WhaleAlert[]> {
   } catch { return []; }
 }
 
+async function fetchLiveEthPrice(): Promise<number> {
+  try {
+    const r = await fetch("https://api.binance.com/api/v3/ticker/price?symbol=ETHUSDT", { signal: AbortSignal.timeout(5000) });
+    if (!r.ok) return 3500; // respaldo solo si Binance falla
+    const d = await r.json() as { price?: string };
+    return d.price ? parseFloat(d.price) : 3500;
+  } catch { return 3500; }
+}
+
 async function fetchEthWhales(apiKey: string): Promise<WhaleAlert[]> {
   if (!apiKey) return [];
   try {
@@ -194,19 +203,22 @@ async function fetchEthWhales(apiKey: string): Promise<WhaleAlert[]> {
       { signal: AbortSignal.timeout(8000) },
     );
     const { result: blockHex } = await blockNumRes.json() as { result: string };
-    const blockRes = await fetch(
-      `https://api.etherscan.io/v2/api?chainid=1&module=proxy&action=eth_getBlockByNumber&tag=${blockHex}&boolean=true&apikey=${apiKey}`,
-      { signal: AbortSignal.timeout(10000) },
-    );
+    const [blockRes, ethPrice] = await Promise.all([
+      fetch(
+        `https://api.etherscan.io/v2/api?chainid=1&module=proxy&action=eth_getBlockByNumber&tag=${blockHex}&boolean=true&apikey=${apiKey}`,
+        { signal: AbortSignal.timeout(10000) },
+      ),
+      fetchLiveEthPrice(),
+    ]);
     const blockData = await blockRes.json() as {
-      result: { transactions: Array<{ hash: string; from: string; to: string; value: string }> }
+      result: { timestamp?: string; transactions: Array<{ hash: string; from: string; to: string; value: string }> }
     };
     const txs = blockData.result?.transactions ?? [];
-    const ETH_PRICE = 3500;
+    const blockTs = blockData.result?.timestamp ? parseInt(blockData.result.timestamp, 16) * 1000 : Date.now();
     const alerts: WhaleAlert[] = [];
     for (const tx of txs) {
       const ethVal = parseInt(tx.value || "0x0", 16) / 1e18;
-      const usd = ethVal * ETH_PRICE;
+      const usd = ethVal * ethPrice;
       if (usd < 300_000) continue;
       const isToEx = !!EXCHANGE_ADDRS[(tx.to ?? "").toLowerCase()];
       const isFromEx = !!EXCHANGE_ADDRS[(tx.from ?? "").toLowerCase()];
@@ -215,7 +227,7 @@ async function fetchEthWhales(apiKey: string): Promise<WhaleAlert[]> {
       else if (isFromEx) type = "exchange_out";
       alerts.push({
         id: tx.hash,
-        ts: Date.now() - Math.floor(Math.random() * 90_000),
+        ts: blockTs, // timestamp real del bloque, ya no aleatorio
         coin: "ETH",
         amount: ethVal,
         usd,
@@ -286,6 +298,18 @@ async function fetchBTCWhales(): Promise<WhaleAlert[]> {
 }
 
 // GET /api/whale-intel/alerts
+// Historial de alertas significativas — el endpoint normal solo muestra el
+// "ahora mismo" (cache de 30s, se reemplaza solo). Esto guarda las últimas 100
+// alertas realmente vistas, en memoria, para no perderlas apenas rotan.
+const ALERT_HISTORY_MAX = 100;
+let alertHistory: WhaleAlert[] = [];
+function mergeIntoHistory(nuevas: WhaleAlert[]) {
+  const existentes = new Set(alertHistory.map(a => a.id));
+  const paraAgregar = nuevas.filter(a => !existentes.has(a.id));
+  if (!paraAgregar.length) return;
+  alertHistory = [...paraAgregar, ...alertHistory].sort((a, b) => b.ts - a.ts).slice(0, ALERT_HISTORY_MAX);
+}
+
 router.get("/whale-intel/alerts", async (req: Request, res: Response) => {
   const cached = cGet<WhaleAlert[]>("whale_alerts");
   if (cached) { res.json({ ok: true, alerts: cached, cached: true }); return; }
@@ -306,8 +330,14 @@ router.get("/whale-intel/alerts", async (req: Request, res: Response) => {
   deduped.sort((a, b) => b.ts - a.ts);
   const result = deduped.slice(0, 60);
 
+  mergeIntoHistory(deduped.filter(a => a.type === "exchange_in" || a.type === "exchange_out" || a.significant));
+
   cSet("whale_alerts", result, 30_000);
   res.json({ ok: true, alerts: result, sources: { hl: hlBTC.length + hlETH.length + hlSOL.length, eth: ethAlerts.length, btc: btcAlerts.length, liq: hlLiq.length } });
+});
+
+router.get("/whale-intel/alerts-history", (_req: Request, res: Response) => {
+  res.json({ ok: true, alerts: alertHistory });
 });
 
 // ─── Signal helper ────────────────────────────────────────────────────────────
