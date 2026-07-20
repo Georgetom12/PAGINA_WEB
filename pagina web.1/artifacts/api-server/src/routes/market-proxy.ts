@@ -194,6 +194,36 @@ router.get("/proxy/okx/oi-history", async (req: Request, res: Response) => {
   );
 });
 
+// ─── BingX ────────────────────────────────────────────────────────────────────
+// (julio 20 2026 — BingX bloquea llamadas directas desde el navegador,
+// "BingX: ninguno de sus endpoints respondió, posible bloqueo CORS", igual
+// que le pasaba antes a MEXC. La única forma real de evitarlo es que el
+// pedido salga del SERVIDOR (Railway), no del navegador — CORS es una
+// restricción que el navegador aplica, un fetch server-to-server no la sufre.)
+router.get("/proxy/bingx/ticker", async (req: Request, res: Response) => {
+  if (!await checkAccess(req, res)) return;
+  const { symbol = "BTC-USDT" } = req.query as Record<string, string>;
+  await proxyFetch(`https://open-api.bingx.com/openApi/swap/v2/quote/ticker?symbol=${symbol}`, res, req);
+});
+
+router.get("/proxy/bingx/depth", async (req: Request, res: Response) => {
+  if (!await checkAccess(req, res)) return;
+  const { symbol = "BTC-USDT", limit = "100" } = req.query as Record<string, string>;
+  await proxyFetch(`https://open-api.bingx.com/openApi/swap/v2/quote/depth?symbol=${symbol}&limit=${limit}`, res, req);
+});
+
+router.get("/proxy/bingx/funding-rate", async (req: Request, res: Response) => {
+  if (!await checkAccess(req, res)) return;
+  const { symbol = "BTC-USDT", limit = "24" } = req.query as Record<string, string>;
+  await proxyFetch(`https://open-api.bingx.com/openApi/swap/v2/quote/fundingRate?symbol=${symbol}&limit=${limit}`, res, req);
+});
+
+router.get("/proxy/bingx/open-interest", async (req: Request, res: Response) => {
+  if (!await checkAccess(req, res)) return;
+  const { symbol = "BTC-USDT" } = req.query as Record<string, string>;
+  await proxyFetch(`https://open-api.bingx.com/openApi/swap/v2/quote/openInterest?symbol=${symbol}`, res, req);
+});
+
 // ─── Coinbase ─────────────────────────────────────────────────────────────────
 router.get("/proxy/coinbase/price", async (req: Request, res: Response) => {
   if (!await checkAccess(req, res)) return;
