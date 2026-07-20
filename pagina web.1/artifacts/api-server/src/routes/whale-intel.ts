@@ -449,6 +449,13 @@ async function fetchTgWhaleTraders(exchangeFilter: "hyperliquid" | "dydx"): Prom
       return exchangeFilter === "hyperliquid" ? e.includes("hyperliquid") : e.includes("dydx") || e.includes("dydx v4");
     };
 
+    const matched = rows.filter(row => matchesExchange(row.exchange));
+    const withSize = matched.filter(row => parseFloat(row.tamano_usd ?? "0") >= 50_000);
+    logger.info(
+      { exchangeFilter, totalRows: rows.length, matchedExchange: matched.length, passedSizeThreshold: withSize.length },
+      "fetchTgWhaleTraders diagnóstico",
+    );
+
     // Nos quedamos con la posición MÁS RECIENTE por (wallet+coin) — si la
     // misma ballena tiene varias alertas en la ventana, mostramos su estado
     // actual, no una fila por cada alerta vieja.
