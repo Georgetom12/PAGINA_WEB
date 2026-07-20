@@ -1653,21 +1653,38 @@ async function fetchQuickPriceDepth(){
 //   precio continua para calcularse — se usa Binance (el más
 //   líquido) como referencia, aclarado en el título de esos paneles.
 // ═══════════════════════════════════════════════════════════════
-function mergeDepth(depthList){
+function mergeDepth(depthList,refPrice){
   // Suma cantidades de varios order books en el MISMO nivel de precio
   // (redondeado a 2 decimales para que niveles casi iguales entre
   // exchanges se combinen en vez de quedar como líneas separadas).
+  //
+  // (julio 20 2026) Se agregó un filtro de sanidad: cualquier nivel de
+  // precio que esté a más de ±25% del precio de referencia actual se
+  // descarta. Sin esto, si UN exchange devuelve un precio corrupto o
+  // en una unidad distinta (ej. un error de la API, o un símbolo mal
+  // formado), ese único valor gigante estira el eje entero del
+  // gráfico y aplasta el resto de los datos reales contra el borde
+  // — exactamente lo que Jorge reportó viendo en "Profundidad Order
+  // Book" (eje hasta $600,000,000 cuando BTC vale ~$64,000).
   const bidMap=new Map(), askMap=new Map();
+  const lo=refPrice*0.75, hi=refPrice*1.25;
+  const sane=p=>Number.isFinite(p)&&p>0&&(!refPrice||(p>=lo&&p<=hi));
+  let rejected=0;
   for(const d of depthList){
     for(const[p,q]of d.bids||[]){
-      const key=parseFloat(p).toFixed(2);
-      bidMap.set(key,(bidMap.get(key)||0)+parseFloat(q));
+      const pf=parseFloat(p), qf=parseFloat(q);
+      if(!sane(pf)||!Number.isFinite(qf)||qf<=0){rejected++;continue;}
+      const key=pf.toFixed(2);
+      bidMap.set(key,(bidMap.get(key)||0)+qf);
     }
     for(const[p,q]of d.asks||[]){
-      const key=parseFloat(p).toFixed(2);
-      askMap.set(key,(askMap.get(key)||0)+parseFloat(q));
+      const pf=parseFloat(p), qf=parseFloat(q);
+      if(!sane(pf)||!Number.isFinite(qf)||qf<=0){rejected++;continue;}
+      const key=pf.toFixed(2);
+      askMap.set(key,(askMap.get(key)||0)+qf);
     }
   }
+  if(rejected>0)console.warn(`mergeDepth: se descartaron ${rejected} niveles de precio fuera de rango (posible dato corrupto de algún exchange)`);
   return{
     bids:Array.from(bidMap.entries()).map(([p,q])=>[p,String(q)]),
     asks:Array.from(askMap.entries()).map(([p,q])=>[p,String(q)]),
@@ -1684,14 +1701,38 @@ async function loadAll(){
     const ok=[]; results.forEach((r,i)=>{if(r.status==='fulfilled')ok.push({...SUMMARY_EXCHANGES[i],data:r.value});});
     if(!ok.length) throw new Error('Ningún exchange respondió');
 
+    // (julio 20 2026) Mismo tipo de bug que se encontró en Profundidad Order
+    // Book (un exchange devolviendo un número corrupto/fuera de escala que
+    // arruina todo el gráfico/promedio) — se aplica el mismo criterio acá:
+    // funding rate realista está entre -5% y +5% (en la práctica casi
+    // siempre <1%, se deja margen amplio); L/S ratio entre 0.05 y 20; OI no
+    // puede ser negativo. Cualquier valor fuera de rango se descarta (no se
+    // inventa un reemplazo, simplemente no participa del promedio/gráfico).
+    const saneFR=v=>Number.isFinite(v)&&Math.abs(v)<=5;
+    const saneRatio=v=>Number.isFinite(v)&&v>0.05&&v<20;
+    const saneOI=v=>Number.isFinite(v)&&v>=0;
+    let rejectedStats=0;
+
     // Precio/variación/vol/OI de referencia: Binance si respondió, si no el primero que sí
     const primary=ok.find(e=>e.key==='binance')||ok[0];
     const price=primary.data.price, chg=primary.data.chg;
     const futures=ok.filter(e=>!e.data.isSpot); // OI/funding/L-S no existen en spot (Bitstamp)
     const totalVol=ok.reduce((a,e)=>a+e.data.quoteVolume,0);
-    const totalOI=futures.reduce((a,e)=>{const arr=e.data.oiR;return a+parseFloat(arr[arr.length-1]?.sumOpenInterestValue||0);},0);
-    const avgFR=futures.length?futures.reduce((a,e)=>{const arr=e.data.fundR;return a+parseFloat(arr[arr.length-1]?.fundingRate||0);},0)/futures.length*100:0;
-    const avgLS=futures.length?futures.reduce((a,e)=>{const arr=e.data.lsR;return a+(arr&&arr.length?parseFloat(arr[arr.length-1].longShortRatio):1);},0)/futures.length:1;
+
+    const oiPerExchange=futures.map(e=>{
+      const v=parseFloat(e.data.oiR[e.data.oiR.length-1]?.sumOpenInterestValue||0);
+      if(!saneOI(v)){rejectedStats++;return 0;}
+      return v;
+    });
+    const totalOI=oiPerExchange.reduce((a,v)=>a+v,0);
+
+    const frValues=futures.map(e=>parseFloat(e.data.fundR[e.data.fundR.length-1]?.fundingRate||0)*100).filter(v=>{const ok2=saneFR(v);if(!ok2)rejectedStats++;return ok2;});
+    const avgFR=frValues.length?frValues.reduce((a,v)=>a+v,0)/frValues.length:0;
+
+    const lsValues=futures.map(e=>e.data.lsR&&e.data.lsR.length?parseFloat(e.data.lsR[e.data.lsR.length-1].longShortRatio):1).filter(v=>{const ok2=saneRatio(v);if(!ok2)rejectedStats++;return ok2;});
+    const avgLS=lsValues.length?lsValues.reduce((a,v)=>a+v,0)/lsValues.length:1;
+
+    if(rejectedStats>0)console.warn(`loadAll: se descartaron ${rejectedStats} valores de funding/OI/L-S fuera de rango (posible dato corrupto de algún exchange)`);
 
     psyFunding=avgFR/100;
     psyLongRatio=avgLS/(1+avgLS)*100;
@@ -1714,14 +1755,19 @@ async function loadAll(){
     const lse=document.getElementById('statLS');lse.textContent=avgLS.toFixed(2);lse.className='stat-val '+(avgLS>=1?'c-green':'c-red');
     document.getElementById('statLSsub').textContent=(avgLS/(1+avgLS)*100).toFixed(1)+'% Long';
 
-    const mergedDepth=mergeDepth(ok.map(e=>e.data.depth));
-    const perExchange=futures.map(e=>({
-      label:e.label,
-      fundingRate:parseFloat(e.data.fundR[e.data.fundR.length-1]?.fundingRate||0)*100,
-      oiUsd:parseFloat(e.data.oiR[e.data.oiR.length-1]?.sumOpenInterestValue||0),
-      lsRatio:e.data.lsR&&e.data.lsR.length?parseFloat(e.data.lsR[e.data.lsR.length-1].longShortRatio):1,
-      buySellRatio:e.data.aggrR&&e.data.aggrR.length?parseFloat(e.data.aggrR[e.data.aggrR.length-1].buySellRatio):1,
-    }));
+    const mergedDepth=mergeDepth(ok.map(e=>e.data.depth),price);
+    const perExchange=futures.map((e,i)=>{
+      const fr=parseFloat(e.data.fundR[e.data.fundR.length-1]?.fundingRate||0)*100;
+      const ls=e.data.lsR&&e.data.lsR.length?parseFloat(e.data.lsR[e.data.lsR.length-1].longShortRatio):1;
+      const bs=e.data.aggrR&&e.data.aggrR.length?parseFloat(e.data.aggrR[e.data.aggrR.length-1].buySellRatio):1;
+      return{
+        label:e.label,
+        fundingRate:saneFR(fr)?fr:0,
+        oiUsd:oiPerExchange[i],
+        lsRatio:saneRatio(ls)?ls:1,
+        buySellRatio:saneRatio(bs)?bs:1,
+      };
+    });
 
     const safe=(fn,label)=>{try{fn();}catch(e){console.warn('Chart error ('+label+'):',e);}};
     safe(()=>renderDepthChart(mergedDepth,price),'depth');
@@ -2125,31 +2171,23 @@ async function loadNews(){
         return`<div class="news-item"><div class="news-dot news-${sentiment}" style="margin-top:5px;flex-shrink:0"></div><div><div class="news-title"><a href="${n.url}" target="_blank">${n.title}</a></div><div class="news-meta">${n.source?.title||'Cripto News'} · ${timeAgo}</div></div></div>`;
       }).join('');
     } else {
-      // Fallback: static recent BTC news placeholders
       loadNewsFallback();
     }
   }catch(e){loadNewsFallback();}
 }
 
+// (julio 20 2026) Antes esto mostraba 8 titulares INVENTADOS atribuidos a
+// medios reales (CoinDesk, Glassnode, The Block, Bloomberg, Whale Alert) con
+// horarios falsos ("hace 12m") — como el token de CryptoPanic de arriba es
+// un placeholder que siempre falla, esto se estaba mostrando prácticamente
+// SIEMPRE, no como excepción rara. Se quitó por completo: ahora avisa
+// honestamente que las noticias no están disponibles en vez de inventar
+// contenido con la firma de medios que nunca publicaron eso.
 function loadNewsFallback(){
-  const items=[
-    {title:'BTC mantiene niveles clave mientras institucionales acumulan en el mercado de futuros',source:'CoinDesk',time:'hace 12m',type:'bullish'},
-    {title:'Open Interest en máximos históricos — señal de alta participación institucional en BTC',source:'CryptoQuant',time:'hace 28m',type:'bullish'},
-    {title:'Análisis técnico: Bandas de Bollinger se comprimen en BTC — próximo movimiento explosivo',source:'The Block',time:'hace 45m',type:'neutral'},
-    {title:'Funding rate negativo en Binance sugiere dominancia de cortos — potencial squeeze alcista',source:'Glassnode',time:'hace 1h',type:'bullish'},
-    {title:'Liquidaciones de longs superan $80M en la última hora — zona de soporte bajo presión',source:'Coinglass',time:'hace 1h 20m',type:'bearish'},
-    {title:'Ballenas movieron 12,000 BTC a exchanges — posible distribución o arbitraje de OTC',source:'Whale Alert',time:'hace 2h',type:'bearish'},
-    {title:'Reservas de BTC en exchanges en mínimos de 5 años — señal de acumulación estructural',source:'Glassnode',time:'hace 3h',type:'bullish'},
-    {title:'Correlación BTC-Gold aumenta en contexto de tensión macro global',source:'Bloomberg Cripto',time:'hace 4h',type:'neutral'},
-  ];
-  document.getElementById('newsContainer').innerHTML=items.map(n=>`
-    <div class="news-item">
-      <div class="news-dot news-${n.type}"></div>
-      <div>
-        <div class="news-title">${n.title}</div>
-        <div class="news-meta">${n.source} · ${n.time}</div>
-      </div>
-    </div>`).join('');
+  document.getElementById('newsContainer').innerHTML=`
+    <div style="padding:20px;text-align:center;font-family:'Share Tech Mono',monospace;font-size:.65rem;color:var(--gray)">
+      ⚠️ Noticias no disponibles en este momento (falta un token real de CryptoPanic configurado).
+    </div>`;
 }
 
 function formatTimeAgo(date){
@@ -2220,7 +2258,7 @@ function startAutoRefresh(){
       checkAlerts(price);
     }catch(e){}
   },15000);
-  setInterval(()=>{loadAll();loadRSIVol();},120000);
+  setInterval(()=>{loadRSIVol();},120000);
   setInterval(()=>{loadNews();},300000);
   setInterval(()=>{loadFearGreed();loadDominance();},600000);
 }
