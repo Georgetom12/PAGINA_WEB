@@ -786,19 +786,46 @@ function TraderCard({
         </div>
         )}
 
+        {t.dataType === "market_aggregate" ? (
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            {[
+              {label:"VARIACIÓN 24H", value:`${(t.priceChange24h??0)>=0?"+":""}${(t.priceChange24h??0).toFixed(2)}%`, color:(t.priceChange24h??0)>=0?"#00e676":"#ff1744"},
+              {label:"VOLUMEN 24H",   value:fmt(t.volume24h), color:"#00e5ff"},
+              {label:"FUNDING",       value:fundingFmt,        color:fundingColor},
+            ].map(s=>(
+              <div key={s.label} className="bg-[#040d18] border border-[#0d1a2a] p-2.5">
+                <div className="font-sharetech text-[7px] text-[#5a8898] tracking-[0.08em] mb-1">{s.label}</div>
+                <div className="font-space text-[15px] font-bold leading-tight" style={{color:s.color}}>{s.value}</div>
+              </div>
+            ))}
+          </div>
+        ) : t.exchange === "gmx" ? (
+          <div className="grid grid-cols-2 gap-2 mb-4">
+            {[
+              {label:"TAMAÑO DEL MOVIMIENTO", value:fmt(t.positionSizeUsd), color:"#00e5ff"},
+              {label:"PRECIO EJECUCIÓN",       value:t.entryPrice?fmtPrice(t.entryPrice):"—", color:"#ffd700"},
+            ].map(s=>(
+              <div key={s.label} className="bg-[#040d18] border border-[#0d1a2a] p-2.5">
+                <div className="font-sharetech text-[7px] text-[#5a8898] tracking-[0.08em] mb-1">{s.label}</div>
+                <div className="font-space text-[15px] font-bold leading-tight" style={{color:s.color}}>{s.value}</div>
+              </div>
+            ))}
+          </div>
+        ) : (
         <div className="grid grid-cols-2 gap-2 mb-4">
           {[
-            {label: t.pnlSource==="mtm"?"PNL 24H ⚡":"PNL 24H",  value:`${t.pnl24h>=0?"+":""}${fmt(t.pnl24h)}`,   color:t.pnl24h>=0?"#00e676":"#ff1744"},
-            {label: t.pnlSource==="mtm"?"PNL 7D ⚡":"PNL 7D",    value:`${t.pnlWeek>=0?"+":""}${fmt(t.pnlWeek)}`, color:t.pnlWeek>=0?"#00e676":"#ff1744"},
+            {label: "PNL 24H",  value:`${t.pnl24h>=0?"+":""}${fmt(t.pnl24h)}`,   color:t.pnl24h>=0?"#00e676":"#ff1744"},
+            {label: "PNL 7D",    value:`${t.pnlWeek>=0?"+":""}${fmt(t.pnlWeek)}`, color:t.pnlWeek>=0?"#00e676":"#ff1744"},
             {label:"VOLUMEN 24H", value:fmt(t.volume24h),          color:"#00e5ff"},
             {label:"FUNDING",     value:fundingFmt,                color:fundingColor},
           ].map(s=>(
             <div key={s.label} className="bg-[#040d18] border border-[#0d1a2a] p-2.5">
-              <div className="font-sharetech text-[6px] text-[#5a8898] tracking-[0.08em] mb-1">{s.label}</div>
-              <div className="font-space text-[10px] font-bold" style={{color:s.color}}>{s.value}</div>
+              <div className="font-sharetech text-[7px] text-[#5a8898] tracking-[0.08em] mb-1">{s.label}</div>
+              <div className="font-space text-[15px] font-bold leading-tight" style={{color:s.color}}>{s.value}</div>
             </div>
           ))}
         </div>
+        )}
 
         <div className="border mb-3 overflow-hidden" style={{borderColor:`${posColor}25`}}>
           <div className="font-sharetech text-[7px] px-3 py-1.5 tracking-[0.15em] text-center"
