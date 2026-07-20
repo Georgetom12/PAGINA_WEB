@@ -169,7 +169,8 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;}
 .panel{background:var(--panel);border:1px solid var(--border2);border-radius:4px;overflow:hidden;margin-bottom:10px;}
 .ph{padding:9px 14px;background:var(--bg3);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;font-family:'Orbitron',monospace;font-size:.6rem;font-weight:700;letter-spacing:.12em;color:var(--cyan);}
-.summary-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:10px 0 16px;}
+.summary-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:10px 0 16px;}
+@media(max-width:1100px){.summary-grid{grid-template-columns:repeat(3,1fr);}}
 @media(max-width:900px){.summary-grid{grid-template-columns:repeat(2,1fr);}}
 .sx-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;position:relative;}
 .sx-card.sx-active{border-color:var(--cyan);box-shadow:0 0 0 1px var(--cyan) inset;}
@@ -460,8 +461,9 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
     <button class="ex-tab active" onclick="setExchange('binance',this)">BINANCE <span class="ex-badge b-bin">FUTURES</span></button>
     <button class="ex-tab" onclick="setExchange('bybit',this)">BYBIT <span class="ex-badge b-byb">PERPS</span></button>
     <button class="ex-tab" onclick="setExchange('okx',this)">OKX <span class="ex-badge b-okx">FUTURES</span></button>
-    <button class="ex-tab" onclick="setExchange('mexc',this)">MEXC <span class="ex-badge b-mex">PERPS</span></button>
+    <button class="ex-tab" onclick="setExchange('bingx',this)">BINGX <span class="ex-badge b-mex">PERPS</span></button>
     <button class="ex-tab" onclick="setExchange('bitget',this)">BITGET <span class="ex-badge b-btg">FUTURES</span></button>
+    <button class="ex-tab" onclick="setExchange('bitstamp',this)">BITSTAMP <span class="ex-badge b-okx">SPOT</span></button>
   </div>
   <div class="ph" style="margin-top:6px">📡 RESUMEN CONSOLIDADO — TODOS LOS EXCHANGES A LA VEZ<span class="ph-sub">Todo el dashboard de abajo ya está unificado — no hace falta tocar nada</span></div>
   <div id="summaryGrid" class="summary-grid"></div>
@@ -1221,12 +1223,12 @@ let charts={}, heatmapData=[], alertHigh=null, alertLow=null, lastAlertTime=0;
 const MAX_HM_COLS=80;
 
 const SYMBOLS={
-  BTC:{binance:'BTCUSDT',okx:'BTC-USDT-SWAP',okxSpot:'BTC-USDT',bybit:'BTCUSDT',mexc:'BTC_USDT',bitget:'BTCUSDT',cg:'bitcoin',step:500,tv:'BINANCE:BTCUSDT.P'},
-  ETH:{binance:'ETHUSDT',okx:'ETH-USDT-SWAP',okxSpot:'ETH-USDT',bybit:'ETHUSDT',mexc:'ETH_USDT',bitget:'ETHUSDT',cg:'ethereum',step:20,tv:'BINANCE:ETHUSDT.P'},
-  SOL:{binance:'SOLUSDT',okx:'SOL-USDT-SWAP',okxSpot:'SOL-USDT',bybit:'SOLUSDT',mexc:'SOL_USDT',bitget:'SOLUSDT',cg:'solana',step:1,tv:'BINANCE:SOLUSDT.P'},
-  XRP:{binance:'XRPUSDT',okx:'XRP-USDT-SWAP',okxSpot:'XRP-USDT',bybit:'XRPUSDT',mexc:'XRP_USDT',bitget:'XRPUSDT',cg:'ripple',step:0.02,tv:'BINANCE:XRPUSDT.P'},
-  BNB:{binance:'BNBUSDT',okx:'BNB-USDT-SWAP',okxSpot:'BNB-USDT',bybit:'BNBUSDT',mexc:'BNB_USDT',bitget:'BNBUSDT',cg:'binancecoin',step:1,tv:'BINANCE:BNBUSDT.P'},
-  DOGE:{binance:'DOGEUSDT',okx:'DOGE-USDT-SWAP',okxSpot:'DOGE-USDT',bybit:'DOGEUSDT',mexc:'DOGE_USDT',bitget:'DOGEUSDT',cg:'dogecoin',step:0.002,tv:'BINANCE:DOGEUSDT.P'},
+  BTC:{binance:'BTCUSDT',okx:'BTC-USDT-SWAP',okxSpot:'BTC-USDT',bybit:'BTCUSDT',bingx:'BTC-USDT',bitget:'BTCUSDT',bitstamp:'btcusd',cg:'bitcoin',step:500,tv:'BINANCE:BTCUSDT.P'},
+  ETH:{binance:'ETHUSDT',okx:'ETH-USDT-SWAP',okxSpot:'ETH-USDT',bybit:'ETHUSDT',bingx:'ETH-USDT',bitget:'ETHUSDT',bitstamp:'ethusd',cg:'ethereum',step:20,tv:'BINANCE:ETHUSDT.P'},
+  SOL:{binance:'SOLUSDT',okx:'SOL-USDT-SWAP',okxSpot:'SOL-USDT',bybit:'SOLUSDT',bingx:'SOL-USDT',bitget:'SOLUSDT',bitstamp:'solusd',cg:'solana',step:1,tv:'BINANCE:SOLUSDT.P'},
+  XRP:{binance:'XRPUSDT',okx:'XRP-USDT-SWAP',okxSpot:'XRP-USDT',bybit:'XRPUSDT',bingx:'XRP-USDT',bitget:'XRPUSDT',bitstamp:'xrpusd',cg:'ripple',step:0.02,tv:'BINANCE:XRPUSDT.P'},
+  BNB:{binance:'BNBUSDT',okx:'BNB-USDT-SWAP',okxSpot:'BNB-USDT',bybit:'BNBUSDT',bingx:'BNB-USDT',bitget:'BNBUSDT',bitstamp:'bnbusd',cg:'binancecoin',step:1,tv:'BINANCE:BNBUSDT.P'},
+  DOGE:{binance:'DOGEUSDT',okx:'DOGE-USDT-SWAP',okxSpot:'DOGE-USDT',bybit:'DOGEUSDT',bingx:'DOGE-USDT',bitget:'DOGEUSDT',bitstamp:'dogeusd',cg:'dogecoin',step:0.002,tv:'BINANCE:DOGEUSDT.P'},
 };
 const sym=()=>SYMBOLS[SYMBOL];
 
@@ -1428,42 +1430,77 @@ async function fetchBybitData(){
   };
 }
 
-// ── MEXC (real, api pública sin key — contract.mexc.com) ───────
-async function fetchMEXCData(){
-  const s=sym().mexc;
+// ── BingX (real, api pública sin key — open-api.bingx.com) ─────
+// (julio 20 2026 — reemplaza a MEXC, que bloqueaba todos sus
+// endpoints desde el navegador — "MEXC: ninguno de sus endpoints
+// respondió, posible bloqueo CORS", confirmado con captura de Jorge)
+async function fetchBingXData(){
+  const s=sym().bingx;
   const urls=[
-    `https://contract.mexc.com/api/v1/contract/ticker?symbol=${s}`,
-    `https://contract.mexc.com/api/v1/contract/depth/${s}?limit=100`,
-    `https://contract.mexc.com/api/v1/contract/funding_rate/history?symbol=${s}&page_num=1&page_size=24`,
-    `https://contract.mexc.com/api/v1/contract/detail?symbol=${s}`,
+    `https://open-api.bingx.com/openApi/swap/v2/quote/ticker?symbol=${s}`,
+    `https://open-api.bingx.com/openApi/swap/v2/quote/depth?symbol=${s}&limit=100`,
+    `https://open-api.bingx.com/openApi/swap/v2/quote/fundingRate?symbol=${s}&limit=24`,
+    `https://open-api.bingx.com/openApi/swap/v2/quote/openInterest?symbol=${s}`,
   ];
   const settled=await Promise.allSettled(urls.map(u=>fetch(u).then(r=>r.json())));
   const failed=settled.filter(x=>x.status==='rejected').length;
-  if(failed===urls.length) throw new Error('MEXC: ninguno de sus endpoints respondió (posible bloqueo CORS/red)');
+  if(failed===urls.length) throw new Error('BingX: ninguno de sus endpoints respondió (posible bloqueo CORS/red)');
   const get=(i,fallback)=>settled[i].status==='fulfilled'?settled[i].value:fallback;
-  const tickerR=get(0,{data:{}}), bookR=get(1,{data:{}}), fundR=get(2,{data:[]}), detailR=get(3,{data:{}});
+  const tickerR=get(0,{data:{}}), bookR=get(1,{data:{}}), fundR=get(2,{data:[]}), oiR=get(3,{data:{}});
 
   const t=tickerR.data||{};
   const price=parseFloat(t.lastPrice||0);
-  const chg=parseFloat(t.riseFallRate||0)*100;
+  const chg=parseFloat(t.priceChangePercent||0); // BingX ya lo da en % (no fracción)
   const book=bookR.data||{bids:[],asks:[]};
-  // MEXC cotiza en CONTRATOS — 1 contrato = contractSize unidades base (ver detailR)
-  const contractSize=parseFloat(detailR.data?.contractSize||1);
   const depth={
     bids:(book.bids||[]).map(b=>[b[0],b[1]]),
     asks:(book.asks||[]).map(a=>[a[0],a[1]]),
   };
-  const fundArr=(fundR.data?.resultList||fundR.data||[]).slice().reverse().map(f=>({fundingTime:+(f.settleTime||Date.now()),fundingRate:String(f.fundingRate||0)}));
-  const oiContracts=parseFloat(t.holdVol||0);
-  const oiNow=oiContracts*contractSize*price;
+  const fundArr=(Array.isArray(fundR.data)?fundR.data:[]).slice().reverse().map(f=>({fundingTime:+(f.fundingTime||Date.now()),fundingRate:String(f.fundingRate||0)}));
+  const oiNow=parseFloat(oiR.data?.openInterest||0)*price;
   return{
-    price, chg, quoteVolume:parseFloat(t.amount24||0),
+    price, chg, quoteVolume:parseFloat(t.quoteVolume||0),
     depth,
     fundR:fundArr.length?fundArr:[{fundingTime:Date.now(),fundingRate:'0'}],
     oiR:(fundArr.length?fundArr:[{}]).map(()=>({sumOpenInterestValue:String(oiNow)})),
-    lsR:[{timestamp:Date.now(),longShortRatio:'1'}], // MEXC no expone long/short ratio público — neutral honesto, no inventado
+    lsR:[{timestamp:Date.now(),longShortRatio:'1'}], // BingX no expone long/short ratio público de forma sencilla — neutral honesto, no inventado
     aggrR:[{timestamp:Date.now(),buySellRatio:'1'}],
-    oiNote:'MEXC: sin long/short ratio público disponible — se muestra neutral (1.00), no es un dato real de ese campo',
+    oiNote:'BingX: sin long/short ratio público disponible — se muestra neutral (1.00), no es un dato real de ese campo',
+  };
+}
+
+// ── Bitstamp (real, api pública sin key — www.bitstamp.net) ────
+// OJO: Bitstamp es un exchange SPOT, no de futuros — no tiene
+// funding rate, ni Open Interest, ni long/short ratio (esos
+// conceptos no existen en spot). Se incluye por precio y
+// profundidad reales — el resto queda honestamente en null, no en
+// cero disfrazado ni inventado.
+async function fetchBitstampData(){
+  const s=sym().bitstamp;
+  const urls=[
+    `https://www.bitstamp.net/api/v2/ticker/${s}/`,
+    `https://www.bitstamp.net/api/v2/order_book/${s}/`,
+  ];
+  const settled=await Promise.allSettled(urls.map(u=>fetch(u).then(r=>{
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    return r.json();
+  })));
+  const failed=settled.filter(x=>x.status==='rejected').length;
+  if(failed===urls.length) throw new Error('Bitstamp: ninguno de sus endpoints respondió (posible bloqueo CORS/red, o el par no existe ahí)');
+  const get=(i,fallback)=>settled[i].status==='fulfilled'?settled[i].value:fallback;
+  const t=get(0,{}), book=get(1,{bids:[],asks:[]});
+  const price=parseFloat(t.last||0);
+  const chg=parseFloat(t.percent_change_24||0);
+  const depth={
+    bids:(book.bids||[]).map(b=>[b[0],b[1]]),
+    asks:(book.asks||[]).map(a=>[a[0],a[1]]),
+  };
+  return{
+    price, chg, quoteVolume:parseFloat(t.volume||0)*price,
+    depth,
+    fundR:[], oiR:[], lsR:[], aggrR:[],
+    isSpot:true,
+    oiNote:'Bitstamp es spot — no tiene funding rate, Open Interest ni long/short ratio (no existen en un mercado spot)',
   };
 }
 
@@ -1506,8 +1543,9 @@ async function fetchBitgetData(){
 async function fetchExchangeData(){
   if(EXCHANGE==='okx')return fetchOKXData();
   if(EXCHANGE==='bybit')return fetchBybitData();
-  if(EXCHANGE==='mexc')return fetchMEXCData();
+  if(EXCHANGE==='bingx')return fetchBingXData();
   if(EXCHANGE==='bitget')return fetchBitgetData();
+  if(EXCHANGE==='bitstamp')return fetchBitstampData();
   return fetchBinanceData();
 }
 
@@ -1516,14 +1554,17 @@ async function fetchExchangeData(){
 // cambiar de pestaña. Cada exchange se pide en paralelo y se falla
 // de forma INDEPENDIENTE (allSettled) — si uno falla, los demás
 // igual se muestran.
-// (julio 20 2026 — MEXC y Bitget ya conectados de verdad)
+// (julio 20 2026 — MEXC bloqueaba CORS desde el navegador,
+// reemplazado por BingX. Se agregó Bitstamp — OJO: es spot, no
+// futuros, así que no tiene funding/OI/L-S, ver isSpot más abajo)
 // ═══════════════════════════════════════════════════════════════
 const SUMMARY_EXCHANGES=[
   {key:'binance',label:'BINANCE',fetch:fetchBinanceDataFor},
   {key:'okx',label:'OKX',fetch:fetchOKXDataFor},
   {key:'bybit',label:'BYBIT',fetch:fetchBybitDataFor},
-  {key:'mexc',label:'MEXC',fetch:async()=>fetchMEXCData()},
+  {key:'bingx',label:'BINGX',fetch:async()=>fetchBingXData()},
   {key:'bitget',label:'BITGET',fetch:async()=>fetchBitgetData()},
+  {key:'bitstamp',label:'BITSTAMP',fetch:async()=>fetchBitstampData()},
 ];
 
 // Variantes de los fetchers que reciben el símbolo actual en vez de leer
@@ -1548,6 +1589,15 @@ async function renderSummaryGrid(){
     card.className='sx-card'+(isActive?' sx-active':'');
     if(r.status==='fulfilled'){
       const d=r.value;
+      if(d.isSpot){
+        card.innerHTML=`
+          <div class="sx-name"><span>${e.label}</span><span class="sx-status-dot" style="background:var(--green)"></span></div>
+          <div class="sx-row"><span>Precio</span><span>$${fmtP(d.price)}</span></div>
+          <div class="sx-row"><span>24h</span><span style="color:${d.chg>=0?'var(--green)':'var(--red)'}">${d.chg>=0?'+':''}${d.chg.toFixed(2)}%</span></div>
+          <div class="sx-row"><span>Vol 24h</span><span>${fmtM(d.quoteVolume)}</span></div>
+          <div class="sx-row" style="margin-top:2px"><span style="font-style:italic;color:var(--gray)">Spot — sin funding/OI/L-S</span><span></span></div>`;
+        return;
+      }
       const latOI=parseFloat(d.oiR[d.oiR.length-1]?.sumOpenInterestValue||0);
       const latFR=parseFloat(d.fundR[d.fundR.length-1]?.fundingRate||0)*100;
       let lsRatio=1; if(d.lsR&&d.lsR.length)lsRatio=parseFloat(d.lsR[d.lsR.length-1].longShortRatio);
@@ -1637,10 +1687,11 @@ async function loadAll(){
     // Precio/variación/vol/OI de referencia: Binance si respondió, si no el primero que sí
     const primary=ok.find(e=>e.key==='binance')||ok[0];
     const price=primary.data.price, chg=primary.data.chg;
+    const futures=ok.filter(e=>!e.data.isSpot); // OI/funding/L-S no existen en spot (Bitstamp)
     const totalVol=ok.reduce((a,e)=>a+e.data.quoteVolume,0);
-    const totalOI=ok.reduce((a,e)=>{const arr=e.data.oiR;return a+parseFloat(arr[arr.length-1]?.sumOpenInterestValue||0);},0);
-    const avgFR=ok.reduce((a,e)=>{const arr=e.data.fundR;return a+parseFloat(arr[arr.length-1]?.fundingRate||0);},0)/ok.length*100;
-    const avgLS=ok.reduce((a,e)=>{const arr=e.data.lsR;return a+(arr&&arr.length?parseFloat(arr[arr.length-1].longShortRatio):1);},0)/ok.length;
+    const totalOI=futures.reduce((a,e)=>{const arr=e.data.oiR;return a+parseFloat(arr[arr.length-1]?.sumOpenInterestValue||0);},0);
+    const avgFR=futures.length?futures.reduce((a,e)=>{const arr=e.data.fundR;return a+parseFloat(arr[arr.length-1]?.fundingRate||0);},0)/futures.length*100:0;
+    const avgLS=futures.length?futures.reduce((a,e)=>{const arr=e.data.lsR;return a+(arr&&arr.length?parseFloat(arr[arr.length-1].longShortRatio):1);},0)/futures.length:1;
 
     psyFunding=avgFR/100;
     psyLongRatio=avgLS/(1+avgLS)*100;
@@ -1664,7 +1715,7 @@ async function loadAll(){
     document.getElementById('statLSsub').textContent=(avgLS/(1+avgLS)*100).toFixed(1)+'% Long';
 
     const mergedDepth=mergeDepth(ok.map(e=>e.data.depth));
-    const perExchange=ok.map(e=>({
+    const perExchange=futures.map(e=>({
       label:e.label,
       fundingRate:parseFloat(e.data.fundR[e.data.fundR.length-1]?.fundingRate||0)*100,
       oiUsd:parseFloat(e.data.oiR[e.data.oiR.length-1]?.sumOpenInterestValue||0),
@@ -2037,7 +2088,7 @@ async function loadCorrelation(){
 function renderPoolsChart(btcOI){
   dc('pools');document.getElementById('poolsChartWrap').innerHTML='<canvas id="poolsChart"></canvas>';
   // Estimated distribution based on market share data
-  const estimated={Binance:btcOI*.45,Bybit:btcOI*.22,OKX:btcOI*.18,MEXC:btcOI*.06,Bitget:btcOI*.05,Otros:btcOI*.04};
+  const estimated={Binance:btcOI*.45,Bybit:btcOI*.22,OKX:btcOI*.18,BingX:btcOI*.06,Bitget:btcOI*.05,Otros:btcOI*.04};
   charts.pools=new Chart(document.getElementById('poolsChart'),{type:'bar',data:{
     labels:Object.keys(estimated),
     datasets:[{label:'Open Interest Estimado',data:Object.values(estimated).map(v=>v/1e9),backgroundColor:['rgba(255,215,0,.7)','rgba(255,165,0,.7)','rgba(0,230,118,.7)','rgba(0,229,255,.7)','rgba(224,64,251,.7)','rgba(84,110,122,.5)'],borderRadius:3}]
