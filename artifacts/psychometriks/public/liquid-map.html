@@ -1430,21 +1430,21 @@ async function fetchBybitData(){
   };
 }
 
-// ── BingX (real, api pública sin key — open-api.bingx.com) ─────
-// (julio 20 2026 — reemplaza a MEXC, que bloqueaba todos sus
-// endpoints desde el navegador — "MEXC: ninguno de sus endpoints
-// respondió, posible bloqueo CORS", confirmado con captura de Jorge)
+// ── BingX (real, vía proxy del backend — bingx.com bloquea CORS
+// directo desde el navegador, igual que le pasaba a MEXC. Por eso
+// esto pasa por /api/proxy/bingx/* en vez de pegarle directo a
+// open-api.bingx.com) ────────────────────────────────────────────
 async function fetchBingXData(){
   const s=sym().bingx;
   const urls=[
-    `https://open-api.bingx.com/openApi/swap/v2/quote/ticker?symbol=${s}`,
-    `https://open-api.bingx.com/openApi/swap/v2/quote/depth?symbol=${s}&limit=100`,
-    `https://open-api.bingx.com/openApi/swap/v2/quote/fundingRate?symbol=${s}&limit=24`,
-    `https://open-api.bingx.com/openApi/swap/v2/quote/openInterest?symbol=${s}`,
+    `/api/proxy/bingx/ticker?symbol=${s}`,
+    `/api/proxy/bingx/depth?symbol=${s}&limit=100`,
+    `/api/proxy/bingx/funding-rate?symbol=${s}&limit=24`,
+    `/api/proxy/bingx/open-interest?symbol=${s}`,
   ];
   const settled=await Promise.allSettled(urls.map(u=>fetch(u).then(r=>r.json())));
   const failed=settled.filter(x=>x.status==='rejected').length;
-  if(failed===urls.length) throw new Error('BingX: ninguno de sus endpoints respondió (posible bloqueo CORS/red)');
+  if(failed===urls.length) throw new Error('BingX: el proxy del backend no respondió (revisar Railway)');
   const get=(i,fallback)=>settled[i].status==='fulfilled'?settled[i].value:fallback;
   const tickerR=get(0,{data:{}}), bookR=get(1,{data:{}}), fundR=get(2,{data:[]}), oiR=get(3,{data:{}});
 
