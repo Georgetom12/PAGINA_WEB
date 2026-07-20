@@ -1,14 +1,16 @@
 import React from "react";
 import { MODULES, LEVEL_META, type Level } from "../data/modules";
+import { isLevelLocked, nextPlanForLevel } from "../access";
 
 const LEVELS: Level[] = ["N1", "N2", "N3", "N4", "N5", "N6", "N7"];
 
 interface AulaHomeProps {
   onSelect: (id: string) => void;
   completed: Set<string>;
+  allowedLevels: Level[];
 }
 
-export function AulaHome({ onSelect, completed }: AulaHomeProps) {
+export function AulaHome({ onSelect, completed, allowedLevels }: AulaHomeProps) {
   const grouped = LEVELS.reduce((acc, level) => {
     acc[level] = MODULES.filter((m) => m.level === level);
     return acc;
@@ -78,8 +80,10 @@ export function AulaHome({ onSelect, completed }: AulaHomeProps) {
         const meta = LEVEL_META[level];
         const mods = grouped[level];
         const levelCompleted = mods.filter((m) => completed.has(m.id)).length;
+        const locked = isLevelLocked(level, allowedLevels);
+        const upsell = locked ? nextPlanForLevel(level) : null;
         return (
-          <div key={level} style={{ marginBottom: 48 }}>
+          <div key={level} style={{ marginBottom: 48, opacity: locked ? 0.55 : 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20 }}>
               <span style={{
                 fontFamily: "'Share Tech Mono', monospace",
@@ -94,12 +98,18 @@ export function AulaHome({ onSelect, completed }: AulaHomeProps) {
                 {meta.label}
               </h2>
               <div style={{ flex: 1, height: 1, background: `linear-gradient(90deg, ${meta.color}44, transparent)` }} />
-              <span style={{ fontSize: 12, color: "#546e7a", fontFamily: "'Share Tech Mono', monospace" }}>
-                {levelCompleted > 0
-                  ? <span><span style={{ color: meta.color }}>{levelCompleted}</span>/{mods.length} completados</span>
-                  : `${mods.length} módulos`
-                }
-              </span>
+              {locked && upsell ? (
+                <span style={{ fontSize: 11, color: meta.color, fontFamily: "'Share Tech Mono', monospace", letterSpacing: 1 }}>
+                  🔒 Incluido en {upsell.plan} ({upsell.price})
+                </span>
+              ) : (
+                <span style={{ fontSize: 12, color: "#546e7a", fontFamily: "'Share Tech Mono', monospace" }}>
+                  {levelCompleted > 0
+                    ? <span><span style={{ color: meta.color }}>{levelCompleted}</span>/{mods.length} completados</span>
+                    : `${mods.length} módulos`
+                  }
+                </span>
+              )}
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12 }}>
@@ -108,18 +118,25 @@ export function AulaHome({ onSelect, completed }: AulaHomeProps) {
                 return (
                   <button
                     key={mod.id}
-                    onClick={() => onSelect(mod.id)}
+                    onClick={() => locked ? undefined : onSelect(mod.id)}
                     className="aula-module-card"
                     style={{
                       padding: "18px 20px", borderRadius: 4,
                       background: done ? `${meta.color}0d` : "#0d1520",
                       border: done ? `1px solid ${meta.color}55` : "1px solid #1a2a3a",
-                      cursor: "pointer", textAlign: "left",
+                      cursor: locked ? "not-allowed" : "pointer", textAlign: "left",
                       transition: "all 0.2s",
                       position: "relative",
                     }}
                   >
-                    {done && (
+                    {locked ? (
+                      <div style={{
+                        position: "absolute", top: 10, right: 10,
+                        fontSize: 16,
+                      }}>
+                        🔒
+                      </div>
+                    ) : done && (
                       <div style={{
                         position: "absolute", top: 10, right: 10,
                         width: 20, height: 20,

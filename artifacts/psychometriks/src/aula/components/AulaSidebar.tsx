@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "wouter";
 import { MODULES, LEVEL_META, type Level, type TradeModule } from "../data/modules";
+import { isLevelLocked } from "../access";
 
 interface AulaSidebarProps {
   currentId: string | null;
@@ -8,11 +9,12 @@ interface AulaSidebarProps {
   isOpen: boolean;
   onToggle: () => void;
   completed: Set<string>;
+  allowedLevels: Level[];
 }
 
 const LEVELS: Level[] = ["N1", "N2", "N3", "N4", "N5", "N6", "N7"];
 
-export function AulaSidebar({ currentId, onSelect, isOpen, onToggle, completed }: AulaSidebarProps) {
+export function AulaSidebar({ currentId, onSelect, isOpen, onToggle, completed, allowedLevels }: AulaSidebarProps) {
   const [expanded, setExpanded] = useState<Record<Level, boolean>>({
     N1: true, N2: true, N3: true, N4: false, N5: false, N6: false, N7: false,
   });
@@ -96,9 +98,10 @@ export function AulaSidebar({ currentId, onSelect, isOpen, onToggle, completed }
             const mods = grouped[level];
             const isExp = expanded[level];
             const levelCompleted = mods.filter((m) => completed.has(m.id)).length;
+            const locked = isLevelLocked(level, allowedLevels);
 
             return (
-              <div key={level} style={{ marginBottom: 4 }}>
+              <div key={level} style={{ marginBottom: 4, opacity: locked ? 0.5 : 1 }}>
                 <button
                   onClick={() => setExpanded((e) => ({ ...e, [level]: !e[level] }))}
                   className="aula-level-header-btn"
@@ -126,7 +129,9 @@ export function AulaSidebar({ currentId, onSelect, isOpen, onToggle, completed }
                   }}>
                     {meta.label}
                   </span>
-                  {levelCompleted > 0 && (
+                  {locked ? (
+                    <span style={{ fontSize: 11 }}>🔒</span>
+                  ) : levelCompleted > 0 && (
                     <span style={{
                       fontFamily: "'Share Tech Mono', monospace",
                       fontSize: 9, color: meta.color, opacity: 0.7,
@@ -147,7 +152,7 @@ export function AulaSidebar({ currentId, onSelect, isOpen, onToggle, completed }
                       return (
                         <button
                           key={mod.id}
-                          onClick={() => onSelect(mod.id)}
+                          onClick={() => locked ? undefined : onSelect(mod.id)}
                           style={{
                             width: "100%", display: "flex",
                             alignItems: "flex-start", gap: 10,
@@ -155,11 +160,11 @@ export function AulaSidebar({ currentId, onSelect, isOpen, onToggle, completed }
                             background: active ? `${meta.color}12` : "none",
                             border: "none",
                             borderLeft: active ? `2px solid ${meta.color}` : "2px solid transparent",
-                            cursor: "pointer", transition: "background 0.15s",
+                            cursor: locked ? "not-allowed" : "pointer", transition: "background 0.15s",
                             textAlign: "left",
                           }}
                         >
-                          <span style={{ fontSize: 15, flexShrink: 0, marginTop: 1 }}>{mod.emoji}</span>
+                          <span style={{ fontSize: 15, flexShrink: 0, marginTop: 1 }}>{locked ? "🔒" : mod.emoji}</span>
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{
                               fontFamily: "'Rajdhani', sans-serif",
@@ -173,7 +178,7 @@ export function AulaSidebar({ currentId, onSelect, isOpen, onToggle, completed }
                               {mod.duration}
                             </div>
                           </div>
-                          {done && (
+                          {!locked && done && (
                             <span style={{
                               flexShrink: 0,
                               width: 16, height: 16,

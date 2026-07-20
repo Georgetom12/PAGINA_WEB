@@ -1,7 +1,8 @@
 import React from "react";
-import { MODULES, LEVEL_META } from "../data/modules";
+import { MODULES, LEVEL_META, type Level } from "../data/modules";
 import { ALL_CONTENT } from "../data";
 import { ModuleRenderer } from "./ModuleRenderer";
+import { isLevelLocked, nextPlanForLevel } from "../access";
 
 interface AulaModulePageProps {
   moduleId: string;
@@ -11,9 +12,10 @@ interface AulaModulePageProps {
   isCompleted: boolean;
   onMarkComplete: () => void;
   onMarkIncomplete: () => void;
+  allowedLevels: Level[];
 }
 
-export function AulaModulePage({ moduleId, onBack, onNext, onPrev, isCompleted, onMarkComplete, onMarkIncomplete }: AulaModulePageProps) {
+export function AulaModulePage({ moduleId, onBack, onNext, onPrev, isCompleted, onMarkComplete, onMarkIncomplete, allowedLevels }: AulaModulePageProps) {
   const mod = MODULES.find((m) => m.id === moduleId);
   const content = ALL_CONTENT[moduleId];
   const idx = MODULES.findIndex((m) => m.id === moduleId);
@@ -25,6 +27,37 @@ export function AulaModulePage({ moduleId, onBack, onNext, onPrev, isCompleted, 
   }
 
   const meta = LEVEL_META[mod.level];
+
+  // (julio 20 2026) Candado real — defensa en profundidad. AulaHome/AulaSidebar
+  // ya no dejan hacer click en un módulo bloqueado, pero esto cubre el caso de
+  // que currentModule se haya seteado igual (ej. progreso guardado de antes de
+  // este arreglo apuntando a un módulo que ya no le corresponde al plan actual).
+  if (isLevelLocked(mod.level, allowedLevels)) {
+    const upsell = nextPlanForLevel(mod.level);
+    return (
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh", padding: 40 }}>
+        <div style={{ textAlign: "center", maxWidth: 420 }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>🔒</div>
+          <div style={{ fontFamily: "'Orbitron', monospace", fontSize: 18, letterSpacing: 2, color: "#eceff1", marginBottom: 10 }}>
+            Módulo de nivel {mod.level}
+          </div>
+          <p style={{ fontSize: 14, color: "#546e7a", lineHeight: 1.6, marginBottom: 20 }}>
+            "{mod.title}" está incluido en el plan <span style={{ color: meta.color }}>{upsell.plan}</span> ({upsell.price}) o superior.
+          </p>
+          <button
+            onClick={onBack}
+            style={{
+              padding: "10px 24px", background: "none",
+              border: `1px solid ${meta.color}`, color: meta.color,
+              cursor: "pointer", fontFamily: "'Share Tech Mono', monospace", fontSize: 12, letterSpacing: 1,
+            }}
+          >
+            ← VOLVER AL AULA
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ flex: 1, overflow: "auto" }}>
