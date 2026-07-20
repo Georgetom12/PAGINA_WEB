@@ -699,7 +699,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 
   <!-- NOTICIAS BTC -->
   <div class="panel">
-    <div class="ph">📰 NOTICIAS CRIPTO EN TIEMPO REAL<span class="ph-sub">CryptoPanic · Impacto en BTC</span></div>
+    <div class="ph">📰 NOTICIAS CRIPTO<span class="ph-sub">NewsData.io · ~12h delay (plan gratis)</span></div>
     <div id="newsContainer"><div class="loading" style="height:120px"><div class="spinner"></div>Cargando noticias...</div></div>
   </div>
 
@@ -2158,35 +2158,37 @@ function renderLiqRecChart(oi,price){
 }
 
 // ═══════════════════════════════════════════════════════════════
-// NEWS (CryptoPanic public API)
+// NEWS (NewsData.io — vía proxy del backend, la key vive en Railway)
 // ═══════════════════════════════════════════════════════════════
+// (julio 20 2026) CryptoPanic descontinuó su plan gratis de API el 1 de
+// abril de 2026 — confirmado por Jorge y verificado. Reemplazado por
+// NewsData.io. La key NUNCA vive acá — se lee del lado del servidor desde
+// la variable NEWSDATA_API_KEY en Railway, vía /api/proxy/newsdata/crypto
+// (mismo patrón que Kraken/OKX/BingX).
+
 async function loadNews(){
   const container=document.getElementById('newsContainer');
   try{
-    const r=await fetch('https://cryptopanic.com/api/free/v1/posts/?auth_token=pub_0000000000000000000000000000000000000000&filter=hot&currencies=BTC&kind=news').then(r=>r.json()).catch(()=>null);
-    if(r&&r.results&&r.results.length){
+    const r=await fetch(`/api/proxy/newsdata/crypto?language=en`).then(r=>r.json());
+    if(r&&r.status==='success'&&r.results&&r.results.length){
       container.innerHTML=r.results.slice(0,10).map(n=>{
-        const sentiment=n.votes?.positive>n.votes?.negative?'bullish':n.votes?.negative>n.votes?.positive?'bearish':'neutral';
-        const timeAgo=formatTimeAgo(new Date(n.published_at));
-        return`<div class="news-item"><div class="news-dot news-${sentiment}" style="margin-top:5px;flex-shrink:0"></div><div><div class="news-title"><a href="${n.url}" target="_blank">${n.title}</a></div><div class="news-meta">${n.source?.title||'Cripto News'} · ${timeAgo}</div></div></div>`;
+        // El plan gratis de NewsData.io no incluye sentimiento (AI tag es de pago)
+        // — se muestra neutral en vez de inventar bullish/bearish sin ese dato.
+        const timeAgo=n.pubDate?formatTimeAgo(new Date(n.pubDate.replace(' ','T')+'Z')):'';
+        return`<div class="news-item"><div class="news-dot news-neutral" style="margin-top:5px;flex-shrink:0"></div><div><div class="news-title"><a href="${n.link}" target="_blank">${n.title}</a></div><div class="news-meta">${n.source_name||'Cripto News'} · ${timeAgo} · datos con ~12h de delay (plan gratis)</div></div></div>`;
       }).join('');
+    } else if(r&&r.error){
+      loadNewsFallback(r.error);
     } else {
-      loadNewsFallback();
+      loadNewsFallback('NewsData.io no devolvió resultados (posible límite diario de créditos alcanzado).');
     }
-  }catch(e){loadNewsFallback();}
+  }catch(e){loadNewsFallback('Error de conexión con el proxy de noticias.');}
 }
 
-// (julio 20 2026) Antes esto mostraba 8 titulares INVENTADOS atribuidos a
-// medios reales (CoinDesk, Glassnode, The Block, Bloomberg, Whale Alert) con
-// horarios falsos ("hace 12m") — como el token de CryptoPanic de arriba es
-// un placeholder que siempre falla, esto se estaba mostrando prácticamente
-// SIEMPRE, no como excepción rara. Se quitó por completo: ahora avisa
-// honestamente que las noticias no están disponibles en vez de inventar
-// contenido con la firma de medios que nunca publicaron eso.
-function loadNewsFallback(){
+function loadNewsFallback(detail){
   document.getElementById('newsContainer').innerHTML=`
     <div style="padding:20px;text-align:center;font-family:'Share Tech Mono',monospace;font-size:.65rem;color:var(--gray)">
-      ⚠️ Noticias no disponibles en este momento (falta un token real de CryptoPanic configurado).
+      ⚠️ Noticias no disponibles en este momento.${detail?'<br>'+detail:''}
     </div>`;
 }
 
