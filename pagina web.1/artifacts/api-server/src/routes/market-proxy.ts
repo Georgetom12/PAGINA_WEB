@@ -224,6 +224,20 @@ router.get("/proxy/bingx/open-interest", async (req: Request, res: Response) => 
   await proxyFetch(`https://open-api.bingx.com/openApi/swap/v2/quote/openInterest?symbol=${symbol}`, res, req);
 });
 
+// ─── NewsData.io (Crypto) ───────────────────────────────────────────────────────
+// (julio 20 2026 — CryptoPanic descontinuó su plan gratis el 1 de abril de
+// 2026. Reemplazado por NewsData.io. La key va acá en el backend, leída de
+// la variable de Railway NEWSDATA_API_KEY — NO en el archivo estático
+// liquid-map.html, para que nunca quede visible en el código fuente que
+// llega al navegador.)
+router.get("/proxy/newsdata/crypto", async (req: Request, res: Response) => {
+  if (!await checkAccess(req, res)) return;
+  const key = process.env["NEWSDATA_API_KEY"];
+  if (!key) { res.json({ status: "error", error: "NEWSDATA_API_KEY no configurado en Railway", results: [] }); return; }
+  const { language = "en" } = req.query as Record<string, string>;
+  await proxyFetch(`https://newsdata.io/api/1/crypto?apikey=${key}&language=${language}`, res, req);
+});
+
 // ─── Coinbase ─────────────────────────────────────────────────────────────────
 router.get("/proxy/coinbase/price", async (req: Request, res: Response) => {
   if (!await checkAccess(req, res)) return;
