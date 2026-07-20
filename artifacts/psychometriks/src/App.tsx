@@ -172,11 +172,14 @@ function Router() {
       <Route path="/psy-token"       component={() => <Guard plan="basico"><PsyToken /></Guard>} />
       <Route path="/boveda"          component={() => <Guard plan="basico"><Boveda /></Guard>} />
 
-      {/* ── CUALQUIER MIEMBRO (aprendiz/trader/institucional) ──────────── */}
-      <Route path="/signals"          component={() => <Guard plan="basico"><Signals /></Guard>} />
-      <Route path="/replay"          component={() => <Guard plan="basico"><Replay /></Guard>} />
-      <Route path="/economic-calendar" component={() => <Guard plan="basico"><EconomicCalendar /></Guard>} />
-      <Route path="/leaderboard"     component={() => <Guard plan="basico"><Leaderboard /></Guard>} />
+      {/* ── EDUCACIÓN+ (antes decía "CUALQUIER MIEMBRO" y quedaban abiertas
+           para Básico — corregido julio 20 2026 a pedido de Jorge: el
+           Dashboard las marketea como exclusivas de Educación, ahora el
+           candado realmente lo exige) ──────────────────────────────────── */}
+      <Route path="/signals"          component={() => <Guard plan="educacion"><Signals /></Guard>} />
+      <Route path="/replay"          component={() => <Guard plan="educacion"><Replay /></Guard>} />
+      <Route path="/economic-calendar" component={() => <Guard plan="educacion"><EconomicCalendar /></Guard>} />
+      <Route path="/leaderboard"     component={() => <Guard plan="educacion"><Leaderboard /></Guard>} />
       <Route path="/aula"            component={() => <Guard plan="basico"><AulaPage /></Guard>} />
 
       {/* ── LIQMAP PRO — requiere plan trader/pro o superior ────────────── */}
