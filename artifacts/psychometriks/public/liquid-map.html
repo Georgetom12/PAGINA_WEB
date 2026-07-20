@@ -154,6 +154,17 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;}
 .panel{background:var(--panel);border:1px solid var(--border2);border-radius:4px;overflow:hidden;margin-bottom:10px;}
 .ph{padding:9px 14px;background:var(--bg3);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;font-family:'Orbitron',monospace;font-size:.6rem;font-weight:700;letter-spacing:.12em;color:var(--cyan);}
+.summary-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:10px 0 16px;}
+@media(max-width:900px){.summary-grid{grid-template-columns:repeat(2,1fr);}}
+.sx-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;position:relative;}
+.sx-card.sx-active{border-color:var(--cyan);box-shadow:0 0 0 1px var(--cyan) inset;}
+.sx-name{font-family:'Orbitron',monospace;font-size:.62rem;font-weight:700;letter-spacing:.08em;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;}
+.sx-row{display:flex;justify-content:space-between;font-family:'Share Tech Mono',monospace;font-size:.65rem;color:#c8d8e0;margin-top:3px;}
+.sx-row span:first-child{color:var(--gray);}
+.sx-status-dot{width:6px;height:6px;border-radius:50%;display:inline-block;}
+.sx-loading{color:var(--gray);font-family:'Share Tech Mono',monospace;font-size:.6rem;text-align:center;padding:10px 0;}
+.sx-err{color:var(--red);font-family:'Share Tech Mono',monospace;font-size:.58rem;text-align:center;padding:6px 0;}
+.sx-pending{color:var(--gray);font-family:'Share Tech Mono',monospace;font-size:.58rem;text-align:center;padding:10px 0;font-style:italic;}
 .ph-sub{font-family:'Share Tech Mono',monospace;font-size:.58rem;color:var(--gray);font-weight:400;letter-spacing:.06em;margin-left:auto;}
 .pb{padding:12px;}
 .legend{display:flex;gap:12px;margin-bottom:8px;flex-wrap:wrap;}
@@ -437,6 +448,8 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
     <button class="ex-tab" onclick="setExchange('mexc',this)">MEXC <span class="ex-badge b-mex">PERPS</span></button>
     <button class="ex-tab" onclick="setExchange('bitget',this)">BITGET <span class="ex-badge b-btg">FUTURES</span></button>
   </div>
+  <div class="ph" style="margin-top:6px">📡 RESUMEN CONSOLIDADO — TODOS LOS EXCHANGES A LA VEZ<span class="ph-sub">No hace falta cambiar de pestaña para comparar</span></div>
+  <div id="summaryGrid" class="summary-grid"></div>
 
   <!-- SYMBOL + CONTROLS -->
   <div class="ctrl-bar">
@@ -1223,6 +1236,7 @@ function setExchange(ex,btn){
   ['lsExLabel','liqExLabel','depthExLabel','heatExLabel','cvdExLabel','fundExLabel','rsiExLabel','volExLabel','bbExLabel'].forEach(id=>{const el=document.getElementById(id);if(el&&!el.dataset.fixed)el.textContent=lbl+(el.textContent.includes('·')?el.textContent.substring(el.textContent.indexOf('·')):' ');});
   if(ex==='binance'||ex==='okx'||ex==='bybit'){heatmapData=[];loadAll();}
   else showNotif('📡 '+lbl+' — Integración pendiente. Usando datos de Binance como referencia por ahora.','var(--cyan)');
+  renderSummaryGrid();
 }
 
 function setSym(s,btn){
@@ -1230,6 +1244,7 @@ function setSym(s,btn){
   document.querySelectorAll('.sym-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   heatmapData=[];loadTVWidget();loadAll();loadRSIVol();loadBollingerBands();
+  if(document.getElementById('summaryGrid'))document.getElementById('summaryGrid').dataset.loaded='';renderSummaryGrid();
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1312,14 +1327,21 @@ async function fetchBinanceData(){
 // ── OKX (real, api pública sin key — www.okx.com/api/v5) ──────
 async function fetchOKXData(){
   const inst=sym().okx, instSpot=sym().okxSpot;
-  const[tickerR,bookR,fundR,oiR,lsR,takerR]=await Promise.all([
-    fetch(`https://www.okx.com/api/v5/market/ticker?instId=${inst}`).then(r=>r.json()),
-    fetch(`https://www.okx.com/api/v5/market/books?instId=${inst}&sz=400`).then(r=>r.json()),
-    fetch(`https://www.okx.com/api/v5/public/funding-rate-history?instId=${inst}&limit=24`).then(r=>r.json()),
-    fetch(`https://www.okx.com/api/v5/public/open-interest?instId=${inst}`).then(r=>r.json()),
-    fetch(`https://www.okx.com/api/v5/rubik/stat/contracts/long-short-account-ratio?instId=${instSpot}&period=1H`).then(r=>r.json()),
-    fetch(`https://www.okx.com/api/v5/rubik/stat/taker-volume?instId=${instSpot}&period=1H`).then(r=>r.json()),
-  ]);
+  const urls=[
+    `https://www.okx.com/api/v5/market/ticker?instId=${inst}`,
+    `https://www.okx.com/api/v5/market/books?instId=${inst}&sz=400`,
+    `https://www.okx.com/api/v5/public/funding-rate-history?instId=${inst}&limit=24`,
+    `https://www.okx.com/api/v5/public/open-interest?instId=${inst}`,
+    `https://www.okx.com/api/v5/rubik/stat/contracts/long-short-account-ratio?instId=${instSpot}&period=1H`,
+    `https://www.okx.com/api/v5/rubik/stat/taker-volume?instId=${instSpot}&period=1H`,
+  ];
+  const settled=await Promise.allSettled(urls.map(u=>fetch(u).then(r=>r.json())));
+  const failed=settled.filter(s=>s.status==='rejected').length;
+  if(failed===urls.length) throw new Error('OKX: ninguno de sus endpoints respondió (posible bloqueo CORS/red)');
+  const get=(i,fallback)=>settled[i].status==='fulfilled'?settled[i].value:fallback;
+  const tickerR=get(0,{data:[]}), bookR=get(1,{data:[]}), fundR=get(2,{data:[]}),
+        oiR=get(3,{data:[]}), lsR=get(4,{data:[]}), takerR=get(5,{data:[]});
+
   const t=tickerR.data?.[0]||{};
   const price=parseFloat(t.last||0), open24h=parseFloat(t.open24h||price);
   const chg=open24h?((price-open24h)/open24h*100):0;
@@ -1332,29 +1354,40 @@ async function fetchOKXData(){
   };
   const fundArr=(fundR.data||[]).slice().reverse().map(f=>({fundingTime:+f.fundingTime,fundingRate:f.fundingRate}));
   const oiNow=parseFloat(oiR.data?.[0]?.oiCcy||0)*price; // OKX no expone histórico horario público de OI — se repite el valor actual
-  const oiArr=fundArr.map(()=>({sumOpenInterestValue:String(oiNow)}));
+  const oiArr=(fundArr.length?fundArr:[{}]).map(()=>({sumOpenInterestValue:String(oiNow)}));
   const lsArr=(lsR.data||[]).slice().reverse().map(row=>({timestamp:+row[0],longShortRatio:row[1]}));
   const takerArr=(takerR.data||[]).slice().reverse().map(row=>{
     const buy=parseFloat(row[1]||0), sell=parseFloat(row[2]||0);
     return{timestamp:+row[0],buySellRatio:String(sell>0?buy/sell:1)};
   });
+  const notes=[];
+  if(!fundArr.length)notes.push('sin funding histórico');
+  if(!lsArr.length)notes.push('sin long/short ratio');
   return{
     price, chg, quoteVolume:parseFloat(t.volCcy24h||0),
-    depth, fundR:fundArr, oiR:oiArr, lsR:lsArr, aggrR:takerArr,
-    oiNote:'OKX: OI actual en vivo — sin histórico horario público disponible',
+    depth, fundR:fundArr.length?fundArr:[{fundingTime:Date.now(),fundingRate:'0'}],
+    oiR:oiArr, lsR:lsArr.length?lsArr:[{timestamp:Date.now(),longShortRatio:'1'}], aggrR:takerArr,
+    oiNote:'OKX: OI actual en vivo — sin histórico horario público disponible'+(notes.length?' · '+notes.join(', '):''),
   };
 }
 
 // ── Bybit (real, api pública v5 sin key — api.bybit.com) ───────
 async function fetchBybitData(){
   const s=sym().bybit;
-  const[tickerR,bookR,fundR,oiR,lsR]=await Promise.all([
-    fetch(`https://api.bybit.com/v5/market/tickers?category=linear&symbol=${s}`).then(r=>r.json()),
-    fetch(`https://api.bybit.com/v5/market/orderbook?category=linear&symbol=${s}&limit=200`).then(r=>r.json()),
-    fetch(`https://api.bybit.com/v5/market/funding/history?category=linear&symbol=${s}&limit=24`).then(r=>r.json()),
-    fetch(`https://api.bybit.com/v5/market/open-interest?category=linear&symbol=${s}&intervalTime=1h&limit=24`).then(r=>r.json()),
-    fetch(`https://api.bybit.com/v5/market/account-ratio?category=linear&symbol=${s}&period=1h&limit=24`).then(r=>r.json()),
-  ]);
+  const urls=[
+    `https://api.bybit.com/v5/market/tickers?category=linear&symbol=${s}`,
+    `https://api.bybit.com/v5/market/orderbook?category=linear&symbol=${s}&limit=200`,
+    `https://api.bybit.com/v5/market/funding/history?category=linear&symbol=${s}&limit=24`,
+    `https://api.bybit.com/v5/market/open-interest?category=linear&symbol=${s}&intervalTime=1h&limit=24`,
+    `https://api.bybit.com/v5/market/account-ratio?category=linear&symbol=${s}&period=1h&limit=24`,
+  ];
+  const settled=await Promise.allSettled(urls.map(u=>fetch(u).then(r=>r.json())));
+  const failed=settled.filter(s=>s.status==='rejected').length;
+  if(failed===urls.length) throw new Error('Bybit: ninguno de sus endpoints respondió (posible bloqueo CORS/red)');
+  const get=(i,fallback)=>settled[i].status==='fulfilled'?settled[i].value:fallback;
+  const tickerR=get(0,{result:{list:[]}}), bookR=get(1,{result:{}}), fundR=get(2,{result:{list:[]}}),
+        oiR=get(3,{result:{list:[]}}), lsR=get(4,{result:{list:[]}});
+
   const t=tickerR.result?.list?.[0]||{};
   const price=parseFloat(t.lastPrice||0);
   const chg=parseFloat(t.price24hPcnt||0)*100;
@@ -1365,14 +1398,17 @@ async function fetchBybitData(){
   };
   const fundArr=(fundR.result?.list||[]).slice().reverse().map(f=>({fundingTime:+f.fundingRateTimestamp,fundingRate:f.fundingRate}));
   // Bybit SÍ tiene histórico real de OI por hora (a diferencia de OKX)
-  const oiArr=(oiR.result?.list||[]).slice().reverse().map(o=>({sumOpenInterestValue:String(parseFloat(o.openInterest)*price)}));
+  const oiArrRaw=(oiR.result?.list||[]).slice().reverse().map(o=>({sumOpenInterestValue:String(parseFloat(o.openInterest)*price)}));
   const lsArr=(lsR.result?.list||[]).slice().reverse().map(row=>{
     const buy=parseFloat(row.buyRatio||0), sell=parseFloat(row.sellRatio||0);
     return{timestamp:+row.timestamp,longShortRatio:String(sell>0?buy/sell:1)};
   });
   return{
     price, chg, quoteVolume:parseFloat(t.turnover24h||0),
-    depth, fundR:fundArr, oiR:oiArr.length?oiArr:fundArr.map(()=>({sumOpenInterestValue:String(parseFloat(t.openInterestValue||0))})), lsR:lsArr,
+    depth,
+    fundR:fundArr.length?fundArr:[{fundingTime:Date.now(),fundingRate:t.fundingRate||'0'}],
+    oiR:oiArrRaw.length?oiArrRaw:[{sumOpenInterestValue:String(parseFloat(t.openInterestValue||0))}],
+    lsR:lsArr.length?lsArr:[{timestamp:Date.now(),longShortRatio:'1'}],
     aggrR:lsArr.map(l=>({timestamp:l.timestamp,buySellRatio:l.longShortRatio})), // aproximación: no hay endpoint público de CVD agregado, se reusa el ratio long/short como proxy de presión compradora/vendedora
     oiNote:null,
   };
@@ -1382,6 +1418,62 @@ async function fetchExchangeData(){
   if(EXCHANGE==='okx')return fetchOKXData();
   if(EXCHANGE==='bybit')return fetchBybitData();
   return fetchBinanceData(); // binance + respaldo para mexc/bitget (aún no conectados, ver nota abajo)
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RESUMEN CONSOLIDADO — todos los exchanges a la vez, sin tener que
+// cambiar de pestaña. Cada exchange se pide en paralelo y se falla
+// de forma INDEPENDIENTE (allSettled) — si uno falla, los demás
+// igual se muestran. MEXC/Bitget quedan honestamente marcados como
+// pendientes (no se inventa data para ellos).
+// (julio 20 2026)
+// ═══════════════════════════════════════════════════════════════
+const SUMMARY_EXCHANGES=[
+  {key:'binance',label:'BINANCE',fetch:fetchBinanceDataFor},
+  {key:'okx',label:'OKX',fetch:fetchOKXDataFor},
+  {key:'bybit',label:'BYBIT',fetch:fetchBybitDataFor},
+];
+
+// Variantes de los fetchers que reciben el símbolo actual en vez de leer
+// `sym()` directo — permite pedir los 3 en paralelo sin pisarse.
+async function fetchBinanceDataFor(){ return fetchBinanceData(); }
+async function fetchOKXDataFor(){ return fetchOKXData(); }
+async function fetchBybitDataFor(){ return fetchBybitData(); }
+
+async function renderSummaryGrid(){
+  const grid=document.getElementById('summaryGrid');
+  if(!grid)return;
+  // Loading inicial solo si está vacío (para no parpadear en cada refresh)
+  if(!grid.dataset.loaded){
+    grid.innerHTML=SUMMARY_EXCHANGES.map(e=>`<div class="sx-card" id="sx-${e.key}"><div class="sx-name">${e.label}</div><div class="sx-loading">Cargando…</div></div>`).join('')
+      +`<div class="sx-card"><div class="sx-name">MEXC</div><div class="sx-pending">Integración pendiente</div></div>`
+      +`<div class="sx-card"><div class="sx-name">BITGET</div><div class="sx-pending">Integración pendiente</div></div>`;
+  }
+  const results=await Promise.allSettled(SUMMARY_EXCHANGES.map(e=>e.fetch()));
+  results.forEach((r,i)=>{
+    const e=SUMMARY_EXCHANGES[i];
+    const card=document.getElementById('sx-'+e.key);
+    if(!card)return;
+    const isActive=EXCHANGE===e.key;
+    card.className='sx-card'+(isActive?' sx-active':'');
+    if(r.status==='fulfilled'){
+      const d=r.value;
+      const latOI=parseFloat(d.oiR[d.oiR.length-1]?.sumOpenInterestValue||0);
+      const latFR=parseFloat(d.fundR[d.fundR.length-1]?.fundingRate||0)*100;
+      let lsRatio=1; if(d.lsR&&d.lsR.length)lsRatio=parseFloat(d.lsR[d.lsR.length-1].longShortRatio);
+      card.innerHTML=`
+        <div class="sx-name"><span>${e.label}</span><span class="sx-status-dot" style="background:var(--green)"></span></div>
+        <div class="sx-row"><span>Precio</span><span>$${fmtP(d.price)}</span></div>
+        <div class="sx-row"><span>24h</span><span style="color:${d.chg>=0?'var(--green)':'var(--red)'}">${d.chg>=0?'+':''}${d.chg.toFixed(2)}%</span></div>
+        <div class="sx-row"><span>OI</span><span>${fmtM(latOI)}</span></div>
+        <div class="sx-row"><span>Vol 24h</span><span>${fmtM(d.quoteVolume)}</span></div>
+        <div class="sx-row"><span>Funding</span><span style="color:${latFR>=0?'var(--green)':'var(--red)'}">${latFR>=0?'+':''}${latFR.toFixed(4)}%</span></div>
+        <div class="sx-row"><span>L/S</span><span>${lsRatio.toFixed(2)}</span></div>`;
+    } else {
+      card.innerHTML=`<div class="sx-name"><span>${e.label}</span><span class="sx-status-dot" style="background:var(--red)"></span></div><div class="sx-err">⚠️ ${String(r.reason&&r.reason.message||r.reason).slice(0,60)}</div>`;
+    }
+  });
+  grid.dataset.loaded='1';
 }
 
 // Velas (klines) multi-exchange, normalizadas a [openTime,open,high,low,close,volume]
@@ -1429,6 +1521,9 @@ async function fetchQuickPriceDepth(){
 // ═══════════════════════════════════════════════════════════════
 async function loadAll(){
   const btn=document.getElementById('refreshBtn');btn.disabled=true;btn.textContent='⟳ CARGANDO...';
+  if(typeof Chart==='undefined'){
+    showNotif('⚠️ Chart.js no cargó (CDN bloqueado o sin conexión) — los números seguirán actualizando pero los gráficos no van a dibujarse','var(--red)');
+  }
   try{
     const{price,chg,quoteVolume,depth,fundR,oiR,lsR,aggrR,oiNote}=await fetchExchangeData();
     const tickR={priceChangePercent:String(chg),quoteVolume:String(quoteVolume)};
@@ -1459,17 +1554,21 @@ async function loadAll(){
     const lse=document.getElementById('statLS');lse.textContent=lsRatio.toFixed(2);lse.className='stat-val '+(lsRatio>=1?'c-green':'c-red');
     document.getElementById('statLSsub').textContent=(lsRatio/(1+lsRatio)*100).toFixed(1)+'% Long';
 
-    // Charts
-    renderDepthChart(depthR,price);
-    updateHeatmap(depthR,price);
-    renderLiqMap(depthR,price,latOI);
-    renderFundingChart(fundR,oiR);
-    renderLSChart(lsR);
-    renderCVDChart(aggrR);
-    renderPoolsChart(latOI);
-    renderLiqRecChart(latOI,price);
-    updateSentiment(latFR,lsRatio);
-    checkAlerts(price);
+    // Charts — cada uno en su propio try/catch: si Chart.js no cargó o un
+    // solo gráfico falla, los números de arriba YA se actualizaron y el
+    // resto de los gráficos igual se intentan dibujar (antes, un solo
+    // error acá abortaba toda la función y dejaba TODO sin actualizar).
+    const safe=(fn,label)=>{try{fn();}catch(e){console.warn('Chart error ('+label+'):',e);}};
+    safe(()=>renderDepthChart(depthR,price),'depth');
+    safe(()=>updateHeatmap(depthR,price),'heatmap');
+    safe(()=>renderLiqMap(depthR,price,latOI),'liqmap');
+    safe(()=>renderFundingChart(fundR,oiR),'funding');
+    safe(()=>renderLSChart(lsR),'ls');
+    safe(()=>renderCVDChart(aggrR),'cvd');
+    safe(()=>renderPoolsChart(latOI),'pools');
+    safe(()=>renderLiqRecChart(latOI,price),'liqrec');
+    safe(()=>updateSentiment(latFR,lsRatio),'sentiment');
+    safe(()=>checkAlerts(price),'alerts');
     if(oiNote)showNotif('ℹ️ '+oiNote,'var(--cyan)');
   }catch(e){showNotif('⚠️ Error cargando datos: '+e.message,'var(--red)');}
   btn.disabled=false;btn.textContent='⟳ ACTUALIZAR';
@@ -1959,6 +2058,8 @@ function startAutoRefresh(){
 function initApp(){
   loadTVWidget();
   loadAll();
+  renderSummaryGrid();
+  setInterval(renderSummaryGrid,30000);
   loadRSIVol();
   loadBollingerBands();
   loadFearGreed();
