@@ -114,8 +114,16 @@ export default function CiclosBTC() {
       try {
         // Kraken weekly OHLC (interval=10080 min = 1 week) — goes back to 2013
         const res = await fetch(`/api/proxy/kraken/ohlc?pair=XBTUSD&interval=10080`);
-        const json = await res.json() as { result: Record<string, [number, string, string, string, string, string, string, number][]> };
-        const weeklyRows = Object.values(json.result ?? {})[0] ?? [];
+        const json = await res.json() as { error?: string[] | string; result?: Record<string, [number, string, string, string, string, string, string, number][]> };
+        // (julio 20 2026) Antes esto no validaba la respuesta — si el proxy
+        // devolvía un error (403 del gate de acceso, error de Kraken, etc.)
+        // igual parseaba como JSON válido con un array vacío, sin lanzar
+        // excepción, dejando el gráfico en blanco para siempre.
+        if (!res.ok || (json.error && json.error.length > 0) || !json.result) {
+          throw new Error(`Kraken proxy falló: ${res.status} ${JSON.stringify(json.error ?? "sin result")}`);
+        }
+        const weeklyRows = Object.values(json.result)[0] ?? [];
+        if (weeklyRows.length === 0) throw new Error("Kraken proxy devolvió 0 velas");
 
         // Group weekly rows into monthly by averaging close prices
         const monthMap = new Map<string, { closes: number[]; ts: number }>();

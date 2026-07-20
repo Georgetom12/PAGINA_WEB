@@ -136,6 +136,7 @@ export default function FedBtc() {
   const [premiumData, setPremiumData]   = useState<PremiumPoint[]>([]);
   const [livePrice, setLivePrice]       = useState<{ coinbase: number; binance: number; premium: number } | null>(null);
   const [loading, setLoading]           = useState(true);
+  const [usingSimulated, setUsingSimulated] = useState(false);
   const [loadingPremium, setLoadingPremium] = useState(true);
   const [tab, setTab]                   = useState<"fed" | "premium" | "ciclos">("fed");
   const [fedRateNow, setFedRateNow]     = useState<number | null>(null);
@@ -148,15 +149,25 @@ export default function FedBtc() {
       try {
         // Kraken weekly OHLC (interval=10080) — goes back to 2013
         const res = await fetch(`/api/proxy/kraken/ohlc?pair=XBTUSD&interval=10080`);
-        const json = await res.json() as { result: Record<string, [number, string, string, string, string, string, string, number][]> };
-        const rows = Object.values(json.result ?? {})[0] ?? [];
+        const json = await res.json() as { error?: string[] | string; result?: Record<string, [number, string, string, string, string, string, string, number][]> };
+        // (julio 20 2026) Antes, si el proxy devolvía un error (ej. 403 del
+        // gate de acceso, o error de Kraken) igual se parseaba como JSON
+        // válido y `rows` quedaba en un array vacío SIN lanzar excepción —
+        // el gráfico se quedaba en blanco para siempre, sin caer nunca al
+        // respaldo simulado. Ahora se valida explícitamente.
+        if (!res.ok || (json.error && json.error.length > 0) || !json.result) {
+          throw new Error(`Kraken proxy falló: ${res.status} ${JSON.stringify(json.error ?? "sin result")}`);
+        }
+        const rows = Object.values(json.result)[0] ?? [];
+        if (rows.length === 0) throw new Error("Kraken proxy devolvió 0 velas");
         const result: PricePoint[] = rows.map(row => ({
           ts: row[0] * 1000,
           price: parseFloat(row[4]),
           dateStr: new Date(row[0] * 1000).toLocaleDateString("es-EC", { year: "numeric", month: "short" }),
         }));
         if (!cancelled) { setBtcHistory(result); setLoading(false); }
-      } catch {
+      } catch (err) {
+        if (!cancelled) console.warn("fed-btc: usando histórico simulado —", err);
         // Fallback: simulated BTC history so chart always renders
         if (!cancelled) {
           const base = new Date("2013-01-01").getTime();
@@ -175,6 +186,7 @@ export default function FedBtc() {
             priceIdx++;
           }
           setBtcHistory(simPrices);
+          setUsingSimulated(true);
           setLoading(false);
         }
       }
@@ -451,6 +463,11 @@ export default function FedBtc() {
               <div className="font-sharetech text-[9px] tracking-[0.2em] text-[#5a8898] mb-3">
                 BITCOIN (SEMANAL) + CAMBIOS DE FED CHAIR — 2014 AL 2030
               </div>
+              {usingSimulated && !loading && (
+                <div className="mb-3 border border-[#ff6d0033] bg-[#0a0500] px-3 py-2 font-space text-[9px] text-[#ff9800]">
+                  ⚠️ No se pudo conectar con el histórico real de Kraken en este momento — mostrando una curva simulada de referencia. Revisar el proxy de Kraken en el backend.
+                </div>
+              )}
               {loading ? (
                 <div className="h-80 flex items-center justify-center font-space text-[#5a8898] text-[11px]">Cargando...</div>
               ) : (
@@ -686,6 +703,9 @@ export default function FedBtc() {
                 {/* Divergencia RSI mensual */}
                 <div className="border-t border-[#1a2535] pt-3 mt-3">
                   <div className="font-sharetech text-[8px] tracking-[0.15em] text-[#7ab3c8] mb-2">DIVERGENCIA RSI MENSUAL (14)</div>
+                  {usingSimulated && (
+                    <div className="mb-2 font-space text-[9px] text-[#ff9800]">⚠️ Calculado sobre datos simulados — el proxy de Kraken no respondió.</div>
+                  )}
                   <div className="flex items-start gap-2">
                     <span className="font-bebas text-lg" style={{ color: !divergence.checked ? "#5a8898" : divergence.bullish ? "#00e676" : "#ff9800" }}>
                       {!divergence.checked ? "SIN DATOS" : divergence.bullish ? "🟢 DIVERGENCIA ALCISTA" : "🟡 SIN CONFIRMAR"}
