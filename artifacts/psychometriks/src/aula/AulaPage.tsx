@@ -4,6 +4,7 @@ import { AulaSidebar } from "./components/AulaSidebar";
 import { AulaHome } from "./components/AulaHome";
 import { AulaModulePage } from "./components/AulaModulePage";
 import { useProgress } from "./hooks/useProgress";
+import { getAllowedAulaLevels } from "./access";
 import "./aula.css";
 
 const SESSION_MAX_AGE_MS = 8 * 60 * 60 * 1000;
@@ -13,6 +14,7 @@ export default function AulaPage() {
   const [authUser, setAuthUser] = useState<string | null>(null);
   const [currentModule, setCurrentModule] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const allowedLevels = getAllowedAulaLevels();
 
   useEffect(() => {
     const raw = localStorage.getItem("psyko_auth");
@@ -63,6 +65,7 @@ export default function AulaPage() {
         isOpen={sidebarOpen}
         onToggle={() => setSidebarOpen((o) => !o)}
         completed={progress.completed}
+        allowedLevels={allowedLevels}
       />
 
       <main style={{ flex: 1, overflow: "auto", minHeight: "100vh", position: "relative", zIndex: 1 }}>
@@ -107,11 +110,13 @@ export default function AulaPage() {
             isCompleted={progress.isCompleted(currentModule)}
             onMarkComplete={() => progress.markComplete(currentModule)}
             onMarkIncomplete={() => progress.markIncomplete(currentModule)}
+            allowedLevels={allowedLevels}
           />
         ) : (
           <AulaHome
             onSelect={handleSelect}
             completed={progress.completed}
+            allowedLevels={allowedLevels}
           />
         )}
       </main>
