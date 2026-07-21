@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Link } from "wouter";
-import { getAuth, isAdmin } from "@/lib/auth";
 
 interface ScoreData {
   score: number;
@@ -399,20 +398,15 @@ export default function PsyScore() {
 
         {/* CTA */}
         <div className="grid grid-cols-2 gap-3">
-          {/* (julio 20 2026) "VER SEÑALES" apuntaba a /realtime, que es SOLO
-              para administradores — cualquier visitante que lo tocara caía
-              en un candado. Ahora ese acceso al PSY Terminal en vivo solo se
-              muestra si sos admin; el resto ve un botón que sí los lleva a
-              algo real (las señales del plan Educación). */}
-          {isAdmin(getAuth()) ? (
-            <Link href="/realtime" className="py-4 text-center font-space text-[11px] font-bold tracking-[0.15em] uppercase border border-[#00e5ff44] text-[#00e5ff] no-underline hover:bg-[#00e5ff10] transition-colors">
-              📡 PSY TERMINAL (ADMIN)
-            </Link>
-          ) : (
-            <Link href="/signals" className="py-4 text-center font-space text-[11px] font-bold tracking-[0.15em] uppercase border border-[#00e5ff44] text-[#00e5ff] no-underline hover:bg-[#00e5ff10] transition-colors">
-              📡 VER SEÑALES
-            </Link>
-          )}
+          {/* (julio 21 2026) Antes había un atajo directo a /realtime (PSY
+              Terminal) acá para admins — Jorge pidió sacarlo: el Terminal
+              solo debe estar accesible desde el Panel Maestro real
+              (PANEL 6: ADMINISTRADOR en dashboard.tsx), no repartido como
+              atajo en páginas sueltas. Ahora todos, admin incluido, ven el
+              mismo botón hacia las señales reales del plan Educación. */}
+          <Link href="/signals" className="py-4 text-center font-space text-[11px] font-bold tracking-[0.15em] uppercase border border-[#00e5ff44] text-[#00e5ff] no-underline hover:bg-[#00e5ff10] transition-colors">
+            📡 VER SEÑALES
+          </Link>
           <Link href="/pricing" className="py-4 text-center font-space text-[11px] font-bold tracking-[0.15em] uppercase text-[#020408] no-underline hover:opacity-90 transition-opacity" style={{ background: level.color }}>
             ACCESO COMPLETO
           </Link>
