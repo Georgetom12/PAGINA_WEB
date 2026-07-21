@@ -38,10 +38,16 @@ const FOREX_SYMBOLS = [
   // Majors
   "EURUSD=X","GBPUSD=X","USDJPY=X","USDCHF=X","AUDUSD=X","USDCAD=X","NZDUSD=X",
   // Cruces principales
-  "EURGBP=X","EURJPY=X","GBPJPY=X","EURCHF=X","EURAUD=X","EURCAD=X","GBPCHF=X","GBPAUD=X","GBPCAD=X",
-  "AUDJPY=X","AUDCAD=X","AUDNZD=X","NZDJPY=X","CHFJPY=X","CADJPY=X",
+  "EURGBP=X","EURJPY=X","GBPJPY=X","EURCHF=X","EURAUD=X","EURCAD=X","GBPCHF=X","GBPAUD=X","GBPCAD=X","GBPNZD=X",
+  "AUDJPY=X","AUDCAD=X","AUDNZD=X","AUDCHF=X","NZDJPY=X","NZDCAD=X","NZDCHF=X","CHFJPY=X","CADJPY=X",
   // Emergentes/commodities
   "USDSEK=X","USDNOK=X","USDMXN=X",
+  // (julio 21 2026 — 25 pares más a pedido de Jorge) Nórdicos/Europa del Este
+  "EURNZD=X","EURSEK=X","EURNOK=X","EURDKK=X","EURTRY=X","EURZAR=X","EURPLN=X","EURHUF=X","EURCZK=X","GBPSEK=X",
+  // Asia/emergentes
+  "USDTRY=X","USDZAR=X","USDPLN=X","USDHUF=X","USDCZK=X","USDCNH=X","USDSGD=X","USDHKD=X","USDTHB=X","USDINR=X",
+  // Latam/otros
+  "USDBRL=X","USDDKK=X",
 ];
 // DXY (Dollar Index) — Jorge pidió esto en cripto, pero ahí no hay velas
 // reales disponibles; aquí en Bolsa sí (Yahoo lo trae sin problema)
