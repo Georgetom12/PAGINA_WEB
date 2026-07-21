@@ -21,7 +21,12 @@ const STOCK_SYMBOLS = [
 ];
 const FOREX_SYMBOLS = [
   "EURUSD=X","GBPUSD=X","USDJPY=X","USDCHF=X","AUDUSD=X","USDCAD=X","NZDUSD=X",
-  "EURGBP=X","EURJPY=X","GBPJPY=X",
+  "EURGBP=X","EURJPY=X","GBPJPY=X","GBPNZD=X",
+  "AUDCHF=X","NZDCAD=X","NZDCHF=X",
+  // (julio 21 2026 — 25 pares más a pedido de Jorge, mismo lote que ia-trading-bolsa.ts)
+  "EURNZD=X","EURSEK=X","EURNOK=X","EURDKK=X","EURTRY=X","EURZAR=X","EURPLN=X","EURHUF=X","EURCZK=X","GBPSEK=X",
+  "USDTRY=X","USDZAR=X","USDPLN=X","USDHUF=X","USDCZK=X","USDCNH=X","USDSGD=X","USDHKD=X","USDTHB=X","USDINR=X",
+  "USDBRL=X","USDDKK=X",
 ];
 // Renta fija — ETFs de bonos más seguidos (corta, media y larga duración + high yield)
 const BOND_SYMBOLS = ["TLT","IEF","SHY","HYG","LQD"];
