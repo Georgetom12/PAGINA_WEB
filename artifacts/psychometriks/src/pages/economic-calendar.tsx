@@ -18,14 +18,21 @@ function EconomicCalendarWidget() {
     const script = document.createElement("script");
     script.src = "https://s3.tradingview.com/external-embedding/embed-widget-events.js";
     script.async = true;
+    // (julio 21 2026) Jorge reportó que se veía blanco/sin contraste — era
+    // "isTransparent:true", que en este widget deja pasar el fondo claro
+    // por defecto de TradingView en vez del tema oscuro. Sacado. También
+    // se agrandó bastante la altura (antes 650px, ahora 900px) a pedido.
     script.innerHTML = JSON.stringify({
-      colorTheme: "dark", isTransparent: true, width: "100%", height: "100%",
+      colorTheme: "dark", isTransparent: false, width: "100%", height: "100%",
       locale: "es", importanceFilter: "-1,0,1", currencyFilter: "USD",
     });
     ref.current.appendChild(script);
     return () => { if (ref.current) ref.current.innerHTML = ""; };
   }, []);
-  return <div ref={ref} className="tradingview-widget-container" style={{ height: 650, width: "100%" }} />;
+  return (
+    <div ref={ref} className="tradingview-widget-container"
+      style={{ height: 900, width: "100%", background: "#0d1117" }} />
+  );
 }
 
 export default function EconomicCalendar() {
