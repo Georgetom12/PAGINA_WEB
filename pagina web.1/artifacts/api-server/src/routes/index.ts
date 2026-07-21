@@ -7,7 +7,11 @@ import copyTradeNotifyRouter from "./copy-trade-notify";
 import signalsRouter from "./signals";
 import channelsRouter from "./channels";
 import marketRouter from "./market";
-// operatorsRouter eliminado — un único superadmin (jamogollon vía env vars)
+// (julio 21 2026) Jorge pidió de vuelta la gestión de operadores — estaba
+// completa (tabla psy_operators, rutas /admin/operators, y el frontend en
+// signals-realtime.tsx ya la esperaba con el mismo header X-PSY-Token) pero
+// el router había quedado desconectado acá. Se reactiva.
+import operatorsRouter from "./operators";
 import botStatusRouter from "./bot-status";
 import testInterpretRouter from "./test-interpret";
 import psyAutopsyRouter from "./psy-autopsy";
@@ -62,7 +66,7 @@ router.use(copyTradeNotifyRouter);
 router.use(signalsRouter);
 router.use(channelsRouter);
 router.use(marketRouter);
-// router.use(operatorsRouter); — eliminado, un único superadmin
+router.use(operatorsRouter);
 router.use(botStatusRouter);
 router.use(testInterpretRouter);
 router.use(psyAutopsyRouter);
