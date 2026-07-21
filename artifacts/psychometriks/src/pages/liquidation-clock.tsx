@@ -44,14 +44,16 @@ function seededRng(seed: number) {
   return () => { s = (s * 1664525 + 1013904223) & 0xffffffff; return (s >>> 0) / 0xffffffff; };
 }
 
+// (julio 20 2026) Antes esto llenaba las 24 barras del historial con
+// números ALEATORIOS al cargar la página — parecía "historial real" pero
+// era 100% inventado. Ahora arranca en cero (honesto: "sin datos aún") y
+// se va llenando solo con datos reales a medida que pasa el tiempo, vía el
+// mismo acumulador en vivo (bucketTick) que ya corría cada minuto.
 function generateBuckets(count: number): MinuteBucket[] {
-  const rng = seededRng(Date.now() & 0xffff);
   const now = Date.now();
-  return Array.from({ length: count }, (_, i) => {
-    const longs  = Math.floor(rng() * 4_000_000 + 100_000);
-    const shorts = Math.floor(rng() * 4_000_000 + 100_000);
-    return { ts: now - (count - 1 - i) * 60_000, longs, shorts, total: longs + shorts };
-  });
+  return Array.from({ length: count }, (_, i) => ({
+    ts: now - (count - 1 - i) * 60_000, longs: 0, shorts: 0, total: 0,
+  }));
 }
 
 function generateEvent(rng: () => number): LiqEvent {
@@ -369,7 +371,7 @@ export default function LiquidationClock() {
       <section className="px-6 md:px-12 pb-8 mt-6">
         <div className="font-space text-[10px] text-[#00e5ff] tracking-[0.4em] uppercase mb-4">Historial 24H — liquidaciones por minuto</div>
         <div className="border border-[#1a2535] p-4 bg-[#060a0f]">
-          <div className="flex items-end gap-px h-40">
+          <div className="flex items-stretch gap-px h-40">
             {buckets.map((b, i) => {
               const heightTotal = (b.total / maxBucket) * 100;
               const heightLongs = (b.longs / b.total) * heightTotal;
