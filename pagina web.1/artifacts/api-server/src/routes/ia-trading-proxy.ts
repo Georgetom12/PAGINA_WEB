@@ -15,7 +15,8 @@ import { Router, type Request, type Response } from "express";
 import { validateToken } from "../lib/psy-auth";
 import {
   ema, rsi, rsiArr, macdCalc, atr, cvd, swings, fibLevels, structure,
-  candlePatterns, chartPatterns, type OHLCV, type CandlePattern,
+  candlePatterns, chartPatterns, clusterConfluenceZones, detectarTrampaMultiTF,
+  type OHLCV, type CandlePattern,
 } from "./psy-algo";
 import { detectarDivergencia } from "./altcoin-signals";
 
@@ -70,19 +71,46 @@ async function requireElite(req: Request, res: Response): Promise<boolean> {
 }
 
 // ─── Datos: Binance Futures (cubre todas las monedas de la lista) ─────────
+async function fetchKlinesBingX(symbol: string, interval: string, limit = 200): Promise<OHLCV[]> {
+  try {
+    const bingxSym = symbol.includes("-") ? symbol : symbol.replace("USDT", "-USDT");
+    const r = await fetch(
+      `https://open-api.bingx.com/openApi/swap/v2/quote/klines?symbol=${bingxSym}&interval=${interval}&limit=${Math.min(limit, 1000)}`,
+      { signal: AbortSignal.timeout(10000) },
+    );
+    if (!r.ok) return [];
+    const d = await r.json() as { data?: Array<{ time: number; open: string; high: string; low: string; close: string; volume: string }> };
+    const rows = d.data ?? [];
+    if (!rows.length) return [];
+    // BingX devuelve más reciente primero — se invierte para quedar cronológico, igual que Binance
+    return rows.slice().reverse().map(k => ({
+      time: Number(k.time), open: parseFloat(k.open), high: parseFloat(k.high),
+      low: parseFloat(k.low), close: parseFloat(k.close), volume: parseFloat(k.volume),
+    }));
+  } catch { return []; }
+}
+
+// (julio 21 2026 — Jorge: "el que da mejor datos para divergencia es BingX,
+// dice que es el menos manipulado de los que usa". Se agrega como respaldo
+// real — si Binance falla o devuelve pocas velas, cae a BingX en vez de
+// quedarse con un array vacío. Mismo criterio ya aplicado en motor_psy.)
 async function fetchKlines(symbol: string, interval: string, limit = 200): Promise<OHLCV[]> {
   try {
     const r = await fetch(
       `https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`,
       { signal: AbortSignal.timeout(10000) },
     );
-    if (!r.ok) return [];
-    const d = await r.json() as unknown[][];
-    return d.map(k => ({
-      time: Number(k[0]), open: parseFloat(String(k[1])), high: parseFloat(String(k[2])),
-      low: parseFloat(String(k[3])), close: parseFloat(String(k[4])), volume: parseFloat(String(k[5])),
-    }));
-  } catch { return []; }
+    if (r.ok) {
+      const d = await r.json() as unknown[][];
+      if (Array.isArray(d) && d.length > 0) {
+        return d.map(k => ({
+          time: Number(k[0]), open: parseFloat(String(k[1])), high: parseFloat(String(k[2])),
+          low: parseFloat(String(k[3])), close: parseFloat(String(k[4])), volume: parseFloat(String(k[5])),
+        }));
+      }
+    }
+  } catch { /* cae a BingX abajo */ }
+  return fetchKlinesBingX(symbol, interval, limit);
 }
 
 // Open Interest histórico (futuros) — para divergencia PRECIO vs CAPITAL:
@@ -305,22 +333,30 @@ export async function analizarNativo(symbolRaw: string) {
   if (capitalSpotDiv.tipo === "DIV_ALCISTA") { score += 1; contexto.push(`Divergencia Futuros/Spot: ${capitalSpotDiv.desc}`); }
   if (capitalSpotDiv.tipo === "DIV_BAJISTA") { score += 1; contexto.push(`Divergencia Futuros/Spot: ${capitalSpotDiv.desc}`); }
 
+  // ── Divergencia de RSI — Bull Trap / Bear Trap (julio 21 2026) ────────────
+  // Distinta de la divergencia de volumen/EMA9 de arriba. Corre en 1H/4H/1D
+  // (manda la temporalidad más alta que confirme). Jorge fue explícito: si
+  // hay trampa confirmada, EL VEREDICTO ES ESA DIRECCIÓN — no es un voto más
+  // en el score, es contraria y obligatoria (bull trap = va para abajo pase
+  // lo que pase con el resto de las señales).
+  const trampaRSI = detectarTrampaMultiTF({ "1h": c1h, "4h": c4h, "1d": c1d });
+  if (trampaRSI.tipo === "BULL_TRAP" && trampaRSI.confianza >= 50) {
+    dir = "BAJISTA";
+    score += trampaRSI.confianza / 20;
+    contexto.push(`🪤 TRAMPA ALCISTA (Bull Trap) en ${trampaRSI.timeframe} — ${trampaRSI.desc}`);
+  }
+  if (trampaRSI.tipo === "BEAR_TRAP" && trampaRSI.confianza >= 50) {
+    dir = "ALCISTA";
+    score += trampaRSI.confianza / 20;
+    contexto.push(`🪤 TRAMPA BAJISTA (Bear Trap) en ${trampaRSI.timeframe} — ${trampaRSI.desc}`);
+  }
+
   if (dir === "NEUTRAL") dir = bullP.length > bearP.length ? "ALCISTA" : bearP.length > bullP.length ? "BAJISTA" : "NEUTRAL";
   const confianza = Math.round(Math.min(100, (score / 29) * 100));
   const accion: "ENTRAR" | "ESPERAR" | "EVITAR" = dir === "NEUTRAL" ? "EVITAR" : confianza >= 65 ? "ENTRAR" : confianza >= 40 ? "ESPERAR" : "EVITAR";
 
   // Bear score independiente (qué tan fuerte es el caso bajista, sin importar cuál ganó)
   const bearScore = Math.round(Math.min(100, ((bearP.length * 1.5) + (macdX === "BEARISH" ? 3 : 0) + (rsiDiv === "BEARISH_DIV" ? 3 : 0) + (st4h === "BEARISH" ? 1 : 0) + (st1d === "BEARISH" ? 1 : 0)) / 12 * 100));
-
-  // Entrada / SL / TPs
-  const zona_entrada = dir === "ALCISTA" ? fibs.f618 : dir === "BAJISTA" ? fibs.f382 : price;
-  const zona_razon = dir === "ALCISTA"
-    ? `Fib 61.8% (${fibs.f618.toFixed(2)}) + estructura 4H — zona de recarga`
-    : dir === "BAJISTA"
-    ? `Fib 38.2% (${fibs.f382.toFixed(2)}) + estructura 4H — zona de distribución`
-    : "Sin zona clara — mercado neutral";
-  const sl = dir === "ALCISTA" ? swL - atr4h * 0.5 : dir === "BAJISTA" ? swH + atr4h * 0.5 : price * (price > 0 ? 0.95 : 1);
-  const sl_razon = dir === "ALCISTA" ? "Debajo del swing low 4H − 0.5×ATR" : dir === "BAJISTA" ? "Arriba del swing high 4H + 0.5×ATR" : "—";
 
   const bullTargets = allP.filter(p => p.type === "BULLISH" && p.target).map(p => p.target!);
   const bearTargets = allP.filter(p => p.type === "BEARISH" && p.target).map(p => p.target!);
@@ -339,8 +375,40 @@ export async function analizarNativo(symbolRaw: string) {
     [swH, "Swing High 4H", 7], [swL, "Swing Low 4H", 7],
     ...allP.filter(p => p.target).map((p): Zona => [p.target!, p.name, p.strength === "FUERTE" ? 9 : p.strength === "MODERADO" ? 6 : 3]),
   ];
-  const zonas_clave = zonasRaw.sort((a, b) => b[2] - a[2]).slice(0, 6);
+  const zonasClustered = clusterConfluenceZones(zonasRaw, 1);
+  const zonas_clave: Zona[] = zonasClustered.slice(0, 6)
+    .map(z => [Math.round(z.price * 100) / 100, z.labels.join(" + "), Math.round(z.score * 10) / 10]);
   const best = zonas_clave[0];
+
+  // Entrada / SL / TPs
+  // (julio 21 2026 — Jorge comparó contra motor_psy y un trader real: la
+  // entrada antes salía de UN solo nivel Fibonacci de 4H, "solo scalping, no
+  // ve el panorama global". motor_psy resuelve esto eligiendo la zona de
+  // CONFLUENCIA con mejor puntaje entre varias temporalidades — se porta el
+  // mismo criterio acá en vez de depender de un Fib aislado.
+  const zonasAbajo = zonasClustered
+    .filter(z => z.price > price * 0.75 && z.price < price * 0.99)
+    .sort((a, b) => b.score - a.score);
+  const zonasArriba = zonasClustered
+    .filter(z => z.price > price * 1.01 && z.price < price * 1.25)
+    .sort((a, b) => b.score - a.score);
+
+  const zona_entrada = dir === "ALCISTA"
+    ? (zonasAbajo[0]?.price ?? fibs.f618)
+    : dir === "BAJISTA" ? (zonasArriba[0]?.price ?? fibs.f382)
+    : price;
+  const zona_razon = dir === "ALCISTA"
+    ? (zonasAbajo[0]
+        ? `Confluencia multi-timeframe: ${zonasAbajo[0].labels.join(" + ")} (score ${zonasAbajo[0].score.toFixed(1)})`
+        : `Fib 61.8% (${fibs.f618.toFixed(2)}) + estructura 4H — zona de recarga`)
+    : dir === "BAJISTA"
+      ? (zonasArriba[0]
+          ? `Confluencia multi-timeframe: ${zonasArriba[0].labels.join(" + ")} (score ${zonasArriba[0].score.toFixed(1)})`
+          : `Fib 38.2% (${fibs.f382.toFixed(2)}) + estructura 4H — zona de distribución`)
+      : "Sin zona clara — mercado neutral";
+  const sl = dir === "ALCISTA" ? swL - atr4h * 0.5 : dir === "BAJISTA" ? swH + atr4h * 0.5 : price * (price > 0 ? 0.95 : 1);
+  const sl_razon = dir === "ALCISTA" ? "Debajo del swing low 4H − 0.5×ATR" : dir === "BAJISTA" ? "Arriba del swing high 4H + 0.5×ATR" : "—";
+
 
   // POC Cascade — "Point of Control" aproximado por temporalidad (precio de la
   // vela de mayor volumen entre las últimas N), comparado contra el precio actual
@@ -399,6 +467,7 @@ export async function analizarNativo(symbolRaw: string) {
     agotamiento_dir: rsi1h > 65 ? "SOBRECOMPRA" : rsi1h < 35 ? "SOBREVENTA" : "NEUTRAL",
     bear_score: bearScore,
     verdict: dir,
+    trampa_rsi: { tipo: trampaRSI.tipo, confianza: trampaRSI.confianza, desc: trampaRSI.desc, timeframe: trampaRSI.timeframe ?? null },
     best_level: best ? best[1] : "—",
     best_score: best ? best[2] * 10 : 0,
     zonas_clave,
