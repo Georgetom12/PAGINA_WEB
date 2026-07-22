@@ -12,7 +12,8 @@ import { Router, type Request, type Response } from "express";
 import { validateToken } from "../lib/psy-auth";
 import {
   ema, rsi, macdCalc, atr, swings, fibLevels, structure,
-  candlePatterns, chartPatterns, type OHLCV, type CandlePattern,
+  candlePatterns, chartPatterns, clusterConfluenceZones, detectarTrampaMultiTF,
+  type OHLCV, type CandlePattern,
 } from "./psy-algo";
 import { detectarDivergencia } from "./altcoin-signals";
 
@@ -236,18 +237,26 @@ async function analizarBolsaNativo(symbolRaw: string) {
   if (bullP.length) { score += Math.min(bullP.length * 1.5, 4); contexto.push(`${bullP.length} patrón(es) alcista(s): ${bullP.map(p => p.name).join(", ")}`); }
   if (bearP.length) { score += Math.min(bearP.length * 1.5, 4); contexto.push(`${bearP.length} patrón(es) bajista(s): ${bearP.map(p => p.name).join(", ")}`); }
 
+  // ── Divergencia de RSI — Bull Trap / Bear Trap (julio 21 2026) ────────────
+  // Distinta de la divergencia de volumen/EMA9 de arriba. Un trap confirmado
+  // FUERZA la dirección contraria (no es un voto más) — Jorge fue explícito:
+  // bull trap con precio arriba = va para abajo, sin ambigüedad.
+  const trampaRSI = detectarTrampaMultiTF({ "1h": c1h, "4h": c4h, "1d": c1d });
+  if (trampaRSI.tipo === "BULL_TRAP" && trampaRSI.confianza >= 50) {
+    dir = "BAJISTA";
+    score += trampaRSI.confianza / 20;
+    contexto.push(`🪤 TRAMPA ALCISTA (Bull Trap) en ${trampaRSI.timeframe} — ${trampaRSI.desc}`);
+  }
+  if (trampaRSI.tipo === "BEAR_TRAP" && trampaRSI.confianza >= 50) {
+    dir = "ALCISTA";
+    score += trampaRSI.confianza / 20;
+    contexto.push(`🪤 TRAMPA BAJISTA (Bear Trap) en ${trampaRSI.timeframe} — ${trampaRSI.desc}`);
+  }
+
   if (dir === "NEUTRAL") dir = bullP.length > bearP.length ? "ALCISTA" : bearP.length > bullP.length ? "BAJISTA" : "NEUTRAL";
   const confianza = Math.round(Math.min(100, (score / 24) * 100));
   const accion: "ENTRAR" | "ESPERAR" | "EVITAR" = dir === "NEUTRAL" ? "EVITAR" : confianza >= 65 ? "ENTRAR" : confianza >= 40 ? "ESPERAR" : "EVITAR";
   const bearScore = Math.round(Math.min(100, ((bearP.length * 1.5) + (macdX === "BEARISH" ? 3 : 0) + (rsiDiv === "BEARISH_DIV" ? 3 : 0) + (st4h === "BEARISH" ? 1 : 0) + (st1d === "BEARISH" ? 1 : 0)) / 12 * 100));
-
-  const zona_entrada = dir === "ALCISTA" ? fibs.f618 : dir === "BAJISTA" ? fibs.f382 : price;
-  const zona_razon = dir === "ALCISTA"
-    ? `Fib 61.8% (${fibs.f618.toFixed(2)}) + estructura 4H — zona de recarga`
-    : dir === "BAJISTA" ? `Fib 38.2% (${fibs.f382.toFixed(2)}) + estructura 4H — zona de distribución`
-    : "Sin zona clara — mercado neutral";
-  const sl = dir === "ALCISTA" ? swL - atr4h * 0.5 : dir === "BAJISTA" ? swH + atr4h * 0.5 : price * 0.98;
-  const sl_razon = dir === "ALCISTA" ? "Debajo del swing low 4H − 0.5×ATR" : dir === "BAJISTA" ? "Arriba del swing high 4H + 0.5×ATR" : "—";
 
   const bullTargets = allP.filter(p => p.type === "BULLISH" && p.target).map(p => p.target!);
   const bearTargets = allP.filter(p => p.type === "BEARISH" && p.target).map(p => p.target!);
@@ -265,8 +274,41 @@ async function analizarBolsaNativo(symbolRaw: string) {
     [swH, "Swing High 4H", 7], [swL, "Swing Low 4H", 7],
     ...allP.filter(p => p.target).map((p): Zona => [p.target!, p.name, p.strength === "FUERTE" ? 9 : p.strength === "MODERADO" ? 6 : 3]),
   ];
-  const zonas_clave = zonasRaw.sort((a, b) => b[2] - a[2]).slice(0, 6);
+  const zonasClustered = clusterConfluenceZones(zonasRaw, 1);
+  const zonas_clave: Zona[] = zonasClustered.slice(0, 6)
+    .map(z => [Math.round(z.price * 100) / 100, z.labels.join(" + "), Math.round(z.score * 10) / 10]);
   const best = zonas_clave[0];
+
+  // ── Entrada óptima — panorama multi-timeframe, no un solo Fib de 4H ────────
+  // (julio 21 2026 — Jorge comparó contra motor_psy y un trader real: la
+  // entrada antes salía de UN solo nivel Fibonacci de 4H, "solo scalping, no
+  // ve el panorama global". motor_psy sí lo resuelve bien: elige la zona de
+  // CONFLUENCIA con mejor puntaje (ya combina fibs + swings + patrones de
+  // varias temporalidades) dentro de una distancia razonable del precio —
+  // se porta ese mismo criterio acá en vez de un Fib aislado.
+  const zonasAbajo = zonasClustered
+    .filter(z => z.price > price * 0.75 && z.price < price * 0.99)
+    .sort((a, b) => b.score - a.score);
+  const zonasArriba = zonasClustered
+    .filter(z => z.price > price * 1.01 && z.price < price * 1.25)
+    .sort((a, b) => b.score - a.score);
+
+  const zona_entrada = dir === "ALCISTA"
+    ? (zonasAbajo[0]?.price ?? fibs.f618)
+    : dir === "BAJISTA" ? (zonasArriba[0]?.price ?? fibs.f382)
+    : price;
+  const zona_razon = dir === "ALCISTA"
+    ? (zonasAbajo[0]
+        ? `Confluencia multi-timeframe: ${zonasAbajo[0].labels.join(" + ")} (score ${zonasAbajo[0].score.toFixed(1)})`
+        : `Fib 61.8% (${fibs.f618.toFixed(2)}) + estructura 4H — zona de recarga`)
+    : dir === "BAJISTA"
+      ? (zonasArriba[0]
+          ? `Confluencia multi-timeframe: ${zonasArriba[0].labels.join(" + ")} (score ${zonasArriba[0].score.toFixed(1)})`
+          : `Fib 38.2% (${fibs.f382.toFixed(2)}) + estructura 4H — zona de distribución`)
+      : "Sin zona clara — mercado neutral";
+  const sl = dir === "ALCISTA" ? swL - atr4h * 0.5 : dir === "BAJISTA" ? swH + atr4h * 0.5 : price * 0.98;
+  const sl_razon = dir === "ALCISTA" ? "Debajo del swing low 4H − 0.5×ATR" : dir === "BAJISTA" ? "Arriba del swing high 4H + 0.5×ATR" : "—";
+
 
   const macro = await getMacro();
 
@@ -283,6 +325,7 @@ async function analizarBolsaNativo(symbolRaw: string) {
     agotamiento_dir: rsi1h > 65 ? "SOBRECOMPRA" : rsi1h < 35 ? "SOBREVENTA" : "NEUTRAL",
     bear_score: bearScore,
     verdict: dir,
+    trampa_rsi: { tipo: trampaRSI.tipo, confianza: trampaRSI.confianza, desc: trampaRSI.desc, timeframe: trampaRSI.timeframe ?? null },
     best_level: best ? best[1] : "—",
     best_score: best ? best[2] * 10 : 0,
     zonas_clave,
