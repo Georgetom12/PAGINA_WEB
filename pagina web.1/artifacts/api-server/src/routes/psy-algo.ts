@@ -87,6 +87,107 @@ export function structure(candles: OHLCV[]): "BULLISH" | "BEARISH" | "NEUTRAL" {
   return "NEUTRAL";
 }
 
+// ─── Divergencia de RSI — Bull Trap / Bear Trap (julio 21 2026) ────────────
+// Distinta de detectarDivergencia() (esa usa volumen + pendiente EMA9 como
+// proxy de momentum). Esta es la divergencia de RSI clásica que pidió Jorge:
+// - BULL TRAP: precio hace un máximo MÁS ALTO, pero el RSI hace uno MÁS
+//   BAJO → el breakout alcista no tiene fuerza real detrás, probable
+//   reversión a la baja (hay que calcular una entrada SHORT).
+// - BEAR TRAP: precio hace un mínimo MÁS BAJO, pero el RSI hace uno MÁS
+//   ALTO → la ruptura bajista no tiene fuerza real, probable reversión al
+//   alza (hay que calcular una entrada LONG).
+export interface TrampaResult {
+  tipo: "BULL_TRAP" | "BEAR_TRAP" | "NONE";
+  confianza: number;
+  desc: string;
+  precioTrampa: number | null; // nivel donde se formó la trampa — referencia para la entrada contraria
+  timeframe?: string;
+}
+
+export function detectarTrampaRSI(candles: OHLCV[], lb = 5, period = 14): TrampaResult {
+  const none: TrampaResult = { tipo: "NONE", confianza: 0, desc: "", precioTrampa: null };
+  if (candles.length < lb * 4 + period + 5) return none;
+
+  const closes = candles.map(c => c.close);
+  const rsiSerie = rsiArr(closes, period);
+  const { highs, lows } = swings(candles, lb);
+
+  if (highs.length >= 2) {
+    const prev = highs[highs.length - 2]!, curr = highs[highs.length - 1]!;
+    const rsiPrev = rsiSerie[prev.i] ?? 50, rsiCurr = rsiSerie[curr.i] ?? 50;
+    if (curr.price > prev.price && rsiCurr < rsiPrev) {
+      const fuerza = Math.round(Math.min(100, 30 + ((rsiPrev - rsiCurr) / Math.max(rsiPrev, 1)) * 200));
+      return {
+        tipo: "BULL_TRAP", confianza: fuerza, precioTrampa: curr.price,
+        desc: `Precio hizo un máximo más alto (${curr.price.toFixed(4)} vs ${prev.price.toFixed(4)}) pero el RSI hizo uno MÁS BAJO (${rsiCurr.toFixed(1)} vs ${rsiPrev.toFixed(1)}) — trampa alcista, probable reversión bajista`,
+      };
+    }
+  }
+
+  if (lows.length >= 2) {
+    const prev = lows[lows.length - 2]!, curr = lows[lows.length - 1]!;
+    const rsiPrev = rsiSerie[prev.i] ?? 50, rsiCurr = rsiSerie[curr.i] ?? 50;
+    if (curr.price < prev.price && rsiCurr > rsiPrev) {
+      const fuerza = Math.round(Math.min(100, 30 + ((rsiCurr - rsiPrev) / Math.max(rsiPrev, 1)) * 200));
+      return {
+        tipo: "BEAR_TRAP", confianza: fuerza, precioTrampa: curr.price,
+        desc: `Precio hizo un mínimo más bajo (${curr.price.toFixed(4)} vs ${prev.price.toFixed(4)}) pero el RSI hizo uno MÁS ALTO (${rsiCurr.toFixed(1)} vs ${rsiPrev.toFixed(1)}) — trampa bajista, probable reversión alcista`,
+      };
+    }
+  }
+
+  return none;
+}
+
+// Corre la detección en varias temporalidades — la de MAYOR jerarquía que
+// confirme una trampa manda (1D pesa más que 4H, que pesa más que 1H),
+// igual que el criterio ya usado para la divergencia de precio/volumen.
+export function detectarTrampaMultiTF(
+  velasPorTf: Partial<Record<"1h" | "4h" | "1d", OHLCV[]>>,
+): TrampaResult {
+  const orden: Array<"1d" | "4h" | "1h"> = ["1d", "4h", "1h"];
+  for (const tf of orden) {
+    const velas = velasPorTf[tf];
+    if (!velas) continue;
+    const r = detectarTrampaRSI(velas);
+    if (r.tipo !== "NONE") return { ...r, timeframe: tf.toUpperCase() };
+  }
+  return { tipo: "NONE", confianza: 0, desc: "", precioTrampa: null };
+}
+
+
+// (julio 21 2026 — Jorge notó que en "ZONAS DE CONFLUENCIA" casi todas las
+// filas mostraban el mismo puntaje, "9pts". Causa: cada patrón se puntuaba
+// SOLO por su categoría de fuerza (FUERTE=9, MODERADO=6, DÉBIL=3) como una
+// zona aislada — nunca se comprobaba si varios niveles (fibs, swings,
+// patrones) realmente COINCIDÍAN en el mismo precio, que es lo que
+// "confluencia" debería significar. Esto agrupa los niveles que caen cerca
+// entre sí (dentro de `tolerancePct`) y sube el puntaje con rendimientos
+// decrecientes por cada confirmación extra que se suma — así una zona
+// confirmada por 3 métodos distintos queda claramente por encima de una
+// zona con una sola señal, en vez de empatar.
+export interface ZonaConfluencia { price: number; labels: string[]; score: number; count: number; }
+export function clusterConfluenceZones(
+  zonasRaw: Array<[number, string, number]>,
+  tolerancePct = 1,
+): ZonaConfluencia[] {
+  const sorted = [...zonasRaw].sort((a, b) => a[0] - b[0]);
+  const clusters: ZonaConfluencia[] = [];
+  for (const [price, label, score] of sorted) {
+    const last = clusters[clusters.length - 1];
+    if (last && last.price > 0 && Math.abs(price - last.price) / last.price * 100 <= tolerancePct) {
+      const n = last.count;
+      last.price = (last.price * n + price) / (n + 1); // precio promedio del cluster
+      last.score += score * (1 / (1 + n * 0.3));         // rendimientos decrecientes por confirmación extra
+      last.labels.push(label);
+      last.count++;
+    } else {
+      clusters.push({ price, labels: [label], score, count: 1 });
+    }
+  }
+  return clusters.sort((a, b) => b.score - a.score);
+}
+
 // ─── CANDLE PATTERN ENGINE ────────────────────────────────────────────────────
 export function candlePatterns(cs: OHLCV[], tf: string): CandlePattern[] {
   const ps: CandlePattern[] = [];
@@ -209,12 +310,21 @@ export function chartPatterns(candles: OHLCV[], tf: string, price: number): Cand
   }
 
   // ── TRIPLE PISO ───────────────────────────────────────────────────────────
+  // (julio 21 2026 — antes esto era avg*1.18, un +18% FIJO sin importar el
+  // instrumento. Para cripto podía pasar desapercibido, pero en forex (ej.
+  // AUD/NZD) un +18% es un objetivo absurdo para un TP de corto plazo —
+  // Jorge lo encontró comparando contra el análisis de un trader real.
+  // Arreglado: ahora usa el mismo criterio de "medida del movimiento" que
+  // Doble Piso/Techo — la altura real entre el soporte y la resistencia más
+  // cercana del propio patrón, no un porcentaje inventado.)
   if (rL.length >= 3) {
     const [la, lb, lc] = [rL.at(-3)!, rL.at(-2)!, rL.at(-1)!];
     const avg = (la.price + lb.price + lc.price) / 3;
     if ([la, lb, lc].every(l => Math.abs(l.price - avg) / avg < 0.03)) {
-      const tgt = avg * 1.18;
-      ps.push({ name: "Triple Piso", type: "BULLISH", timeframe: tf, description: `Tres soportes en ~$${fmt(avg)}. Soporte EXTREMO — institucionales acumulando. Objetivo: $${fmt(tgt)}`, target: tgt, strength: "FUERTE" });
+      const nk = rH.filter(h => h.i > la.i && h.i < lc.i);
+      const neck = nk.length ? Math.max(...nk.map(h => h.price)) : avg * 1.05;
+      const tgt = neck + (neck - avg);
+      ps.push({ name: "Triple Piso", type: "BULLISH", timeframe: tf, description: `Tres soportes en ~$${fmt(avg)}. Soporte EXTREMO — institucionales acumulando. Neckline: $${fmt(neck)}. Objetivo: $${fmt(tgt)}`, target: tgt, strength: "FUERTE" });
     }
   }
 
@@ -223,8 +333,10 @@ export function chartPatterns(candles: OHLCV[], tf: string, price: number): Cand
     const [ha, hb, hc] = [rH.at(-3)!, rH.at(-2)!, rH.at(-1)!];
     const avg = (ha.price + hb.price + hc.price) / 3;
     if ([ha, hb, hc].every(h => Math.abs(h.price - avg) / avg < 0.03)) {
-      const tgt = avg * 0.82;
-      ps.push({ name: "Triple Techo", type: "BEARISH", timeframe: tf, description: `Tres resistencias en ~$${fmt(avg)}. Resistencia EXTREMA — distribución institucional. Objetivo: $${fmt(tgt)}`, target: tgt, strength: "FUERTE" });
+      const nk = rL.filter(l => l.i > ha.i && l.i < hc.i);
+      const neck = nk.length ? Math.min(...nk.map(l => l.price)) : avg * 0.95;
+      const tgt = neck - (avg - neck);
+      ps.push({ name: "Triple Techo", type: "BEARISH", timeframe: tf, description: `Tres resistencias en ~$${fmt(avg)}. Resistencia EXTREMA — distribución institucional. Neckline: $${fmt(neck)}. Objetivo: $${fmt(tgt)}`, target: tgt, strength: "FUERTE" });
     }
   }
 
