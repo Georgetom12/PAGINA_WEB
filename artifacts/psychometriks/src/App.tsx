@@ -29,7 +29,7 @@ import WarRoom from "@/pages/war-room";
 import PsyHeatmap from "@/pages/psy-heatmap";
 import FundingDashboard from "@/pages/funding-dashboard";
 import LiquidationClock from "@/pages/liquidation-clock";
-import PsyScreener from "@/pages/psy-screener";
+import PsyScreener from "@/pages/psy-screener"; 
 import MacroDashboard from "@/pages/macro-dashboard";
 import TestsHome from "@/pages/tests-home";
 import TestQuiz from "@/pages/test-quiz";
