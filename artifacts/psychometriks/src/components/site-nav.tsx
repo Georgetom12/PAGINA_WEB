@@ -61,6 +61,8 @@ const TOOLS_LINKS = [
   { href: "/converter",         icon: "💱", label: "Conversor Crypto",         desc: "Precios en tiempo real",             plan: "basico"    },
   { href: "/economic-calendar", icon: "📅", label: "Calendario Económico",     desc: "FOMC · CPI · NFP",                   plan: "educacion" },
   { href: "/leaderboard",       icon: "🏆", label: "Leaderboard",              desc: "Historial de señales",               plan: "educacion" },
+  { href: "/liquidez-global",   icon: "💧", label: "PSY Liquidity Fuel",       desc: "Liquidez global FED·BOJ·ECB·BOE",    plan: "educacion" },
+  { href: "/psy-panels-btc",    icon: "🧠", label: "PSY Panels BTC",           desc: "Smart Money · RSI · ADX+CVD · POC",  plan: "educacion" },
   { href: "/boveda",            icon: "🔐", label: "Bóveda Personal",          desc: "Seeds, claves, TOTP · Cifrado local", plan: "basico"   },
   { href: "/strategies",        icon: "📋", label: "Marketplace Estrategias",  desc: "Estrategias verificadas · Backtest · Setup",  plan: "elite" },
 ];
