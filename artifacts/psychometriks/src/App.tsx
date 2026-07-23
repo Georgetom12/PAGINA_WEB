@@ -29,7 +29,7 @@ import WarRoom from "@/pages/war-room";
 import PsyHeatmap from "@/pages/psy-heatmap";
 import FundingDashboard from "@/pages/funding-dashboard";
 import LiquidationClock from "@/pages/liquidation-clock";
-import PsyScreener from "@/pages/psy-screener"; 
+import PsyScreener from "@/pages/psy-screener";
 import MacroDashboard from "@/pages/macro-dashboard";
 import TestsHome from "@/pages/tests-home";
 import TestQuiz from "@/pages/test-quiz";
@@ -79,6 +79,7 @@ import VerifyEmail from "@/pages/verify-email";
 import ResetPassword from "@/pages/reset-password";
 import PsyLaunch from "@/pages/psy-launch";
 import LiquidezGlobal from "@/pages/liquidez-global";
+import PsyPanelsBtc from "@/pages/psy-panels-btc";
 
 import { getAuth, isAdmin, hasAccess, type PlanLevel } from "@/lib/auth";
 
@@ -182,6 +183,7 @@ function Router() {
       <Route path="/economic-calendar" component={() => <Guard plan="educacion"><EconomicCalendar /></Guard>} />
       <Route path="/leaderboard"     component={() => <Guard plan="educacion"><Leaderboard /></Guard>} />
       <Route path="/liquidez-global" component={() => <Guard plan="educacion"><LiquidezGlobal /></Guard>} />
+      <Route path="/psy-panels-btc"  component={() => <Guard plan="educacion"><PsyPanelsBtc /></Guard>} />
       <Route path="/aula"            component={() => <Guard plan="basico"><AulaPage /></Guard>} />
 
       {/* ── LIQMAP PRO — requiere plan trader/pro o superior ────────────── */}
