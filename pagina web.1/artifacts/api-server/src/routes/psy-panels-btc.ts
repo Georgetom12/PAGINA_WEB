@@ -5,7 +5,7 @@
 //   1) PSY-SMD          — Smart Money Divergence + Squeeze Detector
 //   2) PSY RSI MASTER    — RSI multi-timeframe + divergencias
 //   3) PSY ADX+CVD       — ADX/DMI + CVD + confluencia multi-TF
-//   4) PSY LIQUIDITY v2  — POC (proxy VWAP) + divergencia de capital
+//   4) PSY LIQUIDITY v2  — POC real (perfil de volumen con aggTrades) + divergencia de capital
 //   5) PSY FUNDING v2.1  — CVD + funding + OI + sentiment score
 //
 // Reusa las funciones YA PROBADAS de psy-algo.ts (rsi, ema, cvd, atr) —
@@ -24,8 +24,13 @@
 //    usa la TASA DE FUNDING REAL de Binance (/fapi/v1/fundingRate),
 //    más precisa que cualquier proxy.
 //
-// Todo lo demás (CVD, divergencias, squeeze, ADX, POC-proxy) es la
-// misma lógica de cálculo que los Pine, portada a TypeScript.
+//  - PSY LIQUIDITY v2: el POC del Pine original era un proxy VWAP (no un
+//    perfil de volumen real, porque Pine no tiene acceso a operaciones
+//    individuales). Acá se reemplazó por un POC REAL, calculado con
+//    aggTrades (operaciones reales) de Binance — ver calcPocReal().
+//
+// Todo lo demás (CVD, divergencias, squeeze, ADX) es la misma lógica de
+// cálculo que los Pine, portada a TypeScript.
 
 import { Router, type Request, type Response } from "express";
 import { rsi, cvd, type OHLCV } from "./psy-algo";
@@ -368,28 +373,141 @@ async function calcADXCVD() {
   };
 }
 
-// ---------- PANEL 4: PSY LIQUIDITY FLOW v2 (POC proxy + capital divergencia) ----------
+// ---------- POC REAL (perfil de volumen con operaciones individuales) ----------
+// Binance /api/v3/aggTrades da operaciones reales (precio+cantidad), no solo
+// velas — con eso armamos un perfil de volumen de verdad y sacamos el POC
+// real (la franja de precio con más volumen operado), en vez de un VWAP.
+//
+// Límite real (no de plata, de cantidad de datos): cada llamada trae máx
+// 1000 operaciones. BTC opera muchísimo, así que para ventanas largas
+// (varios días) no alcanza a cubrirse toda la ventana nominal con un
+// número razonable de llamadas — por eso se cachea fuerte y se declara
+// la "cobertura real" (cuánto tiempo realmente cubren las operaciones
+// traídas) en vez de mentir que cubrió toda la ventana pedida.
+async function fetchAggTradesWindow(
+  startTimeMs: number,
+  endTimeMs: number,
+  maxTrades: number
+): Promise<{ price: number; qty: number; time: number }[]> {
+  const out: { price: number; qty: number; time: number }[] = [];
+  const pageLimit = 1000;
+  const maxPages = Math.ceil(maxTrades / pageLimit);
+  let fromId: number | null = null;
+
+  for (let page = 0; page < maxPages; page++) {
+    const url =
+      fromId === null
+        ? `https://api.binance.com/api/v3/aggTrades?symbol=${SYMBOL_SPOT}&startTime=${startTimeMs}&limit=${pageLimit}`
+        : `https://api.binance.com/api/v3/aggTrades?symbol=${SYMBOL_SPOT}&fromId=${fromId}&limit=${pageLimit}`;
+    let arr: any[];
+    try {
+      const r = await fetch(url);
+      if (!r.ok) break;
+      arr = await r.json();
+    } catch {
+      break;
+    }
+    if (!arr.length) break;
+
+    let hitEnd = false;
+    for (const t of arr) {
+      if (t.T > endTimeMs) {
+        hitEnd = true;
+        break;
+      }
+      out.push({ price: parseFloat(t.p), qty: parseFloat(t.q), time: t.T });
+    }
+    if (hitEnd || arr.length < pageLimit) break;
+    fromId = arr[arr.length - 1].a + 1;
+  }
+  return out;
+}
+
+function pocFromTrades(trades: { price: number; qty: number; time: number }[], rows = 50) {
+  if (!trades.length) return null;
+  let hi = -Infinity;
+  let lo = Infinity;
+  for (const t of trades) {
+    if (t.price > hi) hi = t.price;
+    if (t.price < lo) lo = t.price;
+  }
+  if (hi === lo) return { poc: hi, tradesUsed: trades.length, coverageMs: 0 };
+  const step = (hi - lo) / rows;
+  const buckets = new Array(rows).fill(0);
+  for (const t of trades) {
+    let idx = Math.floor((t.price - lo) / step);
+    idx = Math.max(0, Math.min(rows - 1, idx));
+    buckets[idx] += t.qty;
+  }
+  let maxIdx = 0;
+  for (let i = 1; i < rows; i++) if (buckets[i]! > buckets[maxIdx]!) maxIdx = i;
+  const poc = lo + (maxIdx + 0.5) * step;
+  const coverageMs = trades[trades.length - 1]!.time - trades[0]!.time;
+  return { poc, tradesUsed: trades.length, coverageMs };
+}
+
+function coverageLabel(ms: number): string {
+  const min = ms / 60_000;
+  if (min < 60) return `${Math.round(min)} min`;
+  const h = min / 60;
+  if (h < 24) return `${Math.round(h * 10) / 10} h`;
+  return `${Math.round((h / 24) * 10) / 10} días`;
+}
+
+// Ventana nominal por temporalidad (lo que "debería" cubrir idealmente) y
+// tope de operaciones a traer (Jorge eligió priorizar POC real en TODAS
+// las temporalidades, aceptando que sea más lento / más llamadas)
+const POC_WINDOWS: Record<string, { hours: number; maxTrades: number }> = {
+  "15m": { hours: 2, maxTrades: 20000 },
+  "30m": { hours: 6, maxTrades: 20000 },
+  "1H": { hours: 24, maxTrades: 20000 },
+  "4H": { hours: 24 * 3, maxTrades: 20000 },
+  "1D": { hours: 24 * 7, maxTrades: 20000 },
+};
+
+async function calcPocReal(label: string) {
+  const cacheKey = `poc-real:${label}`;
+  const cached = cGet<any>(cacheKey);
+  if (cached) return cached;
+
+  const cfg = POC_WINDOWS[label]!;
+  const endTimeMs = Date.now();
+  const startTimeMs = endTimeMs - cfg.hours * 60 * 60 * 1000;
+  const trades = await fetchAggTradesWindow(startTimeMs, endTimeMs, cfg.maxTrades);
+  const result = pocFromTrades(trades, 50);
+
+  const nominalMs = cfg.hours * 60 * 60 * 1000;
+  const out = result
+    ? {
+        poc: result.poc,
+        tradesUsed: result.tradesUsed,
+        cobertura: coverageLabel(result.coverageMs),
+        coberturaCompleta: result.coverageMs >= nominalMs * 0.9,
+      }
+    : null;
+
+  if (out) cSet(cacheKey, out, 5 * 60_000); // cache 5 min — traer aggTrades reales es caro
+  return out;
+}
+
+// ---------- PANEL 4: PSY LIQUIDITY FLOW v2 (POC real + capital divergencia) ----------
 async function calcLiquidityFlow() {
-  const tfs = { "15m": "15m", "30m": "30m", "1H": "1h", "4H": "4h", "1D": "1d" } as const;
-  const out: Record<string, { poc: number; distPct: number; posicion: string }> = {};
+  const tfLabels = ["15m", "30m", "1H", "4H", "1D"] as const;
+  const out: Record<string, { poc: number; distPct: number; posicion: string; cobertura: string; coberturaCompleta: boolean }> = {};
   const priceNow = (await fetchKlines("1h", 2)).slice(-1)[0]?.close ?? 0;
 
-  for (const [label, interval] of Object.entries(tfs)) {
-    const candles = await fetchKlines(interval, 200);
-    if (candles.length < 20) continue;
-    // POC proxy: VWAP ponderado por volumen (misma aproximación honesta que el Pine —
-    // un POC real necesita perfil de volumen por precio, que no tenemos con velas OHLC solas)
-    let sumPV = 0;
-    let sumV = 0;
-    for (const c of candles) {
-      const typical = (c.high + c.low + c.close) / 3;
-      sumPV += typical * c.volume;
-      sumV += c.volume;
-    }
-    const poc = sumV > 0 ? sumPV / sumV : priceNow;
-    const distPct = priceNow !== 0 ? (Math.abs(poc - priceNow) / priceNow) * 100 : 0;
-    const posicion = poc < priceNow ? "ABAJO" : poc > priceNow ? "ARRIBA" : "EN PRECIO";
-    out[label] = { poc: round2(poc), distPct: round2(distPct), posicion };
+  for (const label of tfLabels) {
+    const r = await calcPocReal(label);
+    if (!r) continue;
+    const distPct = priceNow !== 0 ? (Math.abs(r.poc - priceNow) / priceNow) * 100 : 0;
+    const posicion = r.poc < priceNow ? "ABAJO" : r.poc > priceNow ? "ARRIBA" : "EN PRECIO";
+    out[label] = {
+      poc: round2(r.poc),
+      distPct: round2(distPct),
+      posicion,
+      cobertura: r.cobertura,
+      coberturaCompleta: r.coberturaCompleta,
+    };
   }
 
   const pocsAbajo = Object.values(out).filter((v) => v.posicion === "ABAJO" && v.distPct > 1.5).length;
@@ -422,11 +540,13 @@ async function calcLiquidityFlow() {
     liqScore: Math.round(liqScore),
     explicacion:
       "El POC (punto de mayor volumen operado) actúa como un 'imán' de precio — si hay POCs por debajo del " +
-      "precio actual, el mercado tiende a bajar a buscarlos antes de seguir subiendo. Nota honesta: esto es una " +
-      "aproximación vía VWAP (precio promedio ponderado por volumen), no un perfil de volumen exacto por nivel " +
-      "de precio, porque eso requeriría datos de cada operación individual que no tenemos disponibles gratis. " +
-      "La 'divergencia de capital' compara si el precio sube más rápido que el volumen (señal de distribución) " +
-      "o al revés (acumulación).",
+      "precio actual, el mercado tiende a bajar a buscarlos antes de seguir subiendo. Ahora es un POC REAL: se " +
+      "arma con operaciones individuales de Binance (no velas), agrupadas en franjas de precio, igual que un " +
+      "volume profile de verdad. Nota honesta sobre 'cobertura': BTC opera tantas veces por segundo que en " +
+      "temporalidades largas (4H/1D) puede no alcanzarse toda la ventana de tiempo ideal con una cantidad " +
+      "razonable de llamadas — por eso cada fila muestra cuánto tiempo real cubren las operaciones usadas " +
+      "('cobertura'), en vez de fingir que siempre cubre la ventana completa. La 'divergencia de capital' compara " +
+      "si el precio sube más rápido que el volumen (señal de distribución) o al revés (acumulación).",
   };
 }
 
