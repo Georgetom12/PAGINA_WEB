@@ -282,8 +282,7 @@ const ACCESS_PANELS: MPanel[] = [
       { icon: "🏆", label: "Leaderboard PSY",            desc: "Historial de señales · Ranking traders",             href: "/leaderboard" },
       { icon: "💱", label: "Conversor Crypto",           desc: "Precios en tiempo real · LATAM friendly",            href: "/converter" },
       { icon: "💱", label: "PSY Wallet",                desc: "DEX Exchange · Swap · Portfolio · Auditoría",        href: "/psy-wallet", badge: "INCLUIDO" },
-      { icon: "💧", label: "PSY Liquidity Fuel",         desc: "Liquidez global FED·BOJ·ECB·BOE · Fuel Gauge",      href: "/liquidez-global", badge: "NUEVO" },
-      { icon: "🧠", label: "PSY Panels BTC",             desc: "Smart Money · RSI · ADX+CVD · POC · Funding",       href: "/psy-panels-btc", badge: "NUEVO" },
+      { icon: "🧠", label: "PSY Panels BTC",             desc: "Liquidez global · Smart Money · RSI · ADX+CVD · POC",  href: "/psy-panels-btc", badge: "NUEVO" },
     ],
   },
   {
