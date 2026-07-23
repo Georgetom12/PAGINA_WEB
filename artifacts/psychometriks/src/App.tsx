@@ -79,6 +79,7 @@ import VerifyEmail from "@/pages/verify-email";
 import ResetPassword from "@/pages/reset-password";
 import PsyLaunch from "@/pages/psy-launch";
 import PsyPanelsBtc from "@/pages/psy-panels-btc";
+import HistoricalCharts from "@/pages/historical-charts";
 
 import { getAuth, isAdmin, hasAccess, type PlanLevel } from "@/lib/auth";
 
@@ -182,6 +183,7 @@ function Router() {
       <Route path="/economic-calendar" component={() => <Guard plan="educacion"><EconomicCalendar /></Guard>} />
       <Route path="/leaderboard"     component={() => <Guard plan="educacion"><Leaderboard /></Guard>} />
       <Route path="/psy-panels-btc"  component={() => <Guard plan="educacion"><PsyPanelsBtc /></Guard>} />
+      <Route path="/historical-charts" component={() => <Guard plan="educacion"><HistoricalCharts /></Guard>} />
       <Route path="/aula"            component={() => <Guard plan="basico"><AulaPage /></Guard>} />
 
       {/* ── LIQMAP PRO — requiere plan trader/pro o superior ────────────── */}
