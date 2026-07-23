@@ -55,6 +55,7 @@ import iaTradingBolsaRouter from "./ia-trading-bolsa";
 import cryptoIndicesRouter from "./crypto-indices";
 import iaSignalsRouter from "./ia-signals";
 import superadminAuthRouter from "./superadmin-auth"; // montar ANTES de freeAuthRouter: mismo path /auth/superadmin-login, esta versión trae TOTP
+import globalLiquidityRouter from "./global-liquidity"; // PSY LIQUIDITY FUEL — página nueva (Educación/Pro/Elite)
 
 const router: IRouter = Router();
 
@@ -110,5 +111,6 @@ router.use(iaTradingProxyRouter);
 router.use(iaTradingBolsaRouter);
 router.use(cryptoIndicesRouter);
 router.use(iaSignalsRouter);
+router.use(globalLiquidityRouter);
 
 export default router;
