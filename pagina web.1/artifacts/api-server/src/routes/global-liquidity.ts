@@ -28,6 +28,27 @@ import { Router } from "express";
 
 const router = Router();
 
+// ---------- BTC semanal (Binance) — para correlacionar con la liquidez ----------
+let btcWeeklyCache: { date: string; value: number }[] | null = null;
+let btcWeeklyCacheAt = 0;
+
+async function fetchBtcWeekly(): Promise<{ date: string; value: number }[]> {
+  if (btcWeeklyCache && Date.now() - btcWeeklyCacheAt < 60 * 60 * 1000) return btcWeeklyCache;
+  try {
+    const url = "https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1w&limit=1000";
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(`Binance BTC semanal HTTP ${r.status}`);
+    const arr: any[] = await r.json();
+    const out = arr.map((k: any) => ({ date: new Date(k[0]).toISOString().slice(0, 10), value: parseFloat(k[4]) }));
+    btcWeeklyCache = out;
+    btcWeeklyCacheAt = Date.now();
+    return out;
+  } catch (err) {
+    console.error("[global-liquidity] fetchBtcWeekly falló", err);
+    return btcWeeklyCache ?? [];
+  }
+}
+
 const FRED_API_KEY = process.env.FRED_API_KEY;
 const REFRESH_MS = 24 * 60 * 60 * 1000; // 24hs — estos datos son semanales, no hace falta más seguido
 const MAX_WEEKS = 104; // ventana máxima para z-score, igual que el Pine
@@ -310,8 +331,122 @@ function ema(values: number[], length: number): number[] {
   return out;
 }
 
+// ---------- Correlación real liquidez↔BTC + reacción histórica en los cruces ----------
+// LAG_WEEKS = mismo rezago que el indicador Pine (teoría de M. Howell: la
+// liquidez global suele adelantarse ~6 semanas al movimiento de BTC)
+const LAG_WEEKS = 6;
+
+function analizarCorrelacionBtc(compositeZ: number[], btcAligned: number[]) {
+  const n = compositeZ.length;
+  const compLagged = compositeZ.map((_, i) => (i >= LAG_WEEKS ? compositeZ[i - LAG_WEEKS] : NaN));
+
+  // Solo se usa el tramo donde realmente hay precio de BTC (Binance no tiene
+  // historial anterior a su propio lanzamiento) — nada de inventar datos.
+  const idxValidos: number[] = [];
+  for (let i = 1; i < n; i++) {
+    if (!isNaN(compLagged[i]!) && !isNaN(compLagged[i - 1]!) && !isNaN(btcAligned[i]!) && !isNaN(btcAligned[i - 1]!) && btcAligned[i - 1]! > 0) {
+      idxValidos.push(i);
+    }
+  }
+
+  const compChg = idxValidos.map((i) => compLagged[i]! - compLagged[i - 1]!);
+  const btcRet = idxValidos.map((i) => Math.log(btcAligned[i]! / btcAligned[i - 1]!));
+
+  // Correlación de Pearson
+  const mean = (arr: number[]) => arr.reduce((a, b) => a + b, 0) / (arr.length || 1);
+  const mC = mean(compChg);
+  const mB = mean(btcRet);
+  let num = 0,
+    denC = 0,
+    denB = 0;
+  for (let k = 0; k < compChg.length; k++) {
+    num += (compChg[k]! - mC) * (btcRet[k]! - mB);
+    denC += (compChg[k]! - mC) ** 2;
+    denB += (btcRet[k]! - mB) ** 2;
+  }
+  const correlacion = denC > 0 && denB > 0 ? num / Math.sqrt(denC * denB) : 0;
+
+  // Beta (regresión simple compChg -> btcRet)
+  const beta = denC !== 0 ? num / denC : 0;
+
+  // Volatilidad semanal de BTC (para escalar la magnitud de los escenarios)
+  const volSemanal = Math.sqrt(btcRet.reduce((a, b) => a + (b - mB) ** 2, 0) / (btcRet.length || 1));
+  const volHorizonte = volSemanal * Math.sqrt(LAG_WEEKS); // escalado al horizonte de 6 semanas
+
+  // Reacción histórica real en los cruces de cero (lo que Jorge señaló en el chart:
+  // cada vez que la liquidez cruzó a expansión/contracción, ¿qué hizo BTC después?)
+  const cruceAlcistaRets: number[] = [];
+  const cruceBajistaRets: number[] = [];
+  for (let i = LAG_WEEKS + 1; i < n; i++) {
+    if (isNaN(compositeZ[i]!) || isNaN(compositeZ[i - 1]!)) continue;
+    const cruzoArriba = compositeZ[i - 1]! <= 0 && compositeZ[i]! > 0;
+    const cruzoAbajo = compositeZ[i - 1]! >= 0 && compositeZ[i]! < 0;
+    if (!cruzoArriba && !cruzoAbajo) continue;
+    const iBtcFuturo = i + LAG_WEEKS;
+    if (iBtcFuturo >= n || isNaN(btcAligned[i]!) || isNaN(btcAligned[iBtcFuturo]!) || btcAligned[i]! <= 0) continue;
+    const retFuturo = (btcAligned[iBtcFuturo]! - btcAligned[i]!) / btcAligned[i]!;
+    if (cruzoArriba) cruceAlcistaRets.push(retFuturo);
+    else cruceBajistaRets.push(retFuturo);
+  }
+  const promedio = (arr: number[]) => (arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0);
+
+  return {
+    correlacion,
+    beta,
+    volHorizonte,
+    reaccionHistorica: {
+      cruceAlcista: { promedioPct: promedio(cruceAlcistaRets) * 100, casos: cruceAlcistaRets.length },
+      cruceBajista: { promedioPct: promedio(cruceBajistaRets) * 100, casos: cruceBajistaRets.length },
+    },
+  };
+}
+
+function construirProyecciones(precioActual: number, beta: number, fuelImpulseActual: number, correlacion: number, volHorizonte: number) {
+  const baseMove = beta * fuelImpulseActual; // mismo cálculo que el Pine (proyección "normal")
+  // Magnitudes de cada escenario, ancladas a la volatilidad real de BTC en
+  // el horizonte de 6 semanas (no números inventados a ojo)
+  const magPesimista = volHorizonte * 0.5;
+  const magNormal = Math.max(Math.abs(baseMove), volHorizonte * 1.0);
+  const magOptimista = volHorizonte * 1.75;
+
+  const proj = (mag: number, signo: 1 | -1) => precioActual * Math.exp(signo * mag);
+
+  const proyecciones = {
+    alza: {
+      pesimista: proj(magPesimista, 1),
+      normal: proj(magNormal, 1),
+      optimista: proj(magOptimista, 1),
+    },
+    baja: {
+      pesimista: proj(magPesimista, -1), // "pesimista" en la baja = la caída más profunda (peor caso)
+      normal: proj(magNormal, -1),
+      optimista: proj(magOptimista, -1), // "optimista" en la baja = la caída más leve (mejor de los casos malos)
+    },
+  };
+
+  // Cuál escenario es "más viable" ahora mismo: dirección según el signo del
+  // combustible actual, magnitud según la fuerza de la correlación real
+  const corrAbs = Math.abs(correlacion);
+  const direccion = baseMove >= 0 ? "alza" : "baja";
+  const escenario = corrAbs >= 0.5 ? "normal" : corrAbs >= 0.25 ? "pesimista" : "pesimista";
+  const confianza = corrAbs >= 0.5 ? "alta" : corrAbs >= 0.25 ? "moderada" : "baja";
+
+  const masViable = {
+    direccion,
+    escenario,
+    confianza,
+    texto:
+      confianza === "alta"
+        ? `Con la correlación actual (${correlacion.toFixed(2)}), el escenario "${escenario}" al ${direccion} es el más viable.`
+        : `La correlación actual entre liquidez y BTC es ${confianza === "baja" ? "débil" : "moderada"} (${correlacion.toFixed(2)}) — el escenario "${escenario}" al ${direccion} es el más conservador y el más viable de tomar en cuenta por ahora.`,
+  };
+
+  return { proyecciones, masViable };
+}
+
+
 // ---------- Endpoints ----------
-router.get("/global-liquidity/live", (_req, res) => {
+router.get("/global-liquidity/live", async (_req, res) => {
   if (!cache) {
     return res.status(503).json({
       error: "Datos macro todavía no cargados, reintentar en unos segundos",
@@ -369,6 +504,15 @@ router.get("/global-liquidity/live", (_req, res) => {
   const fuelGaugeRaw = 50 + compositeZ[last] * 20;
   const fuelGauge = Math.max(0, Math.min(100, fuelGaugeRaw));
 
+  // Correlación real con BTC + proyección de 3 escenarios por lado (pedido
+  // explícito de Jorge tras ver los cruces de la línea vs la reacción real
+  // de BTC en el chart de TradingView)
+  const btcWeekly = await fetchBtcWeekly();
+  const btcAligned = alignForwardFill(base, btcWeekly);
+  const precioActual = btcWeekly[btcWeekly.length - 1]?.value ?? btcAligned[last] ?? 0;
+  const { correlacion, beta, volHorizonte, reaccionHistorica } = analizarCorrelacionBtc(compositeZ, btcAligned);
+  const { proyecciones, masViable } = construirProyecciones(precioActual, beta, fuelImpulse[last], correlacion, volHorizonte);
+
   const veredicto =
     fuelGauge >= 65
       ? { texto: "Combustible de liquidez global expandiéndose — viento macro a favor para BTC.", tipo: "alcista" as const }
@@ -388,6 +532,11 @@ router.get("/global-liquidity/live", (_req, res) => {
     dxyZ: dxyZ[last],
     rateImpulse: rateImpulse[last],
     veredicto,
+    precioActual,
+    correlacionBtc: correlacion,
+    reaccionHistorica,
+    proyecciones,
+    masViable,
     historia: base.map((p, i) => ({
       date: p.date,
       compositeZ: compositeZ[i],

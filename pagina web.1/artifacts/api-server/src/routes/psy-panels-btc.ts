@@ -220,6 +220,74 @@ function round4(v: number) {
   return Math.round(v * 10000) / 10000;
 }
 
+// ---------- Tabla de patrones Precio/CVD/OI/Funding (la matriz de Jorge) ----------
+type Dir4 = "sube" | "baja" | "lateral";
+type DirSigno = "positivo" | "negativo" | "~0";
+
+interface PatronRegla {
+  precio: Dir4;
+  cvd: DirSigno;
+  oi: Dir4 | "~0";
+  funding: DirSigno;
+  señal: string;
+  categoria: "Bajistas" | "Alcistas" | "Trampas" | "Neutral";
+  tipo: Tipo;
+  texto: string;
+}
+
+const TABLA_PATRONES: PatronRegla[] = [
+  // Bajistas — caída con convicción
+  { precio: "sube", cvd: "negativo", oi: "sube", funding: "negativo", señal: "Distribución disfrazada (Judas Swing)", categoria: "Bajistas", tipo: "bajista",
+    texto: "Las ballenas ya tienen shorts listos mientras distribuyen: venden spot arriba y abren shorts en futuros al mismo tiempo." },
+  { precio: "baja", cvd: "negativo", oi: "baja", funding: "negativo", señal: "Distribución pura", categoria: "Bajistas", tipo: "bajista",
+    texto: "La más peligrosa: ballenas saliendo y longs liquidándose. Caída orgánica real." },
+  { precio: "baja", cvd: "negativo", oi: "sube", funding: "negativo", señal: "Shorts nuevos", categoria: "Bajistas", tipo: "bajista",
+    texto: "Shorts institucionales abriendo posición. Presión vendedora entrando fuerte." },
+  { precio: "sube", cvd: "negativo", oi: "sube", funding: "positivo", señal: "Distribución", categoria: "Bajistas", tipo: "bajista",
+    texto: "Ballenas vendiendo mientras el retail compra la subida (Judas Swing clásico). Colapso próximo cuando terminen de distribuir." },
+  { precio: "baja", cvd: "negativo", oi: "baja", funding: "positivo", señal: "Liquidación de longs", categoria: "Bajistas", tipo: "bajista",
+    texto: "Longs apalancados siendo barridos. Caída acelerada por stop hunts." },
+
+  // Alcistas — subida con convicción
+  { precio: "sube", cvd: "positivo", oi: "sube", funding: "positivo", señal: "Acumulación pura", categoria: "Alcistas", tipo: "alcista",
+    texto: "La más fuerte: ballenas comprando con convicción, longs nuevos reales." },
+  { precio: "sube", cvd: "positivo", oi: "sube", funding: "negativo", señal: "Short squeeze", categoria: "Alcistas", tipo: "alcista",
+    texto: "Shorts liquidados empujan el precio. Explosivo pero puede revertir rápido." },
+  { precio: "baja", cvd: "negativo", oi: "sube", funding: "positivo", señal: "Bear trap institucional", categoria: "Alcistas", tipo: "alcista",
+    texto: "El precio cae para cazar stops del retail mientras las ballenas acumulan longs. Reversión alcista próxima." },
+  { precio: "sube", cvd: "positivo", oi: "baja", funding: "positivo", señal: "Longs tomando profit", categoria: "Alcistas", tipo: "alcista",
+    texto: "Sube mientras los longs cierran ganancias. Alcista pero el momentum se debilita." },
+
+  // Trampas — el precio engaña, los datos no
+  { precio: "sube", cvd: "negativo", oi: "baja", funding: "negativo", señal: "Bull trap", categoria: "Trampas", tipo: "neutral",
+    texto: "El precio sube pero sin compradores reales, solo shorts cubriendo. No conviene entrar en largo acá." },
+  { precio: "sube", cvd: "positivo", oi: "baja", funding: "negativo", señal: "Bounce falso", categoria: "Trampas", tipo: "neutral",
+    texto: "Rebote técnico sin Open Interest real que lo respalde." },
+  { precio: "baja", cvd: "positivo", oi: "sube", funding: "positivo", señal: "Bear trap (acumulación oculta)", categoria: "Trampas", tipo: "neutral",
+    texto: "El precio cae pero entran longs institucionales. Acumulación disfrazada — reversión próxima." },
+  { precio: "baja", cvd: "positivo", oi: "baja", funding: "negativo", señal: "Divergencia", categoria: "Trampas", tipo: "neutral",
+    texto: "El precio cae pero el CVD compra. Señal en conflicto — esperar confirmación antes de operar." },
+
+  // Neutral / sin dirección
+  { precio: "lateral", cvd: "~0", oi: "~0", funding: "~0", señal: "Lateralización", categoria: "Neutral", tipo: "neutral",
+    texto: "Sin convicción en ninguna dirección. Mejor esperar una ruptura antes de entrar." },
+  { precio: "lateral", cvd: "negativo", oi: "sube", funding: "negativo", señal: "Presión bajista oculta", categoria: "Neutral", tipo: "bajista",
+    texto: "Parece lateral pero los shorts se están acumulando por debajo. Ruptura bajista probable." },
+  { precio: "baja", cvd: "positivo", oi: "baja", funding: "positivo", señal: "Divergencia compradora (shorts tomando profit)", categoria: "Neutral", tipo: "neutral",
+    texto: "Shorts cerrando ganancias, caída sin convicción vendedora real. Posible rebote técnico, aunque sin fuerza institucional detrás (neutral con sesgo levemente alcista)." },
+];
+
+function clasificarPatron(priceChgPct: number, cvdChgPct: number, oiChgPct: number, fundingPct: number) {
+  const priceDir: Dir4 = priceChgPct > 1.5 ? "sube" : priceChgPct < -1.5 ? "baja" : "lateral";
+  const cvdDir: DirSigno = cvdChgPct > 5 ? "positivo" : cvdChgPct < -5 ? "negativo" : "~0";
+  const oiDir: Dir4 | "~0" = oiChgPct > 1.5 ? "sube" : oiChgPct < -1.5 ? "baja" : "~0";
+  const fundingDir: DirSigno = fundingPct > 0.001 ? "positivo" : fundingPct < -0.001 ? "negativo" : "~0";
+
+  const match = TABLA_PATRONES.find((r) => r.precio === priceDir && r.cvd === cvdDir && r.oi === oiDir && r.funding === fundingDir);
+  if (match) return match;
+  return null;
+}
+
 // ---------- PANEL 1: PSY-SMD (Smart Money & Squeeze) ----------
 async function calcSMD() {
   const candles = await fetchKlines("15m", 300);
@@ -269,11 +337,18 @@ async function calcSMD() {
   else if (isDist) regimen = "DISTRIBUCIÓN";
   else if (isAcum) regimen = "ACUMULACIÓN";
 
+  // Tabla de patrones Precio/CVD/OI/Funding — si la combinación exacta está
+  // tabulada, manda esa señal (más específica); si no, se usa el criterio
+  // simple de arriba como respaldo honesto (no todas las 81 combinaciones
+  // posibles están catalogadas, solo las que tienen un significado claro).
+  const patron = clasificarPatron(priceChg, cvdChg, oiChg, fundingNow);
+
   let veredicto: Veredicto = { texto: "Sin señal de manipulación clara — flujo equilibrado entre compradores y vendedores.", tipo: "neutral" };
   if (regimen === "LONG SQUEEZE") veredicto = { texto: "Squeeze de cortos en desarrollo: presión que puede empujar el precio hacia arriba con fuerza.", tipo: "alcista" };
   else if (regimen === "SHORT SQUEEZE") veredicto = { texto: "Squeeze de largos en desarrollo: presión que puede empujar el precio hacia abajo con fuerza.", tipo: "bajista" };
   else if (regimen === "ACUMULACIÓN") veredicto = { texto: "Compra institucional silenciosa detectada — sesgo de fondo alcista.", tipo: "alcista" };
   else if (regimen === "DISTRIBUCIÓN") veredicto = { texto: "Venta institucional silenciosa detectada — sesgo de fondo bajista.", tipo: "bajista" };
+  if (patron) veredicto = { texto: `${patron.señal}: ${patron.texto}`, tipo: patron.tipo };
 
   const historia: { time: number; precioPct: number; cvdPct: number; divScore: number }[] = [];
   for (let i = smdLen; i < candles.length; i++) {
@@ -288,6 +363,7 @@ async function calcSMD() {
     nombre: "PSY-SMD — Smart Money & Squeeze",
     mide: "Detecta acumulación o distribución institucional oculta y presión de liquidación (squeeze) en tiempo real.",
     regimen,
+    patron: patron ? { señal: patron.señal, categoria: patron.categoria } : null,
     precioPct: round2(priceChg),
     cvdPct: round2(cvdChg),
     oiPct: round2(oiChg),
@@ -303,7 +379,9 @@ async function calcSMD() {
       "silencio (DISTRIBUCIÓN); cuando el precio baja pero el CVD sube, están acumulando (ACUMULACIÓN). El " +
       "squeeze score (0-9) mide cuánta presión de liquidación se acumuló en las últimas velas — score alto + " +
       "funding a favor sugiere un squeeze inminente. La 'ventana de riesgo' marca Asia/Londres/NY, las franjas " +
-      "horarias donde suele haber mechas de manipulación por bajo volumen.",
+      "horarias donde suele haber mechas de manipulación por bajo volumen. Cuando la combinación exacta de " +
+      "Precio/CVD/OI/Funding coincide con un patrón tabulado (distribución disfrazada, bear trap, short squeeze, " +
+      "etc.), el veredicto muestra ese patrón específico en vez de la clasificación simple.",
   };
 }
 
