@@ -78,6 +78,7 @@ import SupportChatWidget from "@/components/support-chat-widget";
 import VerifyEmail from "@/pages/verify-email";
 import ResetPassword from "@/pages/reset-password";
 import PsyLaunch from "@/pages/psy-launch";
+import LiquidezGlobal from "@/pages/liquidez-global";
 
 import { getAuth, isAdmin, hasAccess, type PlanLevel } from "@/lib/auth";
 
@@ -180,6 +181,7 @@ function Router() {
       <Route path="/replay"          component={() => <Guard plan="educacion"><Replay /></Guard>} />
       <Route path="/economic-calendar" component={() => <Guard plan="educacion"><EconomicCalendar /></Guard>} />
       <Route path="/leaderboard"     component={() => <Guard plan="educacion"><Leaderboard /></Guard>} />
+      <Route path="/liquidez-global" component={() => <Guard plan="educacion"><LiquidezGlobal /></Guard>} />
       <Route path="/aula"            component={() => <Guard plan="basico"><AulaPage /></Guard>} />
 
       {/* ── LIQMAP PRO — requiere plan trader/pro o superior ────────────── */}
