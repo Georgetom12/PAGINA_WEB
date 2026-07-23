@@ -206,10 +206,84 @@ export default function PsyPanelsBtcPage() {
               </ComposedChart>
             </ResponsiveContainer>
           )}
+
+          {fuel.reaccionHistorica && (
+            <div className="mt-4">
+              <div className="text-sm text-gray-300 mb-2 font-semibold">
+                Correlación real con BTC: <span className="text-cyan-400">{fuel.correlacionBtc?.toFixed(2)}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-3 text-sm mb-3">
+                <div className="bg-gray-800/50 rounded-lg px-3 py-2">
+                  <div className="text-xs text-gray-500">Cuando la liquidez cruzó a EXPANSIÓN</div>
+                  <div className={`text-sm font-semibold ${fuel.reaccionHistorica.cruceAlcista.promedioPct >= 0 ? "text-teal-400" : "text-red-400"}`}>
+                    BTC promedió {fuel.reaccionHistorica.cruceAlcista.promedioPct?.toFixed(1)}% en las siguientes 6 semanas
+                  </div>
+                  <div className="text-xs text-gray-600">({fuel.reaccionHistorica.cruceAlcista.casos} casos históricos)</div>
+                </div>
+                <div className="bg-gray-800/50 rounded-lg px-3 py-2">
+                  <div className="text-xs text-gray-500">Cuando la liquidez cruzó a CONTRACCIÓN</div>
+                  <div className={`text-sm font-semibold ${fuel.reaccionHistorica.cruceBajista.promedioPct >= 0 ? "text-teal-400" : "text-red-400"}`}>
+                    BTC promedió {fuel.reaccionHistorica.cruceBajista.promedioPct?.toFixed(1)}% en las siguientes 6 semanas
+                  </div>
+                  <div className="text-xs text-gray-600">({fuel.reaccionHistorica.cruceBajista.casos} casos históricos)</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {fuel.proyecciones && (
+            <div className="mt-2">
+              <div className="text-sm text-gray-300 mb-2 font-semibold">Proyección de precio (BTC ≈ ${Math.round(fuel.precioActual).toLocaleString("es-EC")})</div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <div className="text-xs text-teal-400 font-semibold mb-1">📈 Escenarios al alza</div>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between bg-gray-800/50 rounded px-2 py-1">
+                      <span className="text-gray-400">Pesimista</span>
+                      <span>${Math.round(fuel.proyecciones.alza.pesimista).toLocaleString("es-EC")}</span>
+                    </div>
+                    <div className="flex justify-between bg-gray-800/50 rounded px-2 py-1">
+                      <span className="text-gray-400">Normal</span>
+                      <span>${Math.round(fuel.proyecciones.alza.normal).toLocaleString("es-EC")}</span>
+                    </div>
+                    <div className="flex justify-between bg-gray-800/50 rounded px-2 py-1">
+                      <span className="text-gray-400">Optimista</span>
+                      <span>${Math.round(fuel.proyecciones.alza.optimista).toLocaleString("es-EC")}</span>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-red-400 font-semibold mb-1">📉 Escenarios a la baja</div>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between bg-gray-800/50 rounded px-2 py-1">
+                      <span className="text-gray-400">Pesimista</span>
+                      <span>${Math.round(fuel.proyecciones.baja.pesimista).toLocaleString("es-EC")}</span>
+                    </div>
+                    <div className="flex justify-between bg-gray-800/50 rounded px-2 py-1">
+                      <span className="text-gray-400">Normal</span>
+                      <span>${Math.round(fuel.proyecciones.baja.normal).toLocaleString("es-EC")}</span>
+                    </div>
+                    <div className="flex justify-between bg-gray-800/50 rounded px-2 py-1">
+                      <span className="text-gray-400">Optimista</span>
+                      <span>${Math.round(fuel.proyecciones.baja.optimista).toLocaleString("es-EC")}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {fuel.masViable && (
+                <div className="mt-3 rounded-lg border border-cyan-800 bg-cyan-950 px-3 py-2 text-sm text-cyan-200">
+                  🎯 <strong>Más viable:</strong> {fuel.masViable.texto}
+                </div>
+              )}
+            </div>
+          )}
+
           <p className="text-xs text-gray-500 mt-3 border-t border-gray-800 pt-3">
             Combina impresión de dinero (FED+BOJ+ECB+BOE) + fuerza del dólar (DXY) + tasas de interés en un solo
             combustible macro. Columnas verdes/rojas = nivel del combustible; línea naranja = su impulso (si
-            está acelerando o desacelerando).
+            está acelerando o desacelerando). Las proyecciones se calculan sobre la volatilidad histórica real de
+            BTC en el horizonte de 6 semanas (teoría de M. Howell), no son un número inventado a ojo — "pesimista"
+            y "optimista" marcan la magnitud del movimiento, no si es bueno o malo para vos.
           </p>
         </Card>
       )}
@@ -221,6 +295,11 @@ export default function PsyPanelsBtcPage() {
             <Card title={panels.smd.nombre} emoji="🎯" mide={panels.smd.mide} explicacion={panels.smd.explicacion} veredicto={panels.smd.veredicto}>
               <div className="flex flex-wrap gap-2 mb-3">
                 <span className="px-2 py-0.5 rounded text-xs font-semibold bg-gray-700 text-gray-200">{panels.smd.regimen}</span>
+                {panels.smd.patron && (
+                  <span className="px-2 py-0.5 rounded text-xs font-semibold bg-purple-900 text-purple-200">
+                    🔎 {panels.smd.patron.señal} ({panels.smd.patron.categoria})
+                  </span>
+                )}
                 {panels.smd.ventanaRiesgo && (
                   <span className="px-2 py-0.5 rounded text-xs font-semibold bg-yellow-900 text-yellow-300">⚠ Ventana {panels.smd.ventanaRiesgo}</span>
                 )}
