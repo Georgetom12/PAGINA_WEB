@@ -283,6 +283,7 @@ const ACCESS_PANELS: MPanel[] = [
       { icon: "💱", label: "Conversor Crypto",           desc: "Precios en tiempo real · LATAM friendly",            href: "/converter" },
       { icon: "💱", label: "PSY Wallet",                desc: "DEX Exchange · Swap · Portfolio · Auditoría",        href: "/psy-wallet", badge: "INCLUIDO" },
       { icon: "🧠", label: "PSY Panels BTC",             desc: "Liquidez global · Smart Money · RSI · ADX+CVD · POC",  href: "/psy-panels-btc", badge: "NUEVO" },
+      { icon: "📚", label: "Gráficos Históricos",         desc: "Halvings · M2 · Fed Balance Sheet · CPI",  href: "/historical-charts", badge: "NUEVO" },
     ],
   },
   {

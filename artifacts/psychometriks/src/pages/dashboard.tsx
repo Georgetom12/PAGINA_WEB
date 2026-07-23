@@ -106,6 +106,7 @@ const PANELS: Panel[] = [
       { icon: "💱", label: "Conversor Crypto",          desc: "Precios en tiempo real · LATAM friendly",           href: "/converter" },
       { icon: "💱", label: "PSY Wallet",               desc: "DEX Exchange · Swap · Portfolio · Auditoría",        href: "/psy-wallet", badge: "INCLUIDO" },
       { icon: "🧠", label: "PSY Panels BTC",           desc: "Liquidez global · Smart Money · RSI · ADX+CVD · POC · Funding", href: "/psy-panels-btc", badge: "NUEVO" },
+      { icon: "📚", label: "Gráficos Históricos",       desc: "Halvings · M2 · Fed Balance Sheet · CPI · Direcciones activas", href: "/historical-charts", badge: "NUEVO" },
     ],
     cta: "VER SEÑALES →",
     ctaHref: "/signals",
