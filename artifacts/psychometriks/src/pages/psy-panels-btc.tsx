@@ -179,6 +179,7 @@ export default function PsyPanelsBtcPage() {
                     <th className="pb-2">POC</th>
                     <th className="pb-2">Dist %</th>
                     <th className="pb-2">Posición</th>
+                    <th className="pb-2">Cobertura</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -188,6 +189,10 @@ export default function PsyPanelsBtcPage() {
                       <td className="py-1.5">{v.poc}</td>
                       <td className="py-1.5">{v.distPct}%</td>
                       <td className="py-1.5">{v.posicion}</td>
+                      <td className="py-1.5 text-gray-400">
+                        {v.cobertura}
+                        {!v.coberturaCompleta && <span className="text-yellow-500 ml-1">⚠ parcial</span>}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
