@@ -1,45 +1,36 @@
 // pagina web.1/artifacts/api-server/src/routes/psy-panels-btc.ts
 //
-// Los 5 paneles pedidos por Jorge (portados de sus indicadores Pine),
-// calculados SOLO para BTC (sin selector de moneda, para simplificar):
-//   1) PSY-SMD          — Smart Money Divergence + Squeeze Detector
-//   2) PSY RSI MASTER    — RSI multi-timeframe + divergencias
-//   3) PSY ADX+CVD       — ADX/DMI + CVD + confluencia multi-TF
-//   4) PSY LIQUIDITY v2  — POC real (perfil de volumen con aggTrades) + divergencia de capital
-//   5) PSY FUNDING v2.1  — CVD + funding + OI + sentiment score
+// Los 5 paneles técnicos (portados de los indicadores Pine de Jorge),
+// calculados SOLO para BTC:
+//   1) PSY-SMD           — Smart Money & Squeeze
+//   2) PSY RSI MASTER     — RSI multi-timeframe + veredicto por TF
+//   3) PSY ADX+CVD        — Fuerza de tendencia + presión real de flujo
+//   4) PSY LIQUIDITY v2   — POC real (aggTrades) + divergencia de capital
+//   5) PSY FUNDING v2.1   — CVD + funding real + OI real + sentiment
 //
-// Reusa las funciones YA PROBADAS de psy-algo.ts (rsi, ema, cvd, atr) —
-// no se duplica esa lógica. Lo que SÍ es nuevo acá: fetch de klines BTC
-// (Binance→Bybit), ADX/DMI (no existía en psy-algo.ts), y fetch de OI +
-// funding REALES de Binance Futures (mejor que los proxies del Pine).
+// Reusa rsi/rsiArr/cvd de psy-algo.ts. Nuevo acá: klines BTC (Binance→
+// Bybit), ADX/DMI, OI y funding REALES de Binance Futures, POC real vía
+// aggTrades, y un "veredicto" con color por panel (y por temporalidad
+// en RSI/ADX) para que se entienda de un vistazo si es bueno o malo.
 //
-// BUGS ENCONTRADOS EN LOS SCRIPTS PINE ORIGINALES (corregidos acá):
-//  - PSY-SMD: la variable "oi_close" en realidad traía el PRECIO del
-//    contrato perpetuo (request.security(...precio...)), no el Open
-//    Interest real — Pine no tiene forma fácil de pedir OI real. Acá en
-//    el backend SÍ podemos, así que se usa OI real de Binance Futures
-//    (/futures/data/openInterestHist), no un precio disfrazado de OI.
-//  - PSY-SMD / PSY FUNDING: "funding_proxy" en Pine aproximaba el
-//    funding con la distancia precio-vs-EMA o precio-vs-perp — acá se
-//    usa la TASA DE FUNDING REAL de Binance (/fapi/v1/fundingRate),
-//    más precisa que cualquier proxy.
-//
-//  - PSY LIQUIDITY v2: el POC del Pine original era un proxy VWAP (no un
-//    perfil de volumen real, porque Pine no tiene acceso a operaciones
-//    individuales). Acá se reemplazó por un POC REAL, calculado con
-//    aggTrades (operaciones reales) de Binance — ver calcPocReal().
-//
-// Todo lo demás (CVD, divergencias, squeeze, ADX) es la misma lógica de
-// cálculo que los Pine, portada a TypeScript.
+// BUGS CORREGIDOS vs los Pine originales:
+//  - PSY-SMD: "oi_close" en Pine en realidad era el PRECIO del perpetuo
+//    (Pine no puede pedir OI real) — acá se usa OI real de Binance Futures.
+//  - PSY-SMD / FUNDING: el "funding_proxy" de Pine aproximaba con EMA o
+//    precio-vs-perp — acá se usa la TASA DE FUNDING REAL de Binance.
+//  - LIQUIDITY v2: el POC de Pine era un proxy VWAP — acá es un POC REAL
+//    calculado con operaciones individuales (aggTrades).
 
 import { Router, type Request, type Response } from "express";
-import { rsi, cvd, type OHLCV } from "./psy-algo";
+import { rsi, rsiArr, cvd, type OHLCV } from "./psy-algo";
 
 const router = Router();
 const SYMBOL_SPOT = "BTCUSDT";
-const SYMBOL_PERP = "BTCUSDT"; // Binance Futures usa el mismo símbolo en fapi
+const SYMBOL_PERP = "BTCUSDT";
 
-// ---------- Cache simple en memoria (evita golpear Binance en cada request) ----------
+type Veredicto = { texto: string; tipo: "alcista" | "bajista" | "neutral" };
+
+// ---------- Cache simple en memoria ----------
 const _cache = new Map<string, { data: unknown; exp: number }>();
 function cGet<T>(k: string): T | null {
   const e = _cache.get(k);
@@ -66,15 +57,7 @@ async function fetchKlinesBinance(interval: string, limit: number): Promise<OHLC
 }
 
 async function fetchKlinesBybit(interval: string, limit: number): Promise<OHLCV[]> {
-  // Bybit usa minutos como "1","5","15","60","240","D","W"
-  const map: Record<string, string> = {
-    "15m": "15",
-    "30m": "30",
-    "1h": "60",
-    "4h": "240",
-    "1d": "D",
-    "1w": "W",
-  };
+  const map: Record<string, string> = { "15m": "15", "30m": "30", "1h": "60", "4h": "240", "1d": "D", "1w": "W" };
   const bybitInterval = map[interval] ?? "60";
   const url = `https://api.bybit.com/v5/market/kline?category=linear&symbol=${SYMBOL_PERP}&interval=${bybitInterval}&limit=${limit}`;
   const r = await fetch(url);
@@ -90,7 +73,7 @@ async function fetchKlinesBybit(interval: string, limit: number): Promise<OHLCV[
       close: parseFloat(row[4]),
       volume: parseFloat(row[5]),
     }))
-    .reverse(); // Bybit devuelve más nuevo primero
+    .reverse();
 }
 
 async function fetchKlines(interval: string, limit = 300): Promise<OHLCV[]> {
@@ -109,7 +92,7 @@ async function fetchKlines(interval: string, limit = 300): Promise<OHLCV[]> {
       out = [];
     }
   }
-  if (out.length) cSet(cacheKey, out, 60_000); // cache 1 min
+  if (out.length) cSet(cacheKey, out, 60_000);
   return out;
 }
 
@@ -124,7 +107,7 @@ async function fetchOIHistory(period = "1h", limit = 30): Promise<{ time: number
     if (!r.ok) throw new Error(`Binance OI hist HTTP ${r.status}`);
     const arr: any[] = await r.json();
     const out = arr.map((d) => ({ time: d.timestamp, oi: parseFloat(d.sumOpenInterest) }));
-    cSet(cacheKey, out, 5 * 60_000); // 5 min
+    cSet(cacheKey, out, 5 * 60_000);
     return out;
   } catch (err) {
     console.error("[psy-panels-btc] fetchOIHistory falló", err);
@@ -151,7 +134,7 @@ async function fetchFundingHistory(limit = 30): Promise<{ time: number; rate: nu
   }
 }
 
-// ---------- ADX / DMI (no existía en psy-algo.ts, se agrega acá) ----------
+// ---------- ADX / DMI (con serie completa, no solo el último valor) ----------
 function adxDmi(candles: OHLCV[], len = 14, smooth = 14) {
   const n = candles.length;
   const plusDM: number[] = [0];
@@ -193,6 +176,7 @@ function adxDmi(candles: OHLCV[], len = 14, smooth = 14) {
     adx: adxArr[last] ?? 0,
     diPlus: plusDIArr[plusDIArr.length - 1] ?? 0,
     diMinus: minusDIArr[minusDIArr.length - 1] ?? 0,
+    adxArr,
   };
 }
 
@@ -214,22 +198,29 @@ function cvdChangePct(cvdArr: number[], back: number): number {
 }
 
 function cvdNormalizedPct(candles: OHLCV[], len: number): number {
-  // % del volumen total que fue "compra" vs "venta" (wick-based), últimas `len` velas
   const slice = candles.slice(-len);
   let buy = 0;
   let sell = 0;
   for (const c of slice) {
     const range = c.high - c.low || 1;
-    const b = ((c.close - c.low) / range) * c.volume;
-    const s = ((c.high - c.close) / range) * c.volume;
-    buy += b;
-    sell += s;
+    buy += ((c.close - c.low) / range) * c.volume;
+    sell += ((c.high - c.close) / range) * c.volume;
   }
   const total = buy + sell;
   return total > 0 ? ((buy - sell) / total) * 100 : 0;
 }
 
-// ---------- PANEL 1: PSY-SMD (Smart Money Divergence + Squeeze) ----------
+function round1(v: number) {
+  return Math.round(v * 10) / 10;
+}
+function round2(v: number) {
+  return Math.round(v * 100) / 100;
+}
+function round4(v: number) {
+  return Math.round(v * 10000) / 10000;
+}
+
+// ---------- PANEL 1: PSY-SMD (Smart Money & Squeeze) ----------
 async function calcSMD() {
   const candles = await fetchKlines("15m", 300);
   if (candles.length < 30) return null;
@@ -253,7 +244,6 @@ async function calcSMD() {
   const isLsqFast = priceChg > divThresh && oiChg > divThresh && fundingNow > 0.005 && !isAcum;
   const isSsqFast = priceChg < -divThresh && oiChg > divThresh && fundingNow < -0.005 && !isDist;
 
-  // Squeeze acumulado (ventana de 5 velas, score 0-9, igual criterio que el Pine)
   const sqWindow = 5;
   const recent = candles.slice(-sqWindow);
   let lsqScore = 0;
@@ -279,7 +269,24 @@ async function calcSMD() {
   else if (isDist) regimen = "DISTRIBUCIÓN";
   else if (isAcum) regimen = "ACUMULACIÓN";
 
+  let veredicto: Veredicto = { texto: "Sin señal de manipulación clara — flujo equilibrado entre compradores y vendedores.", tipo: "neutral" };
+  if (regimen === "LONG SQUEEZE") veredicto = { texto: "Squeeze de cortos en desarrollo: presión que puede empujar el precio hacia arriba con fuerza.", tipo: "alcista" };
+  else if (regimen === "SHORT SQUEEZE") veredicto = { texto: "Squeeze de largos en desarrollo: presión que puede empujar el precio hacia abajo con fuerza.", tipo: "bajista" };
+  else if (regimen === "ACUMULACIÓN") veredicto = { texto: "Compra institucional silenciosa detectada — sesgo de fondo alcista.", tipo: "alcista" };
+  else if (regimen === "DISTRIBUCIÓN") veredicto = { texto: "Venta institucional silenciosa detectada — sesgo de fondo bajista.", tipo: "bajista" };
+
+  const historia: { time: number; precioPct: number; cvdPct: number; divScore: number }[] = [];
+  for (let i = smdLen; i < candles.length; i++) {
+    const pThen = candles[i - smdLen]!.close;
+    const pChg = pThen !== 0 ? ((candles[i]!.close - pThen) / pThen) * 100 : 0;
+    const cThen = cvdArr[i - smdLen]!;
+    const cChg = cThen !== 0 ? ((cvdArr[i]! - cThen) / Math.abs(cThen)) * 100 : 0;
+    historia.push({ time: candles[i]!.time, precioPct: round2(pChg), cvdPct: round2(cChg), divScore: round2(pChg - cChg) });
+  }
+
   return {
+    nombre: "PSY-SMD — Smart Money & Squeeze",
+    mide: "Detecta acumulación o distribución institucional oculta y presión de liquidación (squeeze) en tiempo real.",
     regimen,
     precioPct: round2(priceChg),
     cvdPct: round2(cvdChg),
@@ -288,19 +295,34 @@ async function calcSMD() {
     lsqScore,
     ssqScore,
     ventanaRiesgo: manipWindow,
+    historia: historia.slice(-96),
+    veredicto,
     explicacion:
-      "Compara el precio contra el CVD (presión real de compra/venta) y el Open Interest real de Binance. " +
-      "Si el precio sube pero el CVD cae, hay ballenas vendiendo en silencio (DISTRIBUCIÓN). Si el precio baja " +
-      "pero el CVD sube, están acumulando (ACUMULACIÓN). El squeeze score mide cuánta presión de liquidación " +
-      "se está acumulando en las últimas velas — score alto + funding a favor = posible squeeze inminente. " +
-      "La 'ventana de riesgo' marca las horas (Asia/Londres/NY) donde suelen darse mechas de manipulación por bajo volumen.",
+      "Compara el precio contra el CVD (presión real de compra/venta, calculada operación por operación) y el " +
+      "Open Interest real de Binance Futures. Cuando el precio sube pero el CVD cae, hay ballenas vendiendo en " +
+      "silencio (DISTRIBUCIÓN); cuando el precio baja pero el CVD sube, están acumulando (ACUMULACIÓN). El " +
+      "squeeze score (0-9) mide cuánta presión de liquidación se acumuló en las últimas velas — score alto + " +
+      "funding a favor sugiere un squeeze inminente. La 'ventana de riesgo' marca Asia/Londres/NY, las franjas " +
+      "horarias donde suele haber mechas de manipulación por bajo volumen.",
   };
+}
+
+function rsiVeredicto(val: number, slope: number): Veredicto {
+  if (val >= 70) return { texto: "Sobrecompra: el movimiento alcista podría estar perdiendo fuerza — vigilar una corrección.", tipo: "bajista" };
+  if (val <= 30) return { texto: "Sobreventa: posible rebote técnico en el corto plazo.", tipo: "alcista" };
+  if (slope > 3) return { texto: "Momentum ganando fuerza al alza.", tipo: "alcista" };
+  if (slope < -3) return { texto: "Momentum perdiendo fuerza / girando a la baja.", tipo: "bajista" };
+  return { texto: "Sin sesgo claro — RSI moviéndose lateral.", tipo: "neutral" };
 }
 
 // ---------- PANEL 2: PSY RSI MASTER ----------
 async function calcRSIMaster() {
   const tfs = { "1H": "1h", "4H": "4h", "1D": "1d", "1W": "1w" } as const;
-  const out: Record<string, { rsi: number; zona: string }> = {};
+  const out: Record<
+    string,
+    { rsi: number; zona: string; historia: { time: number; rsi: number }[]; veredicto: Veredicto }
+  > = {};
+
   for (const [label, interval] of Object.entries(tfs)) {
     const candles = await fetchKlines(interval, 300);
     if (candles.length < 20) continue;
@@ -313,15 +335,39 @@ async function calcRSIMaster() {
     else if (val <= 30) zona = "SOBREVENTA";
     else if (val >= 55) zona = "ALCISTA";
     else if (val <= 45) zona = "BAJISTA";
-    out[label] = { rsi: round1(val), zona };
+
+    const rsiSeries = rsiArr(closes, 14);
+    const times = candles.slice(candles.length - rsiSeries.length).map((c) => c.time);
+    const historia = times.map((time, i) => ({ time, rsi: round1(rsiSeries[i]!) })).slice(-100);
+    const slope = historia.length >= 6 ? historia[historia.length - 1]!.rsi - historia[historia.length - 6]!.rsi : 0;
+
+    out[label] = { rsi: round1(val), zona, historia, veredicto: rsiVeredicto(val, slope) };
   }
+
   return {
+    nombre: "PSY RSI Master",
+    mide: "Mide el momentum y las zonas de sobrecompra/sobreventa de BTC en 4 temporalidades simultáneas.",
     porTimeframe: out,
     explicacion:
-      "RSI (fuerza relativa) calculado en 4 temporalidades a la vez para BTC. Cuando varias temporalidades " +
-      "coinciden en la misma zona (todas sobrecompra o todas sobreventa), la señal es más confiable que mirar " +
-      "una sola vela o un solo timeframe suelto.",
+      "RSI (índice de fuerza relativa) calculado de forma independiente en 1H, 4H, 1D y 1W. Cuando varias " +
+      "temporalidades coinciden en la misma zona (todas sobrecompra o todas sobreventa), la señal es mucho más " +
+      "confiable que mirar una sola vela o un único timeframe. Elegí la pestaña de la temporalidad que te " +
+      "interese para ver su evolución en el tiempo.",
   };
+}
+
+function adxVeredicto(adx: number, adxSlope: number, direccion: string): Veredicto {
+  if (adx >= 25 && adxSlope > 0) {
+    return {
+      texto: `Tendencia ${direccion.toLowerCase()} FORTALECIÉNDOSE (ADX subiendo) — señal de continuación del movimiento.`,
+      tipo: direccion === "ALCISTA" ? "alcista" : direccion === "BAJISTA" ? "bajista" : "neutral",
+    };
+  }
+  if (adx >= 25 && adxSlope <= 0) {
+    return { texto: `Tendencia ${direccion.toLowerCase()} establecida pero perdiendo impulso (ADX bajando) — cuidado con un agotamiento.`, tipo: "neutral" };
+  }
+  if (adx < 20) return { texto: "Mercado en rango, sin tendencia definida — mejor esperar confirmación antes de operar a favor de tendencia.", tipo: "neutral" };
+  return { texto: "Tendencia incipiente, todavía sin confirmar fuerza real.", tipo: "neutral" };
 }
 
 // ---------- PANEL 3: PSY ADX+CVD ----------
@@ -329,12 +375,22 @@ async function calcADXCVD() {
   const tfs = { "1H": "1h", "4H": "4h", "1D": "1d", "1W": "1w" } as const;
   const out: Record<
     string,
-    { adx: number; direccion: string; cvdPct: number; rsi: number; score: number; etiqueta: string }
+    {
+      adx: number;
+      direccion: string;
+      cvdPct: number;
+      rsi: number;
+      score: number;
+      etiqueta: string;
+      historia: { time: number; adx: number; cvdPct: number }[];
+      veredicto: Veredicto;
+    }
   > = {};
+
   for (const [label, interval] of Object.entries(tfs)) {
     const candles = await fetchKlines(interval, 300);
     if (candles.length < 30) continue;
-    const { adx, diPlus, diMinus } = adxDmi(candles, 14, 14);
+    const { adx, diPlus, diMinus, adxArr } = adxDmi(candles, 14, 14);
     const cvdPct = cvdNormalizedPct(candles, 20);
     const rsiVal = rsi(
       candles.map((c) => c.close),
@@ -359,31 +415,46 @@ async function calcADXCVD() {
     else if (score <= -4) etiqueta = "VENTA MAX";
     else if (score <= -2) etiqueta = "VENTA";
 
-    out[label] = { adx: round1(adx), direccion, cvdPct: round1(cvdPct), rsi: round1(rsiVal), score, etiqueta };
+    // Historial por temporalidad: ADX en el tiempo + CVD% en ventana móvil de 20 velas
+    const rollWin = 20;
+    const times = candles.slice(candles.length - adxArr.length).map((c) => c.time);
+    const historia = times
+      .map((time, i) => {
+        const idxCandle = candles.length - adxArr.length + i;
+        const from = Math.max(0, idxCandle - rollWin);
+        const slice = candles.slice(from, idxCandle + 1);
+        return { time, adx: round1(adxArr[i]!), cvdPct: round1(cvdNormalizedPct(slice, slice.length)) };
+      })
+      .slice(-100);
+    const adxSlope = historia.length >= 6 ? historia[historia.length - 1]!.adx - historia[historia.length - 6]!.adx : 0;
+
+    out[label] = {
+      adx: round1(adx),
+      direccion,
+      cvdPct: round1(cvdPct),
+      rsi: round1(rsiVal),
+      score,
+      etiqueta,
+      historia,
+      veredicto: adxVeredicto(adx, adxSlope, direccion),
+    };
   }
   const scoreTotal = Object.values(out).reduce((a, b) => a + b.score, 0);
   return {
+    nombre: "PSY ADX + CVD",
+    mide: "Mide la FUERZA real de la tendencia (ADX) combinada con la presión de compra/venta (CVD) para confirmar si un movimiento tiene sustento real o es ruido.",
     porTimeframe: out,
     scoreTotal,
     explicacion:
-      "ADX mide qué tan FUERTE es la tendencia (no la dirección) — arriba de 25 hay tendencia real, abajo de 20 " +
-      "el mercado está lateral/sin dirección clara. DI+/DI- marcan la dirección. Se combina con el CVD (presión " +
-      "de compra/venta real) y el RSI en 4 temporalidades para armar un score de confluencia: cuando varias " +
-      "temporalidades apuntan al mismo lado, el score sube o baja fuerte.",
+      "ADX mide qué tan FUERTE es la tendencia (no la dirección): arriba de 25 hay tendencia real, abajo de 20 " +
+      "el mercado está lateral/sin dirección clara. DI+/DI- marcan la dirección. Se combina con el CVD (flujo " +
+      "real de órdenes) y el RSI en 4 temporalidades para armar un score de confluencia. Regla simple: si el " +
+      "ADX sube junto con la línea de tendencia, es una tendencia clara y con fuerza real; si el ADX baja, la " +
+      "tendencia se está agotando aunque el precio siga moviéndose en la misma dirección.",
   };
 }
 
-// ---------- POC REAL (perfil de volumen con operaciones individuales) ----------
-// Binance /api/v3/aggTrades da operaciones reales (precio+cantidad), no solo
-// velas — con eso armamos un perfil de volumen de verdad y sacamos el POC
-// real (la franja de precio con más volumen operado), en vez de un VWAP.
-//
-// Límite real (no de plata, de cantidad de datos): cada llamada trae máx
-// 1000 operaciones. BTC opera muchísimo, así que para ventanas largas
-// (varios días) no alcanza a cubrirse toda la ventana nominal con un
-// número razonable de llamadas — por eso se cachea fuerte y se declara
-// la "cobertura real" (cuánto tiempo realmente cubren las operaciones
-// traídas) en vez de mentir que cubrió toda la ventana pedida.
+// ---------- POC REAL (perfil de volumen con aggTrades) ----------
 async function fetchAggTradesWindow(
   startTimeMs: number,
   endTimeMs: number,
@@ -454,9 +525,6 @@ function coverageLabel(ms: number): string {
   return `${Math.round((h / 24) * 10) / 10} días`;
 }
 
-// Ventana nominal por temporalidad (lo que "debería" cubrir idealmente) y
-// tope de operaciones a traer (Jorge eligió priorizar POC real en TODAS
-// las temporalidades, aceptando que sea más lento / más llamadas)
 const POC_WINDOWS: Record<string, { hours: number; maxTrades: number }> = {
   "15m": { hours: 2, maxTrades: 20000 },
   "30m": { hours: 6, maxTrades: 20000 },
@@ -486,7 +554,7 @@ async function calcPocReal(label: string) {
       }
     : null;
 
-  if (out) cSet(cacheKey, out, 5 * 60_000); // cache 5 min — traer aggTrades reales es caro
+  if (out) cSet(cacheKey, out, 5 * 60_000);
   return out;
 }
 
@@ -496,25 +564,20 @@ async function calcLiquidityFlow() {
   const out: Record<string, { poc: number; distPct: number; posicion: string; cobertura: string; coberturaCompleta: boolean }> = {};
   const priceNow = (await fetchKlines("1h", 2)).slice(-1)[0]?.close ?? 0;
 
-  for (const label of tfLabels) {
-    const r = await calcPocReal(label);
+  const results = await Promise.all(tfLabels.map((label) => calcPocReal(label)));
+  for (let i = 0; i < tfLabels.length; i++) {
+    const label = tfLabels[i]!;
+    const r = results[i];
     if (!r) continue;
     const distPct = priceNow !== 0 ? (Math.abs(r.poc - priceNow) / priceNow) * 100 : 0;
     const posicion = r.poc < priceNow ? "ABAJO" : r.poc > priceNow ? "ARRIBA" : "EN PRECIO";
-    out[label] = {
-      poc: round2(r.poc),
-      distPct: round2(distPct),
-      posicion,
-      cobertura: r.cobertura,
-      coberturaCompleta: r.coberturaCompleta,
-    };
+    out[label] = { poc: round2(r.poc), distPct: round2(distPct), posicion, cobertura: r.cobertura, coberturaCompleta: r.coberturaCompleta };
   }
 
   const pocsAbajo = Object.values(out).filter((v) => v.posicion === "ABAJO" && v.distPct > 1.5).length;
   const pocsArriba = Object.values(out).filter((v) => v.posicion === "ARRIBA" && v.distPct > 1.5).length;
 
-  // Divergencia de capital: precio vs volumen (percentil relativo, ventana de 20 velas 1H)
-  const candles1h = await fetchKlines("1h", 40);
+  const candles1h = await fetchKlines("1h", 120);
   const closes = candles1h.map((c) => c.close);
   const vols = candles1h.map((c) => c.volume);
   const priceHi = Math.max(...closes.slice(-20));
@@ -527,26 +590,49 @@ async function calcLiquidityFlow() {
   const capBull = capitalDiv < -15;
   const capBear = capitalDiv > 15;
 
+  const historia: { time: number; capitalDiv: number }[] = [];
+  const rollWin = 20;
+  for (let i = rollWin; i < candles1h.length; i++) {
+    const cSlice = closes.slice(i - rollWin, i + 1);
+    const vSlice = vols.slice(i - rollWin, i + 1);
+    const pHi = Math.max(...cSlice);
+    const pLo = Math.min(...cSlice);
+    const vHi = Math.max(...vSlice);
+    const vLo = Math.min(...vSlice);
+    const pN = pHi !== pLo ? ((closes[i]! - pLo) / (pHi - pLo)) * 100 : 50;
+    const vN = vHi !== vLo ? ((vols[i]! - vLo) / (vHi - vLo)) * 100 : 50;
+    historia.push({ time: candles1h[i]!.time, capitalDiv: round1(pN - vN) });
+  }
+
   const pocScore = Math.max(0, 100 - pocsAbajo * 20);
   const capScore = capBull ? 75 : capBear ? 25 : 50;
   const liqScore = pocScore * 0.6 + capScore * 0.4;
 
+  let veredicto: Veredicto = { texto: "Distribución pareja de liquidez — sin imanes fuertes que condicionen el precio.", tipo: "neutral" };
+  if (pocsAbajo >= 3) veredicto = { texto: "Varios imanes de precio por debajo — el mercado podría buscar liquidez abajo antes de subir.", tipo: "bajista" };
+  else if (pocsAbajo === 0 && capBull) veredicto = { texto: "Camino relativamente libre hacia arriba + acumulación de capital detectada.", tipo: "alcista" };
+  else if (pocsArriba >= 3) veredicto = { texto: "Varios imanes de precio por arriba — resistencia real por volumen operado.", tipo: "bajista" };
+
   return {
+    nombre: "PSY Liquidity Flow — POC",
+    mide: "Ubica las zonas de precio donde se concentró más volumen operado (imanes de liquidez) y si el capital está acumulando o distribuyendo.",
     porTimeframe: out,
     pocsAbajo,
     pocsArriba,
     capitalDiv: round1(capitalDiv),
     capitalEstado: capBull ? "ACUMULACIÓN" : capBear ? "DISTRIBUCIÓN" : "NEUTRAL",
     liqScore: Math.round(liqScore),
+    historia: historia.slice(-100),
+    veredicto,
     explicacion:
-      "El POC (punto de mayor volumen operado) actúa como un 'imán' de precio — si hay POCs por debajo del " +
-      "precio actual, el mercado tiende a bajar a buscarlos antes de seguir subiendo. Ahora es un POC REAL: se " +
-      "arma con operaciones individuales de Binance (no velas), agrupadas en franjas de precio, igual que un " +
-      "volume profile de verdad. Nota honesta sobre 'cobertura': BTC opera tantas veces por segundo que en " +
-      "temporalidades largas (4H/1D) puede no alcanzarse toda la ventana de tiempo ideal con una cantidad " +
-      "razonable de llamadas — por eso cada fila muestra cuánto tiempo real cubren las operaciones usadas " +
-      "('cobertura'), en vez de fingir que siempre cubre la ventana completa. La 'divergencia de capital' compara " +
-      "si el precio sube más rápido que el volumen (señal de distribución) o al revés (acumulación).",
+      "El POC (punto de mayor volumen operado) actúa como un imán de precio: si hay POCs por debajo del precio " +
+      "actual, el mercado tiende a bajar a buscarlos antes de seguir subiendo, y viceversa. Es un POC REAL, " +
+      "armado con operaciones individuales de Binance (no con velas), igual que un volume profile de verdad. " +
+      "Nota honesta sobre 'cobertura': BTC opera tantas veces por segundo que en temporalidades largas (4H/1D) " +
+      "puede no alcanzarse toda la ventana de tiempo ideal con una cantidad razonable de llamadas — cada fila " +
+      "muestra cuánto tiempo real cubren las operaciones usadas, en vez de fingir que siempre cubre la ventana " +
+      "completa. La 'divergencia de capital' compara si el precio sube más rápido que el volumen (distribución) " +
+      "o al revés (acumulación).",
   };
 }
 
@@ -554,9 +640,11 @@ async function calcLiquidityFlow() {
 async function calcFundingSentiment() {
   const tfs = { "15m": "15m", "30m": "30m", "1H": "1h", "4H": "4h", "1D": "1d" } as const;
   const out: Record<string, { cvdPct: number; estado: string }> = {};
+  let candles1hForHistoria: OHLCV[] = [];
   for (const [label, interval] of Object.entries(tfs)) {
-    const candles = await fetchKlines(interval, 60);
+    const candles = await fetchKlines(interval, 120);
     if (candles.length < 10) continue;
+    if (label === "1H") candles1hForHistoria = candles;
     const cvdPct = cvdNormalizedPct(candles, 20);
     const estado = cvdPct > 3 ? "COMPRA" : cvdPct < -3 ? "VENTA" : "NEUTRO";
     out[label] = { cvdPct: round1(cvdPct), estado };
@@ -565,13 +653,11 @@ async function calcFundingSentiment() {
   const bears = Object.values(out).filter((v) => v.estado === "VENTA").length;
   const cvdScore = Math.min(Math.max(50 + (bulls - bears) * 10, 0), 100);
 
-  // Funding REAL (no proxy) — mejora honesta vs el Pine original
   const fundingHist = await fetchFundingHistory(10);
   const fundingNow = fundingHist[fundingHist.length - 1]?.rate ?? 0;
-  const fundSat = 0.05; // % — saturación típica de funding real (no la distancia a EMA del Pine)
+  const fundSat = 0.05;
   const fundScore = Math.min(Math.max(50 - (fundingNow / fundSat) * 50, 0), 100);
 
-  // OI real (no proxy de volumen)
   const oiHist = await fetchOIHistory("1h", 10);
   const oiNow = oiHist[oiHist.length - 1]?.oi ?? 0;
   const oiThen = oiHist[0]?.oi ?? oiNow;
@@ -593,32 +679,52 @@ async function calcFundingSentiment() {
 
   const squeezeSignal = fundingNow < -0.02 && bears >= 3;
 
+  const historia: { time: number; cvdPct: number }[] = [];
+  const rollWin = 20;
+  for (let i = rollWin; i < candles1hForHistoria.length; i++) {
+    const slice = candles1hForHistoria.slice(i - rollWin, i + 1);
+    historia.push({ time: candles1hForHistoria[i]!.time, cvdPct: round1(cvdNormalizedPct(slice, slice.length)) });
+  }
+
+  const veredicto: Veredicto = {
+    texto: squeezeSignal
+      ? "Funding muy negativo + CVD bajista en varias temporalidades: los shorts pagan caro y podrían estar atrapados — posible short squeeze."
+      : sentimentScore >= 55
+        ? "Flujo neto de compra dominante en el mercado de futuros."
+        : sentimentScore <= 45
+          ? "Flujo neto de venta dominante en el mercado de futuros."
+          : "Sentiment equilibrado, sin dominancia clara de compradores o vendedores.",
+    tipo: sentimentScore >= 55 ? "alcista" : sentimentScore <= 45 ? "bajista" : "neutral",
+  };
+
   return {
+    nombre: "PSY Funding Sentiment",
+    mide: "Combina el flujo real de órdenes (CVD), el costo de mantener posiciones (funding) y el interés abierto para medir el sentimiento neto del mercado de futuros.",
     porTimeframe: out,
     fundingPct: round4(fundingNow),
     oiEstado: oiRising ? "SUBIENDO" : oiFalling ? "BAJANDO" : "ESTABLE",
     sentimentScore,
     label,
     squeezeSignal,
+    historia: historia.slice(-100),
+    veredicto,
     explicacion:
       "Combina el CVD (presión de compra/venta real) en 5 temporalidades con la tasa de FUNDING real de Binance " +
       "(no una aproximación) y el Open Interest real. Funding muy negativo + CVD bajista en varias temporalidades " +
-      "= los shorts están pagando caro y podrían estar atrapados → señal de posible short squeeze.",
+      "sugiere que los shorts están pagando caro y podrían estar atrapados, señal de posible short squeeze.",
   };
 }
 
-function round1(v: number) {
-  return Math.round(v * 10) / 10;
-}
-function round2(v: number) {
-  return Math.round(v * 100) / 100;
-}
-function round4(v: number) {
-  return Math.round(v * 10000) / 10000;
-}
+// ---------- Cache de fondo (mismo patrón que pump-live.ts / crypto-indices.ts) ----------
+let cachedPanels: any = null;
+let lastCalcError: string | null = null;
+let calculating = false;
 
-// ---------- Endpoint único: los 5 paneles juntos ----------
-router.get("/psy-panels-btc/live", async (_req: Request, res: Response) => {
+async function refreshPanels() {
+  if (calculating) return;
+  calculating = true;
+  console.log("[psy-panels-btc] recalculando los 5 paneles...");
+  const start = Date.now();
   try {
     const [smd, rsiMaster, adxCvd, liquidityFlow, fundingSentiment] = await Promise.all([
       calcSMD(),
@@ -627,19 +733,29 @@ router.get("/psy-panels-btc/live", async (_req: Request, res: Response) => {
       calcLiquidityFlow(),
       calcFundingSentiment(),
     ]);
-    res.json({
-      updatedAt: Date.now(),
-      simbolo: "BTCUSDT",
-      smd,
-      rsiMaster,
-      adxCvd,
-      liquidityFlow,
-      fundingSentiment,
-    });
+    cachedPanels = { updatedAt: Date.now(), simbolo: "BTCUSDT", smd, rsiMaster, adxCvd, liquidityFlow, fundingSentiment };
+    lastCalcError = null;
+    console.log(`[psy-panels-btc] OK — tardó ${Math.round((Date.now() - start) / 1000)}s`);
   } catch (err: any) {
-    console.error("[psy-panels-btc] error calculando paneles", err);
-    res.status(500).json({ error: "No se pudieron calcular los paneles", detalle: err?.message });
+    lastCalcError = err?.message ?? String(err);
+    console.error("[psy-panels-btc] error recalculando paneles", err);
+  } finally {
+    calculating = false;
   }
+}
+
+refreshPanels();
+setInterval(refreshPanels, 3 * 60_000);
+
+router.get("/psy-panels-btc/live", (_req: Request, res: Response) => {
+  if (!cachedPanels) {
+    return res.status(503).json({ error: "Todavía calculando los paneles por primera vez, reintentar en unos segundos", lastCalcError });
+  }
+  res.json(cachedPanels);
+});
+
+router.get("/psy-panels-btc/status", (_req: Request, res: Response) => {
+  res.json({ listo: !!cachedPanels, calculando: calculating, updatedAt: cachedPanels?.updatedAt ?? null, lastCalcError });
 });
 
 export default router;

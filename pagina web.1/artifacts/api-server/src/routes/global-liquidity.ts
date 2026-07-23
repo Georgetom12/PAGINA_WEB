@@ -369,7 +369,16 @@ router.get("/global-liquidity/live", (_req, res) => {
   const fuelGaugeRaw = 50 + compositeZ[last] * 20;
   const fuelGauge = Math.max(0, Math.min(100, fuelGaugeRaw));
 
+  const veredicto =
+    fuelGauge >= 65
+      ? { texto: "Combustible de liquidez global expandiéndose — viento macro a favor para BTC.", tipo: "alcista" as const }
+      : fuelGauge <= 35
+        ? { texto: "Combustible de liquidez global contrayéndose — viento macro en contra para BTC.", tipo: "bajista" as const }
+        : { texto: "Combustible de liquidez global neutro — sin sesgo macro dominante por ahora.", tipo: "neutral" as const };
+
   res.json({
+    nombre: "PSY Liquidity Fuel — Global vs BTC",
+    mide: "Mide la liquidez global (impresión de dinero + tasas de interés + fuerza del dólar) como combustible macro para el precio de BTC.",
     updatedAt: cache.updatedAt,
     lastDate: base[last]?.date,
     fuelGauge,
@@ -378,6 +387,7 @@ router.get("/global-liquidity/live", (_req, res) => {
     liqZBancos: liqZ[last],
     dxyZ: dxyZ[last],
     rateImpulse: rateImpulse[last],
+    veredicto,
     historia: base.map((p, i) => ({
       date: p.date,
       compositeZ: compositeZ[i],
@@ -420,4 +430,4 @@ router.get("/global-liquidity/status", (_req, res) => {
   });
 });
 
-export default router; 
+export default router;
