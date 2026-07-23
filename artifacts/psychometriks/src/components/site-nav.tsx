@@ -62,6 +62,7 @@ const TOOLS_LINKS = [
   { href: "/economic-calendar", icon: "📅", label: "Calendario Económico",     desc: "FOMC · CPI · NFP",                   plan: "educacion" },
   { href: "/leaderboard",       icon: "🏆", label: "Leaderboard",              desc: "Historial de señales",               plan: "educacion" },
   { href: "/psy-panels-btc",    icon: "🧠", label: "PSY Panels BTC",           desc: "Liquidez global · Smart Money · RSI · ADX+CVD",  plan: "educacion" },
+  { href: "/historical-charts", icon: "📚", label: "Gráficos Históricos",      desc: "Halvings · M2 · Fed Balance Sheet · CPI",        plan: "educacion" },
   { href: "/boveda",            icon: "🔐", label: "Bóveda Personal",          desc: "Seeds, claves, TOTP · Cifrado local", plan: "basico"   },
   { href: "/strategies",        icon: "📋", label: "Marketplace Estrategias",  desc: "Estrategias verificadas · Backtest · Setup",  plan: "elite" },
 ];
