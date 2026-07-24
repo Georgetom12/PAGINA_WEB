@@ -60,6 +60,7 @@ function Stat({ label, value }: { label: string; value: string }) {
 export default function HistoricalChartsPage() {
   const [data, setData] = useState<any>(null);
   const [data2, setData2] = useState<any>(null);
+  const [data3, setData3] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -67,9 +68,14 @@ export default function HistoricalChartsPage() {
     let cancelled = false;
     async function load() {
       try {
-        const [res, res2] = await Promise.all([fetch("/api/historical-charts/live"), fetch("/api/historical-charts-2/live")]);
+        const [res, res2, res3] = await Promise.all([
+          fetch("/api/historical-charts/live"),
+          fetch("/api/historical-charts-2/live"),
+          fetch("/api/historical-charts-3/live"),
+        ]);
         const json = await res.json();
         const json2 = await res2.json().catch(() => null);
+        const json3 = await res3.json().catch(() => null);
         if (cancelled) return;
         if (!res.ok) setError(json.error ?? "Error cargando gráficos");
         else {
@@ -77,6 +83,7 @@ export default function HistoricalChartsPage() {
           setError(null);
         }
         if (res2.ok) setData2(json2);
+        if (res3.ok) setData3(json3);
       } catch {
         if (!cancelled) setError("Fallo de red pidiendo los gráficos");
       } finally {
@@ -491,6 +498,249 @@ export default function HistoricalChartsPage() {
 
           <div className="text-xs text-gray-600 text-center mt-2">
             Última actualización (tanda 2): {new Date(data2.updatedAt).toLocaleString("es-EC")}
+          </div>
+        </>
+      )}
+
+      {data3 && (
+        <>
+          {/* CHART 20 */}
+          {data3.chart20 && (
+            <Card title={`2️⃣0️⃣ ${data3.chart20.nombre}`} mide={data3.chart20.mide}>
+              <ResponsiveContainer width="100%" height={280}>
+                <LineChart data={data3.chart20.series}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+                  <XAxis dataKey="date" stroke="#6b7280" fontSize={9} tickFormatter={(d) => d?.slice(0, 7)} />
+                  <YAxis yAxisId="a" stroke="#6b7280" fontSize={10} />
+                  <YAxis yAxisId="b" orientation="right" stroke="#6b7280" fontSize={10} />
+                  <Tooltip {...chartTooltip} />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  <ReferenceLine yAxisId="b" y={0} stroke="#4b5563" />
+                  <Line yAxisId="a" type="monotone" dataKey="jobless" name="Jobless Claims" stroke="#ef4444" dot={false} strokeWidth={1.5} />
+                  <Line yAxisId="a" type="monotone" dataKey="desempleo" name="Desempleo %" stroke="#22c55e" dot={false} strokeWidth={1.5} />
+                  <Line yAxisId="b" type="monotone" dataKey="curva10y2y" name="Curva 10Y-2Y" stroke="#38bdf8" dot={false} strokeWidth={1.5} />
+                </LineChart>
+              </ResponsiveContainer>
+            </Card>
+          )}
+
+          {/* CHART 21 */}
+          {data3.chart21 && (
+            <Card title={`2️⃣1️⃣ ${data3.chart21.nombre}`} mide={data3.chart21.mide}>
+              <ResponsiveContainer width="100%" height={260}>
+                <ComposedChart data={data3.chart21.series}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+                  <XAxis dataKey="date" stroke="#6b7280" fontSize={9} tickFormatter={(d) => d?.slice(0, 7)} />
+                  <YAxis yAxisId="stable" stroke="#6b7280" fontSize={10} />
+                  <YAxis yAxisId="price" orientation="right" scale="log" domain={["auto", "auto"]} stroke="#6b7280" fontSize={10} />
+                  <Tooltip {...chartTooltip} />
+                  <Line yAxisId="stable" type="monotone" dataKey="stablecoinMcap" name="Stablecoin Mcap" stroke="#38bdf8" dot={false} strokeWidth={2} />
+                  <Line yAxisId="price" type="monotone" dataKey="precio" name="Precio BTC" stroke="#f59e0b" dot={false} strokeWidth={1.5} />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </Card>
+          )}
+
+          {/* CHART 22 */}
+          {data3.chart22 && !data3.chart22.error && (
+            <Card title={`2️⃣2️⃣ ${data3.chart22.nombre}`} mide={data3.chart22.mide} detalle={data3.chart22.nota}>
+              <div className="text-sm text-gray-300">
+                {data3.chart22.series.map((d: any) => (
+                  <div key={d.date} className="flex justify-between bg-gray-800/50 rounded px-3 py-2">
+                    <span>{d.date}</span>
+                    <span>{Math.round(d.btcHeld).toLocaleString("es-EC")} BTC</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+          {data3.chart22?.error && (
+            <Card title="2️⃣2️⃣ Spot Bitcoin ETF vs Gold ETF" nota={data3.chart22.error}>
+              <div className="text-gray-500 text-sm">Sin datos por ahora — URL de BlackRock pendiente de confirmar.</div>
+            </Card>
+          )}
+
+          {/* CHART 23 */}
+          {data3.chart23 && (
+            <Card title={`2️⃣3️⃣ ${data3.chart23.nombre}`} mide={data3.chart23.mide} detalle={data3.chart23.nota}>
+              <ResponsiveContainer width="100%" height={260}>
+                <LineChart data={data3.chart23.series}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+                  <XAxis dataKey="date" stroke="#6b7280" fontSize={9} tickFormatter={(d) => d?.slice(0, 7)} />
+                  <YAxis stroke="#6b7280" fontSize={10} />
+                  <Tooltip {...chartTooltip} />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  <ReferenceLine y={0} stroke="#4b5563" />
+                  <Line type="monotone" dataKey="nfci" name="NFCI (Chicago Fed)" stroke="#22c55e" dot={false} strokeWidth={2} />
+                  <Line type="monotone" dataKey="btcZScore" name="BTC (Z-Score)" stroke="#a78bfa" dot={false} strokeWidth={1.5} />
+                </LineChart>
+              </ResponsiveContainer>
+            </Card>
+          )}
+
+          {/* CHART 24 */}
+          {data3.chart24 && (
+            <Card title={`2️⃣4️⃣ ${data3.chart24.nombre}`} mide={data3.chart24.mide} detalle={data3.chart24.nota}>
+              <ResponsiveContainer width="100%" height={260}>
+                <LineChart data={data3.chart24.series}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+                  <XAxis dataKey="date" stroke="#6b7280" fontSize={9} tickFormatter={(d) => d?.slice(0, 7)} />
+                  <YAxis yAxisId="a" stroke="#6b7280" fontSize={10} />
+                  <YAxis yAxisId="b" orientation="right" stroke="#6b7280" fontSize={10} />
+                  <Tooltip {...chartTooltip} />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  <Line yAxisId="a" type="monotone" dataKey="ventasExistentes" name="Ventas existentes" stroke="#38bdf8" dot={false} strokeWidth={2} />
+                  <Line yAxisId="b" type="monotone" dataKey="construccionNueva" name="Construcción nueva" stroke="#f59e0b" dot={false} strokeWidth={2} />
+                </LineChart>
+              </ResponsiveContainer>
+            </Card>
+          )}
+
+          {/* CHART 25 */}
+          {data3.chart25 && (
+            <Card title={`2️⃣5️⃣ ${data3.chart25.nombre}`} mide={data3.chart25.mide} detalle={data3.chart25.nota}>
+              <ResponsiveContainer width="100%" height={280}>
+                <ComposedChart data={data3.chart25.series}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+                  <XAxis dataKey="dias" stroke="#6b7280" fontSize={9} />
+                  <YAxis scale="log" domain={["auto", "auto"]} stroke="#6b7280" fontSize={10} />
+                  <Tooltip {...chartTooltip} />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  <Line type="monotone" dataKey="bandaAlta" name="Banda alta (3x)" stroke="#6b7280" dot={false} strokeWidth={1} />
+                  <Line type="monotone" dataKey="powerLaw" name="Power Law" stroke="#7c3aed" dot={false} strokeWidth={1} strokeDasharray="4 4" />
+                  <Line type="monotone" dataKey="bandaBaja" name="Banda baja (0.5x)" stroke="#6b7280" dot={false} strokeWidth={1} />
+                  <Line type="monotone" dataKey="precio" name="Precio BTC" stroke="#f59e0b" dot={false} strokeWidth={2} />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </Card>
+          )}
+
+          {/* CHART 26 */}
+          {data3.chart26 && (
+            <Card title={`2️⃣6️⃣ ${data3.chart26.nombre}`} mide={data3.chart26.mide} detalle={data3.chart26.nota}>
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={data3.chart26.series}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+                  <XAxis dataKey="año" stroke="#6b7280" fontSize={10} />
+                  <YAxis stroke="#6b7280" fontSize={10} />
+                  <Tooltip {...chartTooltip} />
+                  <Bar dataKey="institucionalEstimado" name="BTC institucional estimado" fill="#a78bfa" radius={[3, 3, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </Card>
+          )}
+
+          {/* CHART 27 */}
+          {data3.chart27 && (
+            <Card title={`2️⃣7️⃣ ${data3.chart27.nombre}`} mide={data3.chart27.mide}>
+              <div className="flex gap-4 mb-3 text-sm">
+                <Stat label="Promedio histórico" value={`${data3.chart27.promedioHistorico}%`} />
+                <Stat label="Promedio último año" value={`${data3.chart27.promedio1a}%`} />
+              </div>
+              <ResponsiveContainer width="100%" height={240}>
+                <LineChart data={data3.chart27.series}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+                  <XAxis dataKey="date" stroke="#6b7280" fontSize={9} tickFormatter={(d) => d?.slice(0, 4)} />
+                  <YAxis stroke="#6b7280" fontSize={10} />
+                  <Tooltip {...chartTooltip} />
+                  <ReferenceLine y={data3.chart27.promedioHistorico} stroke="#6b7280" strokeDasharray="4 4" />
+                  <Line type="monotone" dataKey="volatilidad1a" name="Volatilidad 1 año %" stroke="#f59e0b" dot={false} strokeWidth={2} />
+                </LineChart>
+              </ResponsiveContainer>
+            </Card>
+          )}
+
+          {/* CHART 28 */}
+          {data3.chart28 && (
+            <Card title={`2️⃣8️⃣ ${data3.chart28.nombre}`} mide={data3.chart28.mide}>
+              <ResponsiveContainer width="100%" height={260}>
+                <ComposedChart data={data3.chart28.series}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+                  <XAxis dataKey="date" stroke="#6b7280" fontSize={9} tickFormatter={(d) => d?.slice(0, 4)} />
+                  <YAxis yAxisId="sharpe" stroke="#6b7280" fontSize={10} />
+                  <YAxis yAxisId="price" orientation="right" scale="log" domain={["auto", "auto"]} stroke="#6b7280" fontSize={10} />
+                  <Tooltip {...chartTooltip} />
+                  <ReferenceLine yAxisId="sharpe" y={0} stroke="#4b5563" />
+                  <Line yAxisId="sharpe" type="monotone" dataKey="sharpe" name="Sharpe Ratio" stroke="#facc15" dot={false} strokeWidth={2} />
+                  <Line yAxisId="price" type="monotone" dataKey="precio" name="Precio BTC" stroke="#e5e7eb" dot={false} strokeWidth={1.5} />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </Card>
+          )}
+
+          {/* CHART 29 */}
+          {data3.chart29 && (
+            <Card title={`2️⃣9️⃣ ${data3.chart29.nombre}`} mide={data3.chart29.mide}>
+              <ResponsiveContainer width="100%" height={260}>
+                <ComposedChart data={data3.chart29.series}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+                  <XAxis dataKey="date" stroke="#6b7280" fontSize={9} tickFormatter={(d) => d?.slice(0, 7)} />
+                  <YAxis yAxisId="oi" stroke="#6b7280" fontSize={10} />
+                  <YAxis yAxisId="price" orientation="right" scale="log" domain={["auto", "auto"]} stroke="#6b7280" fontSize={10} />
+                  <Tooltip {...chartTooltip} />
+                  <ReferenceLine yAxisId="oi" y={0} stroke="#4b5563" />
+                  <Bar yAxisId="oi" dataKey="cambioOiPct" name="Cambio OI %">
+                    {data3.chart29.series.map((d: any, i: number) => (
+                      <Cell key={i} fill={d.liquidacionFuerte ? "#ef4444" : "#6b7280"} />
+                    ))}
+                  </Bar>
+                  <Line yAxisId="price" type="monotone" dataKey="precio" name="Precio BTC" stroke="#f59e0b" dot={false} strokeWidth={1.5} />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </Card>
+          )}
+
+          {/* CHART 30 */}
+          {data3.chart30 && (
+            <Card title={`3️⃣0️⃣ ${data3.chart30.nombre}`} mide={data3.chart30.mide} detalle={data3.chart30.nota}>
+              <ResponsiveContainer width="100%" height={220}>
+                <AreaChart data={data3.chart30.series}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+                  <XAxis dataKey="date" stroke="#6b7280" fontSize={9} />
+                  <YAxis stroke="#6b7280" fontSize={10} />
+                  <Tooltip {...chartTooltip} />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  <Area type="monotone" dataKey="pctBallenas" name="% Ballenas (>$50k)" stroke="#7c3aed" fill="#7c3aed33" strokeWidth={2} />
+                  <Area type="monotone" dataKey="pctRetail" name="% Retail" stroke="#38bdf8" fill="#38bdf822" strokeWidth={2} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </Card>
+          )}
+
+          {/* CHART 31 */}
+          {data3.chart31 && (
+            <Card title={`3️⃣1️⃣ ${data3.chart31.nombre}`} mide={data3.chart31.mide}>
+              <ResponsiveContainer width="100%" height={260}>
+                <ComposedChart data={data3.chart31.series}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+                  <XAxis dataKey="date" stroke="#6b7280" fontSize={9} tickFormatter={(d) => d?.slice(0, 7)} />
+                  <YAxis yAxisId="vol" stroke="#6b7280" fontSize={10} />
+                  <YAxis yAxisId="price" orientation="right" scale="log" domain={["auto", "auto"]} stroke="#6b7280" fontSize={10} />
+                  <Tooltip {...chartTooltip} />
+                  <Area yAxisId="vol" type="monotone" dataKey="volumenUsd" name="Volumen on-chain (USD)" stroke="#22c55e" fill="#22c55e22" strokeWidth={1.5} />
+                  <Line yAxisId="price" type="monotone" dataKey="precio" name="Precio BTC" stroke="#f59e0b" dot={false} strokeWidth={1.5} />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </Card>
+          )}
+
+          {/* CHART 32 */}
+          {data3.chart32 && (
+            <Card title={`3️⃣2️⃣ ${data3.chart32.nombre}`} mide={data3.chart32.mide} detalle={data3.chart32.nota}>
+              <ResponsiveContainer width="100%" height={220}>
+                <AreaChart data={data3.chart32.series}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+                  <XAxis dataKey="date" stroke="#6b7280" fontSize={9} />
+                  <YAxis stroke="#6b7280" fontSize={10} />
+                  <Tooltip {...chartTooltip} />
+                  <Area type="monotone" dataKey="openInterest" name="OI Opciones BTC (Deribit)" stroke="#f472b6" fill="#f472b633" strokeWidth={2} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </Card>
+          )}
+
+          <div className="text-xs text-gray-600 text-center mt-2">
+            Última actualización (tanda 3): {new Date(data3.updatedAt).toLocaleString("es-EC")}
           </div>
         </>
       )}
