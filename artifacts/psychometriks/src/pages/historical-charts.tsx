@@ -23,19 +23,36 @@ import {
 } from "recharts";
 
 const chartTooltip = { contentStyle: { background: "#111827", border: "1px solid #374151", fontSize: 12 } };
-const COLORS = ["#a78bfa", "#38bdf8", "#f59e0b", "#f87171"];
 
-function Card({ title, mide, nota, children }: { title: string; mide?: string; nota?: string; children: React.ReactNode }) {
+function Card({
+  title,
+  mide,
+  nota,
+  detalle,
+  children,
+}: {
+  title: string;
+  mide?: string;
+  nota?: string;
+  detalle?: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="bg-gray-900 rounded-xl p-5 border border-gray-800 mb-6">
       <h2 className="text-lg font-bold">{title}</h2>
       {mide && <p className="text-xs text-gray-500 mb-3">{mide}</p>}
       <div className="mt-2">{children}</div>
-      {nota && (
-        <p className="text-xs text-yellow-600 mt-3 border-t border-gray-800 pt-3">
-          ⚠ {nota}
-        </p>
-      )}
+      {nota && <p className="text-xs text-yellow-600 mt-3 border-t border-gray-800 pt-3">⚠ {nota}</p>}
+      {detalle && !nota && <p className="text-xs text-gray-600 mt-3 border-t border-gray-800 pt-3">{detalle}</p>}
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="bg-gray-800/50 rounded-lg px-3 py-2">
+      <div className="text-xs text-gray-500">{label}</div>
+      <div className="text-sm font-semibold">{value}</div>
     </div>
   );
 }
@@ -86,18 +103,21 @@ export default function HistoricalChartsPage() {
         <>
           {/* CHART 1 */}
           {data.chart1 && (
-            <Card title={`1️⃣ ${data.chart1.nombre}`} mide={data.chart1.mide} nota={data.chart1.nota}>
-              <ResponsiveContainer width="100%" height={280}>
-                <LineChart>
+            <Card title={`1️⃣ ${data.chart1.nombre}`} mide={data.chart1.mide}>
+              <div className="grid grid-cols-3 gap-3 text-sm mb-3">
+                <Stat label="Drawdown actual" value={`${data.chart1.resumen.drawdownActualPct}%`} />
+                <Stat label="ATH histórico" value={`$${Math.round(data.chart1.resumen.athHistorico).toLocaleString("es-EC")}`} />
+                <Stat label="Precio actual" value={`$${Math.round(data.chart1.resumen.precioActual).toLocaleString("es-EC")}`} />
+              </div>
+              <ResponsiveContainer width="100%" height={260}>
+                <ComposedChart data={data.chart1.series}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
-                  <XAxis dataKey="day" type="number" domain={[0, 1450]} stroke="#6b7280" fontSize={10} allowDuplicatedCategory={false} />
+                  <XAxis dataKey="date" stroke="#6b7280" fontSize={9} tickFormatter={(d) => d?.slice(0, 4)} />
                   <YAxis stroke="#6b7280" fontSize={10} />
                   <Tooltip {...chartTooltip} />
-                  <Legend wrapperStyle={{ fontSize: 11 }} />
-                  {Object.entries(data.chart1.series).map(([year, serie]: [string, any], idx: number) => (
-                    <Line key={year} data={serie} type="monotone" dataKey="precio" name={year} stroke={COLORS[idx]} dot={false} strokeWidth={2} />
-                  ))}
-                </LineChart>
+                  <ReferenceLine y={0} stroke="#4b5563" />
+                  <Area type="monotone" dataKey="drawdownPct" name="Drawdown %" stroke="#ef4444" fill="#ef444433" strokeWidth={2} />
+                </ComposedChart>
               </ResponsiveContainer>
             </Card>
           )}
@@ -253,7 +273,7 @@ export default function HistoricalChartsPage() {
         <>
           {/* CHART 9 */}
           {data2.chart9 && (
-            <Card title={`9️⃣ ${data2.chart9.nombre}`} mide={data2.chart9.mide} nota={data2.chart9.nota}>
+            <Card title={`9️⃣ ${data2.chart9.nombre}`} mide={data2.chart9.mide} detalle={data2.chart9.nota}>
               <ResponsiveContainer width="100%" height={280}>
                 <ComposedChart data={data2.chart9.series}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
@@ -290,7 +310,7 @@ export default function HistoricalChartsPage() {
 
           {/* CHART 11 */}
           {data2.chart11 && (
-            <Card title={`1️⃣1️⃣ ${data2.chart11.nombre}`} mide={data2.chart11.mide} nota={data2.chart11.nota}>
+            <Card title={`1️⃣1️⃣ ${data2.chart11.nombre}`} mide={data2.chart11.mide} detalle={data2.chart11.nota}>
               <ResponsiveContainer width="100%" height={260}>
                 <LineChart data={data2.chart11.series}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
@@ -324,7 +344,7 @@ export default function HistoricalChartsPage() {
 
           {/* CHART 13 */}
           {data2.chart13 && (
-            <Card title={`1️⃣3️⃣ ${data2.chart13.nombre}`} mide={data2.chart13.mide} nota={data2.chart13.nota}>
+            <Card title={`1️⃣3️⃣ ${data2.chart13.nombre}`} mide={data2.chart13.mide} detalle={data2.chart13.nota}>
               <ResponsiveContainer width="100%" height={260}>
                 <LineChart data={data2.chart13.series}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
@@ -342,7 +362,7 @@ export default function HistoricalChartsPage() {
 
           {/* CHART 14 */}
           {data2.chart14 && (
-            <Card title={`1️⃣4️⃣ ${data2.chart14.nombre}`} mide={data2.chart14.mide} nota={data2.chart14.nota}>
+            <Card title={`1️⃣4️⃣ ${data2.chart14.nombre}`} mide={data2.chart14.mide} detalle={data2.chart14.nota}>
               <ResponsiveContainer width="100%" height={260}>
                 <AreaChart data={data2.chart14.series}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
@@ -419,16 +439,20 @@ export default function HistoricalChartsPage() {
 
           {/* CHART 18 */}
           {data2.chart18 && (
-            <Card title={`1️⃣8️⃣ ${data2.chart18.nombre}`} mide={data2.chart18.mide} nota={data2.chart18.nota}>
+            <Card title={`1️⃣8️⃣ ${data2.chart18.nombre}`} mide={data2.chart18.mide} detalle={data2.chart18.nota}>
               <div className="space-y-2 text-sm">
                 {Object.entries(data2.chart18.redes).map(([red, v]: [string, any]) => (
                   <div key={red} className="flex justify-between items-center bg-gray-800/50 rounded-lg px-3 py-2">
                     <span className="font-medium">
                       {red} {v.enVivo && <span className="text-teal-400 text-xs">● en vivo</span>}
                     </span>
-                    <span className="text-gray-300">
-                      {v.diasNecesarios?.toLocaleString("es-EC")} días · ${(v.costoTotalUSD / 1_000_000).toFixed(0)}M
-                    </span>
+                    {v.diasNecesarios != null ? (
+                      <span className="text-gray-300">
+                        {v.diasNecesarios.toLocaleString("es-EC")} días · ${(v.costoTotalUSD / 1_000_000).toFixed(0)}M
+                      </span>
+                    ) : (
+                      <span className="text-yellow-600 text-xs">⚠ sin datos{v.error ? ` (${v.error})` : ""}</span>
+                    )}
                   </div>
                 ))}
               </div>
