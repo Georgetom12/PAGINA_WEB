@@ -293,6 +293,7 @@ const ACCESS_PANELS: MPanel[] = [
       { icon: "💱", label: "PSY Wallet",                desc: "DEX Exchange · Swap · Portfolio · Auditoría",        href: "/psy-wallet", badge: "INCLUIDO" },
       { icon: "💧", label: "LiqMap PRO",                desc: "Mapa de liquidaciones institucional · 24/7",         href: "/liquid-map.html", badge: "PRO" },
       { icon: "📊", label: "LiqMap Normal",             desc: "Visualizador de liquidaciones estándar",             href: "/liqmap" },
+      { icon: "🚀", label: "PSY PRO Dashboard",         desc: "Watchlist · Alertas · Portafolio real · Track Record", href: "/pro-dashboard", badge: "NUEVO" },
       { icon: "🚀", label: "PSY Exchange",              desc: "Tokens · PSY Trust Score · Listá proyectos",         href: "/exchange" },
       { icon: "🧠", label: "PSY Score",                 desc: "Score institucional 0–100",                          href: "/psy-score" },
       { icon: "📡", label: "PSY Screener",              desc: "Top 50 con señales PSY-ULT1",                        href: "/screener" },

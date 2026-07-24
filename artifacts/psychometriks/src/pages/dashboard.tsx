@@ -125,6 +125,7 @@ const PANELS: Panel[] = [
     price: "49",
     items: [
       { icon: "💱", label: "PSY Wallet",               desc: "DEX Exchange · Swap · Portfolio · Auditoría",        href: "/psy-wallet", badge: "INCLUIDO" },
+      { icon: "🚀", label: "PSY PRO Dashboard",        desc: "Watchlist · Alertas · Portafolio real · Track Record", href: "/pro-dashboard", badge: "NUEVO" },
       { icon: "🚀", label: "PSY Exchange",             desc: "Explorá tokens · PSY Trust Score · Listar proyectos", href: "/exchange", badge: "PRO" },
       { icon: "🧠", label: "PSY Score",                desc: "Score institucional 0–100 · Indicador de tendencia", href: "/psy-score" },
       { icon: "📡", label: "PSY Screener",             desc: "Top 50 con señales PSY-ULT1 · Oportunidades",       href: "/screener" },
