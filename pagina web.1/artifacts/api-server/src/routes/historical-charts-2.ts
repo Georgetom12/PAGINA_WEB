@@ -37,7 +37,6 @@
 import { Router, type Request, type Response } from "express";
 
 const router = Router();
-const COINGECKO_API_KEY = process.env.COINGECKO_API_KEY;
 const FRED_API_KEY = process.env.FRED_API_KEY;
 const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY;
 const COINGLASS_API_KEY = process.env.COINGLASS_API_KEY;
@@ -89,15 +88,23 @@ async function fetchBtcDailyFull(): Promise<Point[]> {
   const cached = cGet<Point[]>(cacheKey);
   if (cached) return cached;
   try {
-    const from = Math.floor(new Date("2013-04-01T00:00:00Z").getTime() / 1000);
-    const to = Math.floor(Date.now() / 1000);
-    const url = `https://api.coingecko.com/api/v3/coins/bitcoin/market_chart/range?vs_currency=usd&from=${from}&to=${to}`;
-    const headers: Record<string, string> = COINGECKO_API_KEY ? { "x-cg-demo-api-key": COINGECKO_API_KEY } : {};
-    const r = await fetch(url, { headers });
-    if (!r.ok) throw new Error(`CoinGecko HTTP ${r.status}`);
-    const json: any = await r.json();
+    // Binance spot — mismo cambio que en historical-charts.ts: CoinGecko
+    // fallaba en producción (401), Binance ya es la fuente probada del
+    // resto de la plataforma.
     const byDay = new Map<string, number>();
-    for (const [ts, price] of json.prices ?? []) byDay.set(new Date(ts).toISOString().slice(0, 10), price);
+    let endTime = Date.now();
+    const earliestWanted = new Date("2017-08-01T00:00:00Z").getTime();
+    for (let page = 0; page < 12; page++) {
+      const url = `https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=1000&endTime=${endTime}`;
+      const r = await fetch(url);
+      if (!r.ok) throw new Error(`Binance klines HTTP ${r.status}`);
+      const rows: any[] = await r.json();
+      if (!rows.length) break;
+      for (const k of rows) byDay.set(new Date(k[0]).toISOString().slice(0, 10), parseFloat(k[4]));
+      const firstOpenTime = rows[0][0];
+      if (firstOpenTime <= earliestWanted) break;
+      endTime = firstOpenTime - 1;
+    }
     const out = Array.from(byDay.entries())
       .map(([date, value]) => ({ date, value }))
       .sort((a, b) => a.date.localeCompare(b.date));
@@ -402,7 +409,7 @@ async function calcChart11() {
 async function calcChart12() {
   const [top1, bottom50] = await Promise.all([
     fetchFredSeries("WFRBST01134"), // Share of Net Worth - Top 1% (confirmado)
-    fetchFredSeries("WFRBSB50231"), // Share of Net Worth - Bottom 50% (⚠️ VERIFICAR)
+    fetchFredSeries("WFRBSB50215"), // Share of Net Worth - Bottom 50% (confirmado)
   ]);
   if (!top1.length) return null;
   const dates = top1.map((p) => p.date);
@@ -450,16 +457,29 @@ async function calcChart13() {
 
 // ---------- CHART 14: Adopción (% población mundial) ----------
 function calcChart14(activeAddr: Point[]) {
-  if (activeAddr.length < 100) return null;
+  // Filtra puntos inválidos/cero primero — blockchain.info tiene huecos en
+  // su historial más viejo que generaban picos falsos (subía a 0 y volvía)
+  const limpio = activeAddr.filter((p) => p.value > 1000);
+  if (limpio.length < 100) return null;
+
+  // Media móvil de 30 días para suavizar ruido restante antes de graficar
+  const win = 30;
+  const suavizado: Point[] = limpio.map((p, i) => {
+    const from = Math.max(0, i - win);
+    const slice = limpio.slice(from, i + 1);
+    const avg = slice.reduce((a, b) => a + b.value, 0) / slice.length;
+    return { date: p.date, value: avg };
+  });
+
   // Población mundial: valor fijo actualizado a mano (crece ~0.9%/año, no
   // justifica una API en vivo para este propósito)
   const WORLD_POPULATION_2026 = 8_200_000_000;
-  const series = activeAddr
+  const series = suavizado
     .filter((_, i) => i % 5 === 0)
     .map((p) => ({ date: p.date, pctPoblacion: round2((p.value / WORLD_POPULATION_2026) * 100), direccionesActivas: Math.round(p.value) }));
   return {
     nombre: "Adopción — % de la población mundial",
-    mide: "Direcciones de BTC activas por día como % de la población mundial (dato real de blockchain.info), como proxy de adopción a lo largo del tiempo.",
+    mide: "Direcciones de BTC activas por día (suavizado 30 días) como % de la población mundial, como proxy de adopción a lo largo del tiempo.",
     series,
     nota: "No es la curva de campana exacta del original (esa es un modelo fijo) — esto es una serie REAL y viva (direcciones activas / población mundial estimada) que muestra la tendencia de adopción real.",
   };
@@ -551,13 +571,26 @@ async function calcChart18(btcPrice: number) {
     costoTotalUSD: Math.round(TXS * feeUsd),
   });
 
+  // Si el fee salió en 0, casi seguro es que el fetch de esa red falló
+  // (mempool.space / Etherscan) — mejor mostrarlo honesto como "sin datos"
+  // que como un $0 en vivo, que sería engañoso.
+  const btcOk = btcFeeUsd > 0;
+  const ethOk = ethFeeUsd > 0;
+  const solOk = solFeeUsd > 0 && solTps > 0;
+
   return {
     nombre: "Enviar $1 a cada persona en la Tierra — Comparación de redes",
     mide: "Tiempo y costo real (calculado con datos en vivo) para procesar 8.000 millones de transacciones en cada red — Bitcoin, Ethereum y Solana calculados con fee y capacidad REALES de hoy.",
     redes: {
-      Bitcoin: { ...calc(btcTps, btcFeeUsd), tps: btcTps, feeUsdPorTx: round2(btcFeeUsd), enVivo: true },
-      Ethereum: { ...calc(ethTps, ethFeeUsd), tps: ethTps, feeUsdPorTx: round2(ethFeeUsd), enVivo: true },
-      Solana: { ...calc(solTps || 2000, solFeeUsd), tps: round2(solTps || 2000), feeUsdPorTx: round2(solFeeUsd), enVivo: true },
+      Bitcoin: btcOk
+        ? { ...calc(btcTps, btcFeeUsd), tps: btcTps, feeUsdPorTx: round2(btcFeeUsd), enVivo: true }
+        : { diasNecesarios: null, costoTotalUSD: null, tps: null, feeUsdPorTx: null, enVivo: false, error: "mempool.space no respondió" },
+      Ethereum: ethOk
+        ? { ...calc(ethTps, ethFeeUsd), tps: ethTps, feeUsdPorTx: round2(ethFeeUsd), enVivo: true }
+        : { diasNecesarios: null, costoTotalUSD: null, tps: null, feeUsdPorTx: null, enVivo: false, error: "Etherscan gas oracle no respondió" },
+      Solana: solOk
+        ? { ...calc(solTps, solFeeUsd), tps: round2(solTps), feeUsdPorTx: round2(solFeeUsd), enVivo: true }
+        : { diasNecesarios: null, costoTotalUSD: null, tps: null, feeUsdPorTx: null, enVivo: false, error: "RPC de Solana no respondió" },
       Wise: { diasNecesarios: 200, costoTotalUSD: 36_000_000_000, tps: null, feeUsdPorTx: null, enVivo: false },
       "Western Union": { diasNecesarios: 1370, costoTotalUSD: 480_000_000_000, tps: null, feeUsdPorTx: null, enVivo: false },
       SWIFT: { diasNecesarios: 180, costoTotalUSD: 260_000_000_000, tps: null, feeUsdPorTx: null, enVivo: false },

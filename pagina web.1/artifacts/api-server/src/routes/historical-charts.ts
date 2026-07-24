@@ -1,22 +1,25 @@
 // pagina web.1/artifacts/api-server/src/routes/historical-charts.ts
 //
-// Página nueva — "Gráficos Históricos" (primeras 8 de la lista de Jorge).
-// Todas con datos reales, actualización automática en segundo plano.
+// Página nueva — "Gráficos Históricos". Todas con datos reales,
+// actualización automática en segundo plano.
 //
 // Fuentes usadas:
 //  - FRED (api.stlouisfed.org, con FRED_API_KEY ya existente) — M2SL,
 //    CPIAUCSL, WALCL, USREC
-//  - CryptoCompare (min-api.cryptocompare.com, sin key) — precio histórico
-//    diario de BTC. Se probó primero con CoinGecko, pero esa empezó a exigir
-//    key hasta en /market_chart/range (HTTP 401 confirmado en producción) —
-//    se cambió de fuente en vez de depender de un registro extra.
+//  - Binance spot (api.binance.com, sin key) — precio histórico diario de
+//    BTC. Se probó primero con CoinGecko (exigía key hasta en
+//    /market_chart/range, 401 en producción) y después CryptoCompare
+//    (también falló en Railway) — Binance es la misma fuente que ya usa
+//    el resto de la plataforma sin problemas, así que se unificó ahí.
 //  - blockchain.info (api.blockchain.info, sin key) — direcciones activas
 //
 // HONESTO — limitaciones reales, avisadas de antemano:
-//  1) Ciclo de halving 2012: ninguna fuente gratis tiene precio limpio de
-//     BTC entre nov-2012 y abr-2013 — esa parte del gráfico #1 sale
-//     INCOMPLETA (empieza recién ~día 150). Los ciclos 2016/2020/2024 sí
-//     están completos.
+//  1) El gráfico #1 (antes "Bitcoin Price After Halvings" superpuesto por
+//     ciclo) se REEMPLAZÓ por "Caída desde el Máximo Histórico (Drawdown)":
+//     el original necesitaba precio limpio desde 2012, y Binance recién
+//     tiene historial desde ago-2017 — en vez de mostrarlo incompleto para
+//     siempre, se cambió por un gráfico distinto, con el mismo espíritu
+//     (ver dónde estamos parados en el ciclo), 100% armable y confiable.
 //  2) "Active Addresses Momentum" (#2): blockchain.info sí tiene el dato
 //     real de direcciones activas — el "momentum" es mi propio cálculo
 //     (z-score normalizado), no necesariamente la fórmula exacta original.
@@ -75,24 +78,27 @@ async function fetchBtcDailyFull(): Promise<Point[]> {
   const cached = cGet<Point[]>(cacheKey);
   if (cached) return cached;
   try {
-    const earliestWanted = Math.floor(new Date("2013-01-01T00:00:00Z").getTime() / 1000);
+    // Binance spot — misma fuente que ya usa el resto de la plataforma sin
+    // problemas (psy-panels-btc.ts, etc.). Su historial empieza ~ago-2017
+    // (cuando abrió Binance), así que no cubre 2012-2017, pero es 100%
+    // confiable en Railway (a diferencia de CoinGecko/CryptoCompare, que
+    // fallaron en producción).
     const byDay = new Map<string, number>();
-    let toTs = Math.floor(Date.now() / 1000);
+    let endTime = Date.now();
+    const earliestWanted = new Date("2017-08-01T00:00:00Z").getTime();
 
-    for (let page = 0; page < 6; page++) {
-      const url = `https://min-api.cryptocompare.com/data/v2/histoday?fsym=BTC&tsym=USD&limit=2000&toTs=${toTs}`;
+    for (let page = 0; page < 12; page++) {
+      const url = `https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=1000&endTime=${endTime}`;
       const r = await fetch(url);
-      if (!r.ok) throw new Error(`CryptoCompare HTTP ${r.status}`);
-      const json: any = await r.json();
-      if (json.Response !== "Success") throw new Error(`CryptoCompare: ${json.Message ?? "respuesta sin éxito"}`);
-      const rows: any[] = json.Data?.Data ?? [];
+      if (!r.ok) throw new Error(`Binance klines HTTP ${r.status}`);
+      const rows: any[] = await r.json();
       if (!rows.length) break;
-      for (const d of rows) {
-        if (d.close > 0) byDay.set(new Date(d.time * 1000).toISOString().slice(0, 10), d.close);
+      for (const k of rows) {
+        byDay.set(new Date(k[0]).toISOString().slice(0, 10), parseFloat(k[4]));
       }
-      const firstTime = rows[0].time;
-      if (firstTime <= earliestWanted) break;
-      toTs = firstTime - 86400;
+      const firstOpenTime = rows[0][0];
+      if (firstOpenTime <= earliestWanted) break;
+      endTime = firstOpenTime - 1;
     }
 
     const out = Array.from(byDay.entries())
@@ -157,39 +163,31 @@ const PRESIDENTIAL_TERMS = [
   { presidente: "Trump", inicio: "2025-01-20", fin: "2033-01-20" },
 ];
 
-function addDays(dateStr: string, days: number): string {
-  const d = new Date(dateStr + "T00:00:00Z");
-  d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().slice(0, 10);
-}
-
-// ---------- CHART 1: Bitcoin Price After Halvings (escalado) ----------
+// ---------- CHART 1: Bitcoin — Caída desde el Máximo Histórico (Drawdown) ----------
+// Reemplaza al gráfico original de halvings superpuestos: ese necesitaba
+// precio limpio desde 2012, y ninguna fuente gratis lo sostiene de forma
+// confiable en producción (CoinGecko y CryptoCompare fallaron en Railway).
+// Este es un gráfico PROPIO, con el mismo espíritu (ver dónde estamos
+// parados en el ciclo actual), pero 100% armable con Binance.
 function calcChart1(btc: Point[]) {
-  const btcMap = new Map(btc.map((p) => [p.date, p.value]));
-  const ref2024Price = btcMap.get(HALVINGS[3]!.date) ?? btc.find((p) => p.date >= HALVINGS[3]!.date)?.value ?? 0;
-
-  const series: Record<string, { day: number; precio: number }[]> = {};
-  for (const h of HALVINGS) {
-    const day0Price = btcMap.get(h.date) ?? btc.find((p) => p.date >= h.date)?.value;
-    if (!day0Price) {
-      series[h.year] = [];
-      continue;
-    }
-    const scale = ref2024Price / day0Price;
-    const arr: { day: number; precio: number }[] = [];
-    for (let day = 0; day <= 1450; day++) {
-      const d = addDays(h.date, day);
-      const p = btcMap.get(d);
-      if (p !== undefined) arr.push({ day, precio: round2(p * scale) });
-    }
-    series[h.year] = arr;
-  }
+  if (btc.length < 30) return null;
+  let athSoFar = 0;
+  const series = btc.map((p) => {
+    athSoFar = Math.max(athSoFar, p.value);
+    const drawdownPct = athSoFar > 0 ? ((p.value - athSoFar) / athSoFar) * 100 : 0;
+    return { date: p.date, precio: p.value, ath: round2(athSoFar), drawdownPct: round2(drawdownPct) };
+  });
+  const ultimo = series[series.length - 1]!;
 
   return {
-    nombre: "Bitcoin Price After Halvings",
-    mide: "Compara el precio de BTC después de cada halving (escalado al nivel de precio de 2024) para ver si el ciclo actual sigue el patrón histórico.",
+    nombre: "Bitcoin — Caída desde el Máximo Histórico (Drawdown)",
+    mide: "Qué tan lejos está el precio actual de BTC de su máximo histórico — los drawdowns profundos (-70% a -85%) suelen marcar zonas de fondo de ciclo, mientras que drawdowns chicos indican que estamos cerca de máximos.",
     series,
-    nota: "El ciclo 2012 sale incompleto (~150 primeros días sin datos) — ninguna fuente gratis tiene precio limpio de BTC entre nov-2012 y abr-2013.",
+    resumen: {
+      drawdownActualPct: ultimo.drawdownPct,
+      athHistorico: ultimo.ath,
+      precioActual: ultimo.precio,
+    },
   };
 }
 
