@@ -58,6 +58,7 @@ import superadminAuthRouter from "./superadmin-auth"; // montar ANTES de freeAut
 import globalLiquidityRouter from "./global-liquidity"; // PSY LIQUIDITY FUEL — página nueva (Educación/Pro/Elite)
 import psyPanelsBtcRouter from "./psy-panels-btc"; // 5 paneles BTC (SMD/RSI/ADX+CVD/Liquidity Flow/Funding Sentiment)
 import historicalChartsRouter from "./historical-charts"; // 8 gráficos históricos BTC/macro
+import historicalCharts2Router from "./historical-charts-2"; // 11 gráficos más (misma página)
 
 const router: IRouter = Router();
 
@@ -116,5 +117,6 @@ router.use(iaSignalsRouter);
 router.use(globalLiquidityRouter);
 router.use(psyPanelsBtcRouter);
 router.use(historicalChartsRouter);
+router.use(historicalCharts2Router);
 
 export default router;
