@@ -6,31 +6,28 @@
 // Fuentes usadas:
 //  - FRED (api.stlouisfed.org, con FRED_API_KEY ya existente) — M2SL,
 //    CPIAUCSL, WALCL, USREC
-//  - CoinGecko (api.coingecko.com, sin key) — precio histórico diario de BTC
+//  - CryptoCompare (min-api.cryptocompare.com, sin key) — precio histórico
+//    diario de BTC. Se probó primero con CoinGecko, pero esa empezó a exigir
+//    key hasta en /market_chart/range (HTTP 401 confirmado en producción) —
+//    se cambió de fuente en vez de depender de un registro extra.
 //  - blockchain.info (api.blockchain.info, sin key) — direcciones activas
 //
 // HONESTO — limitaciones reales, avisadas de antemano:
-//  1) Ciclo de halving 2012: ni CoinGecko ni ninguna fuente gratis tiene
-//     precio limpio de BTC entre nov-2012 y abr-2013 — esa parte del
-//     gráfico #1 sale INCOMPLETA (empieza recién ~día 150). Los ciclos
-//     2016/2020/2024 sí están completos.
+//  1) Ciclo de halving 2012: ninguna fuente gratis tiene precio limpio de
+//     BTC entre nov-2012 y abr-2013 — esa parte del gráfico #1 sale
+//     INCOMPLETA (empieza recién ~día 150). Los ciclos 2016/2020/2024 sí
+//     están completos.
 //  2) "Active Addresses Momentum" (#2): blockchain.info sí tiene el dato
 //     real de direcciones activas — el "momentum" es mi propio cálculo
 //     (z-score normalizado), no necesariamente la fórmula exacta original.
 //  3) "Tactical Bull-Bear Sentiment Index" (#4): la fórmula de Alphractal
 //     es propietaria y paga — esto es un índice PROPIO (RSI semanal +
 //     percentil de volatilidad), inspirado en el concepto, NO una réplica.
-//  4) CoinGecko YA EXIGE key incluso para /market_chart/range (confirmado
-//     en producción: HTTP 401 sin ella) — hace falta COINGECKO_API_KEY,
-//     una key gratis del plan Demo (100 llamados/min, 10.000/mes, de sobra
-//     para esto ya que está cacheado 24hs). Sacarla en
-//     coingecko.com/en/developers/dashboard y agregarla en Railway.
 
 import { Router, type Request, type Response } from "express";
 
 const router = Router();
 const FRED_API_KEY = process.env.FRED_API_KEY;
-const COINGECKO_API_KEY = process.env.COINGECKO_API_KEY;
 
 // ---------- Cache simple ----------
 const _cache = new Map<string, { data: unknown; exp: number }>();
@@ -72,29 +69,32 @@ async function fetchFredSeries(seriesId: string): Promise<Point[]> {
   }
 }
 
-// ---------- BTC precio diario completo (CoinGecko, sin key) ----------
+// ---------- BTC precio diario completo (CryptoCompare, sin key) ----------
 async function fetchBtcDailyFull(): Promise<Point[]> {
   const cacheKey = "btc-daily-full";
   const cached = cGet<Point[]>(cacheKey);
   if (cached) return cached;
   try {
-    const from = Math.floor(new Date("2013-04-01T00:00:00Z").getTime() / 1000);
-    const to = Math.floor(Date.now() / 1000);
-    const url = `https://api.coingecko.com/api/v3/coins/bitcoin/market_chart/range?vs_currency=usd&from=${from}&to=${to}`;
-    const headers: Record<string, string> = COINGECKO_API_KEY ? { "x-cg-demo-api-key": COINGECKO_API_KEY } : {};
-    if (!COINGECKO_API_KEY) {
-      console.warn("[historical-charts] falta COINGECKO_API_KEY — CoinGecko ahora exige key hasta en /market_chart/range, sacar una gratis en coingecko.com/en/developers/dashboard");
-    }
-    const r = await fetch(url, { headers });
-    if (!r.ok) throw new Error(`CoinGecko HTTP ${r.status}`);
-    const json: any = await r.json();
-    const prices: [number, number][] = json.prices ?? [];
-    // Un punto por día (el último de cada día), CoinGecko a veces manda varios/día
+    const earliestWanted = Math.floor(new Date("2013-01-01T00:00:00Z").getTime() / 1000);
     const byDay = new Map<string, number>();
-    for (const [ts, price] of prices) {
-      const date = new Date(ts).toISOString().slice(0, 10);
-      byDay.set(date, price); // se queda con el último del día (orden ascendente)
+    let toTs = Math.floor(Date.now() / 1000);
+
+    for (let page = 0; page < 6; page++) {
+      const url = `https://min-api.cryptocompare.com/data/v2/histoday?fsym=BTC&tsym=USD&limit=2000&toTs=${toTs}`;
+      const r = await fetch(url);
+      if (!r.ok) throw new Error(`CryptoCompare HTTP ${r.status}`);
+      const json: any = await r.json();
+      if (json.Response !== "Success") throw new Error(`CryptoCompare: ${json.Message ?? "respuesta sin éxito"}`);
+      const rows: any[] = json.Data?.Data ?? [];
+      if (!rows.length) break;
+      for (const d of rows) {
+        if (d.close > 0) byDay.set(new Date(d.time * 1000).toISOString().slice(0, 10), d.close);
+      }
+      const firstTime = rows[0].time;
+      if (firstTime <= earliestWanted) break;
+      toTs = firstTime - 86400;
     }
+
     const out = Array.from(byDay.entries())
       .map(([date, value]) => ({ date, value }))
       .sort((a, b) => a.date.localeCompare(b.date));
