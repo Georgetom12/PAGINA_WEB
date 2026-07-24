@@ -14,3 +14,4 @@ export * from "./api-keys";
 export * from "./trader-snapshots";
 export * from "./conversations";
 export * from "./messages";
+export * from "./pro-dashboard";
