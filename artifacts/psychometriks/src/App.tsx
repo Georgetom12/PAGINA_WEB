@@ -80,6 +80,7 @@ import ResetPassword from "@/pages/reset-password";
 import PsyLaunch from "@/pages/psy-launch";
 import PsyPanelsBtc from "@/pages/psy-panels-btc";
 import HistoricalCharts from "@/pages/historical-charts";
+import ProDashboard from "@/pages/pro-dashboard";
 
 import { getAuth, isAdmin, hasAccess, type PlanLevel } from "@/lib/auth";
 
@@ -188,6 +189,7 @@ function Router() {
 
       {/* ── LIQMAP PRO — requiere plan trader/pro o superior ────────────── */}
       <Route path="/psy-feed"        component={() => <Guard plan="pro"><PsyIntelligenceFeed /></Guard>} />
+      <Route path="/pro-dashboard"   component={() => <Guard plan="pro"><ProDashboard /></Guard>} />
       <Route path="/heatmap"         component={() => <Guard plan="pro"><PsyHeatmap /></Guard>} />
       <Route path="/funding"         component={() => <Guard plan="pro"><FundingDashboard /></Guard>} />
       <Route path="/liquidations"    component={() => <Guard plan="pro"><LiquidationClock /></Guard>} />
