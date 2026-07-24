@@ -316,9 +316,11 @@ function calcChart25(btc: Point[]) {
   });
   return {
     nombre: "Bitcoin Power Law",
-    mide: "Modelo de largo plazo que dice que el precio de BTC crece como una potencia del tiempo desde su creación — la banda entre 0.5x y 3x del valor teórico ha contenido casi todo el historial de precio hasta ahora.",
+    mide:
+      "Teoría (popularizada por varios analistas, no un invento nuestro) que dice que el precio de BTC, mirado en escala logarítmica, sigue una curva muy predecible según cuántos días pasaron desde su creación (genesis block, enero 2009) — no según el calendario ni las noticias, solo el tiempo transcurrido. " +
+      "La línea 'Power Law' (violeta punteada) es ese valor teórico para cada día. Arriba se dibuja la 'Banda alta' (3 veces ese valor) y abajo la 'Banda baja' (la mitad de ese valor) — en más de 15 años de historial, el precio real casi nunca se salió de ese canal: cuando toca la banda alta suele estar cerca de un techo de ciclo, cuando toca la banda baja suele estar cerca de un fondo. " +
+      "Importante: esto es un patrón estadístico del pasado, no una promesa — el precio podría salirse del canal en el futuro.",
     series,
-    nota: "Fórmula pública (power law de Bitcoin, popularizada por varios analistas) aplicada sobre nuestro propio precio real — no garantiza nada sobre el futuro, es un ajuste estadístico histórico.",
   };
 }
 

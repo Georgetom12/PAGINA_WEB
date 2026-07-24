@@ -351,7 +351,10 @@ function calcChart9(btc: Point[]) {
 
   return {
     nombre: "On-chain Value Map (bandas propias)",
-    mide: "Ubica el precio de BTC contra su propio canal de regresión logarítmico de largo plazo — por encima de las bandas superiores históricamente ha marcado sobrevaloración, por debajo de las inferiores, subvaloración.",
+    mide:
+      "Traza una línea 'de valor justo' a través de todo el historial de precio de BTC (una regresión estadística, como la línea que mejor atraviesa el medio de todos los precios pasados), y dibuja 4 bandas paralelas arriba y abajo de esa línea. " +
+      "Cómo leer las 5 zonas: 'Heavy Undervalued' (muy por debajo de la línea) = históricamente donde terminan los mercados bajistas más profundos; 'Undervalued' = zona barata; 'Fair Value' = la línea central, precio 'razonable' según el historial; 'Overvalued' = zona cara; 'Heavy Overvalued' (muy por encima) = donde suelen terminar las euforias/techos de ciclo. " +
+      "Cuando el precio actual está cerca o por encima de 'Heavy Overvalued', estadísticamente el mercado está en una zona que rara vez se sostiene mucho tiempo; cuando está cerca de 'Heavy Undervalued', ha sido zona de acumulación en cada ciclo anterior.",
     series,
     nota: "Esto es un modelo PROPIO (canal de regresión log sobre precio real), NO una réplica de las bandas propietarias de BitcoinStrategyPlatform.",
   };

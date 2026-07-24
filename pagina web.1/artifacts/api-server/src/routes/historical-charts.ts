@@ -331,7 +331,10 @@ function calcChart6(m2: Point[], cpi: Point[]) {
   }));
   return {
     nombre: "M2 vs Poder Adquisitivo (CPI)",
-    mide: "Muestra cómo, mientras la oferta monetaria (M2) crece, el poder de compra del dólar cae en la misma proporción — el 'costo' real de la impresión de dinero.",
+    mide:
+      "Compara 2 cosas en el mismo gráfico: cuánto dinero (M2, línea azul) hay circulando en la economía de EEUU, contra cuánto vale realmente ese dinero (poder adquisitivo, línea roja). " +
+      "El poder adquisitivo se calcula así: se toma el nivel de precios (CPI) del primer mes de este historial como referencia 100, y se compara contra el CPI de cada mes siguiente (100 ÷ CPI actual × CPI base) — si hoy hacen falta más dólares para comprar lo mismo que antes, el poder adquisitivo baja. " +
+      "La lectura simple: mientras la línea azul (dinero impreso) sube sin parar, la línea roja (lo que ese dinero puede comprar) baja — es la forma numérica de mostrar por qué 'antes alcanzaba para más'.",
     series,
   };
 }
