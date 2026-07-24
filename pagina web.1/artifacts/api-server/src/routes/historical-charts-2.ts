@@ -9,8 +9,8 @@
 //  - mempool.space (sin key) — fee real de Bitcoin
 //  - Etherscan (ETHERSCAN_API_KEY ya existente) — gas real de Ethereum
 //  - Solana RPC público (sin key) — TPS real de Solana
-//  - CoinGlass (COINGLASS_API_KEY ya existente) — balance en exchanges
-//  - blockchain.info (sin key, ya usado en historical-charts.ts)
+//  - blockchain.info (sin key, ya usado en historical-charts.ts) — direcciones
+//    activas + hash rate de la red
 //
 // HONESTO — limitaciones reales:
 //  1) "On-chain Value Map" (#1 original): las bandas de valoración de
@@ -30,16 +30,15 @@
 //  5) Sistemas de pago: BTC/ETH/SOL son reales y en vivo (fee/TPS de
 //     cada red). Wise/Western Union/SWIFT NO tienen API pública de
 //     tarifas — quedan como referencia fija declarada, no en vivo.
-//  6) BTC vs Exchange Balance: depende de que el plan de CoinGlass
-//     conectado incluya el endpoint /exchange/balance/chart — si no,
-//     se degrada con error claro en vez de inventar el dato.
+//  6) BTC vs Exchange Balance: CoinGlass devolvió 401 (tu plan no incluye
+//     ese endpoint) — reemplazado por "Bitcoin Hash Rate vs Precio", con
+//     la misma fuente gratis que ya usa direcciones activas.
 
 import { Router, type Request, type Response } from "express";
 
 const router = Router();
 const FRED_API_KEY = process.env.FRED_API_KEY;
 const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY;
-const COINGLASS_API_KEY = process.env.COINGLASS_API_KEY;
 
 // ---------- Cache ----------
 const _cache = new Map<string, { data: unknown; exp: number }>();
@@ -185,6 +184,26 @@ async function fetchActiveAddresses(): Promise<Point[]> {
   }
 }
 
+// ---------- Hash Rate de la red (blockchain.info, misma fuente que direcciones activas) ----------
+async function fetchHashRate(): Promise<Point[]> {
+  const cacheKey = "hash-rate-2";
+  const cached = cGet<Point[]>(cacheKey);
+  if (cached) return cached;
+  try {
+    const url = "https://api.blockchain.info/charts/hash-rate?timespan=all&format=json";
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(`blockchain.info hash-rate HTTP ${r.status}`);
+    const json: any = await r.json();
+    // blockchain.info devuelve el hash rate en TH/s
+    const out = (json.values ?? []).map((v: any) => ({ date: new Date(v.x * 1000).toISOString().slice(0, 10), value: v.y }));
+    cSet(cacheKey, out, 24 * 60 * 60_000);
+    return out;
+  } catch (err) {
+    console.error("[historical-charts-2] fetchHashRate falló", err);
+    return [];
+  }
+}
+
 // ---------- Binance: klines, exchangeInfo, funding ----------
 async function fetchBinanceKlines(symbol: string, interval: string, limit: number): Promise<{ time: number; close: number }[]> {
   try {
@@ -286,34 +305,7 @@ async function fetchSolanaTps(): Promise<number> {
   }
 }
 
-// ---------- CoinGlass (balance en exchanges) ----------
-async function fetchCoinglassExchangeBalance(): Promise<{ time: number[]; price: number[]; total: number[]; error?: string } | null> {
-  if (!COINGLASS_API_KEY) return { time: [], price: [], total: [], error: "Falta COINGLASS_API_KEY" };
-  try {
-    const url = "https://open-api-v4.coinglass.com/api/exchange/balance/chart?symbol=BTC";
-    const r = await fetch(url, { headers: { "CG-API-KEY": COINGLASS_API_KEY } });
-    const bodyText = await r.text();
-    if (!r.ok) {
-      console.error(`[historical-charts-2] CoinGlass HTTP ${r.status} — cuerpo: ${bodyText.slice(0, 300)}`);
-      return { time: [], price: [], total: [], error: `HTTP ${r.status}: ${bodyText.slice(0, 200)}` };
-    }
-    const json: any = JSON.parse(bodyText);
-    if (json.code !== "0" && json.code !== 0) {
-      console.error(`[historical-charts-2] CoinGlass código ${json.code}: ${json.msg}`);
-      return { time: [], price: [], total: [], error: `${json.code}: ${json.msg}` };
-    }
-    const d = json.data?.[0];
-    if (!d) return { time: [], price: [], total: [], error: "Respuesta vacía (sin 'data')" };
-    const dataMap = d.data_map ?? {};
-    const total: number[] = d.time_list.map((_: any, i: number) =>
-      Object.values(dataMap).reduce((sum: number, arr: any) => sum + (arr[i] ?? 0), 0)
-    );
-    return { time: d.time_list, price: d.price_list, total };
-  } catch (err: any) {
-    console.error("[historical-charts-2] fetchCoinglassExchangeBalance falló", err);
-    return { time: [], price: [], total: [], error: err?.message ?? String(err) };
-  }
-}
+
 
 function alignForwardFill(baseDates: string[], other: Point[]): number[] {
   const out: number[] = [];
@@ -549,20 +541,25 @@ async function calcChart16() {
   };
 }
 
-// ---------- CHART 17: BTC vs Exchange Balance (CoinGlass) ----------
-async function calcChart17() {
-  const data = await fetchCoinglassExchangeBalance();
-  if (!data || data.error) {
-    return { nombre: "BTC Price vs Exchange Balance", error: data?.error ?? "Sin datos", series: [] as any[] };
-  }
-  const series = data.time.map((t, i) => ({
-    date: new Date(t).toISOString().slice(0, 10),
-    balance: data.total[i] ?? null,
-    precio: data.price[i] ?? null,
+// ---------- CHART 17: Bitcoin Hash Rate (seguridad de la red) vs Precio ----------
+// Reemplaza al de "Exchange Balance": ese necesitaba un plan pago de
+// CoinGlass que la cuenta conectada no tiene (401: Upgrade plan, confirmado
+// en producción). Este es un reemplazo PROPIO con la misma fuente gratis
+// ya probada (blockchain.info, la misma que direcciones activas) — mide
+// algo distinto pero igual de relevante: qué tan segura/fuerte está la
+// red de minería, un fundamento real de la salud de Bitcoin.
+function calcChart17(hashRate: Point[], btc: Point[]) {
+  if (hashRate.length < 30) return null;
+  const dates = hashRate.map((p) => p.date);
+  const btcAligned = alignForwardFill(dates, btc);
+  const series = hashRate.map((p, i) => ({
+    date: p.date,
+    hashRateEHs: round2(p.value / 1_000_000), // TH/s -> EH/s, más legible
+    precio: btcAligned[i] ?? null,
   }));
   return {
-    nombre: "BTC Price vs Exchange Balance",
-    mide: "Cuánto BTC hay guardado en exchanges conocidos — cuando baja sostenidamente, la gente está retirando a self-custody (señal de acumulación); cuando sube, puede anticipar más presión de venta. Se arma con el balance reportado por cada exchange, sumado entre todos los que trackea CoinGlass.",
+    nombre: "Bitcoin Hash Rate (Seguridad de la Red) vs Precio",
+    mide: "Cuánto poder de cómputo está protegiendo la red de Bitcoin (hash rate real, en Exahashes/segundo) comparado con el precio — un hash rate que sigue subiendo aun con el precio cayendo es una señal de que los mineros siguen creyendo en la red a largo plazo; caídas fuertes de hash rate (capitulación de mineros) suelen coincidir con fondos de mercado.",
     series,
   };
 }
@@ -667,16 +664,16 @@ async function refreshCharts2() {
   try {
     const btc = await fetchBtcDailyFull();
     const activeAddr = await fetchActiveAddresses();
+    const hashRate = await fetchHashRate();
     const btcPriceNow = btc[btc.length - 1]?.value ?? 0;
 
-    const [chart10, chart11, chart12, chart13, chart15, chart16, chart17, chart18] = await Promise.all([
+    const [chart10, chart11, chart12, chart13, chart15, chart16, chart18] = await Promise.all([
       calcChart10(),
       calcChart11(),
       calcChart12(),
       calcChart13(),
       calcChart15(btc),
       calcChart16(),
-      calcChart17(),
       calcChart18(btcPriceNow),
     ]);
 
@@ -690,7 +687,7 @@ async function refreshCharts2() {
       chart14: calcChart14(activeAddr),
       chart15,
       chart16,
-      chart17,
+      chart17: calcChart17(hashRate, btc),
       chart18,
       chart19: calcChart19(btc),
     };
