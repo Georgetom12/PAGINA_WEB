@@ -416,27 +416,19 @@ export default function HistoricalChartsPage() {
           )}
 
           {/* CHART 17 */}
-          {data2.chart17 && !data2.chart17.error && (
+          {data2.chart17 && (
             <Card title={`1️⃣7️⃣ ${data2.chart17.nombre}`} mide={data2.chart17.mide}>
               <ResponsiveContainer width="100%" height={260}>
                 <ComposedChart data={data2.chart17.series}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
                   <XAxis dataKey="date" stroke="#6b7280" fontSize={9} tickFormatter={(d) => d?.slice(0, 7)} />
-                  <YAxis yAxisId="bal" stroke="#6b7280" fontSize={10} />
+                  <YAxis yAxisId="hash" stroke="#6b7280" fontSize={10} />
                   <YAxis yAxisId="price" orientation="right" scale="log" domain={["auto", "auto"]} stroke="#6b7280" fontSize={10} />
                   <Tooltip {...chartTooltip} />
-                  <Line yAxisId="bal" type="monotone" dataKey="balance" name="Balance en exchanges (BTC)" stroke="#22c55e" dot={false} strokeWidth={2} />
+                  <Area yAxisId="hash" type="monotone" dataKey="hashRateEHs" name="Hash Rate (EH/s)" stroke="#a78bfa" fill="#a78bfa33" strokeWidth={2} />
                   <Line yAxisId="price" type="monotone" dataKey="precio" name="Precio BTC" stroke="#f59e0b" dot={false} strokeWidth={1.5} />
                 </ComposedChart>
               </ResponsiveContainer>
-            </Card>
-          )}
-          {(!data2.chart17 || data2.chart17.error) && (
-            <Card
-              title="1️⃣7️⃣ BTC Price vs Exchange Balance"
-              nota={`No se pudo traer de CoinGlass — ${data2.chart17?.error ?? "sin datos"}. Si dice 'HTTP 403' o menciona el plan, tu suscripción actual de CoinGlass no incluye este endpoint.`}
-            >
-              <div className="text-gray-500 text-sm">Sin datos disponibles por ahora.</div>
             </Card>
           )}
 
