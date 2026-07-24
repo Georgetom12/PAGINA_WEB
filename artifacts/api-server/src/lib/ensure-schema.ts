@@ -335,6 +335,50 @@ export async function ensureSchema(): Promise<void> {
         ADD COLUMN IF NOT EXISTS email_verified BOOLEAN NOT NULL DEFAULT true
     `);
 
+    // ── PRO DASHBOARD: watchlist, alertas, conexión de exchange, track record ──
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS psy_watchlist (
+        id         SERIAL PRIMARY KEY,
+        username   TEXT NOT NULL,
+        symbol     TEXT NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE(username, symbol)
+      );
+
+      CREATE TABLE IF NOT EXISTS psy_alerts (
+        id           SERIAL PRIMARY KEY,
+        username     TEXT NOT NULL,
+        symbol       TEXT NOT NULL,
+        metric       TEXT NOT NULL,
+        condition    TEXT NOT NULL,
+        threshold    NUMERIC NOT NULL,
+        active       BOOLEAN NOT NULL DEFAULT TRUE,
+        triggered_at TIMESTAMPTZ,
+        created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS psy_exchange_keys (
+        id              SERIAL PRIMARY KEY,
+        username        TEXT NOT NULL UNIQUE,
+        exchange        TEXT NOT NULL DEFAULT 'binance',
+        api_key_enc     TEXT NOT NULL,
+        api_secret_enc  TEXT NOT NULL,
+        created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS psy_track_record (
+        id            SERIAL PRIMARY KEY,
+        symbol        TEXT NOT NULL,
+        motor         TEXT NOT NULL,
+        direccion     TEXT NOT NULL,
+        entrada       NUMERIC,
+        resultado_pct NUMERIC,
+        estado        TEXT NOT NULL DEFAULT 'PENDIENTE',
+        created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        closed_at     TIMESTAMPTZ
+      );
+    `);
+
     logger.info("Schema verified / created OK");
   } catch (err) {
     logger.error({ err }, "Error ensuring schema — server will still start");
