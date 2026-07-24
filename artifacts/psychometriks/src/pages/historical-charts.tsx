@@ -24,23 +24,47 @@ import {
 
 const chartTooltip = { contentStyle: { background: "#111827", border: "1px solid #374151", fontSize: 12 } };
 
+function diasDesde(fecha?: string): number | null {
+  if (!fecha) return null;
+  const d = new Date(fecha.length <= 7 ? fecha + "-01" : fecha).getTime();
+  if (isNaN(d)) return null;
+  return Math.round((Date.now() - d) / (1000 * 60 * 60 * 24));
+}
+
+function UltimoDatoBadge({ fecha }: { fecha?: string }) {
+  const dias = diasDesde(fecha);
+  if (dias === null) return null;
+  const reciente = dias <= 60;
+  return (
+    <span className={`text-xs px-2 py-0.5 rounded ${reciente ? "bg-teal-900 text-teal-300" : "bg-yellow-900 text-yellow-300"}`}>
+      {reciente ? "● " : "⏱ "}
+      Último dato real: {fecha} {!reciente && `(la fuente original tiene ~${Math.round(dias / 30)} meses de atraso, no nuestro sistema)`}
+    </span>
+  );
+}
+
 function Card({
   title,
   mide,
   nota,
   detalle,
+  ultimoDato,
   children,
 }: {
   title: string;
   mide?: string;
   nota?: string;
   detalle?: string;
+  ultimoDato?: string;
   children: React.ReactNode;
 }) {
   return (
     <div className="bg-gray-900 rounded-xl p-5 border border-gray-800 mb-6">
-      <h2 className="text-lg font-bold">{title}</h2>
-      {mide && <p className="text-xs text-gray-500 mb-3">{mide}</p>}
+      <div className="flex items-start justify-between gap-2 flex-wrap">
+        <h2 className="text-lg font-bold">{title}</h2>
+        <UltimoDatoBadge fecha={ultimoDato} />
+      </div>
+      {mide && <p className="text-xs text-gray-500 mb-3 mt-1">{mide}</p>}
       <div className="mt-2">{children}</div>
       {nota && <p className="text-xs text-yellow-600 mt-3 border-t border-gray-800 pt-3">⚠ {nota}</p>}
       {detalle && !nota && <p className="text-xs text-gray-600 mt-3 border-t border-gray-800 pt-3">{detalle}</p>}
@@ -149,7 +173,7 @@ export default function HistoricalChartsPage() {
 
           {/* CHART 3 */}
           {data.chart3 && (
-            <Card title={`3️⃣ ${data.chart3.nombre}`} mide={data.chart3.mide}>
+            <Card title={`3️⃣ ${data.chart3.nombre}`} mide={data.chart3.mide} ultimoDato={data.chart3.series[data.chart3.series.length - 1]?.date}>
               <ResponsiveContainer width="100%" height={280}>
                 <ComposedChart data={data.chart3.series}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
@@ -207,7 +231,7 @@ export default function HistoricalChartsPage() {
 
           {/* CHART 6 */}
           {data.chart6 && (
-            <Card title={`6️⃣ ${data.chart6.nombre}`} mide={data.chart6.mide}>
+            <Card title={`6️⃣ ${data.chart6.nombre}`} mide={data.chart6.mide} ultimoDato={data.chart6.series[data.chart6.series.length - 1]?.date}>
               <ResponsiveContainer width="100%" height={280}>
                 <ComposedChart data={data.chart6.series}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
@@ -224,7 +248,7 @@ export default function HistoricalChartsPage() {
 
           {/* CHART 7 */}
           {data.chart7 && (
-            <Card title={`7️⃣ ${data.chart7.nombre}`} mide={data.chart7.mide}>
+            <Card title={`7️⃣ ${data.chart7.nombre}`} mide={data.chart7.mide} ultimoDato={data.chart7.fechaActual}>
               <div className="flex gap-4 mb-3 text-sm">
                 <div className="bg-gray-800/50 rounded-lg px-3 py-2">
                   <div className="text-xs text-gray-500">CAGR (2000-hoy)</div>
@@ -249,7 +273,7 @@ export default function HistoricalChartsPage() {
 
           {/* CHART 8 */}
           {data.chart8 && (
-            <Card title={`8️⃣ ${data.chart8.nombre}`} mide={data.chart8.mide}>
+            <Card title={`8️⃣ ${data.chart8.nombre}`} mide={data.chart8.mide} ultimoDato={data.chart8.series[data.chart8.series.length - 1]?.date}>
               <ResponsiveContainer width="100%" height={280}>
                 <ComposedChart data={data.chart8.series}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
@@ -300,7 +324,7 @@ export default function HistoricalChartsPage() {
 
           {/* CHART 10 */}
           {data2.chart10 && (
-            <Card title={`🔟 ${data2.chart10.nombre}`} mide={data2.chart10.mide}>
+            <Card title={`🔟 ${data2.chart10.nombre}`} mide={data2.chart10.mide} ultimoDato={data2.chart10.series[data2.chart10.series.length - 1]?.date}>
               <ResponsiveContainer width="100%" height={260}>
                 <LineChart data={data2.chart10.series}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
@@ -334,7 +358,7 @@ export default function HistoricalChartsPage() {
 
           {/* CHART 12 */}
           {data2.chart12 && (
-            <Card title={`1️⃣2️⃣ ${data2.chart12.nombre}`} mide={data2.chart12.mide} nota={data2.chart12.nota}>
+            <Card title={`1️⃣2️⃣ ${data2.chart12.nombre}`} mide={data2.chart12.mide} nota={data2.chart12.nota} ultimoDato={data2.chart12.series[data2.chart12.series.length - 1]?.date}>
               <ResponsiveContainer width="100%" height={260}>
                 <LineChart data={data2.chart12.series}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
@@ -506,7 +530,7 @@ export default function HistoricalChartsPage() {
         <>
           {/* CHART 20 */}
           {data3.chart20 && (
-            <Card title={`2️⃣0️⃣ ${data3.chart20.nombre}`} mide={data3.chart20.mide}>
+            <Card title={`2️⃣0️⃣ ${data3.chart20.nombre}`} mide={data3.chart20.mide} ultimoDato={data3.chart20.series[data3.chart20.series.length - 1]?.date}>
               <ResponsiveContainer width="100%" height={280}>
                 <LineChart data={data3.chart20.series}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
@@ -562,7 +586,7 @@ export default function HistoricalChartsPage() {
 
           {/* CHART 23 */}
           {data3.chart23 && (
-            <Card title={`2️⃣3️⃣ ${data3.chart23.nombre}`} mide={data3.chart23.mide} detalle={data3.chart23.nota}>
+            <Card title={`2️⃣3️⃣ ${data3.chart23.nombre}`} mide={data3.chart23.mide} detalle={data3.chart23.nota} ultimoDato={data3.chart23.series[data3.chart23.series.length - 1]?.date}>
               <ResponsiveContainer width="100%" height={260}>
                 <LineChart data={data3.chart23.series}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
@@ -580,7 +604,7 @@ export default function HistoricalChartsPage() {
 
           {/* CHART 24 */}
           {data3.chart24 && (
-            <Card title={`2️⃣4️⃣ ${data3.chart24.nombre}`} mide={data3.chart24.mide} detalle={data3.chart24.nota}>
+            <Card title={`2️⃣4️⃣ ${data3.chart24.nombre}`} mide={data3.chart24.mide} detalle={data3.chart24.nota} ultimoDato={data3.chart24.series[data3.chart24.series.length - 1]?.date}>
               <ResponsiveContainer width="100%" height={260}>
                 <LineChart data={data3.chart24.series}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
@@ -693,17 +717,26 @@ export default function HistoricalChartsPage() {
           {/* CHART 30 */}
           {data3.chart30 && (
             <Card title={`3️⃣0️⃣ ${data3.chart30.nombre}`} mide={data3.chart30.mide} detalle={data3.chart30.nota}>
-              <ResponsiveContainer width="100%" height={220}>
-                <AreaChart data={data3.chart30.series}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
-                  <XAxis dataKey="date" stroke="#6b7280" fontSize={9} />
-                  <YAxis stroke="#6b7280" fontSize={10} />
-                  <Tooltip {...chartTooltip} />
-                  <Legend wrapperStyle={{ fontSize: 11 }} />
-                  <Area type="monotone" dataKey="pctBallenas" name="% Ballenas (>$50k)" stroke="#7c3aed" fill="#7c3aed33" strokeWidth={2} />
-                  <Area type="monotone" dataKey="pctRetail" name="% Retail" stroke="#38bdf8" fill="#38bdf822" strokeWidth={2} />
-                </AreaChart>
-              </ResponsiveContainer>
+              <div className="flex gap-3 mb-3 text-sm">
+                <Stat label="% Ballenas ahora" value={`${data3.chart30.series[data3.chart30.series.length - 1]?.pctBallenas ?? "—"}%`} />
+                <Stat label="% Retail ahora" value={`${data3.chart30.series[data3.chart30.series.length - 1]?.pctRetail ?? "—"}%`} />
+                <Stat label="Días acumulados" value={String(data3.chart30.series.length)} />
+              </div>
+              {data3.chart30.series.length > 1 ? (
+                <ResponsiveContainer width="100%" height={220}>
+                  <AreaChart data={data3.chart30.series}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+                    <XAxis dataKey="date" stroke="#6b7280" fontSize={9} />
+                    <YAxis stroke="#6b7280" fontSize={10} />
+                    <Tooltip {...chartTooltip} />
+                    <Legend wrapperStyle={{ fontSize: 11 }} />
+                    <Area type="monotone" dataKey="pctBallenas" name="% Ballenas (>$50k)" stroke="#7c3aed" fill="#7c3aed33" strokeWidth={2} />
+                    <Area type="monotone" dataKey="pctRetail" name="% Retail" stroke="#38bdf8" fill="#38bdf822" strokeWidth={2} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <p className="text-xs text-gray-500 italic">Todavía hay muy pocos días acumulados para dibujar una línea — mañana ya vas a ver 2 puntos, y en 1-2 semanas se va a ver como un gráfico completo.</p>
+              )}
             </Card>
           )}
 
@@ -727,15 +760,23 @@ export default function HistoricalChartsPage() {
           {/* CHART 32 */}
           {data3.chart32 && (
             <Card title={`3️⃣2️⃣ ${data3.chart32.nombre}`} mide={data3.chart32.mide} detalle={data3.chart32.nota}>
-              <ResponsiveContainer width="100%" height={220}>
-                <AreaChart data={data3.chart32.series}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
-                  <XAxis dataKey="date" stroke="#6b7280" fontSize={9} />
-                  <YAxis stroke="#6b7280" fontSize={10} />
-                  <Tooltip {...chartTooltip} />
-                  <Area type="monotone" dataKey="openInterest" name="OI Opciones BTC (Deribit)" stroke="#f472b6" fill="#f472b633" strokeWidth={2} />
-                </AreaChart>
-              </ResponsiveContainer>
+              <div className="flex gap-3 mb-3 text-sm">
+                <Stat label="OI ahora" value={data3.chart32.series[data3.chart32.series.length - 1]?.openInterest?.toLocaleString("es-EC") ?? "—"} />
+                <Stat label="Días acumulados" value={String(data3.chart32.series.length)} />
+              </div>
+              {data3.chart32.series.length > 1 ? (
+                <ResponsiveContainer width="100%" height={220}>
+                  <AreaChart data={data3.chart32.series}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+                    <XAxis dataKey="date" stroke="#6b7280" fontSize={9} />
+                    <YAxis stroke="#6b7280" fontSize={10} />
+                    <Tooltip {...chartTooltip} />
+                    <Area type="monotone" dataKey="openInterest" name="OI Opciones BTC (Deribit)" stroke="#f472b6" fill="#f472b633" strokeWidth={2} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <p className="text-xs text-gray-500 italic">Todavía hay muy pocos días acumulados para dibujar una línea — se va a ir completando solo, día a día.</p>
+              )}
             </Card>
           )}
 
