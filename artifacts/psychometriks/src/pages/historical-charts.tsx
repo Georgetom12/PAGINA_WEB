@@ -42,6 +42,7 @@ function Card({ title, mide, nota, children }: { title: string; mide?: string; n
 
 export default function HistoricalChartsPage() {
   const [data, setData] = useState<any>(null);
+  const [data2, setData2] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -49,14 +50,16 @@ export default function HistoricalChartsPage() {
     let cancelled = false;
     async function load() {
       try {
-        const res = await fetch("/api/historical-charts/live");
+        const [res, res2] = await Promise.all([fetch("/api/historical-charts/live"), fetch("/api/historical-charts-2/live")]);
         const json = await res.json();
+        const json2 = await res2.json().catch(() => null);
         if (cancelled) return;
         if (!res.ok) setError(json.error ?? "Error cargando gráficos");
         else {
           setData(json);
           setError(null);
         }
+        if (res2.ok) setData2(json2);
       } catch {
         if (!cancelled) setError("Fallo de red pidiendo los gráficos");
       } finally {
@@ -241,7 +244,234 @@ export default function HistoricalChartsPage() {
           )}
 
           <div className="text-xs text-gray-600 text-center mt-2">
-            Última actualización: {new Date(data.updatedAt).toLocaleString("es-EC")}
+            Última actualización (tanda 1): {new Date(data.updatedAt).toLocaleString("es-EC")}
+          </div>
+        </>
+      )}
+
+      {data2 && (
+        <>
+          {/* CHART 9 */}
+          {data2.chart9 && (
+            <Card title={`9️⃣ ${data2.chart9.nombre}`} mide={data2.chart9.mide} nota={data2.chart9.nota}>
+              <ResponsiveContainer width="100%" height={280}>
+                <ComposedChart data={data2.chart9.series}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+                  <XAxis dataKey="date" stroke="#6b7280" fontSize={9} tickFormatter={(d) => d?.slice(0, 4)} />
+                  <YAxis scale="log" domain={["auto", "auto"]} stroke="#6b7280" fontSize={10} />
+                  <Tooltip {...chartTooltip} />
+                  <Line type="monotone" dataKey="heavyOver" name="Heavy Overvalued" stroke="#7f1d1d" dot={false} strokeWidth={1} />
+                  <Line type="monotone" dataKey="over" name="Overvalued" stroke="#f59e0b" dot={false} strokeWidth={1} />
+                  <Line type="monotone" dataKey="fair" name="Fair Value" stroke="#6b7280" dot={false} strokeWidth={1} strokeDasharray="4 4" />
+                  <Line type="monotone" dataKey="under" name="Undervalued" stroke="#22c55e" dot={false} strokeWidth={1} />
+                  <Line type="monotone" dataKey="heavyUnder" name="Heavy Undervalued" stroke="#14532d" dot={false} strokeWidth={1} />
+                  <Line type="monotone" dataKey="precio" name="Precio BTC" stroke="#e5e7eb" dot={false} strokeWidth={2} />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </Card>
+          )}
+
+          {/* CHART 10 */}
+          {data2.chart10 && (
+            <Card title={`🔟 ${data2.chart10.nombre}`} mide={data2.chart10.mide}>
+              <ResponsiveContainer width="100%" height={260}>
+                <LineChart data={data2.chart10.series}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+                  <XAxis dataKey="date" stroke="#6b7280" fontSize={9} tickFormatter={(d) => d?.slice(0, 7)} />
+                  <YAxis stroke="#6b7280" fontSize={10} />
+                  <Tooltip {...chartTooltip} />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  <Line type="monotone" dataKey="breakeven5y" name="5-Year Breakeven" stroke="#e5e7eb" dot={false} strokeWidth={2} />
+                  <Line type="monotone" dataKey="forward5y5y" name="5Y Forward 5Y" stroke="#38bdf8" dot={false} strokeWidth={2} />
+                </LineChart>
+              </ResponsiveContainer>
+            </Card>
+          )}
+
+          {/* CHART 11 */}
+          {data2.chart11 && (
+            <Card title={`1️⃣1️⃣ ${data2.chart11.nombre}`} mide={data2.chart11.mide} nota={data2.chart11.nota}>
+              <ResponsiveContainer width="100%" height={260}>
+                <LineChart data={data2.chart11.series}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+                  <XAxis dataKey="date" stroke="#6b7280" fontSize={9} tickFormatter={(d) => d?.slice(0, 7)} />
+                  <YAxis scale="log" domain={["auto", "auto"]} stroke="#6b7280" fontSize={10} />
+                  <Tooltip {...chartTooltip} />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  <Line type="monotone" dataKey="privateEquityIdx" name="Basket Private Equity" stroke="#22c55e" dot={false} strokeWidth={2} />
+                  <Line type="monotone" dataKey="sp500Idx" name="S&P 500" stroke="#e5e7eb" dot={false} strokeWidth={2} />
+                </LineChart>
+              </ResponsiveContainer>
+            </Card>
+          )}
+
+          {/* CHART 12 */}
+          {data2.chart12 && (
+            <Card title={`1️⃣2️⃣ ${data2.chart12.nombre}`} mide={data2.chart12.mide} nota={data2.chart12.nota}>
+              <ResponsiveContainer width="100%" height={260}>
+                <LineChart data={data2.chart12.series}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+                  <XAxis dataKey="date" stroke="#6b7280" fontSize={9} tickFormatter={(d) => d?.slice(0, 4)} />
+                  <YAxis stroke="#6b7280" fontSize={10} />
+                  <Tooltip {...chartTooltip} />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  <Line type="monotone" dataKey="top1Pct" name="Top 1% (%)" stroke="#f59e0b" dot={false} strokeWidth={2} />
+                  <Line type="monotone" dataKey="bottom50Pct" name="Bottom 50% (%)" stroke="#38bdf8" dot={false} strokeWidth={2} />
+                </LineChart>
+              </ResponsiveContainer>
+            </Card>
+          )}
+
+          {/* CHART 13 */}
+          {data2.chart13 && (
+            <Card title={`1️⃣3️⃣ ${data2.chart13.nombre}`} mide={data2.chart13.mide} nota={data2.chart13.nota}>
+              <ResponsiveContainer width="100%" height={260}>
+                <LineChart data={data2.chart13.series}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+                  <XAxis dataKey="date" stroke="#6b7280" fontSize={9} tickFormatter={(d) => d?.slice(0, 7)} />
+                  <YAxis stroke="#6b7280" fontSize={10} />
+                  <Tooltip {...chartTooltip} />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  <Line type="monotone" dataKey="ibitVol" name="IBIT" stroke="#38bdf8" dot={false} strokeWidth={1.5} />
+                  <Line type="monotone" dataKey="fbtcVol" name="FBTC" stroke="#3b82f6" dot={false} strokeWidth={1.5} />
+                  <Line type="monotone" dataKey="gbtcVol" name="GBTC" stroke="#7c3aed" dot={false} strokeWidth={1.5} />
+                </LineChart>
+              </ResponsiveContainer>
+            </Card>
+          )}
+
+          {/* CHART 14 */}
+          {data2.chart14 && (
+            <Card title={`1️⃣4️⃣ ${data2.chart14.nombre}`} mide={data2.chart14.mide} nota={data2.chart14.nota}>
+              <ResponsiveContainer width="100%" height={260}>
+                <AreaChart data={data2.chart14.series}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+                  <XAxis dataKey="date" stroke="#6b7280" fontSize={9} tickFormatter={(d) => d?.slice(0, 4)} />
+                  <YAxis stroke="#6b7280" fontSize={10} />
+                  <Tooltip {...chartTooltip} />
+                  <Area type="monotone" dataKey="pctPoblacion" name="% Población mundial" stroke="#38bdf8" fill="#38bdf833" strokeWidth={2} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </Card>
+          )}
+
+          {/* CHART 15 */}
+          {data2.chart15 && (
+            <Card title={`1️⃣5️⃣ ${data2.chart15.nombre}`} mide={data2.chart15.mide}>
+              <ResponsiveContainer width="100%" height={260}>
+                <ComposedChart data={data2.chart15.series}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+                  <XAxis dataKey="date" stroke="#6b7280" fontSize={9} tickFormatter={(d) => d?.slice(0, 7)} />
+                  <YAxis yAxisId="fund" stroke="#6b7280" fontSize={10} />
+                  <YAxis yAxisId="price" orientation="right" scale="log" domain={["auto", "auto"]} stroke="#6b7280" fontSize={10} />
+                  <Tooltip {...chartTooltip} />
+                  <ReferenceLine yAxisId="fund" y={0} stroke="#4b5563" />
+                  <Bar yAxisId="fund" dataKey="fundingPct" name="Funding %">
+                    {data2.chart15.series.map((d: any, i: number) => (
+                      <Cell key={i} fill={d.fundingPct >= 0 ? "#22c55e" : "#ef4444"} />
+                    ))}
+                  </Bar>
+                  <Line yAxisId="price" type="monotone" dataKey="precio" name="Precio BTC" stroke="#e5e7eb" dot={false} strokeWidth={1.5} />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </Card>
+          )}
+
+          {/* CHART 16 */}
+          {data2.chart16 && (
+            <Card title={`1️⃣6️⃣ ${data2.chart16.nombre}`} mide={data2.chart16.mide}>
+              <ResponsiveContainer width="100%" height={260}>
+                <ComposedChart data={data2.chart16.series}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+                  <XAxis dataKey="dia" stroke="#6b7280" fontSize={10} />
+                  <YAxis stroke="#6b7280" fontSize={10} />
+                  <Tooltip {...chartTooltip} />
+                  <ReferenceLine y={0} stroke="#4b5563" />
+                  <Area type="monotone" dataKey="p75" stroke="none" fill="#a78bfa22" />
+                  <Area type="monotone" dataKey="p25" stroke="none" fill="#0f172a" />
+                  <Line type="monotone" dataKey="mediana" name="Performance mediana %" stroke="#a78bfa" dot={false} strokeWidth={2} />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </Card>
+          )}
+
+          {/* CHART 17 */}
+          {data2.chart17 && (
+            <Card title={`1️⃣7️⃣ ${data2.chart17.nombre}`} mide={data2.chart17.mide}>
+              <ResponsiveContainer width="100%" height={260}>
+                <ComposedChart data={data2.chart17.series}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+                  <XAxis dataKey="date" stroke="#6b7280" fontSize={9} tickFormatter={(d) => d?.slice(0, 7)} />
+                  <YAxis yAxisId="bal" stroke="#6b7280" fontSize={10} />
+                  <YAxis yAxisId="price" orientation="right" scale="log" domain={["auto", "auto"]} stroke="#6b7280" fontSize={10} />
+                  <Tooltip {...chartTooltip} />
+                  <Line yAxisId="bal" type="monotone" dataKey="balance" name="Balance en exchanges (BTC)" stroke="#22c55e" dot={false} strokeWidth={2} />
+                  <Line yAxisId="price" type="monotone" dataKey="precio" name="Precio BTC" stroke="#f59e0b" dot={false} strokeWidth={1.5} />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </Card>
+          )}
+          {!data2.chart17 && (
+            <Card title="1️⃣7️⃣ BTC Price vs Exchange Balance" nota="No se pudo traer — probablemente tu plan de CoinGlass no incluye el endpoint de balance en exchanges. Revisar log del servidor para el error exacto.">
+              <div className="text-gray-500 text-sm">Sin datos disponibles con tu plan actual.</div>
+            </Card>
+          )}
+
+          {/* CHART 18 */}
+          {data2.chart18 && (
+            <Card title={`1️⃣8️⃣ ${data2.chart18.nombre}`} mide={data2.chart18.mide} nota={data2.chart18.nota}>
+              <div className="space-y-2 text-sm">
+                {Object.entries(data2.chart18.redes).map(([red, v]: [string, any]) => (
+                  <div key={red} className="flex justify-between items-center bg-gray-800/50 rounded-lg px-3 py-2">
+                    <span className="font-medium">
+                      {red} {v.enVivo && <span className="text-teal-400 text-xs">● en vivo</span>}
+                    </span>
+                    <span className="text-gray-300">
+                      {v.diasNecesarios?.toLocaleString("es-EC")} días · ${(v.costoTotalUSD / 1_000_000).toFixed(0)}M
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {/* CHART 19 */}
+          {data2.chart19 && (
+            <Card title={`1️⃣9️⃣ ${data2.chart19.nombre}`} mide={data2.chart19.mide}>
+              <div className="overflow-x-auto">
+                <table className="text-xs border-collapse">
+                  <thead>
+                    <tr>
+                      <th className="p-1 text-gray-500">Entrada</th>
+                      {Array.from({ length: 15 }, (_, i) => i + 1).map((h) => (
+                        <th key={h} className="p-1 text-gray-500">{h}a</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data2.chart19.filas.map((fila: any) => (
+                      <tr key={fila.entryYear}>
+                        <td className="p-1 text-gray-400 font-semibold">{fila.entryYear}</td>
+                        {Array.from({ length: 15 }, (_, i) => i + 1).map((h) => {
+                          const v = fila.cagrPorPeriodo[h];
+                          if (v === undefined) return <td key={h} className="p-1"></td>;
+                          const bg = v >= 100 ? "bg-blue-700" : v >= 50 ? "bg-teal-700" : v >= 0 ? "bg-green-800" : "bg-red-800";
+                          return (
+                            <td key={h} className={`p-1 text-center text-white ${bg}`}>
+                              {Math.round(v)}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          )}
+
+          <div className="text-xs text-gray-600 text-center mt-2">
+            Última actualización (tanda 2): {new Date(data2.updatedAt).toLocaleString("es-EC")}
           </div>
         </>
       )}
