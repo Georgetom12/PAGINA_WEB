@@ -20,15 +20,17 @@
 //  3) "Tactical Bull-Bear Sentiment Index" (#4): la fórmula de Alphractal
 //     es propietaria y paga — esto es un índice PROPIO (RSI semanal +
 //     percentil de volatilidad), inspirado en el concepto, NO una réplica.
-//  4) CoinGecko sin key tiene rate limit bajo y no está pensado para
-//     "scheduled polling" — está todo cacheado 24hs para no abusar; si
-//     empieza a fallar seguido, la solución es sacar una key gratis
-//     (Demo) en coingecko.com/en/api.
+//  4) CoinGecko YA EXIGE key incluso para /market_chart/range (confirmado
+//     en producción: HTTP 401 sin ella) — hace falta COINGECKO_API_KEY,
+//     una key gratis del plan Demo (100 llamados/min, 10.000/mes, de sobra
+//     para esto ya que está cacheado 24hs). Sacarla en
+//     coingecko.com/en/developers/dashboard y agregarla en Railway.
 
 import { Router, type Request, type Response } from "express";
 
 const router = Router();
 const FRED_API_KEY = process.env.FRED_API_KEY;
+const COINGECKO_API_KEY = process.env.COINGECKO_API_KEY;
 
 // ---------- Cache simple ----------
 const _cache = new Map<string, { data: unknown; exp: number }>();
@@ -79,7 +81,11 @@ async function fetchBtcDailyFull(): Promise<Point[]> {
     const from = Math.floor(new Date("2013-04-01T00:00:00Z").getTime() / 1000);
     const to = Math.floor(Date.now() / 1000);
     const url = `https://api.coingecko.com/api/v3/coins/bitcoin/market_chart/range?vs_currency=usd&from=${from}&to=${to}`;
-    const r = await fetch(url);
+    const headers: Record<string, string> = COINGECKO_API_KEY ? { "x-cg-demo-api-key": COINGECKO_API_KEY } : {};
+    if (!COINGECKO_API_KEY) {
+      console.warn("[historical-charts] falta COINGECKO_API_KEY — CoinGecko ahora exige key hasta en /market_chart/range, sacar una gratis en coingecko.com/en/developers/dashboard");
+    }
+    const r = await fetch(url, { headers });
     if (!r.ok) throw new Error(`CoinGecko HTTP ${r.status}`);
     const json: any = await r.json();
     const prices: [number, number][] = json.prices ?? [];
