@@ -253,10 +253,13 @@ async function fetchBtcFeeSatVb(): Promise<number> {
 async function fetchEthGasGwei(): Promise<number> {
   if (!ETHERSCAN_API_KEY) return 0;
   try {
-    const url = `https://api.etherscan.io/api?module=gastracker&action=gasoracle&apikey=${ETHERSCAN_API_KEY}`;
+    // Etherscan V1 se dio de baja el 31 de mayo de 2025 — hay que usar V2
+    // con chainid obligatorio (1 = Ethereum mainnet)
+    const url = `https://api.etherscan.io/v2/api?chainid=1&module=gastracker&action=gasoracle&apikey=${ETHERSCAN_API_KEY}`;
     const r = await fetch(url);
     if (!r.ok) throw new Error(`Etherscan HTTP ${r.status}`);
     const json: any = await r.json();
+    if (json.status !== "1") throw new Error(`Etherscan: ${json.message ?? "sin éxito"} — ${json.result ?? ""}`);
     return parseFloat(json.result?.ProposeGasPrice ?? "0");
   } catch (err) {
     console.error("[historical-charts-2] fetchEthGasGwei falló", err);
@@ -284,23 +287,31 @@ async function fetchSolanaTps(): Promise<number> {
 }
 
 // ---------- CoinGlass (balance en exchanges) ----------
-async function fetchCoinglassExchangeBalance(): Promise<{ time: number[]; price: number[]; total: number[] } | null> {
-  if (!COINGLASS_API_KEY) return null;
+async function fetchCoinglassExchangeBalance(): Promise<{ time: number[]; price: number[]; total: number[]; error?: string } | null> {
+  if (!COINGLASS_API_KEY) return { time: [], price: [], total: [], error: "Falta COINGLASS_API_KEY" };
   try {
     const url = "https://open-api-v4.coinglass.com/api/exchange/balance/chart?symbol=BTC";
     const r = await fetch(url, { headers: { "CG-API-KEY": COINGLASS_API_KEY } });
-    if (!r.ok) throw new Error(`CoinGlass HTTP ${r.status}`);
-    const json: any = await r.json();
+    const bodyText = await r.text();
+    if (!r.ok) {
+      console.error(`[historical-charts-2] CoinGlass HTTP ${r.status} — cuerpo: ${bodyText.slice(0, 300)}`);
+      return { time: [], price: [], total: [], error: `HTTP ${r.status}: ${bodyText.slice(0, 200)}` };
+    }
+    const json: any = JSON.parse(bodyText);
+    if (json.code !== "0" && json.code !== 0) {
+      console.error(`[historical-charts-2] CoinGlass código ${json.code}: ${json.msg}`);
+      return { time: [], price: [], total: [], error: `${json.code}: ${json.msg}` };
+    }
     const d = json.data?.[0];
-    if (!d) return null;
+    if (!d) return { time: [], price: [], total: [], error: "Respuesta vacía (sin 'data')" };
     const dataMap = d.data_map ?? {};
     const total: number[] = d.time_list.map((_: any, i: number) =>
       Object.values(dataMap).reduce((sum: number, arr: any) => sum + (arr[i] ?? 0), 0)
     );
     return { time: d.time_list, price: d.price_list, total };
-  } catch (err) {
-    console.error("[historical-charts-2] fetchCoinglassExchangeBalance falló (puede ser tu plan)", err);
-    return null;
+  } catch (err: any) {
+    console.error("[historical-charts-2] fetchCoinglassExchangeBalance falló", err);
+    return { time: [], price: [], total: [], error: err?.message ?? String(err) };
   }
 }
 
@@ -455,33 +466,42 @@ async function calcChart13() {
   };
 }
 
-// ---------- CHART 14: Adopción (% población mundial) ----------
+// ---------- CHART 14: Adopción — direcciones activas por año (histograma) ----------
 function calcChart14(activeAddr: Point[]) {
   // Filtra puntos inválidos/cero primero — blockchain.info tiene huecos en
   // su historial más viejo que generaban picos falsos (subía a 0 y volvía)
   const limpio = activeAddr.filter((p) => p.value > 1000);
   if (limpio.length < 100) return null;
 
-  // Media móvil de 30 días para suavizar ruido restante antes de graficar
-  const win = 30;
-  const suavizado: Point[] = limpio.map((p, i) => {
-    const from = Math.max(0, i - win);
-    const slice = limpio.slice(from, i + 1);
-    const avg = slice.reduce((a, b) => a + b.value, 0) / slice.length;
-    return { date: p.date, value: avg };
+  // Promedio anual — mucho más estable y legible que un % contra la
+  // población mundial (esa versión anterior salía como un escalón feo
+  // porque las direcciones activas son órdenes de magnitud más chicas que
+  // la población, y casi toda la variación quedaba invisible en esa escala)
+  const porAño = new Map<number, { suma: number; cuenta: number }>();
+  for (const p of limpio) {
+    const y = parseInt(p.date.slice(0, 4), 10);
+    const cur = porAño.get(y) ?? { suma: 0, cuenta: 0 };
+    cur.suma += p.value;
+    cur.cuenta += 1;
+    porAño.set(y, cur);
+  }
+  const años = Array.from(porAño.keys()).sort((a, b) => a - b);
+  const series = años.map((y) => {
+    const { suma, cuenta } = porAño.get(y)!;
+    const promedio = suma / cuenta;
+    return { año: y, direccionesActivasPromedio: Math.round(promedio), millonesDirecciones: round2(promedio / 1_000_000) };
   });
 
-  // Población mundial: valor fijo actualizado a mano (crece ~0.9%/año, no
-  // justifica una API en vivo para este propósito)
   const WORLD_POPULATION_2026 = 8_200_000_000;
-  const series = suavizado
-    .filter((_, i) => i % 5 === 0)
-    .map((p) => ({ date: p.date, pctPoblacion: round2((p.value / WORLD_POPULATION_2026) * 100), direccionesActivas: Math.round(p.value) }));
+  const ultimo = series[series.length - 1]!;
+  const pctActual = round2((ultimo.direccionesActivasPromedio / WORLD_POPULATION_2026) * 100);
+
   return {
-    nombre: "Adopción — % de la población mundial",
-    mide: "Direcciones de BTC activas por día (suavizado 30 días) como % de la población mundial, como proxy de adopción a lo largo del tiempo.",
+    nombre: "Adopción — Direcciones activas de BTC por año",
+    mide: "Promedio de direcciones de BTC activas por día, año a año (dato real de blockchain.info) — un histograma muestra mejor el crecimiento real que forzarlo a un % minúsculo de la población mundial.",
     series,
-    nota: "No es la curva de campana exacta del original (esa es un modelo fijo) — esto es una serie REAL y viva (direcciones activas / población mundial estimada) que muestra la tendencia de adopción real.",
+    pctPoblacionActual: pctActual,
+    nota: "No es la curva de campana exacta del original (esa es un modelo fijo con categorías de adopción) — esto es la actividad real, año a año. Al ritmo actual representa apenas el " + pctActual + "% de la población mundial.",
   };
 }
 
@@ -532,7 +552,9 @@ async function calcChart16() {
 // ---------- CHART 17: BTC vs Exchange Balance (CoinGlass) ----------
 async function calcChart17() {
   const data = await fetchCoinglassExchangeBalance();
-  if (!data) return null;
+  if (!data || data.error) {
+    return { nombre: "BTC Price vs Exchange Balance", error: data?.error ?? "Sin datos", series: [] as any[] };
+  }
   const series = data.time.map((t, i) => ({
     date: new Date(t).toISOString().slice(0, 10),
     balance: data.total[i] ?? null,
@@ -540,7 +562,7 @@ async function calcChart17() {
   }));
   return {
     nombre: "BTC Price vs Exchange Balance",
-    mide: "Cuánto BTC hay guardado en exchanges conocidos — cuando baja sostenidamente, la gente está retirando a self-custody (señal de acumulación); cuando sube, puede anticipar más presión de venta.",
+    mide: "Cuánto BTC hay guardado en exchanges conocidos — cuando baja sostenidamente, la gente está retirando a self-custody (señal de acumulación); cuando sube, puede anticipar más presión de venta. Se arma con el balance reportado por cada exchange, sumado entre todos los que trackea CoinGlass.",
     series,
   };
 }
