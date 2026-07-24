@@ -59,6 +59,7 @@ import globalLiquidityRouter from "./global-liquidity"; // PSY LIQUIDITY FUEL �
 import psyPanelsBtcRouter from "./psy-panels-btc"; // 5 paneles BTC (SMD/RSI/ADX+CVD/Liquidity Flow/Funding Sentiment)
 import historicalChartsRouter from "./historical-charts"; // 8 gráficos históricos BTC/macro
 import historicalCharts2Router from "./historical-charts-2"; // 11 gráficos más (misma página)
+import historicalCharts3Router from "./historical-charts-3"; // 13 gráficos más (misma página)
 
 const router: IRouter = Router();
 
@@ -118,5 +119,6 @@ router.use(globalLiquidityRouter);
 router.use(psyPanelsBtcRouter);
 router.use(historicalChartsRouter);
 router.use(historicalCharts2Router);
+router.use(historicalCharts3Router);
 
 export default router;
