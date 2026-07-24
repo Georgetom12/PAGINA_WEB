@@ -16,6 +16,7 @@ const TESTS_LINKS = [
 ];
 
 const LIQMAP_LINKS = [
+  { href: "/pro-dashboard",     icon: "🚀", label: "PSY PRO Dashboard",     desc: "Watchlist · Alertas · Portafolio real",       plan: "pro"   },
   { href: "/psy-score",         icon: "🧠", label: "PSY Score",             desc: "Score institucional 0-100",                    plan: "pro"   },
   { href: "/screener",          icon: "📡", label: "PSY Screener",          desc: "Top 50 con señales PSY-ULT1",                  plan: "pro"   },
   { href: "/liquidations",      icon: "⚡", label: "Liquidation Clock",     desc: "Liquidaciones por minuto",                     plan: "pro"   },
