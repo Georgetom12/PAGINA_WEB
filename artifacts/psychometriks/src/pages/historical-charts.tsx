@@ -124,7 +124,7 @@ export default function HistoricalChartsPage() {
 
           {/* CHART 2 */}
           {data.chart2 && (
-            <Card title={`2️⃣ ${data.chart2.nombre}`} mide={data.chart2.mide} nota={data.chart2.nota}>
+            <Card title={`2️⃣ ${data.chart2.nombre}`} mide={data.chart2.mide} detalle={data.chart2.nota}>
               <ResponsiveContainer width="100%" height={280}>
                 <ComposedChart data={data.chart2.series}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
@@ -364,13 +364,13 @@ export default function HistoricalChartsPage() {
           {data2.chart14 && (
             <Card title={`1️⃣4️⃣ ${data2.chart14.nombre}`} mide={data2.chart14.mide} detalle={data2.chart14.nota}>
               <ResponsiveContainer width="100%" height={260}>
-                <AreaChart data={data2.chart14.series}>
+                <BarChart data={data2.chart14.series}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
-                  <XAxis dataKey="date" stroke="#6b7280" fontSize={9} tickFormatter={(d) => d?.slice(0, 4)} />
+                  <XAxis dataKey="año" stroke="#6b7280" fontSize={10} />
                   <YAxis stroke="#6b7280" fontSize={10} />
                   <Tooltip {...chartTooltip} />
-                  <Area type="monotone" dataKey="pctPoblacion" name="% Población mundial" stroke="#38bdf8" fill="#38bdf833" strokeWidth={2} />
-                </AreaChart>
+                  <Bar dataKey="millonesDirecciones" name="Direcciones activas (millones)" fill="#38bdf8" radius={[3, 3, 0, 0]} />
+                </BarChart>
               </ResponsiveContainer>
             </Card>
           )}
@@ -416,7 +416,7 @@ export default function HistoricalChartsPage() {
           )}
 
           {/* CHART 17 */}
-          {data2.chart17 && (
+          {data2.chart17 && !data2.chart17.error && (
             <Card title={`1️⃣7️⃣ ${data2.chart17.nombre}`} mide={data2.chart17.mide}>
               <ResponsiveContainer width="100%" height={260}>
                 <ComposedChart data={data2.chart17.series}>
@@ -431,9 +431,12 @@ export default function HistoricalChartsPage() {
               </ResponsiveContainer>
             </Card>
           )}
-          {!data2.chart17 && (
-            <Card title="1️⃣7️⃣ BTC Price vs Exchange Balance" nota="No se pudo traer — probablemente tu plan de CoinGlass no incluye el endpoint de balance en exchanges. Revisar log del servidor para el error exacto.">
-              <div className="text-gray-500 text-sm">Sin datos disponibles con tu plan actual.</div>
+          {(!data2.chart17 || data2.chart17.error) && (
+            <Card
+              title="1️⃣7️⃣ BTC Price vs Exchange Balance"
+              nota={`No se pudo traer de CoinGlass — ${data2.chart17?.error ?? "sin datos"}. Si dice 'HTTP 403' o menciona el plan, tu suscripción actual de CoinGlass no incluye este endpoint.`}
+            >
+              <div className="text-gray-500 text-sm">Sin datos disponibles por ahora.</div>
             </Card>
           )}
 
